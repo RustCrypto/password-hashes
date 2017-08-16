@@ -1,0 +1,24 @@
+[package]
+name = "pbkdf2"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+license = "MIT/Apache-2.0"
+description = "Generic implementation of PBKDF2"
+documentation = "https://docs.rs/pbkdf2"
+repository = "https://github.com/RustCrypto/password-hashing"
+keywords = ["crypto", "password", "hashing"]
+
+[dependencies]
+crypto-mac = "0.4"
+generic-array = "0.8"
+byte-tools = "0.2"
+
+rayon = { version = "0.8", optional = true }
+
+[dev-dependencies]
+hmac = "0.4"
+sha-1 = "0.4"
+sha2 = "0.6"
+
+[features]
+parallel = ["rayon"]
