@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 extern crate crypto_mac;
 extern crate generic_array;
 extern crate byte_tools;
@@ -41,7 +42,7 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
 
     for _ in 1..c {
         let mut prfc = prf.clone();
-        prfc.input(&salt.code());
+        prfc.input(salt.code());
         salt = prfc.result();
 
         xor(chunk, salt.code());
