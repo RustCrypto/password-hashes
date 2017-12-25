@@ -10,6 +10,7 @@ extern crate rayon;
 use rayon::prelude::*;
 
 use crypto_mac::Mac;
+use generic_array::GenericArray;
 use generic_array::typenum::Unsigned;
 use byte_tools::write_u32_be;
 
@@ -36,16 +37,16 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
         prfc.input(&buf);
 
         let salt = prfc.result();
-        xor(chunk, salt.code());
+        xor(chunk, &salt.code());
         salt
     };
 
     for _ in 1..c {
         let mut prfc = prf.clone();
-        prfc.input(salt.code());
+        prfc.input(&salt.code());
         salt = prfc.result();
 
-        xor(chunk, salt.code());
+        xor(chunk, &salt.code());
     }
 }
 
@@ -67,10 +68,11 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
     where F: Mac + Clone + Sync
 {
+    let password_array: &GenericArray<u8, F::KeySize> = GenericArray::from_slice(password);
     let n = F::OutputSize::to_usize();
-    let prf = F::new(password);
+    let prf = F::new(password_array);
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
-        pbkdf2_body(i, chunk, &prf, salt, c);
+        pbkdf2_body(i, chunk, &prf, &salt, c);
     }
 }

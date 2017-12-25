@@ -9,16 +9,16 @@ repository = "https://github.com/RustCrypto/password-hashing"
 keywords = ["crypto", "password", "hashing"]
 
 [dependencies]
-crypto-mac = "0.4"
-generic-array = "0.8"
+crypto-mac = "0.6"
+generic-array = "0.9"
 byte-tools = "0.2"
 
 rayon = { version = "0.8", optional = true }
 
 [dev-dependencies]
-hmac = "0.4"
-sha-1 = "0.4"
-sha2 = "0.6"
+hmac = "0.5"
+sha-1 = "0.7"
+sha2 = "0.7"
 
 [features]
 parallel = ["rayon"]
