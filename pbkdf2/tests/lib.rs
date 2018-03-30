@@ -1,8 +1,8 @@
 extern crate pbkdf2;
-extern crate sha_1;
+extern crate sha1;
 extern crate hmac;
 
-use sha_1::Sha1;
+use sha1::Sha1;
 use hmac::Hmac;
 
 #[derive(Debug)]
