@@ -10,13 +10,12 @@ extern crate rayon;
 use rayon::prelude::*;
 
 use crypto_mac::Mac;
-use generic_array::GenericArray;
 use generic_array::typenum::Unsigned;
 use byte_tools::write_u32_be;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
-    assert!(salt.len() >= salt.len());
+    assert!(salt.len() >= salt.len(), "length mismatch in xor");
     for i in 0..res.len() {
         res[i] ^= salt[i];
     }
@@ -36,17 +35,17 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
         write_u32_be(&mut buf, (i + 1) as u32);
         prfc.input(&buf);
 
-        let salt = prfc.result();
-        xor(chunk, &salt.code());
+        let salt = prfc.result().code();
+        xor(chunk, &salt);
         salt
     };
 
     for _ in 1..c {
         let mut prfc = prf.clone();
-        prfc.input(&salt.code());
-        salt = prfc.result();
+        prfc.input(&salt);
+        salt = prfc.result().code();
 
-        xor(chunk, &salt.code());
+        xor(chunk, &salt);
     }
 }
 
@@ -56,7 +55,7 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
     where F: Mac + Clone + Sync
 {
     let n = F::OutputSize::to_usize();
-    let prf = F::new(password);
+    let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
 
     res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
         pbkdf2_body(i, chunk, &prf, salt, c);
@@ -68,11 +67,10 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
     where F: Mac + Clone + Sync
 {
-    let password_array: &GenericArray<u8, F::KeySize> = GenericArray::from_slice(password);
     let n = F::OutputSize::to_usize();
-    let prf = F::new(password_array);
+    let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
-        pbkdf2_body(i, chunk, &prf, &salt, c);
+        pbkdf2_body(i, chunk, &prf, salt, c);
     }
 }

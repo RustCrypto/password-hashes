@@ -13,10 +13,10 @@ crypto-mac = "0.6"
 generic-array = "0.9"
 byte-tools = "0.2"
 
-rayon = { version = "0.8", optional = true }
+rayon = { version = "1", optional = true }
 
 [dev-dependencies]
-hmac = "0.5"
+hmac = "0.6"
 sha-1 = "0.7"
 sha2 = "0.7"
 
