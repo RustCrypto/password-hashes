@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "pbkdf2",
+    "scrypt",
 ]
