@@ -6,7 +6,8 @@ derivation functions, written in pure Rust.
 
 | Name      | Crates.io  | Documentation  |
 | --------- |:----------:| :-----:|
-| [PBKDF2][1]  | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2) | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) |
+| [PBKDF2][https://en.wikipedia.org/wiki/PBKDF2]  | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2) | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) |
+| [scrypt][https://en.wikipedia.org/wiki/Scrypt]  | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt) | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) |
 
 ## License
 
@@ -16,6 +17,3 @@ All crates are licensed under either of
  * [MIT license](http://opensource.org/licenses/MIT)
 
 at your option.
-
-
-[1]: https://en.wikipedia.org/wiki/PBKDF2
