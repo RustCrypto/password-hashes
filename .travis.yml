@@ -1,9 +1,10 @@
 language: rust
 rust:
   - stable
-  - beta
   - nightly
 matrix:
+  include:
+    script: cd scrypt; cargo test --verbose --no-default-features
   allow_failures:
     - rust: nightly
 script: cargo test --verbose --all

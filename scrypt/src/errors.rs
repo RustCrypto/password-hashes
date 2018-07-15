@@ -33,6 +33,7 @@ impl error::Error for InvalidParams {
     fn description(&self) -> &str { "invalid scrypt parameters" }
 }
 
+#[cfg(feature="include_simple")]
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match self {
@@ -42,6 +43,7 @@ impl fmt::Display for CheckError {
     }
 }
 
+#[cfg(feature="include_simple")]
 impl error::Error for CheckError {
     fn description(&self) -> &str {
         match self {

@@ -29,6 +29,7 @@ extern crate rand;
 #[cfg(feature="include_simple")]
 use std::io;
 
+#[cfg(feature="include_simple")]
 use byte_tools::{read_u32v_le, write_u32_le};
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
@@ -44,7 +45,9 @@ mod romix;
 pub mod errors;
 
 pub use params::ScryptParams;
-use errors::{CheckError, InvalidOutputLen};
+use errors::InvalidOutputLen;
+#[cfg(feature="include_simple")]
+use errors::CheckError;
 
 /// The scrypt key derivation function.
 ///
