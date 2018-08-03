@@ -21,4 +21,6 @@ sha-1 = "0.7"
 sha2 = "0.7"
 
 [features]
+default = ["std"]
 parallel = ["rayon"]
+std = []
