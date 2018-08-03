@@ -15,10 +15,18 @@ byte-tools = "0.2"
 
 rayon = { version = "1", optional = true }
 
+constant_time_eq = { version = "0.1", optional = true }
+base64 = { version = "0.9", optional = true }
+rand = { version = "0.5", optional = true }
+hmac = { version = "0.6", optional = true }
+sha2 = { version = "0.7", optional = true }
+
 [dev-dependencies]
 hmac = "0.6"
 sha-1 = "0.7"
 sha2 = "0.7"
 
 [features]
+default = ["include_simple"]
 parallel = ["rayon"]
+include_simple = ["sha2", "hmac", "rand", "base64", "constant_time_eq"]

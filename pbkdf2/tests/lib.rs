@@ -41,3 +41,33 @@ fn rfc6070() {
         assert_eq!(&buf[..n], test.output);
     }
 }
+
+#[test]
+fn test_pbkdf2_simple() {
+    let password = "password";
+
+    let out1 = pbkdf2::pbkdf2_simple(password, 1024).unwrap();
+    let out2 = pbkdf2::pbkdf2_simple(password, 1024).unwrap();
+
+    // This just makes sure that a salt is being applied. It doesn't verify that that salt is
+    // cryptographically strong, however.
+    assert!(out1 != out2);
+
+    match pbkdf2::pbkdf2_check(password, &out1[..]) {
+        Ok(r) => assert!(r),
+        Err(_) => panic!()
+    }
+    match pbkdf2::pbkdf2_check(password, &out2[..]) {
+        Ok(r) => assert!(r),
+        Err(_) => panic!()
+    }
+
+    match pbkdf2::pbkdf2_check("wrong", &out1[..]) {
+        Ok(r) => assert!(!r),
+        Err(_) => panic!()
+    }
+    match pbkdf2::pbkdf2_check("wrong", &out2[..]) {
+        Ok(r) => assert!(!r),
+        Err(_) => panic!()
+    }
+}
