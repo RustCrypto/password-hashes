@@ -4,6 +4,7 @@ extern crate hmac;
 
 use sha1::Sha1;
 use hmac::Hmac;
+use pbkdf2::errors::CheckError;
 
 #[derive(Debug)]
 pub struct Test {
@@ -43,6 +44,7 @@ fn rfc6070() {
 }
 
 #[test]
+#[cfg(feature="include_simple")]
 fn test_pbkdf2_simple() {
     let password = "password";
 
@@ -51,23 +53,11 @@ fn test_pbkdf2_simple() {
 
     // This just makes sure that a salt is being applied. It doesn't verify that that salt is
     // cryptographically strong, however.
-    assert!(out1 != out2);
+    assert_ne!(out1, out2);
 
-    match pbkdf2::pbkdf2_check(password, &out1[..]) {
-        Ok(r) => assert!(r),
-        Err(_) => panic!()
-    }
-    match pbkdf2::pbkdf2_check(password, &out2[..]) {
-        Ok(r) => assert!(r),
-        Err(_) => panic!()
-    }
+    assert_eq!(pbkdf2::pbkdf2_check(password, &out1[..]), Ok(()));
+    assert_eq!(pbkdf2::pbkdf2_check(password, &out2[..]), Ok(()));
 
-    match pbkdf2::pbkdf2_check("wrong", &out1[..]) {
-        Ok(r) => assert!(!r),
-        Err(_) => panic!()
-    }
-    match pbkdf2::pbkdf2_check("wrong", &out2[..]) {
-        Ok(r) => assert!(!r),
-        Err(_) => panic!()
-    }
+    assert_eq!(pbkdf2::pbkdf2_check("wrong", &out1[..]), Err(CheckError::HashMismatch));
+    assert_eq!(pbkdf2::pbkdf2_check("wrong", &out2[..]), Err(CheckError::HashMismatch));
 }

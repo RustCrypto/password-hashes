@@ -38,6 +38,11 @@ use hmac::Hmac;
 #[cfg(feature="include_simple")]
 use sha2::Sha256;
 
+#[cfg(feature="include_simple")]
+pub mod errors;
+#[cfg(feature="include_simple")]
+use errors::CheckError;
+
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
     assert!(salt.len() >= salt.len(), "length mismatch in xor");
@@ -147,8 +152,10 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
 }
 
 /**
- * pbkdf2_check compares a password against the result of a previous call to pbkdf2_simple and
- * returns true if the passed in password hashes to the same value.
+ * pbkdf2_check compares a password against the result of a previous call to
+ * pbkdf2_simple and returns `Ok(())` if the passed in password hashes to the
+ * same value, `Err(CheckError::HashMismatch)` if hashes have different values,
+ * and `Err(CheckError::InvalidFormat)` if `hashed_value` has an invalid format.
  *
  * # Arguments
  *
@@ -157,82 +164,73 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
  *
  */
 #[cfg(feature="include_simple")]
-pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<bool, &'static str> {
-    static ERR_STR: &'static str = "Hash is not in Rust PBKDF2 format.";
-
+pub fn pbkdf2_check(password: &str, hashed_value: &str)
+    -> Result<(), self::errors::CheckError> {
     let mut iter = hashed_value.split('$');
 
     // Check that there are no characters before the first "$"
-    match iter.next() {
-        Some(x) => if x != "" { return Err(ERR_STR); },
-        None => return Err(ERR_STR)
-    }
+    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
 
     // Check the name
-    match iter.next() {
-        Some(t) => if t != "rpbkdf2" { return Err(ERR_STR); },
-        None => return Err(ERR_STR)
-    }
+    if iter.next() != Some("rpbkdf2") { Err(CheckError::InvalidFormat)?; }
 
     // Parse format - currenlty only version 0 is supported
     match iter.next() {
         Some(fstr) => {
             match fstr {
                 "0" => { }
-                _ => return Err(ERR_STR)
+                _ => return Err(CheckError::InvalidFormat)
             }
         }
-        None => return Err(ERR_STR)
+        None => return Err(CheckError::InvalidFormat)
     }
 
     // Parse the iteration count
     let c = match iter.next() {
         Some(pstr) => match base64::decode(pstr) {
             Ok(pvec) => {
-                if pvec.len() != 4 { return Err(ERR_STR); }
+                if pvec.len() != 4 { return Err(CheckError::InvalidFormat); }
                 read_u32_be(&pvec[..])
             }
-            Err(_) => return Err(ERR_STR)
+            Err(_) => return Err(CheckError::InvalidFormat)
         },
-        None => return Err(ERR_STR)
+        None => return Err(CheckError::InvalidFormat)
     };
 
     // Salt
     let salt = match iter.next() {
         Some(sstr) => match base64::decode(sstr) {
             Ok(salt) => salt,
-            Err(_) => return Err(ERR_STR)
+            Err(_) => return Err(CheckError::InvalidFormat)
         },
-        None => return Err(ERR_STR)
+        None => return Err(CheckError::InvalidFormat)
     };
 
     // Hashed value
     let hash = match iter.next() {
         Some(hstr) => match base64::decode(hstr) {
             Ok(hash) => hash,
-            Err(_) => return Err(ERR_STR)
+            Err(_) => return Err(CheckError::InvalidFormat)
         },
-        None => return Err(ERR_STR)
+        None => return Err(CheckError::InvalidFormat)
     };
 
     // Make sure that the input ends with a "$"
-    match iter.next() {
-        Some(x) => if x != "" { return Err(ERR_STR); },
-        None => return Err(ERR_STR)
-    }
+    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
 
     // Make sure there is no trailing data after the final "$"
-    match iter.next() {
-        Some(_) => return Err(ERR_STR),
-        None => { }
-    }
+    if iter.next() != None { Err(CheckError::InvalidFormat)?; }
 
     let mut output = vec![0u8; hash.len()];
     pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, c as usize, &mut output);
 
-    // Be careful here - its important that the comparison be done using a fixed time equality
-    // check. Otherwise an adversary that can measure how long this step takes can learn about the
-    // hashed value which would allow them to mount an offline brute force attack against the
-    // hashed password.
-    Ok(constant_time_eq(&output[..], &hash[..]))
+    // Be careful here - its important that the comparison be done using a fixed
+    // time equality check. Otherwise an adversary that can measure how long
+    // this step takes can learn about the hashed value which would allow them
+    // to mount an offline brute force attack against the hashed password.
+    if constant_time_eq(&output, &hash) {
+        Ok(())
+    } else {
+        Err(CheckError::HashMismatch)
+    }
 }
