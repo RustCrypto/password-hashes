@@ -1,3 +1,12 @@
+//! This crate implements the Scrypt key derivation function as specified
+//! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
+//!
+//! If you are not using convinience functions `pbkdf2_check` and `pbkdf2_simple`
+//! it's recommended to disable `pbkdf2` default features in your `Cargo.toml`:
+//! ```toml
+//! [dependencies]
+//! scrypt = { version = "0.1", default-features = false }
+//! ```
 #![cfg_attr(not(feature = "include_simple"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 extern crate crypto_mac;
@@ -39,9 +48,9 @@ use hmac::Hmac;
 use sha2::Sha256;
 
 #[cfg(feature="include_simple")]
-pub mod errors;
+mod errors;
 #[cfg(feature="include_simple")]
-use errors::CheckError;
+pub use errors::CheckError;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -79,6 +88,7 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
     }
 }
 
+/// Generic implementation of PBKDF2 algorithm.
 #[cfg(feature="parallel")]
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
@@ -92,6 +102,7 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
     });
 }
 
+/// Generic implementation of PBKDF2 algorithm.
 #[cfg(not(feature="parallel"))]
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
@@ -105,26 +116,28 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
     }
 }
 
-/**
- * pbkdf2_simple is a helper function that should be sufficient for the majority of cases where
- * an application needs to use PBKDF2 to hash a password for storage. The result is a String that
- * contains the parameters used as part of its encoding. The pbkdf2_check function may be used on
- * a password to check if it is equal to a hashed value.
- *
- * # Format
- *
- * The format of the output is a modified version of the Modular Crypt Format that encodes algorithm
- * used and iteration count. The format is indicated as "rpbkdf2" which is short for "Rust PBKF2
- * format."
- *
- * $rpbkdf2$0$<base64(c)>$<base64(salt)>$<based64(hash)>$
- *
- * # Arguments
- *
- * * password - The password to process as a str
- * * c - The iteration count
- *
- */
+
+/// A helper function that should be sufficient for the majority of cases where
+/// an application needs to use PBKDF2 to hash a password for storage.
+///
+/// Internally it uses PBKDF2-HMAC-SHA256 algorithm. The result is a `String`
+/// that contains the parameters used as part of its encoding. The `pbkdf2_check`
+/// function may be used on a password to check if it is equal to a hashed value.
+///
+/// # Format
+///
+/// The format of the output is a modified version of the Modular Crypt Format
+/// that encodes algorithm used and iteration count. The format is indicated as
+/// "rpbkdf2" which is short for "Rust PBKF2 format."
+///
+/// ```text
+/// $rpbkdf2$0$<base64(c)>$<base64(salt)>$<based64(hash)>$
+/// ```
+///
+/// # Arguments
+///
+/// * `password` - The password to process
+/// * `c` - The iteration count
 #[cfg(feature="include_simple")]
 pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
     let mut rng = OsRng::new()?;
@@ -151,18 +164,16 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
     Ok(result)
 }
 
-/**
- * pbkdf2_check compares a password against the result of a previous call to
- * pbkdf2_simple and returns `Ok(())` if the passed in password hashes to the
- * same value, `Err(CheckError::HashMismatch)` if hashes have different values,
- * and `Err(CheckError::InvalidFormat)` if `hashed_value` has an invalid format.
- *
- * # Arguments
- *
- * * password - The password to process as a str
- * * hashed_value - A string representing a hashed password returned by pbkdf2_simple()
- *
- */
+/// Compares a password against the result of a `pbkdf2_simple`.
+///
+/// It will return `Ok(())` if `password` hashes to the same value, if hashes
+/// are different it will return `Err(CheckError::HashMismatch)`, and
+/// `Err(CheckError::InvalidFormat)` if `hashed_value` has an invalid format.
+///
+/// # Arguments
+/// * `password` - The password to process
+/// * `hashed_value` - A string representing a hashed password returned by
+/// `pbkdf2_simple`
 #[cfg(feature="include_simple")]
 pub fn pbkdf2_check(password: &str, hashed_value: &str)
     -> Result<(), self::errors::CheckError> {

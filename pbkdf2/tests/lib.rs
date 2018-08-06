@@ -4,7 +4,8 @@ extern crate hmac;
 
 use sha1::Sha1;
 use hmac::Hmac;
-use pbkdf2::errors::CheckError;
+#[cfg(feature="include_simple")]
+use pbkdf2::CheckError;
 
 #[derive(Debug)]
 pub struct Test {
