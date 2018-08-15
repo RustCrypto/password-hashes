@@ -1,4 +1,4 @@
-# Password hashing [![Build Status](https://travis-ci.org/RustCrypto/password-hashing.svg?branch=master)](https://travis-ci.org/RustCrypto/password-hashing)
+# RustCrypto: password hashing [![Build Status](https://travis-ci.org/RustCrypto/password-hashing.svg?branch=master)](https://travis-ci.org/RustCrypto/password-hashing)
 Collection of password hashing algorithms, otherwise known as password-based key
 derivation functions, written in pure Rust.
 
@@ -11,9 +11,14 @@ derivation functions, written in pure Rust.
 
 ## License
 
-All crates are licensed under either of
+All crates licensed under either of
 
  * [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
  * [MIT license](http://opensource.org/licenses/MIT)
 
 at your option.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license
