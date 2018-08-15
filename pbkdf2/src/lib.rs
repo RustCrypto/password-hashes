@@ -244,18 +244,3 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
         Err(CheckError::HashMismatch)
     }
 }
-
-
-#[test]
-fn xor_res_salt_ok() {
-    let mut res = [0u8; 32];
-    xor(&mut res, &[0u8; 32]);
-    xor(&mut res, &[0u8; 64]);
-}
-
-#[test]
-#[should_panic]
-fn xor_res_salt_panic() {
-    let mut res = [0u8; 32];
-    xor(&mut res, &[0u8; 16]);
-}
