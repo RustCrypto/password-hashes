@@ -54,10 +54,9 @@ pub use errors::CheckError;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
-    assert!(salt.len() >= res.len(), "length mismatch in xor");
-    for i in 0..res.len() {
-        res[i] ^= salt[i];
-    }
+    debug_assert!(salt.len() >= res.len(), "length mismatch in xor");
+
+    res.iter_mut().zip(salt.iter()).for_each(|(a, b)| *a ^= b);
 }
 
 #[inline(always)]
