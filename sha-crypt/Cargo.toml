@@ -1,0 +1,10 @@
+[package]
+name = "sha-crypt"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+description = "sha512/sha256-crypt hashes"
+
+[dependencies]
+sha2 = "0.7"
+rand = "0.5"
+constant_time_eq = { version = "0.1" }

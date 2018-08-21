@@ -3,4 +3,5 @@ members = [
     "bcrypt-pbkdf",
     "pbkdf2",
     "scrypt",
+    "sha-crypt"
 ]
