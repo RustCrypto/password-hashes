@@ -8,29 +8,31 @@
 //! scrypt = { version = "0.1", default-features = false }
 //! ```
 //!
-//! # Acknowledgments
-//! This implementation is heavily based on `rust-crypto`'s `scrypt` module.
-//!
-//! # References
-//! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
-//! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
-//!
-//!
 //! # Usage
 //!
 //! ```
 //! extern crate scrypt;
 //!
+//! # fn main() {
 //! use scrypt::{ScryptParams, scrypt_simple, scrypt_check};
 //!
 //! // First setup the ScryptParams arguments with:
 //! // r = 8, p = 1, n = 32768 (log2(n) = 15)
 //! let params = ScryptParams::new(15, 8, 1).unwrap();
 //! // Hash the password for storage
-//! let hashed_password = scrypt_simple("Not so secure password", &params).unwrap();
+//! let hashed_password = scrypt_simple("Not so secure password", &params)
+//!     .expect("OS RNG should not fail");
 //! // Verifying a stored password
 //! assert!(scrypt_check("Not so secure password", &hashed_password).is_ok());
+//! # }
 //! ```
+//!
+//! # Acknowledgments
+//! This implementation is heavily based on `rust-crypto`'s `scrypt` module.
+//!
+//! # References
+//! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
+//! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
 extern crate sha2;
 extern crate pbkdf2;
 extern crate hmac;
