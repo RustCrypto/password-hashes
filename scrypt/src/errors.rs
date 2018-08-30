@@ -41,7 +41,7 @@ impl error::Error for InvalidParams {
 #[cfg(feature="include_simple")]
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match self {
+        f.write_str(match *self {
             CheckError::HashMismatch => "password hash mismatch",
             CheckError::InvalidFormat => "invalid `hashed_value` format",
         })
@@ -51,7 +51,7 @@ impl fmt::Display for CheckError {
 #[cfg(feature="include_simple")]
 impl error::Error for CheckError {
     fn description(&self) -> &str {
-        match self {
+        match *self {
             CheckError::HashMismatch => "password hash mismatch",
             CheckError::InvalidFormat => "invalid `hashed_value` format",
         }

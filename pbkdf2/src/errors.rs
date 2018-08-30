@@ -11,7 +11,7 @@ pub enum CheckError {
 
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match self {
+        f.write_str(match *self {
             CheckError::HashMismatch => "password hash mismatch",
             CheckError::InvalidFormat => "invalid `hashed_value` format",
         })
@@ -20,7 +20,7 @@ impl fmt::Display for CheckError {
 
 impl error::Error for CheckError {
     fn description(&self) -> &str {
-        match self {
+        match *self {
             CheckError::HashMismatch => "password hash mismatch",
             CheckError::InvalidFormat => "invalid `hashed_value` format",
         }
