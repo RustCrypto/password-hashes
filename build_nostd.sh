@@ -6,7 +6,8 @@ DIRS=`ls -d */`
 cargo clean
 
 for DIR in $DIRS; do
-    if [ $DIR = "target/" ]
+    # disable scrypt check as it does not support no_std
+    if [ $DIR = "target/" ] || [ $DIR = "scrypt/" ]
     then
         continue
     fi
