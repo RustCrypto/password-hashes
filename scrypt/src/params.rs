@@ -18,6 +18,10 @@ impl ScryptParams {
     /// - `log_n` - The log2 of the Scrypt parameter `N`
     /// - `r` - The Scrypt parameter `r`
     /// - `p` - The Scrypt parameter `p`
+    /// # Conditions
+    /// - `log_n` must be less than `64`
+    /// - `r` must be greater than `0` and less than or equal to `4294967295`
+    /// - `p` must be greater than `0` and less than `4294967295`
     pub fn new(log_n: u8, r: u32, p: u32) -> Result<ScryptParams, InvalidParams> {
         let cond1 = (log_n as usize) < size_of::<usize>() * 8;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
