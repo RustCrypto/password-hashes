@@ -1,10 +1,28 @@
 language: rust
-rust:
-  - stable
-  - nightly
+services: docker
+sudo: required
+
 matrix:
   include:
-    script: cd scrypt; cargo test --tests --verbose --no-default-features
-  allow_failures:
-    - rust: nightly
-script: cargo test --verbose --all
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: 1.22.0
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: stable
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+
+    - env: TARGET=thumbv7em-none-eabi
+      rust: nightly
+      script: ./build_nostd.sh
+      install:
+        - cargo install xargo || true
+        - rustup target install armv7-unknown-linux-gnueabihf
+        - rustup component add rust-src
+
+install:
+  - cargo install cross || true
+
+script:
+  - cross test --verbose --all --release --target $TARGET
+
+cache: cargo

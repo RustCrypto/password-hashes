@@ -2,18 +2,20 @@
 name = "scrypt"
 version = "0.1.1"
 authors = ["RustCrypto Developers"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"
 documentation = "https://docs.rs/scrypt"
 repository = "https://github.com/RustCrypto/password-hashing"
 keywords = ["crypto", "password", "hashing"]
+categories = ["cryptography", "no-std"]
 
 [dependencies]
 sha2 = "0.7"
 pbkdf2 = "0.2"
 hmac = "0.6"
-byteorder = "1.2"
 byte-tools = "0.3"
+byteorder = { version = "1", default-features = false }
+
 constant_time_eq = { version = "0.1", optional = true }
 base64 = { version = "0.9", optional = true }
 rand = { version = "0.5", optional = true }
@@ -21,3 +23,6 @@ rand = { version = "0.5", optional = true }
 [features]
 default = ["include_simple"]
 include_simple = ["rand", "base64", "constant_time_eq"]
+
+[badges]
+travis-ci = { repository = "RustCrypto/password-hashing" }
