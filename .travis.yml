@@ -4,7 +4,7 @@ rust:
   - nightly
 matrix:
   include:
-    script: cd scrypt; cargo test --verbose --no-default-features
+    script: cd scrypt; cargo test --tests --verbose --no-default-features
   allow_failures:
     - rust: nightly
 script: cargo test --verbose --all
