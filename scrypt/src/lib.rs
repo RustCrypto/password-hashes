@@ -27,9 +27,6 @@
 //! # }
 //! ```
 //!
-//! # Acknowledgments
-//! This implementation is heavily based on `rust-crypto`'s `scrypt` module.
-//!
 //! # References
 //! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
 //! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)

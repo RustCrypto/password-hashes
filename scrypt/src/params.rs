@@ -1,5 +1,5 @@
-use std;
 use std::mem::size_of;
+use std::usize;
 
 use errors::InvalidParams;
 
@@ -29,7 +29,7 @@ impl ScryptParams {
     pub fn new(log_n: u8, r: u32, p: u32) -> Result<ScryptParams, InvalidParams> {
         let cond1 = (log_n as usize) < size_of::<usize>() * 8;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
-        let cond3 = r <= std::usize::MAX as u32 && p < std::usize::MAX as u32;
+        let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
         if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
             Err(InvalidParams)?;
         }
