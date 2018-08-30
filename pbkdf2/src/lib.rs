@@ -1,11 +1,11 @@
-//! This crate implements the Scrypt key derivation function as specified
+//! This crate implements the PBKDF2 key derivation function as specified
 //! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
 //!
 //! If you are not using convinience functions `pbkdf2_check` and `pbkdf2_simple`
 //! it's recommended to disable `pbkdf2` default features in your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
-//! scrypt = { version = "0.1", default-features = false }
+//! pbkdf2 = { version = "0.2", default-features = false }
 //! ```
 #![cfg_attr(not(feature = "include_simple"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
