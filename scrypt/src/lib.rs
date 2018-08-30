@@ -18,6 +18,7 @@
 extern crate sha2;
 extern crate pbkdf2;
 extern crate hmac;
+extern crate byteorder;
 extern crate byte_tools;
 #[cfg(feature="include_simple")]
 extern crate constant_time_eq;
@@ -30,7 +31,7 @@ extern crate rand;
 use std::io;
 
 #[cfg(feature="include_simple")]
-use byte_tools::{read_u32v_le, write_u32_le};
+use byteorder::{ByteOrder, LittleEndian};
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use sha2::Sha256;
@@ -145,8 +146,8 @@ pub fn scrypt_simple(password: &str, params: &ScryptParams)
         result.push_str("1$");
         let mut tmp = [0u8; 9];
         tmp[0] = params.log_n;
-        write_u32_le(&mut tmp[1..5], params.r);
-        write_u32_le(&mut tmp[5..9], params.p);
+        LittleEndian::write_u32(&mut tmp[1..5], params.r);
+        LittleEndian::write_u32(&mut tmp[5..9], params.p);
         result.push_str(&base64::encode(&tmp));
     }
     result.push('$');
@@ -196,7 +197,7 @@ pub fn scrypt_check(password: &str, hashed_value: &str)
         "1" if pvec.len() == 9 => {
             let log_n = pvec[0];
             let mut pval = [0u32; 2];
-            read_u32v_le(&mut pval, &pvec[1..9]);
+            LittleEndian::read_u32_into(&pvec[1..9], &mut pval);
             ScryptParams::new(log_n, pval[0], pval[1])
                 .map_err(|_| CheckError::InvalidFormat)
         }

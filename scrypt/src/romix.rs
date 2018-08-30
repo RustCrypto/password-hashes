@@ -1,12 +1,12 @@
-use byte_tools::copy_memory;
+use byte_tools::copy as copy_memory;
+use byteorder::{ByteOrder, LittleEndian};
 
-use byte_tools::{read_u32_le, read_u32v_le, write_u32_le};
 
 /// The salsa20/8 core function.
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
 
     let mut x = [0u32; 16];
-    read_u32v_le(&mut x, input);
+    LittleEndian::read_u32_into(input, &mut x);
 
     let rounds = 8;
 
@@ -54,9 +54,9 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
     }
 
     for i in 0..16 {
-        write_u32_le(
+        LittleEndian::write_u32(
             &mut output[i * 4..(i + 1) * 4],
-            x[i].wrapping_add(read_u32_le(&input[i * 4..(i + 1) * 4])));
+            x[i].wrapping_add(LittleEndian::read_u32(&input[i * 4..(i + 1) * 4])));
     }
 }
 
@@ -95,7 +95,7 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
         let mask = n - 1;
         // This cast is safe since we're going to get the value mod n (which is a power of 2), so we
         // don't have to care about truncating any of the high bits off
-        let result = (read_u32_le(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
+        let result = (LittleEndian::read_u32(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
         result
     }
 
