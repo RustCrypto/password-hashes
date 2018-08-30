@@ -11,7 +11,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 extern crate crypto_mac;
 extern crate generic_array;
-extern crate byte_tools;
+extern crate byteorder;
 
 #[cfg(feature="parallel")]
 extern crate rayon;
@@ -20,7 +20,7 @@ use rayon::prelude::*;
 
 use crypto_mac::Mac;
 use generic_array::typenum::Unsigned;
-use byte_tools::write_u32_be;
+use byteorder::{ByteOrder, BigEndian};
 
 #[cfg(feature="include_simple")]
 extern crate constant_time_eq;
@@ -36,8 +36,6 @@ extern crate sha2;
 #[cfg(feature="include_simple")]
 use std::io;
 
-#[cfg(feature="include_simple")]
-use byte_tools::read_u32_be;
 #[cfg(feature="include_simple")]
 use constant_time_eq::constant_time_eq;
 #[cfg(feature="include_simple")]
@@ -70,7 +68,7 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
         prfc.input(salt);
 
         let mut buf = [0u8; 4];
-        write_u32_be(&mut buf, (i + 1) as u32);
+        BigEndian::write_u32(&mut buf, (i + 1) as u32);
         prfc.input(&buf);
 
         let salt = prfc.result().code();
@@ -152,7 +150,7 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
 
     let mut result = "$rpbkdf2$0$".to_string();
     let mut tmp = [0u8; 4];
-    write_u32_be(&mut tmp, c);
+    BigEndian::write_u32(&mut tmp, c);
     result.push_str(&base64::encode(&tmp));
     result.push('$');
     result.push_str(&base64::encode(&salt));
@@ -200,7 +198,7 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
         Some(pstr) => match base64::decode(pstr) {
             Ok(pvec) => {
                 if pvec.len() != 4 { return Err(CheckError::InvalidFormat); }
-                read_u32_be(&pvec[..])
+                BigEndian::read_u32(&pvec[..])
             }
             Err(_) => return Err(CheckError::InvalidFormat)
         },
