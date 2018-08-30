@@ -1,15 +1,20 @@
 use std::{fmt, error};
 
+/// `scrypt()` error
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct InvalidOutputLen;
 
+/// `ScryptParams` error
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct InvalidParams;
 
+/// `scrypt_check` error
 #[cfg(feature="include_simple")]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CheckError {
+    /// Password hash mismatch, e.g. due to the incorrect password.
     HashMismatch,
+    /// Invalid format of the hash string.
     InvalidFormat,
 }
 

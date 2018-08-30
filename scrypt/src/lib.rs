@@ -42,6 +42,7 @@ use rand::{OsRng, RngCore};
 
 mod params;
 mod romix;
+/// Errors for `scrypt` operations.
 pub mod errors;
 
 pub use params::ScryptParams;
