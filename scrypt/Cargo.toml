@@ -11,7 +11,7 @@ categories = ["cryptography", "no-std"]
 
 [dependencies]
 sha2 = "0.7"
-pbkdf2 = "0.2"
+pbkdf2 = { version = "0.2", default-features = false }
 hmac = "0.6"
 byte-tools = "0.3"
 byteorder = { version = "1", default-features = false }
