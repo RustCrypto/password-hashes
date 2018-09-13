@@ -3,18 +3,41 @@
 //!
 //! ```toml
 //! [dependencies]
-//! sha-crypt = { version = "0.1" }
+//! sha-crypt = { version = "0.1", default-features = false }
+//! ```
+//! # Usage
+//!
+//! ```
+//! extern crate sha_crypt;
+//!
+//! # fn main() {
+//! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
+//!
+//! // First setup the Sha512Params arguments with:
+//! // rounds = 10_000
+//! let params = Sha512Params::new(10_000).expect("RandomError!");
+//! // Hash the password for storage
+//! let hashed_password = sha512_simple("Not so secure password", &params)
+//!     .expect("Should not fail");
+//! // Verifying a stored password
+//! assert!(sha512_check("Not so secure password", &hashed_password).is_ok());
+//! # }
 //! ```
 //!
 //! # References
 //! \[1\] - [Ulrich Drepper et.al. Unix crypt using SHA-256 and SHA-512]
 //! (https://www.akkadia.org/drepper/SHA-crypt.txt)
 //!
+#[cfg(feature = "include_simple")]
 extern crate constant_time_eq;
+#[cfg(feature = "include_simple")]
 extern crate rand;
 extern crate sha2;
+#[cfg(feature = "include_simple")]
 use constant_time_eq::constant_time_eq;
+#[cfg(feature = "include_simple")]
 use rand::distributions::Distribution;
+#[cfg(feature = "include_simple")]
 use rand::{OsRng, Rng};
 use sha2::{Digest, Sha512};
 use std::result::Result;
@@ -238,8 +261,12 @@ pub fn sha512_crypt_b64(
 /// # Return
 /// `Ok(String)` containing the full SHA512 password hash format, or
 /// Err(CryptError) if something went wrong.
+#[cfg(feature = "include_simple")]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
-    let mut rng = OsRng::new()?;
+    let mut rng = match OsRng::new() {
+        Ok(mut rng) => rng,
+        Err(_) => return Err(CryptError::RoundsError),
+    };
 
     let salt: String = rng
         .sample_iter(&ShaCryptDistribution)
@@ -271,6 +298,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 /// # Return
 /// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
 /// format or password mismatch.
+#[cfg(feature = "include_simple")]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 

@@ -1,7 +1,6 @@
 extern crate sha_crypt;
 use sha_crypt::{
-    sha512_check, sha512_crypt, sha512_crypt_b64, sha512_simple, Sha512Params, ROUNDS_MAX,
-    ROUNDS_MIN,
+    sha512_check, sha512_crypt_b64, sha512_simple, Sha512Params, ROUNDS_MAX, ROUNDS_MIN,
 };
 
 struct TestCrypt {
@@ -41,7 +40,7 @@ fn tests_sha512_crypt() -> Vec<TestCrypt> {
 fn test_sha512_crypt() {
     let tests = tests_sha512_crypt();
     for t in tests.iter() {
-        let params = Sha512Params { rounds: t.rounds };
+        let params = Sha512Params::new(t.rounds).expect("Rounds error");
         let result = sha512_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params).unwrap();
         assert!(&result == t.result);
     }
@@ -49,17 +48,11 @@ fn test_sha512_crypt() {
 
 #[test]
 fn test_sha512_crypt_invalid_rounds() {
-    let params = Sha512Params {
-        rounds: ROUNDS_MAX + 1,
-    };
-    let result = sha512_crypt("foobar".as_bytes(), "thesalt".as_bytes(), &params);
-    assert!(result.is_err());
+    let params = Sha512Params::new(ROUNDS_MAX + 1);
+    assert!(params.is_err());
 
-    let params = Sha512Params {
-        rounds: ROUNDS_MIN - 1,
-    };
-    let result = sha512_crypt("foobar".as_bytes(), "thesalt".as_bytes(), &params);
-    assert!(result.is_err());
+    let params = Sha512Params::new(ROUNDS_MIN - 1);
+    assert!(params.is_err());
 }
 
 #[test]
@@ -79,7 +72,7 @@ fn test_sha512_check_with_rounds() {
 #[test]
 fn test_sha512_simple_check_roundtrip() {
     let pw = "this is my password";
-    let params = Sha512Params { rounds: 5_000 };
+    let params = Sha512Params::new(5_000).expect("Rounds error");
 
     let r = sha512_simple(&pw, &params);
     assert!(r.is_ok());
