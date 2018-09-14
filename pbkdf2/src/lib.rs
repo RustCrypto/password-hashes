@@ -38,7 +38,7 @@ use std::io;
 
 #[cfg(feature="include_simple")]
 use constant_time_eq::constant_time_eq;
-#[cfg(feature="include_simple")]
+#[cfg(all(not(target_arch="wasm32"), feature="include_simple"))]
 use rand::{OsRng, RngCore};
 #[cfg(feature="include_simple")]
 use hmac::Hmac;
@@ -135,7 +135,7 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 ///
 /// * `password` - The password to process
 /// * `c` - The iteration count
-#[cfg(feature="include_simple")]
+#[cfg(all(not(target_arch="wasm32"), feature="include_simple"))]
 pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
     let mut rng = OsRng::new()?;
 
