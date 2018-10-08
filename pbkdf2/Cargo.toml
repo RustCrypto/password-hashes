@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
@@ -10,26 +10,25 @@ keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
 
 [dependencies]
-crypto-mac = "0.6"
-generic-array = "0.9"
+crypto-mac = "0.7"
 byteorder = { version = "1", default-features = false }
 
 rayon = { version = "1", optional = true }
-constant_time_eq = { version = "0.1", optional = true }
 base64 = { version = "0.9", optional = true }
 rand = { version = "0.5", optional = true }
-hmac = { version = "0.6", optional = true }
-sha2 = { version = "0.7", optional = true }
+hmac = { version = "0.7", optional = true }
+sha2 = { version = "0.8", optional = true }
+subtle = { version = "1", default-features = false , optional = true }
 
 [dev-dependencies]
-hmac = "0.6"
-sha-1 = "0.7"
-sha2 = "0.7"
+hmac = "0.7"
+sha-1 = "0.8"
+sha2 = "0.8"
 
 [features]
 default = ["include_simple"]
 parallel = ["rayon"]
-include_simple = ["sha2", "hmac", "rand", "base64", "constant_time_eq"]
+include_simple = ["sha2", "hmac", "rand", "base64", "subtle"]
 
 [badges]
 travis-ci = { repository = "RustCrypto/password-hashing" }

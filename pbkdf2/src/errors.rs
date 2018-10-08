@@ -1,3 +1,4 @@
+#![cfg(feature="include_simple")]
 use std::{fmt, error};
 
 /// `pbkdf2_check` error
