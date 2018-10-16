@@ -75,12 +75,12 @@ fn produce_byte_seq(len: usize, fill_from: &[u8], bs: usize) -> Vec<u8> {
     let mut offset: usize = 0;
     for _ in 0..(len / bs) {
         let from_slice = &fill_from[..offset + bs];
-        &seq[offset..offset + bs].clone_from_slice(from_slice);
+        seq[offset..offset + bs].clone_from_slice(from_slice);
         offset += bs;
     }
     let from_slice = &fill_from[..offset + (len % bs)];
-    &seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
-    return seq;
+    seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
+    seq
 }
 
 fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
@@ -127,7 +127,7 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
 
     let mut r: Vec<u8> = vec![];
     r.extend_from_slice(intermediate.as_slice());
-    return r;
+    r
 }
 
 /// The SHA512 crypt function returned as byte vector
@@ -304,7 +304,9 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     // Check that there are no characters before the first "$"
     if iter.next() != Some("") {
-        Err(CheckError::InvalidFormat(format!("Should start with '$")))?;
+        Err(CheckError::InvalidFormat(
+            "Should start with '$".to_string(),
+        ))?;
     }
 
     if iter.next() != Some("6") {
@@ -314,14 +316,14 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         )))?;
     }
 
-    let mut next = iter.next().ok_or(CheckError::InvalidFormat(format!(
-        "Does not contain a rounds or salt nor hash string"
-    )))?;
+    let mut next = iter.next().ok_or_else(|| {
+        CheckError::InvalidFormat("Does not contain a rounds or salt nor hash string".to_string())
+    })?;
     let rounds = if next.starts_with(SHA512_ROUNDS_PREFIX) {
         let rounds = next;
-        next = iter.next().ok_or(CheckError::InvalidFormat(format!(
-            "Does not contain a salt nor hash string"
-        )))?;
+        next = iter.next().ok_or_else(|| {
+            CheckError::InvalidFormat("Does not contain a salt nor hash string".to_string())
+        })?;
 
         rounds[SHA512_ROUNDS_PREFIX.len()..].parse().map_err(|_| {
             CheckError::InvalidFormat(format!(
@@ -335,18 +337,18 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     let salt = next;
 
-    let hash = iter.next().ok_or(CheckError::InvalidFormat(format!(
-        "Does not contain a hash string"
-    )))?;
+    let hash = iter
+        .next()
+        .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
 
     // Make sure there is no trailing data after the final "$"
     if iter.next() != None {
-        Err(CheckError::InvalidFormat(format!(
-            "Trailing characters present"
-        )))?;
+        Err(CheckError::InvalidFormat(
+            "Trailing characters present".to_string(),
+        ))?;
     }
 
-    let params = Sha512Params { rounds: rounds };
+    let params = Sha512Params { rounds };
 
     let output = match sha512_crypt(password.as_bytes(), salt.as_bytes(), &params) {
         Ok(v) => v,

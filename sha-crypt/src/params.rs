@@ -22,6 +22,6 @@ impl Sha512Params {
         if rounds < ROUNDS_MIN || rounds > ROUNDS_MAX {
             return Err(errors::CryptError::RoundsError);
         }
-        Ok(Sha512Params { rounds: rounds })
+        Ok(Sha512Params { rounds })
     }
 }
