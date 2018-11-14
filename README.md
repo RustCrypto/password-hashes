@@ -1,4 +1,6 @@
-# RustCrypto: password hashing [![Build Status](https://travis-ci.org/RustCrypto/password-hashing.svg?branch=master)](https://travis-ci.org/RustCrypto/password-hashing)
+# RustCrypto: password hashing
+[![Build Status](https://travis-ci.org/RustCrypto/password-hashing.svg?branch=master)](https://travis-ci.org/RustCrypto/password-hashing) [![dependency status](https://deps.rs/repo/github/RustCrypto/password-hashing/status.svg)](https://deps.rs/repo/github/RustCrypto/password-hashing)
+
 Collection of password hashing algorithms, otherwise known as password-based key
 derivation functions, written in pure Rust.
 
