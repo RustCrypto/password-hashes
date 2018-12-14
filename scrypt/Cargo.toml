@@ -16,7 +16,7 @@ hmac = "0.7"
 byte-tools = "0.3"
 byteorder = { version = "1", default-features = false }
 
-subtle = { version = "1", default-features = false , optional = true }
+subtle = { version = "2", default-features = false , optional = true }
 base64 = { version = "0.9", optional = true }
 rand = { version = "0.5", optional = true }
 
