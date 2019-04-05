@@ -3,12 +3,11 @@ use byteorder::{ByteOrder, LittleEndian};
 
 
 /// The salsa20/8 core function.
+#[inline(never)]
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
 
     let mut x = [0u32; 16];
     LittleEndian::read_u32_into(input, &mut x);
-
-    let rounds = 8;
 
     macro_rules! run_round (
         ($($set_idx:expr, $idx_a:expr, $idx_b:expr, $rot:expr);*) => { {
@@ -16,7 +15,16 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
         } }
     );
 
-    for _ in 0..rounds / 2 {
+    macro_rules! repeat4 (
+        ($block:expr) => {
+            $block;
+            $block;
+            $block;
+            $block;
+        }
+    );
+
+    repeat4!({
         run_round!(
             0x4, 0x0, 0xc, 7;
             0x8, 0x4, 0x0, 9;
@@ -51,7 +59,7 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
             0xe, 0xd, 0xc, 13;
             0xf, 0xe, 0xd, 18
         )
-    }
+    });
 
     for i in 0..16 {
         LittleEndian::write_u32(
