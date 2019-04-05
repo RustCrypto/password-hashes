@@ -6,7 +6,7 @@ extern crate test;
 use test::Bencher;
 
 #[bench]
-pub fn pbkdf2_hmac_sha1_16384_20(bh: &mut Bencher) {
+pub fn scrypt_15_8_1(bh: &mut Bencher) {
     let password = b"my secure password";
     let salt = b"salty salt";
     let mut buf = [0u8; 32];
