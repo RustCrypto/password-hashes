@@ -4,7 +4,8 @@ use std::string::String;
 use std::string::ToString;
 
 use subtle::ConstantTimeEq;
-use rand::{OsRng, RngCore};
+use rand::RngCore;
+use rand::rngs::OsRng;
 use hmac::Hmac;
 use sha2::Sha256;
 use errors::CheckError;
