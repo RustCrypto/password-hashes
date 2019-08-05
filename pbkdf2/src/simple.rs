@@ -11,7 +11,6 @@ use errors::CheckError;
 use base64;
 
 use super::pbkdf2;
-use byteorder::{ByteOrder, BigEndian};
 
 /// A helper function that should be sufficient for the majority of cases where
 /// an application needs to use PBKDF2 to hash a password for storage.
@@ -47,9 +46,7 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
     pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, c as usize, &mut dk);
 
     let mut result = "$rpbkdf2$0$".to_string();
-    let mut tmp = [0u8; 4];
-    BigEndian::write_u32(&mut tmp, c);
-    result.push_str(&base64::encode(&tmp));
+    result.push_str(&base64::encode(&c.to_be_bytes()));
     result.push('$');
     result.push_str(&base64::encode(&salt));
     result.push('$');
@@ -95,7 +92,7 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
         Some(pstr) => match base64::decode(pstr) {
             Ok(pvec) => {
                 if pvec.len() != 4 { return Err(CheckError::InvalidFormat); }
-                BigEndian::read_u32(&pvec[..])
+                u32::from_be_bytes([pvec[0], pvec[1], pvec[2], pvec[3]])
             }
             Err(_) => return Err(CheckError::InvalidFormat)
         },

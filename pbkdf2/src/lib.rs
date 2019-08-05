@@ -12,7 +12,6 @@
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 extern crate crypto_mac;
-extern crate byteorder;
 
 #[cfg(feature="parallel")]
 extern crate rayon;
@@ -44,7 +43,6 @@ use rayon::prelude::*;
 
 use crypto_mac::Mac;
 use crypto_mac::generic_array::typenum::Unsigned;
-use byteorder::{ByteOrder, BigEndian};
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -64,7 +62,7 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
         prfc.input(salt);
 
         let mut buf = [0u8; 4];
-        BigEndian::write_u32(&mut buf, (i + 1) as u32);
+        (&mut buf[0..4]).copy_from_slice(&((i + 1) as u32).to_be_bytes());
         prfc.input(&buf);
 
         let salt = prfc.result().code();
