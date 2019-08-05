@@ -8,7 +8,6 @@ use ScryptParams;
 use subtle::ConstantTimeEq;
 // TODO: replace with rand core and seprate os-rng crate
 use rand::{OsRng, RngCore};
-use byteorder::{ByteOrder, LittleEndian};
 use base64;
 
 /// `scrypt_simple` is a helper function that should be sufficient for the
@@ -64,8 +63,8 @@ pub fn scrypt_simple(password: &str, params: &ScryptParams)
         result.push_str("1$");
         let mut tmp = [0u8; 9];
         tmp[0] = params.log_n;
-        LittleEndian::write_u32(&mut tmp[1..5], params.r);
-        LittleEndian::write_u32(&mut tmp[5..9], params.p);
+        (&mut tmp[1..5]).copy_from_slice(&params.r.to_le_bytes());
+        (&mut tmp[5..9]).copy_from_slice(&params.p.to_le_bytes());
         result.push_str(&base64::encode(&tmp));
     }
     result.push('$');
@@ -114,8 +113,8 @@ pub fn scrypt_check(password: &str, hashed_value: &str)
         }
         "1" if pvec.len() == 9 => {
             let log_n = pvec[0];
-            let mut pval = [0u32; 2];
-            LittleEndian::read_u32_into(&pvec[1..9], &mut pval);
+            let pval = [u32::from_le_bytes([pvec[1], pvec[2], pvec[3], pvec[4]]),
+                        u32::from_le_bytes([pvec[5], pvec[6], pvec[7], pvec[8]])];
             ScryptParams::new(log_n, pval[0], pval[1])
                 .map_err(|_| CheckError::InvalidFormat)
         }

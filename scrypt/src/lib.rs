@@ -38,7 +38,6 @@
 extern crate sha2;
 extern crate pbkdf2;
 extern crate hmac;
-extern crate byteorder;
 extern crate byte_tools;
 #[cfg(feature="include_simple")]
 extern crate subtle;
