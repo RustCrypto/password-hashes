@@ -81,25 +81,18 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
 
     // Parse format - currenlty only version 0 is supported
     match iter.next() {
-        Some(fstr) => {
-            match fstr {
-                "0" => { }
-                _ => return Err(CheckError::InvalidFormat)
-            }
-        }
-        None => return Err(CheckError::InvalidFormat)
+        Some("0") => {}
+        Some(_) | None => return Err(CheckError::InvalidFormat),
     }
 
     // Parse the iteration count
     let c = match iter.next() {
         Some(pstr) => match base64::decode(pstr) {
-            Ok(pvec) => {
-                if pvec.len() != 4 { return Err(CheckError::InvalidFormat); }
-                BigEndian::read_u32(&pvec[..])
-            }
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Ok(ref pvec) if pvec.len() != 4 => return Err(CheckError::InvalidFormat),
+            Ok(pvec) => BigEndian::read_u32(&pvec[..]),
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Salt
