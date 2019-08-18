@@ -1,17 +1,17 @@
-#![cfg(feature="include_simple")]
+#![cfg(feature = "include_simple")]
 use std::io;
 use std::string::String;
 use std::string::ToString;
 
-use subtle::ConstantTimeEq;
-use rand::{OsRng, RngCore};
-use hmac::Hmac;
-use sha2::Sha256;
-use errors::CheckError;
 use base64;
+use errors::CheckError;
+use hmac::Hmac;
+use rand::{OsRng, RngCore};
+use sha2::Sha256;
+use subtle::ConstantTimeEq;
 
 use super::pbkdf2;
-use byteorder::{ByteOrder, BigEndian};
+use byteorder::{BigEndian, ByteOrder};
 
 /// A helper function that should be sufficient for the majority of cases where
 /// an application needs to use PBKDF2 to hash a password for storage.
@@ -99,18 +99,18 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
     let salt = match iter.next() {
         Some(sstr) => match base64::decode(sstr) {
             Ok(salt) => salt,
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Hashed value
     let hash = match iter.next() {
         Some(hstr) => match base64::decode(hstr) {
             Ok(hash) => hash,
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Make sure that the input ends with a "$"
