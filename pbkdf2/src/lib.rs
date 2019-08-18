@@ -1,12 +1,31 @@
 //! This crate implements the PBKDF2 key derivation function as specified
 //! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
 //!
-//! If you are not using convinience functions `pbkdf2_check` and `pbkdf2_simple`
-//! it's recommended to disable `pbkdf2` default features in your `Cargo.toml`:
+//! This crate exposes one core function ([`pbkdf2()`]) as well as two optional
+//! helper functions for convenient hashing and checking those hashes. The usage
+//! of those functions looks like that:
+//!
+//! ```
+//! # extern crate pbkdf2;
+//! # use pbkdf2::{pbkdf2_simple, pbkdf2_check};
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let hash = pbkdf2_simple("my super secret password", 2048)?;
+//! pbkdf2_check("my super secret password", &hash).expect("Passwords match");
+//! pbkdf2_check("another password", &hash).expect_err("Passwords don't match");
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! # Optional features
+//! If you are not using convenience functions `pbkdf2_check` and
+//! `pbkdf2_simple` it is recommended to disable `pbkdf2` default features in
+//! your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
 //! pbkdf2 = { version = "0.2", default-features = false }
 //! ```
+//!
+//! [`pbkdf2()`]: fn.pbkdf2.html
 #![no_std]
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
