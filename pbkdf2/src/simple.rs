@@ -2,7 +2,6 @@
 use std::io;
 use std::string::String;
 use std::string::ToString;
-use std::vec::Vec;
 
 use base64;
 use errors::CheckError;
@@ -71,13 +70,18 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
 /// * `hashed_value` - A string representing a hashed password returned by
 /// `pbkdf2_simple`
 pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
-    let parts: Vec<_> = hashed_value.split('$').collect();
+    let parts = hashed_value.split('$');
+    // prevent dynamic allocations by using a fixed-size buffer
+    let mut buffer = [None; 8];
+    buffer.iter_mut().zip(parts).for_each(|(b, p)| *b = Some(p));
 
     // check the format of the input: there may be no tokens before the first
     // and after the last `$`, tokens must have correct information and length.
-    let (count, salt, hash) = match parts[..] {
-        ["", "rpbkdf2", "0", count, salt, hash, ""] => (count, salt, hash),
-        _ => Err(CheckError::InvalidFormat)?,
+    let (count, salt, hash) = match buffer {
+        [Some(""), Some("rpbkdf2"), Some("0"), Some(c), Some(s), Some(h), Some(""), None] => {
+            (c, s, h)
+        }
+        _ => return Err(CheckError::InvalidFormat),
     };
 
     let count = base64::decode(count)?;
