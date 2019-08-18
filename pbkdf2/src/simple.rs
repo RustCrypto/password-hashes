@@ -86,32 +86,30 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str)
     }
 
     // Parse the iteration count
-    let c = match iter.next() {
-        Some(pstr) => match base64::decode(pstr) {
-            Ok(ref pvec) if pvec.len() != 4 => return Err(CheckError::InvalidFormat),
-            Ok(pvec) => BigEndian::read_u32(&pvec[..]),
-            Err(_) => return Err(CheckError::InvalidFormat),
-        },
-        None => return Err(CheckError::InvalidFormat),
-    };
+    let c = iter
+        .next()
+        .ok_or(CheckError::InvalidFormat)
+        .and_then(|s| base64::decode(s).map_err(|_| CheckError::InvalidFormat))
+        .and_then(|count| {
+            if count.len() != 4 {
+                Err(CheckError::InvalidFormat)
+            } else {
+                Ok(count)
+            }
+        })
+        .map(|count| BigEndian::read_u32(&count[..]))?;
 
     // Salt
-    let salt = match iter.next() {
-        Some(sstr) => match base64::decode(sstr) {
-            Ok(salt) => salt,
-            Err(_) => return Err(CheckError::InvalidFormat),
-        },
-        None => return Err(CheckError::InvalidFormat),
-    };
+    let salt = iter
+        .next()
+        .ok_or(CheckError::InvalidFormat)
+        .and_then(|salt| base64::decode(salt).map_err(|_| CheckError::InvalidFormat))?;
 
     // Hashed value
-    let hash = match iter.next() {
-        Some(hstr) => match base64::decode(hstr) {
-            Ok(hash) => hash,
-            Err(_) => return Err(CheckError::InvalidFormat),
-        },
-        None => return Err(CheckError::InvalidFormat),
-    };
+    let hash = iter
+        .next()
+        .ok_or(CheckError::InvalidFormat)
+        .and_then(|hash| base64::decode(hash).map_err(|_| CheckError::InvalidFormat))?;
 
     // Make sure that the input ends with a "$"
     if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
