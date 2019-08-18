@@ -1,5 +1,6 @@
-#![cfg(feature="include_simple")]
-use std::{fmt, error};
+#![cfg(feature = "include_simple")]
+use std::error::Error;
+use std::fmt::{self, Display, Formatter};
 
 /// `pbkdf2_check` error
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -10,16 +11,13 @@ pub enum CheckError {
     InvalidFormat,
 }
 
-impl fmt::Display for CheckError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(match *self {
-            CheckError::HashMismatch => "password hash mismatch",
-            CheckError::InvalidFormat => "invalid `hashed_value` format",
-        })
+impl Display for CheckError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(self.description())
     }
 }
 
-impl error::Error for CheckError {
+impl Error for CheckError {
     fn description(&self) -> &str {
         match *self {
             CheckError::HashMismatch => "password hash mismatch",
