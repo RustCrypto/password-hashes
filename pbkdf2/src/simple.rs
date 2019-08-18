@@ -2,6 +2,7 @@
 use std::io;
 use std::string::String;
 use std::string::ToString;
+use std::vec::Vec;
 
 use base64;
 use errors::CheckError;
@@ -69,56 +70,26 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
 /// * `password` - The password to process
 /// * `hashed_value` - A string representing a hashed password returned by
 /// `pbkdf2_simple`
-pub fn pbkdf2_check(password: &str, hashed_value: &str)
-    -> Result<(), CheckError> {
-    let mut iter = hashed_value.split('$');
+pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
+    let parts: Vec<_> = hashed_value.split('$').collect();
 
-    // Check that there are no characters before the first "$"
-    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
+    // check the format of the input: there may be no tokens before the first
+    // and after the last `$`, tokens must have correct information and length.
+    let (count, salt, hash) = match parts[..] {
+        ["", "rpbkdf2", "0", count, salt, hash, ""] => (count, salt, hash),
+        _ => Err(CheckError::InvalidFormat)?,
+    };
 
-    // Check the name
-    if iter.next() != Some("rpbkdf2") { Err(CheckError::InvalidFormat)?; }
-
-    // Parse format - currenlty only version 0 is supported
-    match iter.next() {
-        Some("0") => {}
-        Some(_) | None => return Err(CheckError::InvalidFormat),
+    let count = base64::decode(count).map_err(|_| CheckError::InvalidFormat)?;
+    if count.len() != 4 {
+        Err(CheckError::InvalidFormat)?;
     }
-
-    // Parse the iteration count
-    let c = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|s| base64::decode(s).map_err(|_| CheckError::InvalidFormat))
-        .and_then(|count| {
-            if count.len() != 4 {
-                Err(CheckError::InvalidFormat)
-            } else {
-                Ok(count)
-            }
-        })
-        .map(|count| BigEndian::read_u32(&count[..]))?;
-
-    // Salt
-    let salt = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|salt| base64::decode(salt).map_err(|_| CheckError::InvalidFormat))?;
-
-    // Hashed value
-    let hash = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|hash| base64::decode(hash).map_err(|_| CheckError::InvalidFormat))?;
-
-    // Make sure that the input ends with a "$"
-    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
-
-    // Make sure there is no trailing data after the final "$"
-    if iter.next() != None { Err(CheckError::InvalidFormat)?; }
+    let count = BigEndian::read_u32(&count[..]) as usize;
+    let salt = base64::decode(salt).map_err(|_| CheckError::InvalidFormat)?;
+    let hash = base64::decode(hash).map_err(|_| CheckError::InvalidFormat)?;
 
     let mut output = vec![0u8; hash.len()];
-    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, c as usize, &mut output);
+    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, count, &mut output);
 
     // Be careful here - its important that the comparison be done using a fixed
     // time equality check. Otherwise an adversary that can measure how long
