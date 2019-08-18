@@ -7,12 +7,11 @@
 //!
 //! ```
 //! # extern crate pbkdf2;
+//! # fn main() {
 //! # use pbkdf2::{pbkdf2_simple, pbkdf2_check};
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let hash = pbkdf2_simple("my super secret password", 2048)?;
+//! let hash = pbkdf2_simple("my super secret password", 2048).unwrap();
 //! pbkdf2_check("my super secret password", &hash).expect("Passwords match");
 //! pbkdf2_check("another password", &hash).expect_err("Passwords don't match");
-//! # Ok(())
 //! # }
 //! ```
 //!
