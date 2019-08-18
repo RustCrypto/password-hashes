@@ -80,13 +80,13 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         _ => Err(CheckError::InvalidFormat)?,
     };
 
-    let count = base64::decode(count).map_err(|_| CheckError::InvalidFormat)?;
+    let count = base64::decode(count)?;
     if count.len() != 4 {
         Err(CheckError::InvalidFormat)?;
     }
     let count = BigEndian::read_u32(&count[..]) as usize;
-    let salt = base64::decode(salt).map_err(|_| CheckError::InvalidFormat)?;
-    let hash = base64::decode(hash).map_err(|_| CheckError::InvalidFormat)?;
+    let salt = base64::decode(salt)?;
+    let hash = base64::decode(hash)?;
 
     let mut output = vec![0u8; hash.len()];
     pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, count, &mut output);

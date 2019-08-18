@@ -27,3 +27,9 @@ impl error::Error for CheckError {
         }
     }
 }
+
+impl From<base64::DecodeError> for CheckError {
+    fn from(_e: base64::DecodeError) -> Self {
+        CheckError::InvalidFormat
+    }
+}
