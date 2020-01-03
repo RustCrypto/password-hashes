@@ -1,0 +1,12 @@
+[package]
+name = "bcrypt-pbkdf"
+description = "bcrypt-pbkdf password-based key derivation function"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+repository = "https://github.com/RustCrypto/password-hashing"
+keywords = ["crypto", "password", "hashing"]
+categories = ["cryptography"]
+license = "MIT OR Apache-2.0"
+edition = "2018"
+
+[dependencies]
