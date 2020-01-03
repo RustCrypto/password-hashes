@@ -15,6 +15,10 @@ use pbkdf2::pbkdf2;
 use sha2::{Digest, Sha512};
 use zeroize::Zeroize;
 
+mod errors;
+
+pub use errors::Error;
+
 const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;
 const BHASH_SEED: &[u8; BHASH_OUTPUT_SIZE] = b"OxychromaticBlowfishSwatDynamite";
@@ -100,7 +104,28 @@ impl Drop for Bhash {
 /// - `salt` - The salt value to use as a byte vector.
 /// - `rounds` - The number of rounds to apply.
 /// - `output` - The resulting derived key is returned in this byte vector.
-pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, output: &mut [u8]) {
+///
+/// # Returns
+/// - `Ok(())` if everything is fine.
+/// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
+/// - `Err(Error::InvalidRounds)` if `rounds == 0`.
+/// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
+#[must_use]
+pub fn bcrypt_pbkdf(
+    passphrase: &str,
+    salt: &[u8],
+    rounds: u32,
+    output: &mut [u8],
+) -> Result<(), Error> {
+    // Validate inputs in same way as OpenSSH implementation
+    if passphrase.is_empty() || salt.is_empty() {
+        return Err(errors::Error::InvalidParamLen);
+    } else if rounds == 0 {
+        return Err(errors::Error::InvalidRounds);
+    } else if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
+        return Err(errors::Error::InvalidOutputLen);
+    }
+
     // Allocate a Vec large enough to hold the output we require.
     let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
     let mut generated = vec![0; stride * BHASH_OUTPUT_SIZE];
@@ -121,6 +146,8 @@ pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, output: &mut [u8
     }
 
     generated.zeroize();
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -296,7 +323,7 @@ mod test {
 
         for t in tests.iter() {
             let mut out = vec![0; t.out.len()];
-            bcrypt_pbkdf(&t.password[..], &t.salt[..], t.rounds, &mut out);
+            bcrypt_pbkdf(&t.password[..], &t.salt[..], t.rounds, &mut out).unwrap();
             assert_eq!(out, t.out);
         }
     }
