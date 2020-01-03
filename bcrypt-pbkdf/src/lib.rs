@@ -1,5 +1,9 @@
-//! This crate implements bcrypt_pbkdf, a custom derivative of PBKDF2 used in
-//! OpenSSH.
+//! This crate implements [bcrypt_pbkdf], a custom derivative of PBKDF2 used in
+//! [OpenSSH].
+//!
+//! [bcrypt_pbkdf]: https://flak.tedunangst.com/post/bcrypt-pbkdf
+//! [OpenSSH]: https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf
+#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
 use blowfish::Blowfish;
 use byteorder::{ByteOrder, BE, LE};
@@ -78,6 +82,13 @@ impl Mac for Bhash {
     }
 }
 
+/// The bcrypt_pbkdf function.
+///
+/// # Arguments
+/// - `passphrase` - The passphrase to process.
+/// - `salt` - The salt value to use as a byte vector.
+/// - `rounds` - The number of rounds to apply.
+/// - `output` - The resulting derived key is returned in this byte vector.
 pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, output: &mut [u8]) {
     // Allocate a Vec large enough to hold the output we require.
     let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
