@@ -13,6 +13,7 @@ use crypto_mac::{
 };
 use pbkdf2::pbkdf2;
 use sha2::{Digest, Sha512};
+use zeroize::Zeroize;
 
 const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;
@@ -48,6 +49,8 @@ fn bhash(sha2_pass: &[u8], sha2_salt: &[u8]) -> [u8; BHASH_OUTPUT_SIZE] {
         LE::write_u32(&mut output[i * 4..(i + 1) * 4], cdata[i]);
     }
 
+    cdata.zeroize();
+
     output
 }
 
@@ -76,9 +79,17 @@ impl Mac for Bhash {
         self.salt.reset();
     }
 
-    fn result(self) -> MacResult<Self::OutputSize> {
-        let output = bhash(&self.sha2_pass, &self.salt.result());
-        MacResult::new(GenericArray::clone_from_slice(&output[..]))
+    fn result(mut self) -> MacResult<Self::OutputSize> {
+        let mut output = bhash(&self.sha2_pass, &self.salt.result_reset());
+        let res = MacResult::new(GenericArray::clone_from_slice(&output[..]));
+        output.zeroize();
+        res
+    }
+}
+
+impl Drop for Bhash {
+    fn drop(&mut self) {
+        self.sha2_pass.zeroize();
     }
 }
 
@@ -108,6 +119,8 @@ pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, output: &mut [u8
         let chunk_index = i / stride;
         *out_byte = generated[chunk_num * BHASH_OUTPUT_SIZE + chunk_index];
     }
+
+    generated.zeroize();
 }
 
 #[cfg(test)]
