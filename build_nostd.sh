@@ -6,8 +6,8 @@ DIRS=`ls -d */`
 cargo clean
 
 for DIR in $DIRS; do
-    # disable scrypt check as it does not support no_std
-    if [ $DIR = "target/" ] || [ $DIR = "scrypt/" ]
+    # disable scrypt and bcrypt-pbkdf checks as they do not support no_std
+    if [ $DIR = "target/" ] || [ $DIR = "scrypt/" ] || [ $DIR = "bcrypt-pbkdf" ]
     then
         continue
     fi
