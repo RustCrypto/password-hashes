@@ -78,9 +78,9 @@ impl Mac for Bhash {
     }
 }
 
-pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, out_len: usize) -> Vec<u8> {
+pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, output: &mut [u8]) {
     // Allocate a Vec large enough to hold the output we require.
-    let stride = (out_len + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
+    let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
     let mut generated = vec![0; stride * BHASH_OUTPUT_SIZE];
 
     // Run the regular PBKDF2 algorithm with bhash as the MAC.
@@ -92,14 +92,11 @@ pub fn bcrypt_pbkdf(passphrase: &str, salt: &[u8], rounds: u32, out_len: usize) 
     );
 
     // Apply the bcrypt_pbkdf non-linear transformation on the output.
-    let mut output = vec![0; out_len];
     for (i, out_byte) in output.iter_mut().enumerate() {
         let chunk_num = i % stride;
         let chunk_index = i / stride;
         *out_byte = generated[chunk_num * BHASH_OUTPUT_SIZE + chunk_index];
     }
-
-    output
 }
 
 #[cfg(test)]
@@ -274,7 +271,8 @@ mod test {
         );
 
         for t in tests.iter() {
-            let out = bcrypt_pbkdf(&t.password[..], &t.salt[..], t.rounds, t.out.len());
+            let mut out = vec![0; t.out.len()];
+            bcrypt_pbkdf(&t.password[..], &t.salt[..], t.rounds, &mut out);
             assert_eq!(out, t.out);
         }
     }
