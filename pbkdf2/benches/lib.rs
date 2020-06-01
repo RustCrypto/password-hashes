@@ -1,15 +1,11 @@
 #![no_std]
 #![feature(test)]
-extern crate pbkdf2;
-extern crate sha1;
-extern crate sha2;
-extern crate hmac;
 
 extern crate test;
 
-use test::Bencher;
-use pbkdf2::pbkdf2;
 use hmac::Hmac;
+use pbkdf2::pbkdf2;
+use test::Bencher;
 
 #[bench]
 pub fn pbkdf2_hmac_sha1_16384_20(bh: &mut Bencher) {

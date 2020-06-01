@@ -33,34 +33,25 @@
 //! # References
 //! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
 //! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
-#![doc(html_logo_url =
-    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-extern crate sha2;
-extern crate pbkdf2;
-extern crate hmac;
-extern crate byteorder;
-extern crate byte_tools;
-#[cfg(feature="include_simple")]
-extern crate subtle;
-#[cfg(feature="include_simple")]
+#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+
+#[cfg(feature = "include_simple")]
 extern crate base64;
-#[cfg(feature="include_simple")]
-extern crate rand;
 
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use sha2::Sha256;
 
-mod params;
-mod romix;
 /// Errors for `scrypt` operations.
 pub mod errors;
-#[cfg(feature="include_simple")]
+mod params;
+mod romix;
+#[cfg(feature = "include_simple")]
 mod simple;
 
-#[cfg(feature="include_simple")]
-pub use simple::{scrypt_simple, scrypt_check};
-pub use params::ScryptParams;
+pub use crate::params::ScryptParams;
+#[cfg(feature = "include_simple")]
+pub use crate::simple::{scrypt_check, scrypt_simple};
 
 /// The scrypt key derivation function.
 ///
@@ -76,7 +67,10 @@ pub use params::ScryptParams;
 /// `output` does not satisfy the following condition:
 /// `output.len() > 0 && output.len() <= (2^32 - 1) * 32`.
 pub fn scrypt(
-    password: &[u8], salt: &[u8], params: &ScryptParams, output: &mut [u8]
+    password: &[u8],
+    salt: &[u8],
+    params: &ScryptParams,
+    output: &mut [u8],
 ) -> Result<(), errors::InvalidOutputLen> {
     // This check required by Scrypt:
     // check output.len() > 0 && output.len() <= (2^32 - 1) * 32

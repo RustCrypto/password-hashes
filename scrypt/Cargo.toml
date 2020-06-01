@@ -8,6 +8,7 @@ documentation = "https://docs.rs/scrypt"
 repository = "https://github.com/RustCrypto/password-hashing"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography"]
+edition = "2018"
 
 [dependencies]
 sha2 = { version = "0.8", default-features = false }

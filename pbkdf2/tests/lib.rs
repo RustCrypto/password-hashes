@@ -1,11 +1,9 @@
-extern crate pbkdf2;
-extern crate sha1;
-extern crate hmac;
+use pbkdf2;
 
-use sha1::Sha1;
 use hmac::Hmac;
-#[cfg(feature="include_simple")]
+#[cfg(feature = "include_simple")]
 use pbkdf2::CheckError;
+use sha1::Sha1;
 
 #[derive(Debug)]
 pub struct Test {
@@ -45,7 +43,7 @@ fn rfc6070() {
 }
 
 #[test]
-#[cfg(feature="include_simple")]
+#[cfg(feature = "include_simple")]
 fn test_pbkdf2_simple() {
     let password = "password";
 
@@ -59,6 +57,12 @@ fn test_pbkdf2_simple() {
     assert_eq!(pbkdf2::pbkdf2_check(password, &out1[..]), Ok(()));
     assert_eq!(pbkdf2::pbkdf2_check(password, &out2[..]), Ok(()));
 
-    assert_eq!(pbkdf2::pbkdf2_check("wrong", &out1[..]), Err(CheckError::HashMismatch));
-    assert_eq!(pbkdf2::pbkdf2_check("wrong", &out2[..]), Err(CheckError::HashMismatch));
+    assert_eq!(
+        pbkdf2::pbkdf2_check("wrong", &out1[..]),
+        Err(CheckError::HashMismatch)
+    );
+    assert_eq!(
+        pbkdf2::pbkdf2_check("wrong", &out2[..]),
+        Err(CheckError::HashMismatch)
+    );
 }

@@ -1,14 +1,14 @@
 use std::mem::size_of;
 use std::usize;
 
-use errors::InvalidParams;
+use crate::errors::InvalidParams;
 
 /// The Scrypt parameter values.
 #[derive(Clone, Copy)]
 pub struct ScryptParams {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
-    pub(crate) p: u32
+    pub(crate) p: u32,
 }
 
 impl ScryptParams {
@@ -51,14 +51,22 @@ impl ScryptParams {
         // This check required by Scrypt:
         // check: n < 2^(128 * r / 8)
         // r * 16 won't overflow since r128 didn't
-        if !((log_n as usize) < r * 16) { Err(InvalidParams)?; }
+        if !((log_n as usize) < r * 16) {
+            Err(InvalidParams)?;
+        }
 
         // This check required by Scrypt:
         // check: p <= ((2^32-1) * 32) / (128 * r)
         // It takes a bit of re-arranging to get the check above into this form,
         // but it is indeed the same.
-        if !(r * p < 0x40000000) { Err(InvalidParams)?; }
+        if !(r * p < 0x40000000) {
+            Err(InvalidParams)?;
+        }
 
-        Ok(ScryptParams { log_n, r: r as u32, p: p as u32 })
+        Ok(ScryptParams {
+            log_n,
+            r: r as u32,
+            p: p as u32,
+        })
     }
 }

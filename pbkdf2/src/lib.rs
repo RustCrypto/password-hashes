@@ -8,43 +8,33 @@
 //! pbkdf2 = { version = "0.2", default-features = false }
 //! ```
 #![no_std]
-#![doc(html_logo_url =
-    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
-extern crate crypto_mac;
-extern crate byteorder;
 
-#[cfg(feature="parallel")]
+#[cfg(feature = "parallel")]
 extern crate rayon;
 
-#[cfg(feature="include_simple")]
-extern crate subtle;
-#[cfg(feature="include_simple")]
+#[cfg(feature = "include_simple")]
 extern crate base64;
-#[cfg(feature="include_simple")]
-extern crate rand;
-#[cfg(feature="include_simple")]
-extern crate hmac;
-#[cfg(feature="include_simple")]
-extern crate sha2;
-#[cfg(feature="include_simple")]
-#[macro_use] extern crate std;
 
+#[cfg(feature = "include_simple")]
+#[macro_use]
+extern crate std;
 
 mod errors;
 mod simple;
 
-#[cfg(feature="include_simple")]
-pub use errors::CheckError;
-#[cfg(feature="include_simple")]
-pub use simple::{pbkdf2_simple, pbkdf2_check};
+#[cfg(feature = "include_simple")]
+pub use crate::errors::CheckError;
+#[cfg(feature = "include_simple")]
+pub use crate::simple::{pbkdf2_check, pbkdf2_simple};
 
-#[cfg(feature="parallel")]
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use crypto_mac::Mac;
+use byteorder::{BigEndian, ByteOrder};
 use crypto_mac::generic_array::typenum::Unsigned;
-use byteorder::{ByteOrder, BigEndian};
+use crypto_mac::Mac;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -55,9 +45,12 @@ fn xor(res: &mut [u8], salt: &[u8]) {
 
 #[inline(always)]
 fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
-    where F: Mac + Clone
+where
+    F: Mac + Clone,
 {
-    for v in chunk.iter_mut() { *v = 0; }
+    for v in chunk.iter_mut() {
+        *v = 0;
+    }
 
     let mut salt = {
         let mut prfc = prf.clone();
@@ -82,10 +75,11 @@ fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
 }
 
 /// Generic implementation of PBKDF2 algorithm.
-#[cfg(feature="parallel")]
+#[cfg(feature = "parallel")]
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
-    where F: Mac + Clone + Sync
+where
+    F: Mac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
@@ -96,10 +90,11 @@ pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 }
 
 /// Generic implementation of PBKDF2 algorithm.
-#[cfg(not(feature="parallel"))]
+#[cfg(not(feature = "parallel"))]
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
-    where F: Mac + Clone + Sync
+where
+    F: Mac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");

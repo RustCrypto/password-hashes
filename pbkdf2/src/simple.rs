@@ -3,15 +3,15 @@ use std::io;
 use std::string::String;
 use std::string::ToString;
 
-use subtle::ConstantTimeEq;
-use rand::{OsRng, RngCore};
-use hmac::Hmac;
-use sha2::Sha256;
-use errors::CheckError;
+use crate::errors::CheckError;
 use base64;
+use hmac::Hmac;
+use rand::{OsRng, RngCore};
+use sha2::Sha256;
+use subtle::ConstantTimeEq;
 
 use super::pbkdf2;
-use byteorder::{ByteOrder, BigEndian};
+use byteorder::{BigEndian, ByteOrder};
 
 /// A helper function that should be sufficient for the majority of cases where
 /// an application needs to use PBKDF2 to hash a password for storage.
@@ -69,62 +69,69 @@ pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
 /// * `password` - The password to process
 /// * `hashed_value` - A string representing a hashed password returned by
 /// `pbkdf2_simple`
-pub fn pbkdf2_check(password: &str, hashed_value: &str)
-    -> Result<(), CheckError> {
+pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 
     // Check that there are no characters before the first "$"
-    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
+    if iter.next() != Some("") {
+        Err(CheckError::InvalidFormat)?;
+    }
 
     // Check the name
-    if iter.next() != Some("rpbkdf2") { Err(CheckError::InvalidFormat)?; }
+    if iter.next() != Some("rpbkdf2") {
+        Err(CheckError::InvalidFormat)?;
+    }
 
     // Parse format - currenlty only version 0 is supported
     match iter.next() {
-        Some(fstr) => {
-            match fstr {
-                "0" => { }
-                _ => return Err(CheckError::InvalidFormat)
-            }
-        }
-        None => return Err(CheckError::InvalidFormat)
+        Some(fstr) => match fstr {
+            "0" => {}
+            _ => return Err(CheckError::InvalidFormat),
+        },
+        None => return Err(CheckError::InvalidFormat),
     }
 
     // Parse the iteration count
     let c = match iter.next() {
         Some(pstr) => match base64::decode(pstr) {
             Ok(pvec) => {
-                if pvec.len() != 4 { return Err(CheckError::InvalidFormat); }
+                if pvec.len() != 4 {
+                    return Err(CheckError::InvalidFormat);
+                }
                 BigEndian::read_u32(&pvec[..])
             }
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Salt
     let salt = match iter.next() {
         Some(sstr) => match base64::decode(sstr) {
             Ok(salt) => salt,
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Hashed value
     let hash = match iter.next() {
         Some(hstr) => match base64::decode(hstr) {
             Ok(hash) => hash,
-            Err(_) => return Err(CheckError::InvalidFormat)
+            Err(_) => return Err(CheckError::InvalidFormat),
         },
-        None => return Err(CheckError::InvalidFormat)
+        None => return Err(CheckError::InvalidFormat),
     };
 
     // Make sure that the input ends with a "$"
-    if iter.next() != Some("") { Err(CheckError::InvalidFormat)?; }
+    if iter.next() != Some("") {
+        Err(CheckError::InvalidFormat)?;
+    }
 
     // Make sure there is no trailing data after the final "$"
-    if iter.next() != None { Err(CheckError::InvalidFormat)?; }
+    if iter.next() != None {
+        Err(CheckError::InvalidFormat)?;
+    }
 
     let mut output = vec![0u8; hash.len()];
     pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, c as usize, &mut output);

@@ -8,6 +8,7 @@ documentation = "https://docs.rs/pbkdf2"
 repository = "https://github.com/RustCrypto/password-hashing"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
+edition = "2018"
 
 [dependencies]
 crypto-mac = "0.7"
