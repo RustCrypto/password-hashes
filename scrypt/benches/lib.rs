@@ -1,6 +1,6 @@
 #![no_std]
 #![feature(test)]
-extern crate scrypt;
+
 extern crate test;
 
 use test::Bencher;

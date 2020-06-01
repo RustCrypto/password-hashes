@@ -1,11 +1,9 @@
 use byte_tools::copy as copy_memory;
 use byteorder::{ByteOrder, LittleEndian};
 
-
 /// The salsa20/8 core function.
 #[inline(never)]
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
-
     let mut x = [0u32; 16];
     LittleEndian::read_u32_into(input, &mut x);
 
@@ -64,7 +62,8 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
     for i in 0..16 {
         LittleEndian::write_u32(
             &mut output[i * 4..(i + 1) * 4],
-            x[i].wrapping_add(LittleEndian::read_u32(&input[i * 4..(i + 1) * 4])));
+            x[i].wrapping_add(LittleEndian::read_u32(&input[i * 4..(i + 1) * 4])),
+        );
     }
 }
 
@@ -86,7 +85,11 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     for (i, chunk) in input.chunks(64).enumerate() {
         xor(&x, chunk, &mut t);
         salsa20_8(&t, &mut x);
-        let pos = if i % 2 == 0 { (i / 2) * 64 } else { (i / 2) * 64 + input.len() / 2 };
+        let pos = if i % 2 == 0 {
+            (i / 2) * 64
+        } else {
+            (i / 2) * 64 + input.len() / 2
+        };
         copy_memory(&x, &mut output[pos..pos + 64]);
     }
 }
