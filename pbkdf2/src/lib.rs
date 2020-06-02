@@ -34,7 +34,7 @@ use rayon::prelude::*;
 
 use byteorder::{BigEndian, ByteOrder};
 use crypto_mac::generic_array::typenum::Unsigned;
-use crypto_mac::Mac;
+use crypto_mac::{Mac, NewMac};
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -54,21 +54,21 @@ where
 
     let mut salt = {
         let mut prfc = prf.clone();
-        prfc.input(salt);
+        prfc.update(salt);
 
         let mut buf = [0u8; 4];
         BigEndian::write_u32(&mut buf, (i + 1) as u32);
-        prfc.input(&buf);
+        prfc.update(&buf);
 
-        let salt = prfc.result().code();
+        let salt = prfc.result().into_bytes();
         xor(chunk, &salt);
         salt
     };
 
     for _ in 1..c {
         let mut prfc = prf.clone();
-        prfc.input(&salt);
-        salt = prfc.result().code();
+        prfc.update(&salt);
+        salt = prfc.result().into_bytes();
 
         xor(chunk, &salt);
     }
@@ -79,7 +79,7 @@ where
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 where
-    F: Mac + Clone + Sync,
+    F: Mac + NewMac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
@@ -94,7 +94,7 @@ where
 #[inline]
 pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
 where
-    F: Mac + Clone + Sync,
+    F: Mac + NewMac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
