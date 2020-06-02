@@ -11,15 +11,15 @@ categories = ["cryptography"]
 edition = "2018"
 
 [dependencies]
-sha2 = { version = "= 0.9.0-pre", default-features = false }
-pbkdf2 = { version = "= 0.4.0-pre", default-features = false, path = "../pbkdf2" }
-hmac = "= 0.8.0-pre"
+base64 = { version = "0.9", optional = true }
 byte-tools = "0.3"
 byteorder = { version = "1", default-features = false }
-
-subtle = { version = "2", default-features = false , optional = true }
-base64 = { version = "0.9", optional = true }
+hmac = "= 0.8.0-pre"
+pbkdf2 = { version = "= 0.4.0-pre", default-features = false, path = "../pbkdf2" }
 rand = { version = "0.5", optional = true }
+sha2 = { version = "= 0.9.0-pre", default-features = false }
+salsa20 = "= 0.5.0-pre"
+subtle = { version = "2", default-features = false , optional = true }
 
 [features]
 default = ["include_simple"]

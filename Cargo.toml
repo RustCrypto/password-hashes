@@ -9,5 +9,7 @@ block-buffer = { git = "https://github.com/RustCrypto/utils" }
 crypto-mac = { git = "https://github.com/RustCrypto/traits" }
 digest = { git = "https://github.com/RustCrypto/traits" }
 hmac = { git = "https://github.com/RustCrypto/MACs" }
+salsa20 = { git = "https://github.com/RustCrypto/stream-ciphers" }
 sha-1 = { git = "https://github.com/RustCrypto/hashes" }
 sha2 = { git = "https://github.com/RustCrypto/hashes" }
+stream-cipher = { git = "https://github.com/RustCrypto/traits" }
