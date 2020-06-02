@@ -11,12 +11,6 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 
-#[cfg(feature = "parallel")]
-extern crate rayon;
-
-#[cfg(feature = "include_simple")]
-extern crate base64;
-
 #[cfg(feature = "include_simple")]
 #[macro_use]
 extern crate std;
@@ -60,7 +54,7 @@ where
         BigEndian::write_u32(&mut buf, (i + 1) as u32);
         prfc.update(&buf);
 
-        let salt = prfc.result().into_bytes();
+        let salt = prfc.finalize().into_bytes();
         xor(chunk, &salt);
         salt
     };
@@ -68,7 +62,7 @@ where
     for _ in 1..c {
         let mut prfc = prf.clone();
         prfc.update(&salt);
-        salt = prfc.result().into_bytes();
+        salt = prfc.finalize().into_bytes();
 
         xor(chunk, &salt);
     }
