@@ -6,7 +6,8 @@ use std::string::ToString;
 use crate::errors::CheckError;
 use base64;
 use hmac::Hmac;
-use rand::{OsRng, RngCore};
+use rand::RngCore;
+use rand::rngs::OsRng;
 use sha2::Sha256;
 use subtle::ConstantTimeEq;
 
@@ -35,11 +36,9 @@ use byteorder::{BigEndian, ByteOrder};
 /// * `password` - The password to process
 /// * `c` - The iteration count
 pub fn pbkdf2_simple(password: &str, c: u32) -> io::Result<String> {
-    let mut rng = OsRng::new()?;
-
     // 128-bit salt
     let mut salt = [0u8; 16];
-    rng.try_fill_bytes(&mut salt)?;
+    OsRng.try_fill_bytes(&mut salt)?;
 
     // 256-bit derived key
     let mut dk = [0u8; 32];
