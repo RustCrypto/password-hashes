@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.3.0-pre"
+version = "0.3.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"
@@ -25,6 +25,3 @@ default = ["include_simple", "thread_rng", "std"]
 include_simple = ["rand_core", "base64", "subtle"]
 thread_rng = ["rand"]
 std = []
-
-[badges]
-travis-ci = { repository = "RustCrypto/password-hashing" }

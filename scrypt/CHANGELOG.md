@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## 0.3.0 (2020-06-10)
+### Added
+- `recommended` method for easy creation of recommended ScryptParam ([#28])
+- `std` feature ([#32])
+- `thread_rng` feature ([#33])
+
+### Changed
+- Code improvements ([#33])
+- Bump `rand` to v0.7 ([#33])
+- Bump `hmac` to v0.8 ([#30])
+- Bump `sha2` to v0.9 ([#30])
+- Bump `pbkdf2` to v0.4 ([#36])
+- Bump `subtle` to v2 ([#13])
+- MSRV 1.41+ ([#30])
+- Upgrade to Rust 2018 edition ([#24])
+
+[#36]: https://github.com/RustCrypto/password-hashing/pull/36
+[#33]: https://github.com/RustCrypto/password-hashing/pull/33
+[#32]: https://github.com/RustCrypto/password-hashing/pull/32
+[#30]: https://github.com/RustCrypto/password-hashing/pull/30
+[#28]: https://github.com/RustCrypto/password-hashing/pull/28
+[#24]: https://github.com/RustCrypto/password-hashing/pull/24
+[#13]: https://github.com/RustCrypto/password-hashing/pull/13
+
+## 0.2.0 (2018-10-08)
+
+## 0.1.2 (2018-08-30)
+
+## 0.1.1 (2018-07-15)
+
+## 0.1.0 (2018-06-30)
