@@ -12,7 +12,7 @@ edition = "2018"
 
 [dependencies]
 hmac = "0.8"
-pbkdf2 = { version = "= 0.4.0-pre", default-features = false, path = "../pbkdf2" }
+pbkdf2 = { version = "0.4", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.9", default-features = false }
 
 base64 = { version = "0.12", default-features = false, optional = true }
