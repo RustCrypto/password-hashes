@@ -33,10 +33,15 @@
 //! # References
 //! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
 //! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
+
+#![no_std]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
-#[cfg(feature = "include_simple")]
-extern crate base64;
+#[macro_use]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
