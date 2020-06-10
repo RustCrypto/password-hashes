@@ -15,10 +15,10 @@ hmac = "0.8"
 pbkdf2 = { version = "= 0.4.0-pre", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.9", default-features = false }
 
-base64 = { version = "0.12", optional = true }
-rand_core = { version = "0.5", optional = true, default-features = false, features = ["getrandom"] }
-rand = { version = "0.7", optional = true }
-subtle = { version = "2", default-features = false , optional = true }
+base64 = { version = "0.12", default-features = false, optional = true }
+rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
+rand = { version = "0.7", default-features = false, optional = true }
+subtle = { version = "2", default-features = false, optional = true }
 
 [features]
 default = ["include_simple", "thread_rng", "std"]
