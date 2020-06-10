@@ -1,15 +1,17 @@
-use std::io;
-
 use super::scrypt;
 use crate::errors::CheckError;
 use crate::ScryptParams;
 
+use core::convert::TryInto;
 use alloc::string::String;
 use subtle::ConstantTimeEq;
 use base64;
-use byteorder::{ByteOrder, LittleEndian};
-// TODO: replace with rand_core
-use rand::{OsRng, RngCore};
+use rand_core::RngCore;
+
+#[cfg(not(features = "thread_rng"))]
+type DefaultRng = rand_core::OsRng;
+#[cfg(features = "thread_rng")]
+type DefaultRng = rand::ThreadRng;
 
 /// `scrypt_simple` is a helper function that should be sufficient for the
 /// majority of cases where an application needs to use Scrypt to hash a
@@ -36,11 +38,9 @@ use rand::{OsRng, RngCore};
 /// `Ok(String)` if calculation is succesfull with the computation result.
 /// It will return `io::Error` error in the case of an unlikely `OsRng` failure.
 #[cfg(feature = "include_simple")]
-pub fn scrypt_simple(password: &str, params: &ScryptParams) -> io::Result<String> {
-    let mut rng = OsRng::new()?;
-
+pub fn scrypt_simple(password: &str, params: &ScryptParams) -> Result<String, rand_core::Error> {
     let mut salt = [0u8; 16];
-    rng.try_fill_bytes(&mut salt)?;
+    DefaultRng::default().try_fill_bytes(&mut salt)?;
 
     // 256-bit derived key
     let mut dk = [0u8; 32];
@@ -62,8 +62,8 @@ pub fn scrypt_simple(password: &str, params: &ScryptParams) -> io::Result<String
         result.push_str("1$");
         let mut tmp = [0u8; 9];
         tmp[0] = params.log_n;
-        LittleEndian::write_u32(&mut tmp[1..5], params.r);
-        LittleEndian::write_u32(&mut tmp[5..9], params.p);
+        tmp[1..5].copy_from_slice(&params.r.to_le_bytes());
+        tmp[5..9].copy_from_slice(&params.p.to_le_bytes());
         result.push_str(&base64::encode(&tmp));
     }
     result.push('$');
@@ -87,68 +87,50 @@ pub fn scrypt_simple(password: &str, params: &ScryptParams) -> io::Result<String
 /// by `scrypt_simple()`
 #[cfg(feature = "include_simple")]
 pub fn scrypt_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
-    let mut iter = hashed_value.split('$');
+    let mut parts = hashed_value.split('$');
 
-    // Check that there are no characters before the first "$"
-    if iter.next() != Some("") {
-        Err(CheckError::InvalidFormat)?;
-    }
+    let buf = [
+        parts.next(), parts.next(), parts.next(), parts.next(),
+        parts.next(), parts.next(), parts.next(), parts.next(),
+    ];
 
-    // Check the name
-    if iter.next() != Some("rscrypt") {
-        Err(CheckError::InvalidFormat)?;
-    }
-
-    // Parse format - currenlty only version 0 (compact) and 1 (expanded) are
-    // supported
-    let fstr = iter.next().ok_or(CheckError::InvalidFormat)?;
-    let pvec = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|s| base64::decode(s).map_err(|_| CheckError::InvalidFormat))?;
-    let params = match fstr {
-        "0" if pvec.len() == 3 => {
-            let log_n = pvec[0];
-            let r = pvec[1] as u32;
-            let p = pvec[2] as u32;
-            ScryptParams::new(log_n, r, p).map_err(|_| CheckError::InvalidFormat)
+    let (log_n, r, p, salt, hash) = match buf {
+        [
+            Some(""), Some("rscrypt"), Some("0"), Some(p),
+            Some(s), Some(h), Some(""), None
+        ] => {
+            let pvec = base64::decode(p)?;
+            if pvec.len() != 3 {
+                return Err(CheckError::InvalidFormat);
+            }
+            (pvec[0], pvec[1] as u32, pvec[2] as u32, s, h)
         }
-        "1" if pvec.len() == 9 => {
+        [
+            Some(""), Some("rscrypt"), Some("1"), Some(p),
+            Some(s), Some(h), Some(""), None
+        ] => {
+            let pvec = base64::decode(p)?;
+            if pvec.len() != 9 {
+                return Err(CheckError::InvalidFormat);
+            }
             let log_n = pvec[0];
-            let mut pval = [0u32; 2];
-            LittleEndian::read_u32_into(&pvec[1..9], &mut pval);
-            ScryptParams::new(log_n, pval[0], pval[1]).map_err(|_| CheckError::InvalidFormat)
+            let r = u32::from_le_bytes(pvec[1..5].try_into().unwrap());
+            let p = u32::from_le_bytes(pvec[5..9].try_into().unwrap());
+            (log_n, r, p, s, h)
         }
-        _ => Err(CheckError::InvalidFormat),
-    }?;
+        _ => return Err(CheckError::InvalidFormat),
+    };
 
-    // Salt
-    let salt = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|s| base64::decode(s).map_err(|_| CheckError::InvalidFormat))?;
-
-    // Hashed value
-    let hash = iter
-        .next()
-        .ok_or(CheckError::InvalidFormat)
-        .and_then(|s| base64::decode(s).map_err(|_| CheckError::InvalidFormat))?;
-
-    // Make sure that the input ends with a "$"
-    if iter.next() != Some("") {
-        Err(CheckError::InvalidFormat)?;
-    }
-
-    // Make sure there is no trailing data after the final "$"
-    if iter.next() != None {
-        Err(CheckError::InvalidFormat)?;
-    }
+    let params = ScryptParams::new(log_n, r, p)
+        .map_err(|_| CheckError::InvalidFormat)?;
+    let salt = base64::decode(salt)?;
+    let hash = base64::decode(hash)?;
 
     let mut output = vec![0u8; hash.len()];
     scrypt(password.as_bytes(), &salt, &params, &mut output)
         .map_err(|_| CheckError::InvalidFormat)?;
 
-    // Be careful here - its important that the comparison be done using a fixed
+    // Be careful here - its important that the comparison is done using a fixed
     // time equality check. Otherwise an adversary that can measure how long
     // this step takes can learn about the hashed value which would allow them
     // to mount an offline brute force attack against the hashed password.

@@ -34,7 +34,7 @@ fn rfc6070() {
     let tests = new_tests!("1", "2", "3", "4", "5");
     let mut buf = [0u8; 25];
     for test in &tests {
-        let c: usize = test.c.parse().unwrap();
+        let c = test.c.parse().unwrap();
         println!("c: {:?}", test);
         let n = test.output.len();
         pbkdf2::pbkdf2::<Hmac<Sha1>>(test.password, test.salt, c, &mut buf[..n]);
