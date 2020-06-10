@@ -11,18 +11,20 @@ categories = ["cryptography"]
 edition = "2018"
 
 [dependencies]
-base64 = { version = "0.9", optional = true }
-byte-tools = "0.3"
-byteorder = { version = "1", default-features = false }
 hmac = "0.8"
 pbkdf2 = { version = "= 0.4.0-pre", default-features = false, path = "../pbkdf2" }
-rand = { version = "0.5", optional = true }
 sha2 = { version = "0.9", default-features = false }
+
+base64 = { version = "0.12", optional = true }
+rand_core = { version = "0.5", optional = true, default-features = false, features = ["getrandom"] }
+rand = { version = "0.5", optional = true }
 subtle = { version = "2", default-features = false , optional = true }
 
 [features]
-default = ["include_simple"]
-include_simple = ["rand", "base64", "subtle"]
+default = ["include_simple", "thread_rng", "std"]
+include_simple = ["rand_core", "base64", "subtle"]
+thread_rng = ["rand"]
+std = []
 
 [badges]
 travis-ci = { repository = "RustCrypto/password-hashing" }
