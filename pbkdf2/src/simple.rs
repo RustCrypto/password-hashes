@@ -47,7 +47,7 @@ pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::E
 
     pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, rounds, &mut dk);
 
-    let mut result = String::with_capacity(16);
+    let mut result = String::with_capacity(90);
     result.push_str("$rpbkdf2$0$");
     result.push_str(&base64::encode(&rounds.to_be_bytes()));
     result.push('$');
