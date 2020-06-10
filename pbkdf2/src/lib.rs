@@ -11,9 +11,11 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 
-#[cfg(feature = "include_simple")]
-#[macro_use]
+#[cfg(feature = "std")]
 extern crate std;
+
+#[cfg(feature = "include_simple")]
+extern crate alloc;
 
 mod errors;
 mod simple;
@@ -26,7 +28,6 @@ pub use crate::simple::{pbkdf2_check, pbkdf2_simple};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use byteorder::{BigEndian, ByteOrder};
 use crypto_mac::generic_array::typenum::Unsigned;
 use crypto_mac::{Mac, NewMac};
 
@@ -38,7 +39,7 @@ fn xor(res: &mut [u8], salt: &[u8]) {
 }
 
 #[inline(always)]
-fn pbkdf2_body<F>(i: usize, chunk: &mut [u8], prf: &F, salt: &[u8], c: usize)
+fn pbkdf2_body<F>(i: u32, chunk: &mut [u8], prf: &F, salt: &[u8], rounds: u32)
 where
     F: Mac + Clone,
 {
@@ -49,17 +50,14 @@ where
     let mut salt = {
         let mut prfc = prf.clone();
         prfc.update(salt);
-
-        let mut buf = [0u8; 4];
-        BigEndian::write_u32(&mut buf, (i + 1) as u32);
-        prfc.update(&buf);
+        prfc.update(&(i + 1).to_be_bytes());
 
         let salt = prfc.finalize().into_bytes();
         xor(chunk, &salt);
         salt
     };
 
-    for _ in 1..c {
+    for _ in 1..rounds {
         let mut prfc = prf.clone();
         prfc.update(&salt);
         salt = prfc.finalize().into_bytes();
@@ -71,7 +69,7 @@ where
 /// Generic implementation of PBKDF2 algorithm.
 #[cfg(feature = "parallel")]
 #[inline]
-pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
+pub fn pbkdf2<F>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
     F: Mac + NewMac + Clone + Sync,
 {
@@ -79,14 +77,14 @@ where
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
 
     res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
-        pbkdf2_body(i, chunk, &prf, salt, c);
+        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
     });
 }
 
 /// Generic implementation of PBKDF2 algorithm.
 #[cfg(not(feature = "parallel"))]
 #[inline]
-pub fn pbkdf2<F>(password: &[u8], salt: &[u8], c: usize, res: &mut [u8])
+pub fn pbkdf2<F>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
     F: Mac + NewMac + Clone + Sync,
 {
@@ -94,6 +92,6 @@ where
     let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
-        pbkdf2_body(i, chunk, &prf, salt, c);
+        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
     }
 }
