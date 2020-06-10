@@ -22,7 +22,8 @@ subtle = { version = "2", default-features = false , optional = true }
 
 [features]
 default = ["include_simple"]
-include_simple = ["rand", "base64", "subtle"]
+include_simple = ["rand", "base64", "subtle", "std"]
+std = []
 
 [badges]
 travis-ci = { repository = "RustCrypto/password-hashing" }

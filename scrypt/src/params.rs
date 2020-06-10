@@ -1,5 +1,4 @@
-use std::mem::size_of;
-use std::usize;
+use core::{mem::size_of, usize};
 
 use crate::errors::InvalidParams;
 

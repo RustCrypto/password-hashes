@@ -1,14 +1,14 @@
-#![cfg(feature="include_simple")]
 use std::io;
 
 use super::scrypt;
 use crate::errors::CheckError;
 use crate::ScryptParams;
 
+use alloc::string::String;
 use subtle::ConstantTimeEq;
-// TODO: replace with rand core and seprate os-rng crate
 use base64;
 use byteorder::{ByteOrder, LittleEndian};
+// TODO: replace with rand_core
 use rand::{OsRng, RngCore};
 
 /// `scrypt_simple` is a helper function that should be sufficient for the
