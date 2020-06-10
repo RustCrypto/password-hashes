@@ -5,7 +5,6 @@ use crate::ScryptParams;
 use core::convert::TryInto;
 use alloc::string::String;
 use subtle::ConstantTimeEq;
-use base64;
 use rand_core::RngCore;
 
 #[cfg(not(features = "thread_rng"))]
