@@ -1,11 +1,13 @@
-use byte_tools::copy as copy_memory;
-use byteorder::{ByteOrder, LittleEndian};
+use core::convert::TryInto;
 
 /// The salsa20/8 core function.
 #[inline(never)]
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
     let mut x = [0u32; 16];
-    LittleEndian::read_u32_into(input, &mut x);
+    assert_eq!(input.len(), 4*x.len());
+    for (c, b) in input.chunks_exact(4).zip(x.iter_mut()) {
+        *b = u32::from_le_bytes(c.try_into().unwrap());
+    }
 
     macro_rules! run_round (
         ($($set_idx:expr, $idx_a:expr, $idx_b:expr, $rot:expr);*) => { {
@@ -59,11 +61,10 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
         )
     });
 
-    for i in 0..16 {
-        LittleEndian::write_u32(
-            &mut output[i * 4..(i + 1) * 4],
-            x[i].wrapping_add(LittleEndian::read_u32(&input[i * 4..(i + 1) * 4])),
-        );
+    for (o, (i, b)) in output.chunks_exact_mut(4).zip(input.chunks_exact(4).zip(x.iter())) {
+        let a = u32::from_le_bytes((&*i).try_into().unwrap());
+        let t = b.wrapping_add(a);
+        o.copy_from_slice(&t.to_le_bytes());
     }
 }
 
@@ -78,7 +79,7 @@ fn xor(x: &[u8], y: &[u8], output: &mut [u8]) {
 /// output - the output vector. Must be the same length as input.
 fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     let mut x = [0u8; 64];
-    copy_memory(&input[input.len() - 64..], &mut x);
+    x.copy_from_slice(&input[input.len() - 64..]);
 
     let mut t = [0u8; 64];
 
@@ -90,7 +91,7 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
         } else {
             (i / 2) * 64 + input.len() / 2
         };
-        copy_memory(&x, &mut output[pos..pos + 64]);
+        output[pos..pos + 64].copy_from_slice(&x);
     }
 }
 
@@ -106,14 +107,16 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
         let mask = n - 1;
         // This cast is safe since we're going to get the value mod n (which is a power of 2), so we
         // don't have to care about truncating any of the high bits off
-        let result = (LittleEndian::read_u32(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
+        //let result = (LittleEndian::read_u32(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
+        let t = u32::from_le_bytes(x[x.len() - 64..x.len() - 60].try_into().unwrap());
+        let result = (t as usize) & mask;
         result
     }
 
     let len = b.len();
 
     for chunk in v.chunks_mut(len) {
-        copy_memory(b, chunk);
+        chunk.copy_from_slice(b);
         scrypt_block_mix(chunk, b);
     }
 
