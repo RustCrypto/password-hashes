@@ -9,7 +9,7 @@ use blowfish::Blowfish;
 use byteorder::{ByteOrder, BE, LE};
 use crypto_mac::{
     generic_array::{typenum::U32, GenericArray},
-    Mac, MacResult,
+    Mac, NewMac, Output,
 };
 use pbkdf2::pbkdf2;
 use sha2::{Digest, Sha512};
@@ -64,8 +64,7 @@ struct Bhash {
     salt: Sha512,
 }
 
-impl Mac for Bhash {
-    type OutputSize = U32;
+impl NewMac for Bhash {
     type KeySize = <Sha512 as Digest>::OutputSize;
 
     fn new(key: &GenericArray<u8, Self::KeySize>) -> Self {
@@ -74,18 +73,22 @@ impl Mac for Bhash {
             salt: Sha512::default(),
         }
     }
+}
 
-    fn input(&mut self, data: &[u8]) {
-        self.salt.input(data);
+impl Mac for Bhash {
+    type OutputSize = U32;
+
+    fn update(&mut self, data: &[u8]) {
+        self.salt.update(data);
     }
 
     fn reset(&mut self) {
         self.salt.reset();
     }
 
-    fn result(mut self) -> MacResult<Self::OutputSize> {
-        let mut output = bhash(&self.sha2_pass, &self.salt.result_reset());
-        let res = MacResult::new(GenericArray::clone_from_slice(&output[..]));
+    fn finalize(mut self) -> Output<Self> {
+        let mut output = bhash(&self.sha2_pass, &self.salt.finalize_reset());
+        let res = Output::new(GenericArray::clone_from_slice(&output[..]));
         output.zeroize();
         res
     }
@@ -134,7 +137,7 @@ pub fn bcrypt_pbkdf(
     pbkdf2::<Bhash>(
         &Sha512::digest(passphrase.as_bytes()),
         salt,
-        rounds as usize,
+        rounds,
         &mut generated,
     );
 
