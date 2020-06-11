@@ -7,7 +7,7 @@ cargo clean
 
 for DIR in $DIRS; do
     # disable scrypt and bcrypt-pbkdf checks as they do not support no_std
-    if [ $DIR = "target/" ] || [ $DIR = "scrypt/" ] || [ $DIR = "bcrypt-pbkdf" ]
+    if [ $DIR = "target/" ] || [ $DIR = "scrypt/" ] || [ $DIR = "bcrypt-pbkdf/" ]
     then
         continue
     fi
