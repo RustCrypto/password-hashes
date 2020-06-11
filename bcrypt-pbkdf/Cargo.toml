@@ -10,7 +10,7 @@ license = "MIT OR Apache-2.0"
 edition = "2018"
 
 [dependencies]
-blowfish = { version = "0.4", features = ["bcrypt"] }
+blowfish = { version = "0.5", features = ["bcrypt"] }
 byteorder = { version = "1", default-features = false }
 crypto-mac = "0.8"
 pbkdf2 = { version = "0.4", default-features = false }
