@@ -6,7 +6,7 @@
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
 use blowfish::Blowfish;
-use byteorder::{ByteOrder, BE, LE};
+use core::convert::TryInto;
 use crypto_mac::{
     generic_array::{typenum::U32, GenericArray},
     Mac, NewMac, Output,
@@ -37,7 +37,7 @@ fn bhash(sha2_pass: &[u8], sha2_salt: &[u8]) -> [u8; BHASH_OUTPUT_SIZE] {
 
     let mut cdata = [0u32; BHASH_WORDS];
     for i in 0..BHASH_WORDS {
-        cdata[i] = BE::read_u32(&BHASH_SEED[i * 4..(i + 1) * 4]);
+        cdata[i] = u32::from_be_bytes(BHASH_SEED[i * 4..(i + 1) * 4].try_into().unwrap());
     }
 
     for _ in 0..64 {
@@ -50,7 +50,7 @@ fn bhash(sha2_pass: &[u8], sha2_salt: &[u8]) -> [u8; BHASH_OUTPUT_SIZE] {
 
     let mut output = [0u8; BHASH_OUTPUT_SIZE];
     for i in 0..BHASH_WORDS {
-        LE::write_u32(&mut output[i * 4..(i + 1) * 4], cdata[i]);
+        output[i * 4..(i + 1) * 4].copy_from_slice(&cdata[i].to_le_bytes());
     }
 
     cdata.zeroize();
