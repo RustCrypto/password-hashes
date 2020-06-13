@@ -1,7 +1,7 @@
 [package]
 name = "bcrypt-pbkdf"
 description = "bcrypt-pbkdf password-based key derivation function"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["RustCrypto Developers"]
 repository = "https://github.com/RustCrypto/password-hashing"
 keywords = ["crypto", "password", "hashing"]
