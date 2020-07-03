@@ -51,4 +51,5 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - run: cargo test --release --no-default-features
       - run: cargo test --release
