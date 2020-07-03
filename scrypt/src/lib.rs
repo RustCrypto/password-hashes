@@ -27,7 +27,6 @@
 //! assert!(scrypt_check("Not so secure password", &hashed_password).is_ok());
 //! # }
 //! # #[cfg(not(feature="include_simple"))]
-//! fn main() {}
 //! ```
 //!
 //! # References
