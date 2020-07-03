@@ -3,7 +3,6 @@ use alloc::{vec, string::String};
 use core::convert::TryInto;
 
 use crate::errors::CheckError;
-use base64;
 use hmac::Hmac;
 use sha2::Sha256;
 use subtle::ConstantTimeEq;

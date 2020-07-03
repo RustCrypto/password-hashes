@@ -46,7 +46,7 @@ impl ScryptParams {
         // This check required by Scrypt:
         // check: n < 2^(128 * r / 8)
         // r * 16 won't overflow since r128 didn't
-        if !((log_n as usize) < r * 16) {
+        if (log_n as usize) >= r * 16 {
             Err(InvalidParams)?;
         }
 
@@ -54,7 +54,7 @@ impl ScryptParams {
         // check: p <= ((2^32-1) * 32) / (128 * r)
         // It takes a bit of re-arranging to get the check above into this form,
         // but it is indeed the same.
-        if !(r * p < 0x40000000) {
+        if r * p >= 0x4000_0000 {
             Err(InvalidParams)?;
         }
 

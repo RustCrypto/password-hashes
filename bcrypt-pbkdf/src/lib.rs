@@ -113,7 +113,6 @@ impl Drop for Bhash {
 /// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
 /// - `Err(Error::InvalidRounds)` if `rounds == 0`.
 /// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
-#[must_use]
 pub fn bcrypt_pbkdf(
     passphrase: &str,
     salt: &[u8],
