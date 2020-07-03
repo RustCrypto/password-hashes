@@ -1,16 +1,16 @@
-name: scrypt
+name: bcrypt-pbkdf
 
 on:
   pull_request:
     paths:
-      - "scrypt/**"
+      - "bcrypt-pbkdf/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: scrypt
+    working-directory: bcrypt-pbkdf
 
 env:
   CARGO_INCREMENTAL: 0
