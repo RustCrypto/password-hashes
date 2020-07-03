@@ -26,8 +26,6 @@ impl fmt::Display for InvalidParams {
 #[cfg(feature = "std")]
 impl std::error::Error for InvalidParams {}
 
-
-
 /// `scrypt_check` error
 #[cfg(feature = "include_simple")]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

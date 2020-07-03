@@ -4,6 +4,11 @@
 //! [bcrypt_pbkdf]: https://flak.tedunangst.com/post/bcrypt-pbkdf
 //! [OpenSSH]: https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![no_std]
+
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 use blowfish::Blowfish;
 use core::convert::TryInto;
@@ -113,7 +118,6 @@ impl Drop for Bhash {
 /// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
 /// - `Err(Error::InvalidRounds)` if `rounds == 0`.
 /// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
-#[must_use]
 pub fn bcrypt_pbkdf(
     passphrase: &str,
     salt: &[u8],
@@ -131,7 +135,7 @@ pub fn bcrypt_pbkdf(
 
     // Allocate a Vec large enough to hold the output we require.
     let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
-    let mut generated = vec![0; stride * BHASH_OUTPUT_SIZE];
+    let mut generated = alloc::vec![0; stride * BHASH_OUTPUT_SIZE];
 
     // Run the regular PBKDF2 algorithm with bhash as the MAC.
     pbkdf2::<Bhash>(
@@ -165,7 +169,7 @@ mod test {
             out: [u8; 32],
         }
 
-        let tests = vec![
+        let tests = alloc::vec![
             Test {
                 hpass: [
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

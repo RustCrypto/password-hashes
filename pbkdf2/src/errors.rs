@@ -26,4 +26,4 @@ impl From<base64::DecodeError> for CheckError {
 }
 
 #[cfg(featue = "std")]
-impl std::error::Error for CheckError { }
+impl std::error::Error for CheckError {}

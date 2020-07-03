@@ -4,7 +4,7 @@ use core::convert::TryInto;
 #[inline(never)]
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
     let mut x = [0u32; 16];
-    assert_eq!(input.len(), 4*x.len());
+    assert_eq!(input.len(), 4 * x.len());
     for (c, b) in input.chunks_exact(4).zip(x.iter_mut()) {
         *b = u32::from_le_bytes(c.try_into().unwrap());
     }
@@ -61,7 +61,10 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
         )
     });
 
-    for (o, (i, b)) in output.chunks_exact_mut(4).zip(input.chunks_exact(4).zip(x.iter())) {
+    for (o, (i, b)) in output
+        .chunks_exact_mut(4)
+        .zip(input.chunks_exact(4).zip(x.iter()))
+    {
         let a = u32::from_le_bytes((&*i).try_into().unwrap());
         let t = b.wrapping_add(a);
         o.copy_from_slice(&t.to_le_bytes());
@@ -100,6 +103,7 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
 /// v - a temporary variable to store the vector V
 /// t - a temporary variable to store the result of the xor
 /// n - the scrypt parameter N
+#[allow(clippy::many_single_char_names)]
 pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) {
     fn integerify(x: &[u8], n: usize) -> usize {
         // n is a power of 2, so n - 1 gives us a bitmask that we can use to perform a calculation
@@ -109,8 +113,7 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
         // don't have to care about truncating any of the high bits off
         //let result = (LittleEndian::read_u32(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
         let t = u32::from_le_bytes(x[x.len() - 64..x.len() - 60].try_into().unwrap());
-        let result = (t as usize) & mask;
-        result
+        (t as usize) & mask
     }
 
     let len = b.len();

@@ -1,13 +1,12 @@
 #![cfg(feature = "include_simple")]
-use alloc::{vec, string::String};
+use alloc::{string::String, vec};
 use core::convert::TryInto;
 
 use crate::errors::CheckError;
-use base64;
 use hmac::Hmac;
+use rand_core::RngCore;
 use sha2::Sha256;
 use subtle::ConstantTimeEq;
-use rand_core::RngCore;
 
 use super::pbkdf2;
 
@@ -73,17 +72,22 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError
     let mut parts = hashed_value.split('$');
     // prevent dynamic allocations by using a fixed-size buffer
     let buf = [
-        parts.next(), parts.next(), parts.next(), parts.next(),
-        parts.next(), parts.next(), parts.next(), parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
     ];
 
     // check the format of the input: there may be no tokens before the first
     // and after the last `$`, tokens must have correct information and length.
     let (count, salt, hash) = match buf {
-        [
-            Some(""), Some("rpbkdf2"), Some("0"), Some(c),
-            Some(s), Some(h), Some(""), None
-        ] => (c, s, h),
+        [Some(""), Some("rpbkdf2"), Some("0"), Some(c), Some(s), Some(h), Some(""), None] => {
+            (c, s, h)
+        }
         _ => return Err(CheckError::InvalidFormat),
     };
 

@@ -2,10 +2,10 @@ use super::scrypt;
 use crate::errors::CheckError;
 use crate::ScryptParams;
 
-use core::convert::TryInto;
 use alloc::string::String;
-use subtle::ConstantTimeEq;
+use core::convert::TryInto;
 use rand_core::RngCore;
+use subtle::ConstantTimeEq;
 
 #[cfg(not(features = "thread_rng"))]
 type DefaultRng = rand_core::OsRng;
@@ -89,25 +89,25 @@ pub fn scrypt_check(password: &str, hashed_value: &str) -> Result<(), CheckError
     let mut parts = hashed_value.split('$');
 
     let buf = [
-        parts.next(), parts.next(), parts.next(), parts.next(),
-        parts.next(), parts.next(), parts.next(), parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
+        parts.next(),
     ];
 
     let (log_n, r, p, salt, hash) = match buf {
-        [
-            Some(""), Some("rscrypt"), Some("0"), Some(p),
-            Some(s), Some(h), Some(""), None
-        ] => {
+        [Some(""), Some("rscrypt"), Some("0"), Some(p), Some(s), Some(h), Some(""), None] => {
             let pvec = base64::decode(p)?;
             if pvec.len() != 3 {
                 return Err(CheckError::InvalidFormat);
             }
             (pvec[0], pvec[1] as u32, pvec[2] as u32, s, h)
         }
-        [
-            Some(""), Some("rscrypt"), Some("1"), Some(p),
-            Some(s), Some(h), Some(""), None
-        ] => {
+        [Some(""), Some("rscrypt"), Some("1"), Some(p), Some(s), Some(h), Some(""), None] => {
             let pvec = base64::decode(p)?;
             if pvec.len() != 9 {
                 return Err(CheckError::InvalidFormat);
@@ -120,8 +120,7 @@ pub fn scrypt_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         _ => return Err(CheckError::InvalidFormat),
     };
 
-    let params = ScryptParams::new(log_n, r, p)
-        .map_err(|_| CheckError::InvalidFormat)?;
+    let params = ScryptParams::new(log_n, r, p).map_err(|_| CheckError::InvalidFormat)?;
     let salt = base64::decode(salt)?;
     let hash = base64::decode(hash)?;
 

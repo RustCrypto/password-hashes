@@ -79,7 +79,7 @@ pub fn scrypt(
 ) -> Result<(), errors::InvalidOutputLen> {
     // This check required by Scrypt:
     // check output.len() > 0 && output.len() <= (2^32 - 1) * 32
-    if !(output.len() > 0 && output.len() / 32 <= 0xffffffff) {
+    if output.is_empty() || output.len() / 32 > 0xffff_ffff {
         Err(errors::InvalidOutputLen)?;
     }
 

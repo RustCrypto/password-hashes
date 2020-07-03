@@ -9,7 +9,6 @@
 //! ```
 #![no_std]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-#![cfg_attr(feature = "cargo-clippy", allow(inline_always))]
 
 #[cfg(feature = "std")]
 extern crate std;

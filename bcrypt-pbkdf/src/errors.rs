@@ -1,4 +1,4 @@
-use std::{error, fmt};
+use core::fmt;
 
 /// `bcrypt_pbkdf` error
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -21,4 +21,5 @@ impl fmt::Display for Error {
     }
 }
 
-impl error::Error for Error {}
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
