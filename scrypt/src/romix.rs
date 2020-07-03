@@ -4,7 +4,7 @@ use core::convert::TryInto;
 #[inline(never)]
 fn salsa20_8(input: &[u8], output: &mut [u8]) {
     let mut x = [0u32; 16];
-    assert_eq!(input.len(), 4*x.len());
+    assert_eq!(input.len(), 4 * x.len());
     for (c, b) in input.chunks_exact(4).zip(x.iter_mut()) {
         *b = u32::from_le_bytes(c.try_into().unwrap());
     }
@@ -61,7 +61,10 @@ fn salsa20_8(input: &[u8], output: &mut [u8]) {
         )
     });
 
-    for (o, (i, b)) in output.chunks_exact_mut(4).zip(input.chunks_exact(4).zip(x.iter())) {
+    for (o, (i, b)) in output
+        .chunks_exact_mut(4)
+        .zip(input.chunks_exact(4).zip(x.iter()))
+    {
         let a = u32::from_le_bytes((&*i).try_into().unwrap());
         let t = b.wrapping_add(a);
         o.copy_from_slice(&t.to_le_bytes());
