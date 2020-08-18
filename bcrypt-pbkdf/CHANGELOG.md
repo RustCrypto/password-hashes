@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.3.0 (2020-08-18)
 ### Changed
-- Bump `crypto-mac` dependency to v0.9, `blowfish` to v0.6, and `pbkdf2` to v0.5 ([#45])
+- Bump `crypto-mac` dependency to v0.9, `blowfish` to v0.6, and `pbkdf2` to v0.5 ([#46])
 
-[#45]: https://github.com/RustCrypto/password-hashing/pull/45
+[#46]: https://github.com/RustCrypto/password-hashing/pull/46
 
 ## 0.2.1 (2020-06-03)
 ### Added
