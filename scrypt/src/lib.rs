@@ -17,9 +17,8 @@
 //! # fn main() {
 //! use scrypt::{ScryptParams, scrypt_simple, scrypt_check};
 //!
-//! // First setup the ScryptParams arguments with:
-//! // r = 8, p = 1, n = 32768 (log2(n) = 15)
-//! let params = ScryptParams::new(15, 8, 1).unwrap();
+//! // First setup the ScryptParams arguments with the recommended defaults
+//! let params = ScryptParams::recommended();
 //! // Hash the password for storage
 //! let hashed_password = scrypt_simple("Not so secure password", &params)
 //!     .expect("OS RNG should not fail");
