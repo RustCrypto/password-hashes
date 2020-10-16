@@ -11,7 +11,7 @@ categories = ["cryptography", "no-std"]
 edition = "2018"
 
 [dependencies]
-crypto-mac = "0.9"
+crypto-mac = "0.10"
 
 rayon = { version = "1", optional = true }
 base64 = { version = "0.13", default-features = false, features = ["alloc"], optional = true }

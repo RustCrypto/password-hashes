@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 blowfish = { version = "0.6", features = ["bcrypt"] }
-crypto-mac = "0.9"
+crypto-mac = "0.10"
 pbkdf2 = { version = "0.5", default-features = false }
 sha2 = { version = "0.9", default-features = false }
 zeroize = { version = "1", default-features = false }

@@ -17,7 +17,7 @@ name = "bcrypt-pbkdf"
 version = "0.3.0"
 dependencies = [
  "blowfish",
- "crypto-mac",
+ "crypto-mac 0.10.0",
  "pbkdf2 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2",
  "zeroize",
@@ -128,6 +128,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto-mac"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4857fd85a0c34b3c3297875b747c1e02e06b6a0ea32dd892d8192b9ce0813ea6"
+dependencies = [
+ "generic-array",
+ "subtle",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -178,7 +188,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "deae6d9dbb35ec2c502d62b8f7b1c000a0822c3b0794ba36b3149c0a1c840dff"
 dependencies = [
- "crypto-mac",
+ "crypto-mac 0.9.1",
  "digest",
 ]
 
@@ -230,7 +240,7 @@ name = "pbkdf2"
 version = "0.5.0"
 dependencies = [
  "base64",
- "crypto-mac",
+ "crypto-mac 0.10.0",
  "hmac",
  "rand",
  "rand_core",
@@ -246,7 +256,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7170d73bf11f39b4ce1809aabc95bf5c33564cdc16fc3200ddda17a5f6e5e48b"
 dependencies = [
- "crypto-mac",
+ "crypto-mac 0.9.1",
 ]
 
 [[package]]
