@@ -9,6 +9,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/scrypt"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography"]
 edition = "2018"
+readme = "README.md"
 
 [dependencies]
 hmac = "0.10"
