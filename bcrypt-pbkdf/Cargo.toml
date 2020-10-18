@@ -1,7 +1,7 @@
 [package]
 name = "bcrypt-pbkdf"
 description = "bcrypt-pbkdf password-based key derivation function"
-version = "0.3.0"
+version = "0.4.0-pre"
 authors = ["RustCrypto Developers"]
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbkdf"
 keywords = ["crypto", "password", "hashing"]
@@ -10,9 +10,9 @@ license = "MIT OR Apache-2.0"
 edition = "2018"
 
 [dependencies]
-blowfish = { version = "0.6", features = ["bcrypt"] }
-crypto-mac = "0.9"
-pbkdf2 = { version = "0.5", default-features = false }
+blowfish = { version = "0.7", features = ["bcrypt"] }
+crypto-mac = "0.10"
+pbkdf2 = { version = "0.6.0-pre", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.9", default-features = false }
 zeroize = { version = "1", default-features = false }
 
