@@ -311,6 +311,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "salsa20"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "803bc218af7bc955c5ae0e0cf3a7af4331fefd1fc78cde0371853c634a358125"
+dependencies = [
+ "cipher",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -325,6 +334,7 @@ dependencies = [
  "pbkdf2",
  "rand",
  "rand_core",
+ "salsa20",
  "sha2",
  "subtle",
 ]
