@@ -9,6 +9,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/pbkdf2"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
 edition = "2018"
+readme = "README.md"
 
 [dependencies]
 crypto-mac = "0.10"
