@@ -26,7 +26,7 @@ impl ScryptParams {
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
         if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
-            Err(InvalidParams)?;
+            return Err(InvalidParams);
         }
 
         let r = r as usize;
@@ -47,7 +47,7 @@ impl ScryptParams {
         // check: n < 2^(128 * r / 8)
         // r * 16 won't overflow since r128 didn't
         if (log_n as usize) >= r * 16 {
-            Err(InvalidParams)?;
+            return Err(InvalidParams);
         }
 
         // This check required by Scrypt:
@@ -55,7 +55,7 @@ impl ScryptParams {
         // It takes a bit of re-arranging to get the check above into this form,
         // but it is indeed the same.
         if r * p >= 0x4000_0000 {
-            Err(InvalidParams)?;
+            return Err(InvalidParams);
         }
 
         Ok(ScryptParams {

@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.5.0"
+version = "0.6.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
@@ -11,18 +11,18 @@ categories = ["cryptography", "no-std"]
 edition = "2018"
 
 [dependencies]
-crypto-mac = "0.9"
+crypto-mac = "0.10"
 
 rayon = { version = "1", optional = true }
 base64 = { version = "0.13", default-features = false, features = ["alloc"], optional = true }
 rand = { version = "0.7", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
-hmac = { version = "0.9", default-features = false, optional = true }
+hmac = { version = "0.10", default-features = false, optional = true }
 sha2 = { version = "0.9", default-features = false, optional = true }
 subtle = { version = "2", default-features = false, optional = true }
 
 [dev-dependencies]
-hmac = "0.9"
+hmac = "0.10"
 sha-1 = "0.9"
 sha2 = "0.9"
 

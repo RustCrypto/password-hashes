@@ -135,6 +135,6 @@ pub fn scrypt_check(password: &str, hashed_value: &str) -> Result<(), CheckError
     if output.ct_eq(&hash).unwrap_u8() == 1 {
         Ok(())
     } else {
-        Err(CheckError::HashMismatch)?
+        Err(CheckError::HashMismatch)
     }
 }
