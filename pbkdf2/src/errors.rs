@@ -1,4 +1,4 @@
-#![cfg(feature="include_simple")]
+#![cfg(feature = "include_simple")]
 use core::fmt;
 
 /// `pbkdf2_check` error
