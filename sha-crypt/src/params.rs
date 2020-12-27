@@ -1,4 +1,4 @@
-use errors;
+use crate::errors;
 use std::default::Default;
 pub const ROUNDS_DEFAULT: usize = 5_000;
 pub const ROUNDS_MIN: usize = 1_000;

@@ -29,16 +29,11 @@
 //! (https://www.akkadia.org/drepper/SHA-crypt.txt)
 //!
 #[cfg(feature = "include_simple")]
-extern crate constant_time_eq;
-#[cfg(feature = "include_simple")]
-extern crate rand;
-extern crate sha2;
-#[cfg(feature = "include_simple")]
 use constant_time_eq::constant_time_eq;
 #[cfg(feature = "include_simple")]
 use rand::distributions::Distribution;
 #[cfg(feature = "include_simple")]
-use rand::{OsRng, Rng};
+use rand::{thread_rng, Rng};
 use sha2::{Digest, Sha512};
 use std::result::Result;
 
@@ -47,17 +42,25 @@ mod defs;
 pub mod errors;
 pub mod params;
 
-use errors::{CheckError, CryptError};
+#[cfg(feature = "include_simple")]
+use errors::CheckError;
+use errors::CryptError;
 pub use params::{Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN};
 
-use defs::{BLOCK_SIZE, SALT_MAX_LEN, TAB};
+use defs::BLOCK_SIZE;
+#[cfg(feature = "include_simple")]
+use defs::{SALT_MAX_LEN, TAB};
 
+#[cfg(feature = "include_simple")]
 static SHA512_SALT_PREFIX: &str = "$6$";
+#[cfg(feature = "include_simple")]
 static SHA512_ROUNDS_PREFIX: &str = "rounds=";
 
+#[cfg(feature = "include_simple")]
 #[derive(Debug)]
 struct ShaCryptDistribution;
 
+#[cfg(feature = "include_simple")]
 impl Distribution<char> for ShaCryptDistribution {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
         const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
@@ -87,26 +90,26 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
     let pw_len = password.len();
 
     let mut hasher = Sha512::default();
-    hasher.input(password);
-    hasher.input(salt);
+    hasher.update(password);
+    hasher.update(salt);
 
     // 4.
     let mut hasher_alt = Sha512::default();
     // 5.
-    hasher_alt.input(password);
+    hasher_alt.update(password);
     // 6.
-    hasher_alt.input(salt);
+    hasher_alt.update(salt);
     // 7.
-    hasher_alt.input(password);
+    hasher_alt.update(password);
     // 8.
-    let digest_b = hasher_alt.result();
+    let digest_b = hasher_alt.finalize();
 
     // 9.
     for _ in 0..(pw_len / BLOCK_SIZE) {
-        hasher.input(&digest_b);
+        hasher.update(&digest_b);
     }
     // 10.
-    hasher.input(&digest_b[..(pw_len % BLOCK_SIZE)]);
+    hasher.update(&digest_b[..(pw_len % BLOCK_SIZE)]);
 
     // 11
     let mut n = pw_len;
@@ -115,15 +118,15 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
             break;
         }
         if (n & 1) != 0 {
-            hasher.input(&digest_b);
+            hasher.update(&digest_b);
         } else {
-            hasher.input(password);
+            hasher.update(password);
         }
         n >>= 1;
     }
 
     // 12.
-    let intermediate = hasher.result();
+    let intermediate = hasher.finalize();
 
     let mut r: Vec<u8> = vec![];
     r.extend_from_slice(intermediate.as_slice());
@@ -152,7 +155,7 @@ pub fn sha512_crypt(
 
     let salt_len = salt.len();
     let salt = match salt_len {
-        0...15 => &salt[0..salt_len],
+        0..=15 => &salt[0..salt_len],
         _ => &salt[0..16],
     };
     let salt_len = salt.len();
@@ -168,11 +171,11 @@ pub fn sha512_crypt(
 
     // 14.
     for _ in 0..pw_len {
-        hasher_alt.input(password);
+        hasher_alt.update(password);
     }
 
     // 15.
-    let dp = hasher_alt.result();
+    let dp = hasher_alt.finalize();
 
     // 16.
     // Create byte sequence P.
@@ -183,19 +186,19 @@ pub fn sha512_crypt(
 
     // 18.
     // For every character in the password add the entire password.
-    for _ in 0..(16 + &digest_a[0]) {
-        hasher_alt.input(salt);
+    for _ in 0..(16 + digest_a[0] as usize) {
+        hasher_alt.update(salt);
     }
 
     // 19.
     // Finish the digest.
-    let ds = hasher_alt.result();
+    let ds = hasher_alt.finalize();
 
     // 20.
     // Create byte sequence S.
     let s_vec = produce_byte_seq(salt_len, &ds, BLOCK_SIZE);
 
-    let mut digest_c = digest_a.clone();
+    let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA512 to burn
     // CPU cycles
     for i in 0..params.rounds as usize {
@@ -204,29 +207,29 @@ pub fn sha512_crypt(
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.input(&p_vec);
+            hasher.update(&p_vec);
         } else {
-            hasher.input(&digest_c);
+            hasher.update(&digest_c);
         }
 
         // Add salt for numbers not divisible by 3
         if i % 3 != 0 {
-            hasher.input(&s_vec);
+            hasher.update(&s_vec);
         }
 
         // Add key for numbers not divisible by 7
         if i % 7 != 0 {
-            hasher.input(&p_vec);
+            hasher.update(&p_vec);
         }
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.input(&digest_c);
+            hasher.update(&digest_c);
         } else {
-            hasher.input(&p_vec);
+            hasher.update(&p_vec);
         }
 
-        digest_c.clone_from_slice(&hasher.result());
+        digest_c.clone_from_slice(&hasher.finalize());
     }
 
     Ok(digest_c.as_slice().to_vec())
@@ -263,10 +266,7 @@ pub fn sha512_crypt_b64(
 /// Err(CryptError) if something went wrong.
 #[cfg(feature = "include_simple")]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
-    let mut rng = match OsRng::new() {
-        Ok(mut rng) => rng,
-        Err(_) => return Err(CryptError::RoundsError),
-    };
+    let rng = thread_rng();
 
     let salt: String = rng
         .sample_iter(&ShaCryptDistribution)
@@ -304,16 +304,16 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     // Check that there are no characters before the first "$"
     if iter.next() != Some("") {
-        Err(CheckError::InvalidFormat(
+        return Err(CheckError::InvalidFormat(
             "Should start with '$".to_string(),
-        ))?;
+        ));
     }
 
     if iter.next() != Some("6") {
-        Err(CheckError::InvalidFormat(format!(
+        return Err(CheckError::InvalidFormat(format!(
             "does not contain SHA512 identifier: '{}'",
             SHA512_SALT_PREFIX
-        )))?;
+        )));
     }
 
     let mut next = iter.next().ok_or_else(|| {
@@ -343,22 +343,22 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     // Make sure there is no trailing data after the final "$"
     if iter.next() != None {
-        Err(CheckError::InvalidFormat(
+        return Err(CheckError::InvalidFormat(
             "Trailing characters present".to_string(),
-        ))?;
+        ));
     }
 
     let params = Sha512Params { rounds };
 
     let output = match sha512_crypt(password.as_bytes(), salt.as_bytes(), &params) {
         Ok(v) => v,
-        Err(e) => Err(CheckError::Crypt(e))?,
+        Err(e) => return Err(CheckError::Crypt(e)),
     };
 
     let hash = b64::decode(hash.as_bytes());
 
     if !constant_time_eq(&output, &hash) {
-        Err(CheckError::HashMismatch)?
+        return Err(CheckError::HashMismatch);
     }
 
     Ok(())

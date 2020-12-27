@@ -1,4 +1,4 @@
-use defs::{MAP, TAB};
+use crate::defs::{MAP, TAB};
 
 pub fn encode(source: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![];
@@ -20,6 +20,7 @@ pub fn encode(source: &[u8]) -> Vec<u8> {
     out
 }
 
+#[cfg(feature = "include_simple")]
 pub fn decode(source: &[u8]) -> Vec<u8> {
     let mut out: [u8; 64] = [0; 64];
     for iter in MAP.iter().enumerate() {
