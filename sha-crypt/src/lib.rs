@@ -1,16 +1,12 @@
-//! This crate implements the UNIX crypt using SHA-512 password hashing based
-//! on \[1\].
+//! Pure Rust implementation of the [`SHA-crypt` password hash based on SHA-512][1],
+//! a legacy password hashing scheme supported by the [POSIX crypt C library][2].
 //!
-//! ```toml
-//! [dependencies]
-//! sha-crypt = { version = "0.1", default-features = false }
-//! ```
+//! Password hashes using this algorithm start with `$6$` when encoded using the
+//! [PHC string format][3].
+//!
 //! # Usage
 //!
 //! ```
-//! extern crate sha_crypt;
-//!
-//! # fn main() {
 //! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
 //!
 //! // First setup the Sha512Params arguments with:
@@ -21,13 +17,12 @@
 //!     .expect("Should not fail");
 //! // Verifying a stored password
 //! assert!(sha512_check("Not so secure password", &hashed_password).is_ok());
-//! # }
 //! ```
 //!
-//! # References
-//! \[1\] - [Ulrich Drepper et.al. Unix crypt using SHA-256 and SHA-512]
-//! (https://www.akkadia.org/drepper/SHA-crypt.txt)
-//!
+//! [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
+//! [2]: https://en.wikipedia.org/wiki/Crypt_(C)
+//! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
+
 #[cfg(feature = "include_simple")]
 use constant_time_eq::constant_time_eq;
 #[cfg(feature = "include_simple")]
@@ -261,9 +256,9 @@ pub fn sha512_crypt_b64(
 ///
 ///  `$<ID>$<SALT>$<HASH>`
 ///
-/// # Return
-/// `Ok(String)` containing the full SHA512 password hash format, or
-/// Err(CryptError) if something went wrong.
+/// # Returns
+/// - `Ok(String)` containing the full SHA512 password hash format on success
+/// - `Err(CryptError)` if something went wrong.
 #[cfg(feature = "include_simple")]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
     let rng = thread_rng();
@@ -298,6 +293,8 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 /// # Return
 /// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
 /// format or password mismatch.
+///
+/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "include_simple")]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
