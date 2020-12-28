@@ -1,13 +1,17 @@
 [package]
 name = "sha-crypt"
-version = "0.1.0"
+version = "0.0.0"
+description = """
+Pure Rust implementation of the SHA-crypt password hash based on SHA-512
+as implemented by the POSIX crypt C library
+"""
 authors = ["RustCrypto Developers"]
-description = "sha-crypt password hashing"
 documentation = "https://docs.rs/sha-crypt"
-repository = "https://github.com/RustCrypto/password-hashing"
+repository = "https://github.com/RustCrypto/password-hashes/tree/master/sha-crypt"
 keywords = ["crypto", "password", "hashing"]
 edition = "2018"
 categories = ["cryptography"]
+readme = "README.md"
 
 [dependencies]
 sha2 = "0.9"
@@ -17,6 +21,3 @@ constant_time_eq = { version = "0.1", optional = true }
 [features]
 default = [ "include_simple" ]
 include_simple = [ "rand", "constant_time_eq" ]
-
-[badges]
-travis-ci = { repository = "RustCrypto/password-hashing" }
