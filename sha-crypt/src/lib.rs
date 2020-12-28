@@ -7,16 +7,21 @@
 //! # Usage
 //!
 //! ```
+//! # #[cfg(feature = "include_simple")]
+//! # {
 //! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
 //!
 //! // First setup the Sha512Params arguments with:
 //! // rounds = 10_000
 //! let params = Sha512Params::new(10_000).expect("RandomError!");
+//!
 //! // Hash the password for storage
 //! let hashed_password = sha512_simple("Not so secure password", &params)
 //!     .expect("Should not fail");
+//!
 //! // Verifying a stored password
 //! assert!(sha512_check("Not so secure password", &hashed_password).is_ok());
+//! # }
 //! ```
 //!
 //! [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
