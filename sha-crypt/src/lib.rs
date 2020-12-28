@@ -28,6 +28,14 @@
 //! [2]: https://en.wikipedia.org/wiki/Crypt_(C)
 //! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
+#![deny(unsafe_code)]
+#![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`
+
 #[cfg(feature = "include_simple")]
 use constant_time_eq::constant_time_eq;
 #[cfg(feature = "include_simple")]
@@ -144,8 +152,9 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
 /// - `params` - The Sha512Params to use
 ///   **WARNING: Make sure to compare this value in constant time!**
 ///
-/// # Return
-/// `Ok(())` if calculation was successful. Otherwise a errors::CryptError
+/// # Returns
+/// - `Ok(())` if calculation was successful
+/// - `Err(errors::CryptError)` otherwise
 pub fn sha512_crypt(
     password: &[u8],
     salt: &[u8],
@@ -243,8 +252,9 @@ pub fn sha512_crypt(
 /// - `params` - The Sha512Params to use
 ///   **WARNING: Make sure to compare this value in constant time!**
 ///
-/// # Return
-/// `Ok(())` if calculation was successful. Otherwise a errors::CryptError
+/// # Returns
+/// - `Ok(())` if calculation was successful
+/// - `Err(errors::CryptError)` otherwise
 pub fn sha512_crypt_b64(
     password: &[u8],
     salt: &[u8],
@@ -264,7 +274,10 @@ pub fn sha512_crypt_b64(
 /// # Returns
 /// - `Ok(String)` containing the full SHA512 password hash format on success
 /// - `Err(CryptError)` if something went wrong.
+///
+/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "include_simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
     let rng = thread_rng();
 
@@ -301,6 +314,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "include_simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 
