@@ -1,16 +1,17 @@
 [package]
 name = "sha-crypt"
-version = "0.0.0"
+version = "0.1.0"
 description = """
 Pure Rust implementation of the SHA-crypt password hash based on SHA-512
 as implemented by the POSIX crypt C library
 """
 authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/sha-crypt"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/sha-crypt"
+categories = ["cryptography", "no-std"]
 keywords = ["crypto", "password", "hashing"]
 edition = "2018"
-categories = ["cryptography"]
 readme = "README.md"
 
 [dependencies]
