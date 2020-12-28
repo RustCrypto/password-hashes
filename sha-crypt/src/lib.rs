@@ -36,28 +36,29 @@
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`
 
-#[cfg(feature = "include_simple")]
-use constant_time_eq::constant_time_eq;
-#[cfg(feature = "include_simple")]
-use rand::distributions::Distribution;
-#[cfg(feature = "include_simple")]
-use rand::{thread_rng, Rng};
-use sha2::{Digest, Sha512};
-use std::result::Result;
-
-mod b64;
-mod defs;
 pub mod errors;
 pub mod params;
 
-#[cfg(feature = "include_simple")]
-use errors::CheckError;
-use errors::CryptError;
-pub use params::{Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN};
+mod b64;
+mod defs;
 
-use defs::BLOCK_SIZE;
+pub use crate::{
+    defs::BLOCK_SIZE,
+    errors::CryptError,
+    params::{Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN},
+};
+
+use sha2::{Digest, Sha512};
+use std::result::Result;
+
 #[cfg(feature = "include_simple")]
-use defs::{SALT_MAX_LEN, TAB};
+use {
+    crate::{
+        defs::{SALT_MAX_LEN, TAB},
+        errors::CheckError,
+    },
+    rand::{distributions::Distribution, thread_rng, Rng},
+};
 
 #[cfg(feature = "include_simple")]
 static SHA512_SALT_PREFIX: &str = "$6$";
@@ -373,9 +374,10 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     let hash = b64::decode(hash.as_bytes());
 
-    if !constant_time_eq(&output, &hash) {
-        return Err(CheckError::HashMismatch);
+    use subtle::ConstantTimeEq;
+    if output.ct_eq(&hash).into() {
+        Ok(())
+    } else {
+        Err(CheckError::HashMismatch)
     }
-
-    Ok(())
 }
