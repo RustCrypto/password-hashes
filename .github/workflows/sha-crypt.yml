@@ -32,11 +32,11 @@ jobs:
 #      - uses: actions/checkout@v1
 #      - uses: actions-rs/toolchain@v1
 #        with:
-#          profile: minimal
 #          toolchain: ${{ matrix.rust }}
 #          target: ${{ matrix.target }}
+#          profile: minimal
 #          override: true
-#      - run: cargo build --no-default-features --release --target ${{ matrix.target }}
+#      - run: cargo build --release --target ${{ matrix.target }}
 
   test:
     runs-on: ubuntu-latest
@@ -49,8 +49,8 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: cargo test --release --no-default-features
+          profile: minimal
       - run: cargo test --release
+      - run: cargo test --release --all-features

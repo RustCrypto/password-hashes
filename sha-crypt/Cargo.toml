@@ -15,9 +15,12 @@ readme = "README.md"
 
 [dependencies]
 sha2 = "0.9"
-rand = { version = "0.7",  optional = true }
+rand = { version = "0.7", optional = true }
 constant_time_eq = { version = "0.1", optional = true }
 
 [features]
-default = [ "include_simple" ]
-include_simple = [ "rand", "constant_time_eq" ]
+simple = ["rand", "constant_time_eq"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

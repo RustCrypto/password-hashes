@@ -7,7 +7,7 @@
 //! # Usage
 //!
 //! ```
-//! # #[cfg(feature = "include_simple")]
+//! # #[cfg(feature = "simple")]
 //! # {
 //! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
 //!
@@ -28,11 +28,19 @@
 //! [2]: https://en.wikipedia.org/wiki/Crypt_(C)
 //! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 
-#[cfg(feature = "include_simple")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
+#![deny(unsafe_code)]
+#![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`
+
+#[cfg(feature = "simple")]
 use constant_time_eq::constant_time_eq;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use rand::distributions::Distribution;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use rand::{thread_rng, Rng};
 use sha2::{Digest, Sha512};
 use std::result::Result;
@@ -42,25 +50,26 @@ mod defs;
 pub mod errors;
 pub mod params;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use errors::CheckError;
 use errors::CryptError;
 pub use params::{Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN};
 
 use defs::BLOCK_SIZE;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use defs::{SALT_MAX_LEN, TAB};
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 static SHA512_SALT_PREFIX: &str = "$6$";
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 static SHA512_ROUNDS_PREFIX: &str = "rounds=";
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[derive(Debug)]
 struct ShaCryptDistribution;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 impl Distribution<char> for ShaCryptDistribution {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
         const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
@@ -264,7 +273,8 @@ pub fn sha512_crypt_b64(
 /// # Returns
 /// - `Ok(String)` containing the full SHA512 password hash format on success
 /// - `Err(CryptError)` if something went wrong.
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
     let rng = thread_rng();
 
@@ -300,7 +310,8 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 /// format or password mismatch.
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 

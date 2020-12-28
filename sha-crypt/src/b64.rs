@@ -20,7 +20,7 @@ pub fn encode(source: &[u8]) -> Vec<u8> {
     out
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub fn decode(source: &[u8]) -> Vec<u8> {
     let mut out: [u8; 64] = [0; 64];
     for iter in MAP.iter().enumerate() {
@@ -49,7 +49,7 @@ pub fn decode(source: &[u8]) -> Vec<u8> {
 }
 
 mod tests {
-    #[cfg(feature = "include_simple")]
+    #[cfg(feature = "simple")]
     #[test]
     fn test_encode_decode() {
         let original: [u8; 64] = [

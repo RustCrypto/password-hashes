@@ -1,5 +1,5 @@
 pub const BLOCK_SIZE: usize = 64;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub const SALT_MAX_LEN: usize = 16;
 pub static TAB: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 pub const MAP: [(u8, u8, u8, u8); 22] = [
