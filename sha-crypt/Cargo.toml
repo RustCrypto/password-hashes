@@ -1,0 +1,22 @@
+[package]
+name = "sha-crypt"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+description = "sha-crypt password hashing"
+documentation = "https://docs.rs/sha-crypt"
+repository = "https://github.com/RustCrypto/password-hashing"
+keywords = ["crypto", "password", "hashing"]
+edition = "2018"
+categories = ["cryptography"]
+
+[dependencies]
+sha2 = "0.9"
+rand = { version = "0.7",  optional = true }
+constant_time_eq = { version = "0.1", optional = true }
+
+[features]
+default = [ "include_simple" ]
+include_simple = [ "rand", "constant_time_eq" ]
+
+[badges]
+travis-ci = { repository = "RustCrypto/password-hashing" }
