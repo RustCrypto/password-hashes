@@ -16,7 +16,7 @@ base64 = { version = "0.13", default-features = false, features = ["alloc"], opt
 hmac = "0.10"
 pbkdf2 = { version = "0.6.0", default-features = false, path = "../pbkdf2" }
 rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
-rand = { version = "0.7", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, optional = true }
 salsa20 = { version = "0.7.2", default-features = false, features = ["expose-core"] }
 sha2 = { version = "0.9", default-features = false }
 subtle = { version = "2", default-features = false, optional = true }

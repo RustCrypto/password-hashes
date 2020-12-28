@@ -16,7 +16,7 @@ readme = "README.md"
 
 [dependencies]
 sha2 = { version = "0.9", default-features = false }
-rand = { version = "0.7", optional = true }
+rand = { version = "0.8", optional = true }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]

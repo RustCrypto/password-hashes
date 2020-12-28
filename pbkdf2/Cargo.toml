@@ -16,7 +16,7 @@ crypto-mac = "0.10"
 
 rayon = { version = "1", optional = true }
 base64 = { version = "0.13", default-features = false, features = ["alloc"], optional = true }
-rand = { version = "0.7", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
 hmac = { version = "0.10", default-features = false, optional = true }
 sha2 = { version = "0.9", default-features = false, optional = true }
