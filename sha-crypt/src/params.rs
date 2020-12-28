@@ -1,5 +1,8 @@
+//! Algorithm parameters.
+
 use crate::errors;
-use std::default::Default;
+use core::default::Default;
+
 pub const ROUNDS_DEFAULT: usize = 5_000;
 pub const ROUNDS_MIN: usize = 1_000;
 pub const ROUNDS_MAX: usize = 999_999_999;

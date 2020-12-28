@@ -28,6 +28,7 @@
 //! [2]: https://en.wikipedia.org/wiki/Crypt_(C)
 //! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
@@ -35,6 +36,13 @@
 )]
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`
+
+// TODO(tarcieri): heapless support
+#[macro_use]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod errors;
 pub mod params;
@@ -48,8 +56,8 @@ pub use crate::{
     params::{Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN},
 };
 
+use alloc::{string::String, vec::Vec};
 use sha2::{Digest, Sha512};
-use std::result::Result;
 
 #[cfg(feature = "include_simple")]
 use {
@@ -57,6 +65,7 @@ use {
         defs::{SALT_MAX_LEN, TAB},
         errors::CheckError,
     },
+    alloc::string::ToString,
     rand::{distributions::Distribution, thread_rng, Rng},
 };
 

@@ -1,4 +1,7 @@
+//! Base64 encoding support
+
 use crate::defs::{MAP, TAB};
+use alloc::vec::Vec;
 
 pub fn encode(source: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![];
