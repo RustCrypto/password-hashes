@@ -52,6 +52,5 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      # TODO(tarcieri): doesn't pass yet
-      #- run: cargo test --release --no-default-features
+      - run: cargo test --release --no-default-features
       - run: cargo test --release

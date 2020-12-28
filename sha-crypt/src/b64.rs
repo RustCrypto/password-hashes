@@ -49,6 +49,7 @@ pub fn decode(source: &[u8]) -> Vec<u8> {
 }
 
 mod tests {
+    #[cfg(feature = "include_simple")]
     #[test]
     fn test_encode_decode() {
         let original: [u8; 64] = [
