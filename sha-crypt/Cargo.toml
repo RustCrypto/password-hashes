@@ -14,13 +14,14 @@ categories = ["cryptography"]
 readme = "README.md"
 
 [dependencies]
-sha2 = "0.9"
-rand = { version = "0.7",  optional = true }
-subtle = { version = "2", default-features = false, optional = true }
+sha2 = { version = "0.9", default-features = false }
+rand = { version = "0.7", optional = true }
+subtle = { version = "2", optional = true, default-features = false }
 
 [features]
 default = ["include_simple"]
-include_simple = ["rand", "subtle"]
+include_simple = ["rand", "std", "subtle"]
+std = []
 
 [package.metadata.docs.rs]
 all-features = true
