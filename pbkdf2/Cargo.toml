@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.6.0"
+version = "0.7.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
@@ -19,17 +19,24 @@ base64 = { version = "0.13", default-features = false, features = ["alloc"], opt
 rand = { version = "0.7", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
 hmac = { version = "0.10", default-features = false, optional = true }
+password-hash = { version = "0", default-features = false, features = ["alloc"], optional = true }
+sha1 = { version = "0.9", package = "sha-1", default-features = false, optional = true }
 sha2 = { version = "0.9", default-features = false, optional = true }
 subtle = { version = "2", default-features = false, optional = true }
 
 [dev-dependencies]
+hex-literal = "0.3"
 hmac = "0.10"
-sha-1 = "0.9"
+sha1 = { version = "0.9", package = "sha-1" }
 sha2 = "0.9"
 
 [features]
 default = ["include_simple", "thread_rng"]
 parallel = ["rayon", "std"]
-include_simple = ["sha2", "hmac", "rand_core", "base64", "subtle"]
+include_simple = ["sha2", "hmac", "password-hash", "rand_core", "base64", "subtle"]
 thread_rng = ["rand"]
 std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

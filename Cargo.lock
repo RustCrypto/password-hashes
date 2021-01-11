@@ -7,6 +7,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
 
 [[package]]
+name = "b64ct"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a293adc36d315fd3f03a3c4a5594b0a30be4678cbae95ce9b430e9b8d6e34032"
+
+[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,6 +191,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex-literal"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+
+[[package]]
 name = "hmac"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -232,12 +244,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "password-hash"
+version = "0.0.0"
+source = "git+https://github.com/rustcrypto/traits#8c0ead96042eda8dd3031ebb7224965163d0e0f3"
+dependencies = [
+ "b64ct",
+]
+
+[[package]]
 name = "pbkdf2"
-version = "0.6.0"
+version = "0.7.0-pre"
 dependencies = [
  "base64",
  "crypto-mac",
+ "hex-literal",
  "hmac",
+ "password-hash",
  "rand",
  "rand_core",
  "rayon",
@@ -335,7 +357,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "scrypt"
-version = "0.5.0"
+version = "0.6.0-pre"
 dependencies = [
  "base64",
  "hmac",

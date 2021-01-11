@@ -1,13 +1,15 @@
 //! This crate implements the PBKDF2 key derivation function as specified
 //! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
 //!
-//! If you are not using convinience functions `pbkdf2_check` and `pbkdf2_simple`
+//! If you are not using convenience functions `pbkdf2_check` and `pbkdf2_simple`
 //! it's recommended to disable `pbkdf2` default features in your `Cargo.toml`:
 //! ```toml
 //! [dependencies]
 //! pbkdf2 = { version = "0.2", default-features = false }
 //! ```
+
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
 #[cfg(feature = "std")]
@@ -16,13 +18,21 @@ extern crate std;
 #[cfg(feature = "include_simple")]
 extern crate alloc;
 
+#[cfg(feature = "password-hash")]
+pub use password_hash;
+
 mod errors;
+#[cfg(feature = "include_simple")]
+mod hasher;
+#[cfg(feature = "include_simple")]
 mod simple;
 
 #[cfg(feature = "include_simple")]
-pub use crate::errors::CheckError;
-#[cfg(feature = "include_simple")]
-pub use crate::simple::{pbkdf2_check, pbkdf2_simple};
+pub use crate::{
+    errors::CheckError,
+    hasher::{AlgorithmId, Params, Pbkdf2},
+    simple::{pbkdf2_check, pbkdf2_simple},
+};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
