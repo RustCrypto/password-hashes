@@ -22,9 +22,10 @@ impl Default for Sha512Params {
 
 impl Sha512Params {
     pub fn new(rounds: usize) -> Result<Sha512Params, errors::CryptError> {
-        if rounds < ROUNDS_MIN || rounds > ROUNDS_MAX {
-            return Err(errors::CryptError::RoundsError);
+        if (ROUNDS_MIN..=ROUNDS_MAX).contains(&rounds) {
+            Ok(Sha512Params { rounds })
+        } else {
+            Err(errors::CryptError::RoundsError)
         }
-        Ok(Sha512Params { rounds })
     }
 }
