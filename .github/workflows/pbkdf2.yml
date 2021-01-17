@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.41.0 # MSRV
+          - 1.47.0 # MSRV
           - stable
         target:
           - thumbv7em-none-eabi
@@ -35,14 +35,14 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           override: true
-      - run: cargo build --no-default-features --release --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --release --no-default-features
 
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
-          - 1.41.0 # MSRV
+          - 1.47.0 # MSRV
           - stable
     steps:
       - uses: actions/checkout@v1
@@ -52,5 +52,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release --no-default-features
-      - run: cargo test --release --features parallel
       - run: cargo test --release
+      - run: cargo test --release --features include_simple
+      - run: cargo test --release --features parallel
+      - run: cargo test --release --features sha1
+      - run: cargo test --release --features include_simple,sha1
+      - run: cargo test --release --all-features

@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.5.0"
+version = "0.6.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"
@@ -14,7 +14,7 @@ readme = "README.md"
 [dependencies]
 base64 = { version = "0.13", default-features = false, features = ["alloc"], optional = true }
 hmac = "0.10"
-pbkdf2 = { version = "0.6.0", default-features = false, path = "../pbkdf2" }
+pbkdf2 = { version = "=0.7.0-pre", default-features = false, path = "../pbkdf2" }
 rand_core = { version = "0.5", default-features = false, features = ["getrandom"], optional = true }
 rand = { version = "0.7", default-features = false, optional = true }
 salsa20 = { version = "0.7.2", default-features = false, features = ["expose-core"] }

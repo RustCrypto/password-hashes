@@ -1,4 +1,5 @@
-#![cfg(feature = "include_simple")]
+//! Simple password hashing support (legacy)
+
 use alloc::{string::String, vec};
 use core::convert::TryInto;
 
@@ -36,6 +37,7 @@ type DefaultRng = rand::ThreadRng;
 ///
 /// * `password` - The password to process
 /// * `c` - The iteration count
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
 pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::Error> {
     // 128-bit salt
     let mut salt = [0u8; 16];
@@ -68,7 +70,24 @@ pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::E
 /// * `password` - The password to process
 /// * `hashed_value` - A string representing a hashed password returned by
 /// `pbkdf2_simple`
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
 pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
+    let (count, salt, hash) = parse_hash(hashed_value)?;
+    let salt = base64::decode(salt)?;
+    let hash = base64::decode(hash)?;
+
+    let mut output = vec![0u8; hash.len()];
+    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, count, &mut output);
+
+    if output.ct_eq(&hash).unwrap_u8() == 1 {
+        Ok(())
+    } else {
+        Err(CheckError::HashMismatch)
+    }
+}
+
+/// Parse `rpbkdf2` hash to `(count, salt, hash)` tuple.
+pub(crate) fn parse_hash(hashed_value: &str) -> Result<(u32, &str, &str), CheckError> {
     let mut parts = hashed_value.split('$');
     // prevent dynamic allocations by using a fixed-size buffer
     let buf = [
@@ -84,31 +103,17 @@ pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     // check the format of the input: there may be no tokens before the first
     // and after the last `$`, tokens must have correct information and length.
-    let (count, salt, hash) = match buf {
-        [Some(""), Some("rpbkdf2"), Some("0"), Some(c), Some(s), Some(h), Some(""), None] => {
-            (c, s, h)
+    match buf {
+        [Some(""), Some("rpbkdf2"), Some("0"), Some(count), Some(salt), Some(hash), Some(""), None] =>
+        {
+            let count_arr = base64::decode(count)?
+                .as_slice()
+                .try_into()
+                .map_err(|_| CheckError::InvalidFormat)?;
+
+            let count = u32::from_be_bytes(count_arr);
+            Ok((count, salt, hash))
         }
-        _ => return Err(CheckError::InvalidFormat),
-    };
-
-    let count_arr = base64::decode(count)?
-        .as_slice()
-        .try_into()
-        .map_err(|_| CheckError::InvalidFormat)?;
-    let count = u32::from_be_bytes(count_arr);
-    let salt = base64::decode(salt)?;
-    let hash = base64::decode(hash)?;
-
-    let mut output = vec![0u8; hash.len()];
-    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, count, &mut output);
-
-    // Be careful here - its important that the comparison be done using a fixed
-    // time equality check. Otherwise an adversary that can measure how long
-    // this step takes can learn about the hashed value which would allow them
-    // to mount an offline brute force attack against the hashed password.
-    if output.ct_eq(&hash).unwrap_u8() == 1 {
-        Ok(())
-    } else {
-        Err(CheckError::HashMismatch)
+        _ => Err(CheckError::InvalidFormat),
     }
 }
