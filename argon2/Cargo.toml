@@ -1,0 +1,19 @@
+[package]
+name = "argon2"
+description = "Pure Rust implementation of the Argon2 password hashing function"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/argon2"
+repository = "https://github.com/RustCrypto/password-hashes/tree/master/argon2"
+keywords = ["crypto", "password", "hashing"]
+categories = ["cryptography", "no-std"]
+edition = "2018"
+readme = "README.md"
+
+[dependencies]
+blake2 = { version = "0.9", default-features = false }
+zeroize = { version = "1", optional = true }
+
+[dev-dependencies]
+hex-literal = "0.3"
