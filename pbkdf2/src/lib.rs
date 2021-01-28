@@ -30,7 +30,7 @@ mod simple;
 #[cfg(feature = "include_simple")]
 pub use crate::{
     errors::CheckError,
-    hasher::{AlgorithmId, Params, Pbkdf2},
+    hasher::{Algorithm, Params, Pbkdf2},
     simple::{pbkdf2_check, pbkdf2_simple},
 };
 
