@@ -1,4 +1,26 @@
-//! Argon2 password hashing function.
+//! Pure Rust implementation of the [Argon2] password hashing function.
+//!
+//! # About
+//!
+//! Argon2 is a memory-hard [key derivation function] chosen as the winner of
+//! the 2015 [Password Hashing Competition] in July 2015.
+//!
+//! It provides three algorithmic variants (chosen via the [`Algorithm`] enum):
+//!
+//! - **Argon2d**: maximizes resistance to GPU cracking attacks
+//! - **Argon2i**: optimized to resist side-channel attacks
+//! - **Argon2id**: (default) hybrid version
+//!
+//! # Notes
+//!
+//! Multithreading has not yet been implemented.
+//!
+//! Will still compute the correct results for higher parallelism factors, but
+//! there will be no associated performance improvement.
+//!
+//! [Argon2]: https://en.wikipedia.org/wiki/Argon2
+//! [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
+//! [Password Hashing Competition]: https://www.password-hashing.net/
 
 #![no_std]
 #![doc(
@@ -75,14 +97,22 @@ const SYNC_POINTS: u32 = 4;
 /// Argon2 primitive type: variants of the algorithm
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Algorithm {
-    /// Argon2d: optimizes memory-hardness but vulnerable to side-channels
+    /// Optimizes against GPU cracking attacks but vulnerable to side-channels.
+    ///
+    /// Accesses the memory array in a password dependent order, reducing the
+    /// possibility of time–memory tradeoff (TMTO) attacks.
     Argon2d = 0,
 
-    /// Argon2i: hardened against side-channels but less memory-hard than Argon2d
+    /// Optimized to resist side-channel attacks.
+    ///
+    /// Accesses the memory array in a password independent order, increasing the
+    /// possibility of time-memory tradeoff (TMTO) attacks.
     Argon2i = 1,
 
-    /// Argon2id (default): mixes Argon2i and Argon2d passes, thereby providing
-    /// the combined benefits of Argon2i and Argon2d.
+    /// Hybrid that mixes Argon2i and Argon2d passes (*default*).
+    ///
+    /// Uses the Argon2i approach for the first half pass over memory and
+    /// Argon2d approach for subsequent passes.
     Argon2id = 2,
 }
 

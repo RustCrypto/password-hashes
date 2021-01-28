@@ -7,10 +7,11 @@ derivation functions, written in pure Rust.
 
 | Name      | Crates.io  | Documentation  |
 | --------- |:----------:| :-----:|
+| [Argon2](https://en.wikipedia.org/wiki/Argon2)  | [![crates.io](https://img.shields.io/crates/v/argon2.svg)](https://crates.io/crates/argon2) | [![Documentation](https://docs.rs/argon2/badge.svg)](https://docs.rs/argon2) |
+| [bcrypt-pbkdf](https://flak.tedunangst.com/post/bcrypt-pbkdf) | [![crates.io](https://img.shields.io/crates/v/bcrypt-pbkdf.svg)](https://crates.io/crates/bcrypt-pbkdf) | [![Documentation](https://docs.rs/bcrypt-pbkdf/badge.svg)](https://docs.rs/bcrypt-pbkdf) |
 | [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2)  | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2) | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) |
 | [scrypt](https://en.wikipedia.org/wiki/Scrypt)  | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt) | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) |
 | [SHA-crypt](https://www.akkadia.org/drepper/SHA-crypt.txt)    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt) | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) |
-| [bcrypt-pbkdf](https://flak.tedunangst.com/post/bcrypt-pbkdf) | [![crates.io](https://img.shields.io/crates/v/bcrypt-pbkdf.svg)](https://crates.io/crates/bcrypt-pbkdf) | [![Documentation](https://docs.rs/bcrypt-pbkdf/badge.svg)](https://docs.rs/bcrypt-pbkdf) |
 
 ## License
 

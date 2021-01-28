@@ -1,6 +1,9 @@
 [package]
 name = "argon2"
-description = "Pure Rust implementation of the Argon2 password hashing function"
+description = """
+Pure Rust implementation of the Argon2 password hashing function with support
+for the Argon2d, Argon2i, and Argon2id algorithmic variants
+"""
 version = "0.0.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"

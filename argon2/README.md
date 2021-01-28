@@ -7,7 +7,7 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust implementation of the Argon2 password hashing function.
+Pure Rust implementation of the [Argon2] password hashing function.
 
 [Documentation][docs-link]
 
@@ -52,3 +52,5 @@ dual licensed as above, without any additional terms or conditions.
 [build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Aargon2
 
 [//]: # (general links)
+
+[Argon2]: https://en.wikipedia.org/wiki/Argon2
