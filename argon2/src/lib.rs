@@ -21,9 +21,6 @@ pub use crate::error::{Error, Result};
 use crate::{block::Block, instance::Instance};
 use blake2::{digest, Blake2b, Digest};
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
-
 /// Minimum and maximum number of lanes (degree of parallelism)
 pub const MIN_LANES: u32 = 1;
 
@@ -174,7 +171,7 @@ pub struct Argon2<'key> {
     threads: u32,
 
     /// Segment length
-    segment_length: u32,
+    pub(crate) segment_length: u32,
 
     /// Version number
     version: Version,
@@ -267,7 +264,7 @@ impl<'key> Argon2<'key> {
     /// Function that performs memory-hard hashing with certain degree of parallelism.
     pub fn hash_password(
         &self,
-        argon2_type: Algorithm,
+        alg: Algorithm,
         pwd: &[u8],
         salt: &[u8],
         ad: &[u8],
@@ -304,30 +301,18 @@ impl<'key> Argon2<'key> {
 
         // Hashing all inputs
         #[allow(unused_mut)]
-        let mut initial_hash = self.initial_hash(argon2_type, pwd, salt, ad, out);
+        let mut initial_hash = self.initial_hash(alg, pwd, salt, ad, out);
+
+        // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
         let mut memory = vec![Block::default(); memory_blocks];
-        let mut instance = Instance::new(
-            self,
-            argon2_type,
-            self.segment_length,
-            &initial_hash,
-            &mut memory,
-        )?;
 
-        #[cfg(feature = "zeroize")]
-        initial_hash.zeroize();
-
-        // Filling memory
-        instance.fill_memory_blocks();
-
-        // Finalization
-        instance.finalize(out)
+        Instance::hash(self, alg, initial_hash, &mut memory, out)
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
     fn initial_hash(
         &self,
-        argon2_type: Algorithm,
+        alg: Algorithm,
         pwd: &[u8],
         salt: &[u8],
         ad: &[u8],
@@ -339,7 +324,7 @@ impl<'key> Argon2<'key> {
         digest.update(&self.m_cost.to_le_bytes());
         digest.update(&self.t_cost.to_le_bytes());
         digest.update(&self.version.to_le_bytes());
-        digest.update(&argon2_type.to_le_bytes());
+        digest.update(&alg.to_le_bytes());
         digest.update(&(pwd.len() as u32).to_le_bytes());
         digest.update(pwd);
         digest.update(&(salt.len() as u32).to_le_bytes());

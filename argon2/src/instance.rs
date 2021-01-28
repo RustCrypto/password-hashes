@@ -55,29 +55,47 @@ pub(crate) struct Instance<'a> {
     threads: u32,
 
     /// Argon2 type
-    argon2_type: Algorithm,
+    alg: Algorithm,
 }
 
 impl<'a> Instance<'a> {
+    /// Hash the given inputs with Argon2, writing the output into the
+    /// provided buffer.
+    pub fn hash(
+        context: &Argon2<'_>,
+        alg: Algorithm,
+        initial_hash: digest::Output<Blake2b>,
+        memory: &'a mut [Block],
+        out: &mut [u8],
+    ) -> Result<()> {
+        let mut instance = Self::new(context, alg, initial_hash, memory)?;
+
+        // Filling memory
+        instance.fill_memory_blocks();
+
+        // Finalization
+        instance.finalize(out)
+    }
+
     /// Hashes the inputs with BLAKE2b and creates first two blocks.
     ///
     /// Returns struct containing main memory with 2 blocks per lane initialized.
-    pub fn new(
+    #[allow(unused_mut)]
+    fn new(
         context: &Argon2<'_>,
-        argon2_type: Algorithm,
-        segment_length: u32,
-        initial_hash: &digest::Output<Blake2b>,
+        alg: Algorithm,
+        mut initial_hash: digest::Output<Blake2b>,
         memory: &'a mut [Block],
     ) -> Result<Self> {
         let mut instance = Instance {
             version: context.version,
             memory,
             passes: context.t_cost,
-            segment_length,
-            lane_length: segment_length * SYNC_POINTS,
+            segment_length: context.segment_length,
+            lane_length: context.segment_length * SYNC_POINTS,
             lanes: context.lanes,
             threads: context.threads,
-            argon2_type,
+            alg,
         };
 
         if instance.threads > instance.lanes {
@@ -89,12 +107,15 @@ impl<'a> Instance<'a> {
         // Creating first blocks, we always have at least two blocks in a slice
         instance.fill_first_blocks(&initial_hash)?;
 
+        #[cfg(feature = "zeroize")]
+        initial_hash.zeroize();
+
         Ok(instance)
     }
 
     /// Function that fills the entire memory t_cost times based on the first two
     /// blocks in each lane
-    pub fn fill_memory_blocks(&mut self) {
+    fn fill_memory_blocks(&mut self) {
         // TODO(tarcieri): multithread support
         // Single-threaded version for p=1 case
         for r in 0..self.passes {
@@ -114,7 +135,7 @@ impl<'a> Instance<'a> {
     }
 
     /// XORing the last block of each lane, hashing it, making the tag.
-    pub fn finalize(&mut self, out: &mut [u8]) -> Result<()> {
+    fn finalize(&mut self, out: &mut [u8]) -> Result<()> {
         let mut blockhash = self.memory[(self.lane_length - 1) as usize];
 
         // XOR the last blocks
@@ -150,7 +171,7 @@ impl<'a> Instance<'a> {
             // G(H0||1||i)
             for i in 0u32..2u32 {
                 blake2b_long(&[blockhash, &i.to_le_bytes(), &l.to_le_bytes()], &mut hash)?;
-                self.memory[(l * self.lane_length + i) as usize].from_bytes(&hash);
+                self.memory[(l * self.lane_length + i) as usize].load(&hash);
             }
         }
 
@@ -164,8 +185,8 @@ impl<'a> Instance<'a> {
         let mut input_block = Block::default();
         let zero_block = Block::default();
 
-        let data_independent_addressing = (self.argon2_type == Algorithm::Argon2i)
-            || (self.argon2_type == Algorithm::Argon2id
+        let data_independent_addressing = (self.alg == Algorithm::Argon2i)
+            || (self.alg == Algorithm::Argon2id
                 && (position.pass == 0)
                 && (position.slice < SYNC_POINTS / 2));
 
@@ -175,7 +196,7 @@ impl<'a> Instance<'a> {
             input_block[2] = position.slice as u64;
             input_block[3] = self.memory.len() as u64;
             input_block[4] = self.passes as u64;
-            input_block[5] = self.argon2_type as u64;
+            input_block[5] = self.alg as u64;
         }
 
         let mut starting_index = 0;

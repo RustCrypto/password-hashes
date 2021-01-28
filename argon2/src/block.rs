@@ -64,8 +64,8 @@ impl Zeroize for Block {
 }
 
 impl Block {
-    /// Load a block from bytes
-    pub fn from_bytes(&mut self, input: &[u8]) {
+    /// Load a block from a block-sized byte slice
+    pub fn load(&mut self, input: &[u8]) {
         debug_assert_eq!(input.len(), BLOCK_SIZE);
 
         for (i, chunk) in input.chunks(8).enumerate() {
