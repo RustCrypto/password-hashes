@@ -29,7 +29,6 @@
 )]
 #![forbid(unsafe_code)]
 #![warn(rust_2018_idioms, missing_docs)]
-#![allow(clippy::too_many_arguments, clippy::absurd_extreme_comparisons)]
 
 #[macro_use]
 extern crate alloc;
@@ -244,12 +243,8 @@ impl<'key> Argon2<'key> {
         }
 
         // Validate time cost
-        if MIN_TIME > t_cost {
+        if t_cost < MIN_TIME {
             return Err(Error::TimeTooSmall);
-        }
-
-        if MAX_TIME < t_cost {
-            return Err(Error::TimeTooLarge);
         }
 
         // Validate lanes

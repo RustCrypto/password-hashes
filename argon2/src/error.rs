@@ -46,9 +46,6 @@ pub enum Error {
 
     /// Time cost is too small
     TimeTooSmall,
-
-    /// Time cost is too large
-    TimeTooLarge,
 }
 
 impl fmt::Display for Error {
@@ -68,7 +65,6 @@ impl fmt::Display for Error {
             Error::ThreadsTooFew => "not enough threads",
             Error::ThreadsTooMany => "too many threads",
             Error::TimeTooSmall => "time cost is too small",
-            Error::TimeTooLarge => "time cost is too large",
         })
     }
 }
