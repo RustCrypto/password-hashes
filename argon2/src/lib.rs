@@ -173,20 +173,16 @@ pub struct Argon2<'key> {
     /// Maximum number of threads
     threads: u32,
 
+    /// Segment length
+    segment_length: u32,
+
     /// Version number
     version: Version,
 }
 
 impl Default for Argon2<'_> {
     fn default() -> Self {
-        Self {
-            secret: None,
-            t_cost: 3,
-            m_cost: 4096,
-            lanes: 1,
-            threads: 1,
-            version: Version::default(),
-        }
+        Self::new(None, 3, 4096, 1, Version::default()).expect("invalid default Argon2 params")
     }
 }
 
@@ -199,12 +195,71 @@ impl<'key> Argon2<'key> {
         parallelism: u32,
         version: Version,
     ) -> Result<Self> {
+        let lanes = parallelism;
+
+        if let Some(secret) = &secret {
+            if MAX_SECRET < secret.len() {
+                return Err(Error::SecretTooLong);
+            }
+        }
+
+        // Validate memory cost
+        if MIN_MEMORY > m_cost {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if MAX_MEMORY < m_cost {
+            return Err(Error::MemoryTooMuch);
+        }
+
+        if m_cost < 8 * lanes {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        // Validate time cost
+        if MIN_TIME > t_cost {
+            return Err(Error::TimeTooSmall);
+        }
+
+        if MAX_TIME < t_cost {
+            return Err(Error::TimeTooLarge);
+        }
+
+        // Validate lanes
+        if MIN_LANES > lanes {
+            return Err(Error::LanesTooFew);
+        }
+
+        if MAX_LANES < parallelism {
+            return Err(Error::LanesTooMany);
+        }
+
+        // Validate threads
+        if MIN_THREADS > lanes {
+            return Err(Error::ThreadsTooFew);
+        }
+
+        if MAX_THREADS < parallelism {
+            return Err(Error::ThreadsTooMany);
+        }
+
+        // Align memory size
+        // Minimum memory_blocks = 8L blocks, where L is the number of lanes
+        let memory_blocks = if m_cost < 2 * SYNC_POINTS * lanes {
+            2 * SYNC_POINTS * lanes
+        } else {
+            m_cost
+        };
+
+        let segment_length = memory_blocks / (lanes * SYNC_POINTS);
+
         Ok(Self {
             secret,
             t_cost,
             m_cost,
-            lanes: parallelism,
+            lanes,
             threads: parallelism,
+            segment_length,
             version,
         })
     }
@@ -218,34 +273,6 @@ impl<'key> Argon2<'key> {
         ad: &[u8],
         out: &mut [u8],
     ) -> Result<()> {
-        // Validate all inputs
-        self.validate_inputs(pwd, salt, ad, out)?;
-
-        // Hashing all inputs
-        #[allow(unused_mut)]
-        let mut initial_hash = self.initial_hash(argon2_type, pwd, salt, ad, out);
-        let mut memory = vec![Block::default(); self.memory_blocks()];
-        let mut instance = Instance::new(self, argon2_type, &initial_hash, &mut memory)?;
-
-        #[cfg(feature = "zeroize")]
-        initial_hash.zeroize();
-
-        // Filling memory
-        instance.fill_memory_blocks();
-
-        // Finalization
-        instance.finalize(out)
-    }
-
-    /// Function that validates all inputs against predefined restrictions
-    // TODO(tarcieri): merge this into `hash_password` and simplify/refactor
-    fn validate_inputs(&self, pwd: &[u8], salt: &[u8], ad: &[u8], out: &[u8]) -> Result<()> {
-        if let Some(secret) = &self.secret {
-            if MAX_SECRET < secret.len() {
-                return Err(Error::SecretTooLong);
-            }
-        }
-
         // Validate output length
         if MIN_OUTLEN > out.len() {
             return Err(Error::OutputTooShort);
@@ -273,47 +300,28 @@ impl<'key> Argon2<'key> {
             return Err(Error::AdTooLong);
         }
 
-        // Validate memory cost
-        if MIN_MEMORY > self.m_cost {
-            return Err(Error::MemoryTooLittle);
-        }
+        let memory_blocks = (self.segment_length * self.lanes * SYNC_POINTS) as usize;
 
-        if MAX_MEMORY < self.m_cost {
-            return Err(Error::MemoryTooMuch);
-        }
+        // Hashing all inputs
+        #[allow(unused_mut)]
+        let mut initial_hash = self.initial_hash(argon2_type, pwd, salt, ad, out);
+        let mut memory = vec![Block::default(); memory_blocks];
+        let mut instance = Instance::new(
+            self,
+            argon2_type,
+            self.segment_length,
+            &initial_hash,
+            &mut memory,
+        )?;
 
-        if self.m_cost < 8 * self.lanes {
-            return Err(Error::MemoryTooLittle);
-        }
+        #[cfg(feature = "zeroize")]
+        initial_hash.zeroize();
 
-        // Validate time cost
-        if MIN_TIME > self.t_cost {
-            return Err(Error::TimeTooSmall);
-        }
+        // Filling memory
+        instance.fill_memory_blocks();
 
-        if MAX_TIME < self.t_cost {
-            return Err(Error::TimeTooLarge);
-        }
-
-        // Validate lanes
-        if MIN_LANES > self.lanes {
-            return Err(Error::LanesTooFew);
-        }
-
-        if MAX_LANES < self.lanes {
-            return Err(Error::LanesTooMany);
-        }
-
-        // Validate threads
-        if MIN_THREADS > self.threads {
-            return Err(Error::ThreadsTooFew);
-        }
-
-        if MAX_THREADS < self.threads {
-            return Err(Error::ThreadsTooMany);
-        }
-
-        Ok(())
+        // Finalization
+        instance.finalize(out)
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
@@ -348,26 +356,5 @@ impl<'key> Argon2<'key> {
         digest.update(ad);
 
         digest.finalize()
-    }
-
-    /// Compute segment length
-    // TODO(tarcieri): precompute and cache this
-    fn segment_length(&self) -> u32 {
-        // Align memory size
-        // Minimum memory_blocks = 8L blocks, where L is the number of lanes
-        let mut memory_blocks = self.m_cost;
-
-        if memory_blocks < 2 * SYNC_POINTS * self.lanes {
-            memory_blocks = 2 * SYNC_POINTS * self.lanes;
-        }
-
-        memory_blocks / (self.lanes * SYNC_POINTS)
-    }
-
-    /// Compute the number of memory blocks needed
-    // TODO(tarcieri): precompute and cache this
-    fn memory_blocks(&self) -> usize {
-        // Ensure that all segments have equal length
-        (self.segment_length() * self.lanes * SYNC_POINTS) as usize
     }
 }

@@ -42,9 +42,6 @@ pub(crate) struct Instance<'a> {
     /// Number of passes
     passes: u32,
 
-    /// Number of blocks in memory
-    memory_blocks: usize,
-
     /// Segment length
     segment_length: u32,
 
@@ -68,16 +65,14 @@ impl<'a> Instance<'a> {
     pub fn new(
         context: &Argon2<'_>,
         argon2_type: Algorithm,
+        segment_length: u32,
         initial_hash: &digest::Output<Blake2b>,
         memory: &'a mut [Block],
     ) -> Result<Self> {
-        let segment_length = context.segment_length();
-
         let mut instance = Instance {
             version: context.version,
             memory,
             passes: context.t_cost,
-            memory_blocks: context.memory_blocks(),
             segment_length,
             lane_length: segment_length * SYNC_POINTS,
             lanes: context.lanes,
@@ -178,7 +173,7 @@ impl<'a> Instance<'a> {
             input_block[0] = position.pass as u64;
             input_block[1] = position.lane as u64;
             input_block[2] = position.slice as u64;
-            input_block[3] = self.memory_blocks as u64;
+            input_block[3] = self.memory.len() as u64;
             input_block[4] = self.passes as u64;
             input_block[5] = self.argon2_type as u64;
         }
