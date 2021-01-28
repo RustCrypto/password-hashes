@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "argon2",
     "bcrypt-pbkdf",
     "pbkdf2",
     "scrypt",
