@@ -7,7 +7,7 @@
 use hex_literal::hex;
 use pbkdf2::{
     password_hash::{McfHasher, PasswordHasher, Salt},
-    AlgorithmId, Params, Pbkdf2,
+    Algorithm, Params, Pbkdf2,
 };
 use std::convert::TryFrom;
 
@@ -33,7 +33,7 @@ fn hash_with_default_algorithm() {
         .hash_password(PASSWORD.as_bytes(), None, params.into(), salt)
         .unwrap();
 
-    assert_eq!(hash.algorithm, AlgorithmId::Sha256.ident());
+    assert_eq!(hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
     assert_eq!(hash.salt.unwrap().as_str(), SALT_B64);
     assert_eq!(Params::try_from(&hash.params).unwrap(), params);
 
@@ -47,7 +47,7 @@ fn upgrade_mcf_hash() {
     let mcf_hash = pbkdf2::pbkdf2_simple(PASSWORD, rounds).unwrap();
     let phc_hash = Pbkdf2.upgrade_mcf_hash(&mcf_hash).unwrap();
 
-    assert_eq!(phc_hash.algorithm, AlgorithmId::Sha256.ident());
+    assert_eq!(phc_hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
 
     let params = Params::try_from(&phc_hash.params).unwrap();
     assert_eq!(params.rounds, rounds);
