@@ -2,11 +2,15 @@
 
 use core::fmt;
 
-/// Error type
+/// Error type.
+// TODO(tarcieri): finer-grained context-specific errors?
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
     /// Associated data is too long
     AdTooLong,
+
+    /// Algorithm identifier invalid
+    AlgorithmInvalid,
 
     /// Too few lanes
     LanesTooFew,
@@ -46,12 +50,16 @@ pub enum Error {
 
     /// Time cost is too small
     TimeTooSmall,
+
+    /// Invalid version
+    VersionInvalid,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Error::AdTooLong => "associated data is too long",
+            Error::AlgorithmInvalid => "algorithm identifier invalid",
             Error::LanesTooFew => "too few lanes",
             Error::LanesTooMany => "too many lanes",
             Error::MemoryTooLittle => "memory cost is too small",
@@ -65,9 +73,7 @@ impl fmt::Display for Error {
             Error::ThreadsTooFew => "not enough threads",
             Error::ThreadsTooMany => "too many threads",
             Error::TimeTooSmall => "time cost is too small",
+            Error::VersionInvalid => "invalid version",
         })
     }
 }
-
-/// Result type
-pub type Result<T> = core::result::Result<T, Error>;

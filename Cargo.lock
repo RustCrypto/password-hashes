@@ -6,6 +6,7 @@ version = "0.0.0"
 dependencies = [
  "blake2",
  "hex-literal",
+ "password-hash",
  "zeroize",
 ]
 
@@ -269,7 +270,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "password-hash"
 version = "0.0.0"
-source = "git+https://github.com/rustcrypto/traits#0da78eabf8edeca29ca6ee433274b05ec9356ad6"
+source = "git+https://github.com/rustcrypto/traits#2927b40ef3ac3b6985466f491760159dde2a1550"
 dependencies = [
  "base64ct",
 ]
