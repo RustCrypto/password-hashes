@@ -36,6 +36,7 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --target ${{ matrix.target }} --release
+      - run: cargo build --target ${{ matrix.target }} --release --features zeroize
 
   test:
     runs-on: ubuntu-latest
@@ -52,3 +53,4 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release
+      - run: cargo test --release --all-features
