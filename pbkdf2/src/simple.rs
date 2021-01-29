@@ -242,7 +242,7 @@ impl McfHasher for Pbkdf2 {
             }
             _ => {
                 // TODO(tarcieri): better errors here?
-                return Err(HasherError::Parse(ParseError::InvalidChar('?')));
+                return Err(ParseError::InvalidChar('?').into());
             }
         };
 

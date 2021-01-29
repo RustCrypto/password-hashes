@@ -1,8 +1,10 @@
-#[cfg(feature = "simple")]
-use scrypt::errors::CheckError;
 use scrypt::{scrypt, ScryptParams};
+
 #[cfg(feature = "simple")]
-use scrypt::{scrypt_check, scrypt_simple};
+use {
+    password_hash::{McfHasher, PasswordHash, PasswordVerifier},
+    scrypt::{Scrypt, ALG_ID},
+};
 
 struct Test {
     password: &'static str,
@@ -79,43 +81,49 @@ fn test_scrypt() {
     }
 }
 
+/// Test vector from passlib:
+/// <https://passlib.readthedocs.io/en/stable/lib/passlib.hash.scrypt.html>
 #[cfg(feature = "simple")]
-fn test_scrypt_simple(log_n: u8, r: u32, p: u32) {
+const EXAMPLE_PASSWORD_HASH: &str =
+    "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
+
+#[cfg(feature = "simple")]
+#[test]
+fn simple_verify_password() {
     let password = "password";
+    let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
+    assert_eq!(Scrypt.verify_password(password.as_bytes(), &hash), Ok(()));
+}
 
-    let params = ScryptParams::new(log_n, r, p).unwrap();
-    let out1 = scrypt_simple(password, &params).unwrap();
-    let out2 = scrypt_simple(password, &params).unwrap();
+#[cfg(feature = "simple")]
+#[test]
+fn simple_reject_incorrect_password() {
+    let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
+    assert!(Scrypt.verify_password(b"invalid", &hash).is_err());
+}
 
-    // This just makes sure that a salt is being applied. It doesn't verify that
-    // that salt is cryptographically strong, however.
-    assert!(out1 != out2);
+#[cfg(feature = "simple")]
+fn upgrade_mcf_hash(mcf_hash: &str) {
+    let password = "password";
+    let phc_hash = Scrypt.upgrade_mcf_hash(&mcf_hash).unwrap();
 
-    assert_eq!(scrypt_check(password, &out1[..]), Ok(()));
-    assert_eq!(scrypt_check(password, &out2[..]), Ok(()));
-
+    assert_eq!(phc_hash.algorithm, ALG_ID);
     assert_eq!(
-        scrypt_check("wrong", &out1[..]),
-        Err(CheckError::HashMismatch)
-    );
-    assert_eq!(
-        scrypt_check("wrong", &out2[..]),
-        Err(CheckError::HashMismatch)
+        Scrypt.verify_mcf_hash(password.as_bytes(), &mcf_hash),
+        Ok(())
     );
 }
 
 #[cfg(feature = "simple")]
 #[test]
-fn test_scrypt_simple_compact() {
-    // These parameters are intentionally very weak - the goal is to make
-    // the test run quickly!
-    test_scrypt_simple(7, 8, 1);
+fn upgrade_mcf_hash_compact() {
+    upgrade_mcf_hash(
+        "$rscrypt$0$BwgB$flwNu8vqUpUSgFzZSajHLw==$RxR+nD/NG8J5ISXHlLlt+K9ObCFtt7JlFuToDKf1dwY=$",
+    );
 }
 
 #[cfg(feature = "simple")]
 #[test]
-fn test_scrypt_simple_expanded() {
-    // These parameters are intentionally very weak - the goal is to make
-    // the test run quickly!
-    test_scrypt_simple(3, 1, 256);
+fn upgrade_mcf_hash_expanded() {
+    upgrade_mcf_hash("$rscrypt$1$AwEAAAAAAQAA$e+yvke4tpXh81X6xjumIDg==$P05p56eFrxfrnULgondqX0s/Kj6Ht+vCI03AO9kvMHU=$");
 }
