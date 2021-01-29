@@ -55,10 +55,7 @@ use core::{
 #[cfg(feature = "password-hash")]
 use {
     core::convert::TryInto,
-    password_hash::{
-        errors::{HasherError, ParamsError},
-        Decimal, Ident, ParamsString, Salt,
-    },
+    password_hash::{Decimal, HasherError, Ident, ParamsError, ParamsString, Salt},
 };
 
 /// Minimum and maximum number of lanes (degree of parallelism)
@@ -538,10 +535,9 @@ impl PasswordHasher for Argon2<'_> {
             hasher
                 .hash_password_into(algorithm, password, salt_bytes, ad, out)
                 .map_err(|e| {
-                    use password_hash::errors::OutputError;
                     match e {
-                        Error::OutputTooShort => OutputError::TooShort,
-                        Error::OutputTooLong => OutputError::TooLong,
+                        Error::OutputTooShort => password_hash::OutputError::TooShort,
+                        Error::OutputTooLong => password_hash::OutputError::TooLong,
                         // Other cases are not returned from `hash_password_into`
                         // TODO(tarcieri): finer-grained error types?
                         _ => unreachable!(),

@@ -8,8 +8,8 @@ use core::{
 };
 use hmac::Hmac;
 use password_hash::{
-    errors::ParamsError, Decimal, HasherError, Ident, McfHasher, Output, ParamsString,
-    PasswordHash, PasswordHasher, Salt,
+    Decimal, HasherError, Ident, McfHasher, Output, ParamsError, ParamsString, PasswordHash,
+    PasswordHasher, Salt,
 };
 use sha2::{Sha256, Sha512};
 
@@ -75,7 +75,7 @@ impl PasswordHasher for Pbkdf2 {
 
 impl McfHasher for Pbkdf2 {
     fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>, HasherError> {
-        use password_hash::errors::ParseError;
+        use password_hash::ParseError;
 
         // TODO(tarcieri): better error here?
         let (rounds, salt, hash) = simple::parse_hash(hash)
