@@ -28,6 +28,7 @@ mod hasher;
 mod simple;
 
 #[cfg(feature = "include_simple")]
+#[allow(deprecated)]
 pub use crate::{
     errors::CheckError,
     hasher::{Algorithm, Params, Pbkdf2},

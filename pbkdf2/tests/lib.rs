@@ -1,3 +1,7 @@
+//! PBKDF2 tests
+
+#![allow(deprecated)]
+
 use pbkdf2;
 
 use hmac::Hmac;

@@ -38,6 +38,10 @@ type DefaultRng = rand::ThreadRng;
 /// * `password` - The password to process
 /// * `c` - The iteration count
 #[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[deprecated(
+    since = "0.7.0",
+    note = "use Pbkdf2 struct and PasswordHasher/McfHasher traits instead"
+)]
 pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::Error> {
     // 128-bit salt
     let mut salt = [0u8; 16];
@@ -71,6 +75,10 @@ pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::E
 /// * `hashed_value` - A string representing a hashed password returned by
 /// `pbkdf2_simple`
 #[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[deprecated(
+    since = "0.7.0",
+    note = "use Pbkdf2 struct and PasswordHasher/McfHasher traits instead"
+)]
 pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let (count, salt, hash) = parse_hash(hashed_value)?;
     let salt = base64::decode(salt)?;

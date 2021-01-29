@@ -42,6 +42,7 @@ fn hash_with_default_algorithm() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upgrade_mcf_hash() {
     let rounds = 1024;
     let mcf_hash = pbkdf2::pbkdf2_simple(PASSWORD, rounds).unwrap();
