@@ -57,6 +57,7 @@ pub use crate::{
 };
 
 use alloc::{string::String, vec::Vec};
+use core::convert::TryInto;
 use sha2::{Digest, Sha512};
 
 #[cfg(feature = "simple")]
@@ -73,83 +74,6 @@ use {
 static SHA512_SALT_PREFIX: &str = "$6$";
 #[cfg(feature = "simple")]
 static SHA512_ROUNDS_PREFIX: &str = "rounds=";
-
-#[cfg(feature = "simple")]
-#[derive(Debug)]
-struct ShaCryptDistribution;
-
-#[cfg(feature = "simple")]
-impl Distribution<char> for ShaCryptDistribution {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
-        const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
-        loop {
-            let var = rng.next_u32() >> (32 - 6);
-            if var < RANGE {
-                return TAB[var as usize] as char;
-            }
-        }
-    }
-}
-
-fn produce_byte_seq(len: usize, fill_from: &[u8], bs: usize) -> Vec<u8> {
-    let mut seq: Vec<u8> = vec![0; len];
-    let mut offset: usize = 0;
-    for _ in 0..(len / bs) {
-        let from_slice = &fill_from[..offset + bs];
-        seq[offset..offset + bs].clone_from_slice(from_slice);
-        offset += bs;
-    }
-    let from_slice = &fill_from[..offset + (len % bs)];
-    seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
-    seq
-}
-
-fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> Vec<u8> {
-    let pw_len = password.len();
-
-    let mut hasher = Sha512::default();
-    hasher.update(password);
-    hasher.update(salt);
-
-    // 4.
-    let mut hasher_alt = Sha512::default();
-    // 5.
-    hasher_alt.update(password);
-    // 6.
-    hasher_alt.update(salt);
-    // 7.
-    hasher_alt.update(password);
-    // 8.
-    let digest_b = hasher_alt.finalize();
-
-    // 9.
-    for _ in 0..(pw_len / BLOCK_SIZE) {
-        hasher.update(&digest_b);
-    }
-    // 10.
-    hasher.update(&digest_b[..(pw_len % BLOCK_SIZE)]);
-
-    // 11
-    let mut n = pw_len;
-    for _ in 0..pw_len {
-        if n == 0 {
-            break;
-        }
-        if (n & 1) != 0 {
-            hasher.update(&digest_b);
-        } else {
-            hasher.update(password);
-        }
-        n >>= 1;
-    }
-
-    // 12.
-    let intermediate = hasher.finalize();
-
-    let mut r: Vec<u8> = vec![];
-    r.extend_from_slice(intermediate.as_slice());
-    r
-}
 
 /// The SHA512 crypt function returned as byte vector
 ///
@@ -169,7 +93,7 @@ pub fn sha512_crypt(
     password: &[u8],
     salt: &[u8],
     params: &Sha512Params,
-) -> Result<Vec<u8>, CryptError> {
+) -> Result<[u8; BLOCK_SIZE], CryptError> {
     let pw_len = password.len();
 
     let salt_len = salt.len();
@@ -251,7 +175,7 @@ pub fn sha512_crypt(
         digest_c.clone_from_slice(&hasher.finalize());
     }
 
-    Ok(digest_c.as_slice().to_vec())
+    Ok(digest_c)
 }
 
 /// Same as sha512_crypt except base64 representation will be returned.
@@ -271,7 +195,7 @@ pub fn sha512_crypt_b64(
     params: &Sha512Params,
 ) -> Result<String, CryptError> {
     let output = sha512_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode(output.as_slice()))?;
+    let r = String::from_utf8(b64::encode(&output))?;
     Ok(r)
 }
 
@@ -306,7 +230,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode(out.as_slice()))?;
+    let s = String::from_utf8(b64::encode(&out))?;
     result.push_str(&s);
     Ok(result)
 }
@@ -389,4 +313,77 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
     } else {
         Err(CheckError::HashMismatch)
     }
+}
+
+#[cfg(feature = "simple")]
+#[derive(Debug)]
+struct ShaCryptDistribution;
+
+#[cfg(feature = "simple")]
+impl Distribution<char> for ShaCryptDistribution {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
+        const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
+        loop {
+            let var = rng.next_u32() >> (32 - 6);
+            if var < RANGE {
+                return TAB[var as usize] as char;
+            }
+        }
+    }
+}
+
+fn produce_byte_seq(len: usize, fill_from: &[u8], bs: usize) -> Vec<u8> {
+    let mut seq: Vec<u8> = vec![0; len];
+    let mut offset: usize = 0;
+    for _ in 0..(len / bs) {
+        let from_slice = &fill_from[..offset + bs];
+        seq[offset..offset + bs].clone_from_slice(from_slice);
+        offset += bs;
+    }
+    let from_slice = &fill_from[..offset + (len % bs)];
+    seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
+    seq
+}
+
+fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE] {
+    let pw_len = password.len();
+
+    let mut hasher = Sha512::default();
+    hasher.update(password);
+    hasher.update(salt);
+
+    // 4.
+    let mut hasher_alt = Sha512::default();
+    // 5.
+    hasher_alt.update(password);
+    // 6.
+    hasher_alt.update(salt);
+    // 7.
+    hasher_alt.update(password);
+    // 8.
+    let digest_b = hasher_alt.finalize();
+
+    // 9.
+    for _ in 0..(pw_len / BLOCK_SIZE) {
+        hasher.update(&digest_b);
+    }
+    // 10.
+    hasher.update(&digest_b[..(pw_len % BLOCK_SIZE)]);
+
+    // 11
+    let mut n = pw_len;
+    for _ in 0..pw_len {
+        if n == 0 {
+            break;
+        }
+        if (n & 1) != 0 {
+            hasher.update(&digest_b);
+        } else {
+            hasher.update(password);
+        }
+        n >>= 1;
+    }
+
+    // 12.
+    hasher.finalize().as_slice().try_into().unwrap()
 }
