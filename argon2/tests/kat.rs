@@ -1,4 +1,4 @@
-//! Argon2 test vectors.
+//! Argon2 Known Answer Tests (KAT).
 //!
 //! Taken from the Argon2 reference implementation as well as
 //! `draft-irtf-cfrg-argon2-12` Section 5:
