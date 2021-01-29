@@ -27,7 +27,7 @@ impl fmt::Display for InvalidParams {
 impl std::error::Error for InvalidParams {}
 
 /// `scrypt_check` error
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CheckError {
     /// Password hash mismatch, e.g. due to the incorrect password.
@@ -36,7 +36,7 @@ pub enum CheckError {
     InvalidFormat,
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match *self {
@@ -46,12 +46,12 @@ impl fmt::Display for CheckError {
     }
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 impl From<base64::DecodeError> for CheckError {
     fn from(_e: ::base64::DecodeError) -> Self {
         CheckError::InvalidFormat
     }
 }
 
-#[cfg(all(feature = "include_simple", feature = "std"))]
+#[cfg(all(feature = "simple", feature = "std"))]
 impl std::error::Error for CheckError {}

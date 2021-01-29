@@ -1,6 +1,6 @@
 use sha_crypt::{sha512_crypt_b64, Sha512Params, ROUNDS_MAX, ROUNDS_MIN};
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use sha_crypt::{sha512_check, sha512_simple};
 
 struct TestCrypt {
@@ -55,7 +55,7 @@ fn test_sha512_crypt_invalid_rounds() {
     assert!(params.is_err());
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_sha512_check() {
     let pw = "foobar";
@@ -63,7 +63,7 @@ fn test_sha512_check() {
     assert!(sha512_check(pw, s).is_ok());
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_sha512_check_with_rounds() {
     let pw = "foobar";
@@ -71,7 +71,7 @@ fn test_sha512_check_with_rounds() {
     assert!(sha512_check(pw, s).is_ok());
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_sha512_simple_check_roundtrip() {
     let pw = "this is my password";
@@ -85,7 +85,7 @@ fn test_sha512_simple_check_roundtrip() {
     assert!(c_r.is_ok());
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_sha512_check_invalid_format() {
     // unexpected prefix 'SHOULDNOTBEHERE'

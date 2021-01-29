@@ -1,7 +1,7 @@
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use scrypt::errors::CheckError;
 use scrypt::{scrypt, ScryptParams};
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use scrypt::{scrypt_check, scrypt_simple};
 
 struct Test {
@@ -79,7 +79,7 @@ fn test_scrypt() {
     }
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 fn test_scrypt_simple(log_n: u8, r: u32, p: u32) {
     let password = "password";
 
@@ -104,7 +104,7 @@ fn test_scrypt_simple(log_n: u8, r: u32, p: u32) {
     );
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_scrypt_simple_compact() {
     // These parameters are intentionally very weak - the goal is to make
@@ -112,7 +112,7 @@ fn test_scrypt_simple_compact() {
     test_scrypt_simple(7, 8, 1);
 }
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[test]
 fn test_scrypt_simple_expanded() {
     // These parameters are intentionally very weak - the goal is to make
