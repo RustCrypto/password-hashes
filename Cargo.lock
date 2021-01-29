@@ -7,6 +7,7 @@ dependencies = [
  "blake2",
  "hex-literal",
  "password-hash",
+ "rand_core",
  "zeroize",
 ]
 
@@ -274,6 +275,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad35539a493c5a6c5b02fa3ac28ca380af704ec297a3c078d8beaa40d5849be4"
 dependencies = [
  "base64ct",
+ "rand_core",
 ]
 
 [[package]]
