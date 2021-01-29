@@ -21,18 +21,11 @@ extern crate alloc;
 #[cfg(feature = "password-hash")]
 pub use password_hash;
 
-mod errors;
-#[cfg(feature = "include_simple")]
-mod hasher;
 #[cfg(feature = "include_simple")]
 mod simple;
 
 #[cfg(feature = "include_simple")]
-pub use crate::{
-    errors::CheckError,
-    hasher::{Algorithm, Params, Pbkdf2},
-    simple::{pbkdf2_check, pbkdf2_simple},
-};
+pub use crate::simple::{Algorithm, Params, Pbkdf2};
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;

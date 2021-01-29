@@ -43,14 +43,13 @@ fn hash_with_default_algorithm() {
 
 #[test]
 fn upgrade_mcf_hash() {
-    let rounds = 1024;
-    let mcf_hash = pbkdf2::pbkdf2_simple(PASSWORD, rounds).unwrap();
+    let mcf_hash = "$rpbkdf2$0$AAAEAA==$w7Y1w07wETYY7CXw5W07TA==$wRwXwI/764oNt1HvTeQcIrqr9rfzfq/KySgcCROy1HU=$";
     let phc_hash = Pbkdf2.upgrade_mcf_hash(&mcf_hash).unwrap();
 
     assert_eq!(phc_hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
 
     let params = Params::try_from(&phc_hash.params).unwrap();
-    assert_eq!(params.rounds, rounds);
+    assert_eq!(params.rounds, 1024);
     assert_eq!(params.output_length, 32);
     assert_eq!(
         Pbkdf2.verify_mcf_hash(PASSWORD.as_bytes(), &mcf_hash),

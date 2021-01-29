@@ -15,7 +15,7 @@ readme = "README.md"
 crypto-mac = "0.10"
 
 rayon = { version = "1", optional = true }
-base64 = { version = "0.13", default-features = false, features = ["alloc"], optional = true }
+base64ct = { version = "0.1", default-features = false, features = ["alloc"], optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"], optional = true }
 hmac = { version = "0.10", default-features = false, optional = true }
@@ -33,7 +33,7 @@ sha2 = "0.9"
 [features]
 default = ["include_simple", "thread_rng"]
 parallel = ["rayon", "std"]
-include_simple = ["sha2", "hmac", "password-hash", "rand_core", "base64", "subtle"]
+include_simple = ["sha2", "hmac", "password-hash", "rand_core", "base64ct", "subtle"]
 thread_rng = ["rand"]
 std = []
 

@@ -1,119 +1,272 @@
-//! Simple password hashing support (legacy)
+//! Implementation of the `password-hash` crate API.
 
-use alloc::{string::String, vec};
-use core::convert::TryInto;
-
-use crate::errors::CheckError;
+use crate::pbkdf2;
+use core::{
+    convert::{TryFrom, TryInto},
+    fmt::{self, Display},
+    str::FromStr,
+};
 use hmac::Hmac;
-use rand_core::RngCore;
-use sha2::Sha256;
-use subtle::ConstantTimeEq;
+use password_hash::{
+    Decimal, HasherError, Ident, McfHasher, Output, ParamsError, ParamsString, PasswordHash,
+    PasswordHasher, Salt,
+};
+use sha2::{Sha256, Sha512};
 
-use super::pbkdf2;
+#[cfg(feature = "sha1")]
+use sha1::Sha1;
 
-#[cfg(not(features = "thread_rng"))]
-type DefaultRng = rand_core::OsRng;
-#[cfg(features = "thread_rng")]
-type DefaultRng = rand::ThreadRng;
+/// PBKDF2 (SHA-1)
+#[cfg(feature = "sha1")]
+pub const PBKDF2_SHA1: Ident = Ident::new("pbkdf2");
 
-/// A helper function that should be sufficient for the majority of cases where
-/// an application needs to use PBKDF2 to hash a password for storage.
-///
-/// Internally it uses PBKDF2-HMAC-SHA256 algorithm. The result is a `String`
-/// that contains the parameters used as part of its encoding. The `pbkdf2_check`
-/// function may be used on a password to check if it is equal to a hashed value.
-///
-/// # Format
-///
-/// The format of the output is a modified version of the Modular Crypt Format
-/// that encodes algorithm used and iteration count. The format is indicated as
-/// "rpbkdf2" which is short for "Rust PBKF2 format."
-///
-/// ```text
-/// $rpbkdf2$0$<base64(c)>$<base64(salt)>$<based64(hash)>$
-/// ```
-///
-/// # Arguments
-///
-/// * `password` - The password to process
-/// * `c` - The iteration count
+/// PBKDF2 (SHA-256)
+pub const PBKDF2_SHA256: Ident = Ident::new("pbkdf2-sha256");
+
+/// PBKDF2 (SHA-512)
+pub const PBKDF2_SHA512: Ident = Ident::new("pbkdf2-sha512");
+
+/// PBKDF2 type for use with [`PasswordHasher`].
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
-pub fn pbkdf2_simple(password: &str, rounds: u32) -> Result<String, rand_core::Error> {
-    // 128-bit salt
-    let mut salt = [0u8; 16];
-    DefaultRng::default().try_fill_bytes(&mut salt)?;
+pub struct Pbkdf2;
 
-    // 256-bit derived key
-    let mut dk = [0u8; 32];
+impl PasswordHasher for Pbkdf2 {
+    type Params = Params;
 
-    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, rounds, &mut dk);
+    fn hash_password<'a>(
+        &self,
+        password: &[u8],
+        alg_id: Option<Ident<'a>>,
+        version: Option<Decimal>,
+        params: Params,
+        salt: Salt<'a>,
+    ) -> Result<PasswordHash<'a>, HasherError> {
+        let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256))?;
 
-    let mut result = String::with_capacity(90);
-    result.push_str("$rpbkdf2$0$");
-    result.push_str(&base64::encode(&rounds.to_be_bytes()));
-    result.push('$');
-    result.push_str(&base64::encode(&salt));
-    result.push('$');
-    result.push_str(&base64::encode(&dk));
-    result.push('$');
-
-    Ok(result)
-}
-
-/// Compares a password against the result of a `pbkdf2_simple`.
-///
-/// It will return `Ok(())` if `password` hashes to the same value, if hashes
-/// are different it will return `Err(CheckError::HashMismatch)`, and
-/// `Err(CheckError::InvalidFormat)` if `hashed_value` has an invalid format.
-///
-/// # Arguments
-/// * `password` - The password to process
-/// * `hashed_value` - A string representing a hashed password returned by
-/// `pbkdf2_simple`
-#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
-pub fn pbkdf2_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
-    let (count, salt, hash) = parse_hash(hashed_value)?;
-    let salt = base64::decode(salt)?;
-    let hash = base64::decode(hash)?;
-
-    let mut output = vec![0u8; hash.len()];
-    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, count, &mut output);
-
-    if output.ct_eq(&hash).unwrap_u8() == 1 {
-        Ok(())
-    } else {
-        Err(CheckError::HashMismatch)
-    }
-}
-
-/// Parse `rpbkdf2` hash to `(count, salt, hash)` tuple.
-pub(crate) fn parse_hash(hashed_value: &str) -> Result<(u32, &str, &str), CheckError> {
-    let mut parts = hashed_value.split('$');
-    // prevent dynamic allocations by using a fixed-size buffer
-    let buf = [
-        parts.next(),
-        parts.next(),
-        parts.next(),
-        parts.next(),
-        parts.next(),
-        parts.next(),
-        parts.next(),
-        parts.next(),
-    ];
-
-    // check the format of the input: there may be no tokens before the first
-    // and after the last `$`, tokens must have correct information and length.
-    match buf {
-        [Some(""), Some("rpbkdf2"), Some("0"), Some(count), Some(salt), Some(hash), Some(""), None] =>
-        {
-            let count_arr = base64::decode(count)?
-                .as_slice()
-                .try_into()
-                .map_err(|_| CheckError::InvalidFormat)?;
-
-            let count = u32::from_be_bytes(count_arr);
-            Ok((count, salt, hash))
+        if version.is_some() {
+            return Err(HasherError::Version);
         }
-        _ => Err(CheckError::InvalidFormat),
+
+        let mut salt_arr = [0u8; 64];
+        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+
+        let output = Output::init_with(params.output_length, |out| {
+            let f = match algorithm {
+                #[cfg(feature = "sha1")]
+                Algorithm::Pbkdf2Sha1 => pbkdf2::<Hmac<Sha1>>,
+                Algorithm::Pbkdf2Sha256 => pbkdf2::<Hmac<Sha256>>,
+                Algorithm::Pbkdf2Sha512 => pbkdf2::<Hmac<Sha512>>,
+            };
+
+            f(password, salt_bytes, params.rounds, out);
+            Ok(())
+        })?;
+
+        Ok(PasswordHash {
+            algorithm: algorithm.ident(),
+            version: None,
+            params: params.try_into()?,
+            salt: Some(salt),
+            hash: Some(output),
+        })
     }
+}
+
+/// PBKDF2 variants.
+///
+/// <https://en.wikipedia.org/wiki/PBKDF2>
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[non_exhaustive]
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+pub enum Algorithm {
+    /// PBKDF2 SHA1
+    #[cfg(feature = "sha1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sha1")))]
+    Pbkdf2Sha1,
+
+    /// PBKDF2 SHA-256
+    Pbkdf2Sha256,
+
+    /// PBKDF2 SHA-512
+    Pbkdf2Sha512,
+}
+
+impl Algorithm {
+    /// Parse an [`Algorithm`] from the provided string.
+    pub fn new(id: impl AsRef<str>) -> Result<Self, HasherError> {
+        id.as_ref().parse()
+    }
+
+    /// Get the [`Ident`] that corresponds to this PBKDF2 [`Algorithm`].
+    pub fn ident(&self) -> Ident<'static> {
+        match self {
+            #[cfg(feature = "sha1")]
+            Algorithm::Pbkdf2Sha1 => PBKDF2_SHA1,
+            Algorithm::Pbkdf2Sha256 => PBKDF2_SHA256,
+            Algorithm::Pbkdf2Sha512 => PBKDF2_SHA512,
+        }
+    }
+
+    /// Get the identifier string for this PBKDF2 [`Algorithm`].
+    pub fn as_str(&self) -> &str {
+        self.ident().as_str()
+    }
+}
+
+impl AsRef<str> for Algorithm {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl Display for Algorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for Algorithm {
+    type Err = HasherError;
+
+    fn from_str(s: &str) -> Result<Algorithm, HasherError> {
+        Ident::try_from(s)?.try_into()
+    }
+}
+
+impl From<Algorithm> for Ident<'static> {
+    fn from(alg: Algorithm) -> Ident<'static> {
+        alg.ident()
+    }
+}
+
+impl<'a> TryFrom<Ident<'a>> for Algorithm {
+    type Error = HasherError;
+
+    fn try_from(ident: Ident<'a>) -> Result<Algorithm, HasherError> {
+        match ident {
+            #[cfg(feature = "sha1")]
+            PBKDF2_SHA1 => Ok(Algorithm::Pbkdf2Sha1),
+            PBKDF2_SHA256 => Ok(Algorithm::Pbkdf2Sha256),
+            PBKDF2_SHA512 => Ok(Algorithm::Pbkdf2Sha512),
+            _ => Err(HasherError::Algorithm),
+        }
+    }
+}
+
+/// PBKDF2 params
+#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Params {
+    /// Number of rounds
+    pub rounds: u32,
+
+    /// Size of the output (in bytes)
+    pub output_length: usize,
+}
+
+impl Default for Params {
+    fn default() -> Params {
+        Params {
+            rounds: 10_000,
+            output_length: 32,
+        }
+    }
+}
+
+impl TryFrom<&ParamsString> for Params {
+    type Error = HasherError;
+
+    fn try_from(input: &ParamsString) -> Result<Self, HasherError> {
+        let mut output = Params::default();
+
+        for (ident, value) in input.iter() {
+            match ident.as_str() {
+                "i" => output.rounds = value.decimal()?,
+                "l" => {
+                    output.output_length = value
+                        .decimal()?
+                        .try_into()
+                        .map_err(|_| ParamsError::InvalidValue)?
+                }
+                _ => return Err(ParamsError::InvalidName.into()),
+            }
+        }
+
+        Ok(output)
+    }
+}
+
+impl<'a> TryFrom<Params> for ParamsString {
+    type Error = HasherError;
+
+    fn try_from(input: Params) -> Result<ParamsString, HasherError> {
+        let mut output = ParamsString::new();
+        output.add_decimal("i", input.rounds)?;
+        output.add_decimal("l", input.output_length as u32)?;
+        Ok(output)
+    }
+}
+
+impl McfHasher for Pbkdf2 {
+    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>, HasherError> {
+        use password_hash::ParseError;
+
+        let mut parts = hash.split('$');
+
+        // prevent dynamic allocations by using a fixed-size buffer
+        let buf = [
+            parts.next(),
+            parts.next(),
+            parts.next(),
+            parts.next(),
+            parts.next(),
+            parts.next(),
+            parts.next(),
+            parts.next(),
+        ];
+
+        // check the format of the input: there may be no tokens before the first
+        // and after the last `$`, tokens must have correct information and length.
+        let (rounds, salt, hash) = match buf {
+            [Some(""), Some("rpbkdf2"), Some("0"), Some(count), Some(salt), Some(hash), Some(""), None] =>
+            {
+                let count_arr = base64ct::padded::decode_vec(count)?
+                    .as_slice()
+                    .try_into()
+                    .map_err(|_| HasherError::Params(ParamsError::InvalidValue))?;
+
+                let count = u32::from_be_bytes(count_arr);
+                (count, salt, hash)
+            }
+            _ => {
+                // TODO(tarcieri): better errors here?
+                return Err(HasherError::Parse(ParseError::InvalidChar('?')));
+            }
+        };
+
+        let salt = Salt::new(b64_strip(salt))?;
+        let hash = Output::b64_decode(b64_strip(hash))?;
+
+        let params = Params {
+            rounds,
+            output_length: hash.len(),
+        };
+
+        Ok(PasswordHash {
+            algorithm: PBKDF2_SHA256,
+            version: None,
+            params: params.try_into()?,
+            salt: Some(salt),
+            hash: Some(hash),
+        })
+    }
+}
+
+/// Strip trailing `=` signs off a Base64 value to make a valid B64 value
+pub fn b64_strip(mut s: &str) -> &str {
+    while s.ends_with('=') {
+        s = &s[..(s.len() - 1)]
+    }
+    s
 }

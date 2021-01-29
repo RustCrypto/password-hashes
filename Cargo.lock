@@ -282,7 +282,7 @@ dependencies = [
 name = "pbkdf2"
 version = "0.7.0-pre"
 dependencies = [
- "base64",
+ "base64ct",
  "crypto-mac 0.10.0",
  "hex-literal",
  "hmac",
