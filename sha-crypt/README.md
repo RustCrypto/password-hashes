@@ -49,7 +49,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/sha-crypt/badge.svg
 [docs-link]: https://docs.rs/sha-crypt/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.41+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.47+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/sha-crypt/badge.svg?branch=master&event=push
