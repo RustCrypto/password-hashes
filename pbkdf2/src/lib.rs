@@ -1,8 +1,10 @@
 //! This crate implements the PBKDF2 key derivation function as specified
 //! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
 //!
-//! If you are not using convenience functions `pbkdf2_check` and `pbkdf2_simple`
-//! it's recommended to disable `pbkdf2` default features in your `Cargo.toml`:
+//! If you are only using the low-level [`pbkdf2`] function instead of the
+//! higher-level [`Pbkdf2`] struct to produce/verify hash strings,
+//! it's recommended to disable default features in your `Cargo.toml`:
+//!
 //! ```toml
 //! [dependencies]
 //! pbkdf2 = { version = "0.2", default-features = false }
@@ -18,7 +20,8 @@ extern crate std;
 #[cfg(feature = "simple")]
 extern crate alloc;
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub use password_hash;
 
 #[cfg(feature = "simple")]
@@ -36,7 +39,6 @@ use crypto_mac::{Mac, NewMac};
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
     debug_assert!(salt.len() >= res.len(), "length mismatch in xor");
-
     res.iter_mut().zip(salt.iter()).for_each(|(a, b)| *a ^= b);
 }
 
