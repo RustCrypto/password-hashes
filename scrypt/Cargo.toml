@@ -27,3 +27,7 @@ rand_core = { version = "0.6", features = ["std"] }
 default = ["simple", "std"]
 simple = ["password-hash", "base64ct"]
 std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
