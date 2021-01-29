@@ -1,6 +1,8 @@
 //! Argon2 instance (i.e. state)
 
-use crate::{Algorithm, Argon2, Block, Error, Result, Version, BLOCK_SIZE, SYNC_POINTS};
+use crate::{
+    Algorithm, Argon2, Block, Error, Version, BLOCK_SIZE, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
+};
 use blake2::{
     digest::{self, VariableOutput},
     Blake2b, Digest, VarBlake2b,
@@ -67,7 +69,7 @@ impl<'a> Instance<'a> {
         initial_hash: digest::Output<Blake2b>,
         memory: &'a mut [Block],
         out: &mut [u8],
-    ) -> Result<()> {
+    ) -> Result<(), Error> {
         let mut instance = Self::new(context, alg, initial_hash, memory)?;
 
         // Filling memory
@@ -86,13 +88,13 @@ impl<'a> Instance<'a> {
         alg: Algorithm,
         mut initial_hash: digest::Output<Blake2b>,
         memory: &'a mut [Block],
-    ) -> Result<Self> {
+    ) -> Result<Self, Error> {
         let mut instance = Instance {
             version: context.version,
             memory,
             passes: context.t_cost,
-            segment_length: context.segment_length,
-            lane_length: context.segment_length * SYNC_POINTS,
+            segment_length: context.segment_length(),
+            lane_length: context.segment_length() * SYNC_POINTS,
             lanes: context.lanes,
             threads: context.threads,
             alg,
@@ -135,7 +137,7 @@ impl<'a> Instance<'a> {
     }
 
     /// XORing the last block of each lane, hashing it, making the tag.
-    fn finalize(&mut self, out: &mut [u8]) -> Result<()> {
+    fn finalize(&mut self, out: &mut [u8]) -> Result<(), Error> {
         let mut blockhash = self.memory[(self.lane_length - 1) as usize];
 
         // XOR the last blocks
@@ -163,7 +165,7 @@ impl<'a> Instance<'a> {
     }
 
     /// Function creates first 2 blocks per lane
-    fn fill_first_blocks(&mut self, blockhash: &[u8]) -> Result<()> {
+    fn fill_first_blocks(&mut self, blockhash: &[u8]) -> Result<(), Error> {
         let mut hash = [0u8; BLOCK_SIZE];
 
         for l in 0..self.lanes {
@@ -340,8 +342,12 @@ fn next_addresses(address_block: &mut Block, input_block: &mut Block, zero_block
 }
 
 /// BLAKE2b with an extended output
-fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<()> {
-    if out.len() > u32::MAX as usize {
+fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<(), Error> {
+    if out.len() < MIN_OUTLEN as usize {
+        return Err(Error::OutputTooLong);
+    }
+
+    if out.len() > MAX_OUTLEN as usize {
         return Err(Error::OutputTooLong);
     }
 

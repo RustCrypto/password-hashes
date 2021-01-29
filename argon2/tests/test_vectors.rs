@@ -4,6 +4,9 @@
 //! `draft-irtf-cfrg-argon2-12` Section 5:
 //! <https://datatracker.ietf.org/doc/draft-irtf-cfrg-argon2/>
 
+// TODO(tarcieri): test full set of vectors from the reference implementation:
+// https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
+
 use argon2::{Algorithm, Argon2, Version};
 use hex_literal::hex;
 
@@ -45,7 +48,7 @@ fn argon2d_v0x10() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -89,7 +92,7 @@ fn argon2i_v0x10() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -133,7 +136,7 @@ fn argon2id_v0x10() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -190,7 +193,7 @@ fn argon2d_v0x13() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -247,7 +250,7 @@ fn argon2i_v0x13() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -292,7 +295,7 @@ fn argon2id_v0x13() {
     let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);

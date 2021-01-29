@@ -35,6 +35,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           override: true
+      - run: cargo build --target ${{ matrix.target }} --release --no-default-features
       - run: cargo build --target ${{ matrix.target }} --release
       - run: cargo build --target ${{ matrix.target }} --release --features zeroize
 
@@ -52,5 +53,6 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - run: cargo test --release --no-default-features
       - run: cargo test --release
       - run: cargo test --release --all-features

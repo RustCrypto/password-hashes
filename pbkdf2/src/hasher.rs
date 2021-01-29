@@ -3,13 +3,13 @@
 use crate::{pbkdf2, simple};
 use core::{
     convert::{TryFrom, TryInto},
-    fmt,
+    fmt::{self, Display},
     str::FromStr,
 };
 use hmac::Hmac;
 use password_hash::{
-    errors::ParamsError, HasherError, Ident, McfHasher, Output, ParamsString, PasswordHash,
-    PasswordHasher, Salt,
+    errors::ParamsError, Decimal, HasherError, Ident, McfHasher, Output, ParamsString,
+    PasswordHash, PasswordHasher, Salt,
 };
 use sha2::{Sha256, Sha512};
 
@@ -37,11 +37,16 @@ impl PasswordHasher for Pbkdf2 {
     fn hash_password<'a>(
         &self,
         password: &[u8],
-        algorithm: Option<Ident<'a>>,
+        alg_id: Option<Ident<'a>>,
+        version: Option<Decimal>,
         params: Params,
         salt: Salt<'a>,
     ) -> Result<PasswordHash<'a>, HasherError> {
-        let algorithm = Algorithm::new(algorithm.unwrap_or(PBKDF2_SHA256))?;
+        let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256))?;
+
+        if version.is_some() {
+            return Err(HasherError::Version);
+        }
 
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
@@ -111,6 +116,7 @@ pub fn b64_strip(mut s: &str) -> &str {
 pub enum Algorithm {
     /// PBKDF2 SHA1
     #[cfg(feature = "sha1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sha1")))]
     Pbkdf2Sha1,
 
     /// PBKDF2 SHA-256
@@ -121,12 +127,12 @@ pub enum Algorithm {
 }
 
 impl Algorithm {
-    /// Parse an [`AlgorithmId`] from the provided [`Ident`]
+    /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self, HasherError> {
         id.as_ref().parse()
     }
 
-    /// Get the [`Ident`] that corresponds to this PBKDF2 [`AlgorithmId`].
+    /// Get the [`Ident`] that corresponds to this PBKDF2 [`Algorithm`].
     pub fn ident(&self) -> Ident<'static> {
         match self {
             #[cfg(feature = "sha1")]
@@ -136,23 +142,9 @@ impl Algorithm {
         }
     }
 
-    /// Get the identifier string for this PBKDF2 [`AlgorithmId`].
+    /// Get the identifier string for this PBKDF2 [`Algorithm`].
     pub fn as_str(&self) -> &str {
         self.ident().as_str()
-    }
-}
-
-impl FromStr for Algorithm {
-    type Err = HasherError;
-
-    fn from_str(s: &str) -> Result<Algorithm, HasherError> {
-        match Ident::try_from(s)? {
-            #[cfg(feature = "sha1")]
-            PBKDF2_SHA1 => Ok(Algorithm::Pbkdf2Sha1),
-            PBKDF2_SHA256 => Ok(Algorithm::Pbkdf2Sha256),
-            PBKDF2_SHA512 => Ok(Algorithm::Pbkdf2Sha512),
-            _ => Err(HasherError::Algorithm),
-        }
     }
 }
 
@@ -162,21 +154,43 @@ impl AsRef<str> for Algorithm {
     }
 }
 
+impl Display for Algorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for Algorithm {
+    type Err = HasherError;
+
+    fn from_str(s: &str) -> Result<Algorithm, HasherError> {
+        Ident::try_from(s)?.try_into()
+    }
+}
+
 impl From<Algorithm> for Ident<'static> {
     fn from(alg: Algorithm) -> Ident<'static> {
         alg.ident()
     }
 }
 
-impl fmt::Display for Algorithm {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+impl<'a> TryFrom<Ident<'a>> for Algorithm {
+    type Error = HasherError;
+
+    fn try_from(ident: Ident<'a>) -> Result<Algorithm, HasherError> {
+        match ident {
+            #[cfg(feature = "sha1")]
+            PBKDF2_SHA1 => Ok(Algorithm::Pbkdf2Sha1),
+            PBKDF2_SHA256 => Ok(Algorithm::Pbkdf2Sha256),
+            PBKDF2_SHA512 => Ok(Algorithm::Pbkdf2Sha512),
+            _ => Err(HasherError::Algorithm),
+        }
     }
 }
 
 /// PBKDF2 params
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Number of rounds
     pub rounds: u32,
