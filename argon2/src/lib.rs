@@ -11,6 +11,31 @@
 //! - **Argon2i**: optimized to resist side-channel attacks
 //! - **Argon2id**: (default) hybrid version
 //!
+//! # Usage (simple with default params)
+//!
+//! ```
+//! # #[cfg(feature = "password-hash")]
+//! # {
+//! use argon2::{
+//!     Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString
+//! };
+//! use rand_core::OsRng;
+//!
+//! let password = b"hunter42"; // Bad password; don't actually use!
+//! let salt = SaltString::generate(&mut OsRng);
+//!
+//! // Argon2 with default params (Argon2id v19)
+//! let argon2 = Argon2::default();
+//!
+//! // Hash password to PHC string ($argon2id$v=19$...)
+//! let password_hash = argon2.hash_password_simple(password, salt.as_ref()).unwrap().to_string();
+//!
+//! // Verify password against PHC string
+//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! assert!(argon2.verify_password(password, &parsed_hash).is_ok());
+//! # }
+//! ```
+//!
 //! # Notes
 //!
 //! Multithreading has not yet been implemented.
