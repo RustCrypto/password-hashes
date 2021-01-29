@@ -36,7 +36,7 @@ type DefaultRng = rand::ThreadRng;
 /// # Return
 /// `Ok(String)` if calculation is succesfull with the computation result.
 /// It will return `io::Error` error in the case of an unlikely `OsRng` failure.
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub fn scrypt_simple(password: &str, params: &ScryptParams) -> Result<String, rand_core::Error> {
     let mut salt = [0u8; 16];
     DefaultRng::default().try_fill_bytes(&mut salt)?;
@@ -84,7 +84,7 @@ pub fn scrypt_simple(password: &str, params: &ScryptParams) -> Result<String, ra
 /// - password - The password to process as a str
 /// - hashed_value - A string representing a hashed password returned
 /// by `scrypt_simple()`
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub fn scrypt_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut parts = hashed_value.split('$');
 

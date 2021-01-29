@@ -31,9 +31,9 @@ sha1 = { version = "0.9", package = "sha-1" }
 sha2 = "0.9"
 
 [features]
-default = ["include_simple", "thread_rng"]
+default = ["simple", "thread_rng"]
 parallel = ["rayon", "std"]
-include_simple = ["sha2", "hmac", "password-hash", "rand_core", "base64ct", "subtle"]
+simple = ["sha2", "hmac", "password-hash", "rand_core", "base64ct", "subtle"]
 thread_rng = ["rand"]
 std = []
 

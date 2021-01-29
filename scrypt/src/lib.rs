@@ -13,7 +13,7 @@
 //! ```
 //! extern crate scrypt;
 //!
-//! # #[cfg(feature="include_simple")]
+//! # #[cfg(feature="simple")]
 //! # fn main() {
 //! use scrypt::{ScryptParams, scrypt_simple, scrypt_check};
 //!
@@ -25,7 +25,7 @@
 //! // Verifying a stored password
 //! assert!(scrypt_check("Not so secure password", &hashed_password).is_ok());
 //! # }
-//! # #[cfg(not(feature="include_simple"))]
+//! # #[cfg(not(feature="simple"))]
 //! # fn main() {}
 //! ```
 //!
@@ -50,11 +50,11 @@ use sha2::Sha256;
 pub mod errors;
 mod params;
 mod romix;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 mod simple;
 
 pub use crate::params::ScryptParams;
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub use crate::simple::{scrypt_check, scrypt_simple};
 
 /// The scrypt key derivation function.

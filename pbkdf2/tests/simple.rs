@@ -2,7 +2,7 @@
 //!
 //! PBKDF2-SHA256 vectors adapted from: https://stackoverflow.com/a/5136918
 
-#![cfg(feature = "include_simple")]
+#![cfg(feature = "simple")]
 
 use hex_literal::hex;
 use pbkdf2::{

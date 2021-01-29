@@ -2,7 +2,7 @@
 
 use alloc::string;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use alloc::string::String;
 
 #[cfg(feature = "std")]
@@ -32,8 +32,8 @@ impl From<string::FromUtf8Error> for CryptError {
     }
 }
 
-#[cfg(feature = "include_simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 #[derive(Debug)]
 pub enum CheckError {
     InvalidFormat(String),

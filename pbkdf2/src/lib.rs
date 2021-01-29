@@ -15,16 +15,16 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 extern crate alloc;
 
 #[cfg(feature = "password-hash")]
 pub use password_hash;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 mod simple;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 pub use crate::simple::{Algorithm, Params, Pbkdf2};
 
 #[cfg(feature = "parallel")]

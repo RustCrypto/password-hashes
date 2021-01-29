@@ -7,7 +7,7 @@
 //! # Usage
 //!
 //! ```
-//! # #[cfg(feature = "include_simple")]
+//! # #[cfg(feature = "simple")]
 //! # {
 //! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
 //!
@@ -59,7 +59,7 @@ pub use crate::{
 use alloc::{string::String, vec::Vec};
 use sha2::{Digest, Sha512};
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 use {
     crate::{
         defs::{SALT_MAX_LEN, TAB},
@@ -69,16 +69,16 @@ use {
     rand::{distributions::Distribution, thread_rng, Rng},
 };
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 static SHA512_SALT_PREFIX: &str = "$6$";
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 static SHA512_ROUNDS_PREFIX: &str = "rounds=";
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 #[derive(Debug)]
 struct ShaCryptDistribution;
 
-#[cfg(feature = "include_simple")]
+#[cfg(feature = "simple")]
 impl Distribution<char> for ShaCryptDistribution {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
         const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
@@ -286,8 +286,8 @@ pub fn sha512_crypt_b64(
 /// - `Err(CryptError)` if something went wrong.
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-#[cfg(feature = "include_simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
     let rng = thread_rng();
 
@@ -323,8 +323,8 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 /// format or password mismatch.
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-#[cfg(feature = "include_simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "include_simple")))]
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 
