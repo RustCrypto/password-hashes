@@ -1,4 +1,4 @@
-use crate::{scrypt, ScryptParams};
+use crate::{scrypt, Params};
 use core::convert::TryInto;
 use password_hash::{
     Decimal, HasherError, Ident, McfHasher, Output, OutputError, ParamsError, PasswordHash,
@@ -14,14 +14,14 @@ pub const ALG_ID: Ident = Ident::new("scrypt");
 pub struct Scrypt;
 
 impl PasswordHasher for Scrypt {
-    type Params = ScryptParams;
+    type Params = Params;
 
     fn hash_password<'a>(
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
         version: Option<Decimal>,
-        params: ScryptParams,
+        params: Params,
         salt: Salt<'a>,
     ) -> Result<PasswordHash<'a>, HasherError> {
         match alg_id {
@@ -94,7 +94,7 @@ impl McfHasher for Scrypt {
             }
         };
 
-        let params = ScryptParams::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue)?;
+        let params = Params::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue)?;
         let salt = Salt::new(b64_strip(salt))?;
         let hash = Output::b64_decode(b64_strip(hash))?;
 

@@ -1,8 +1,10 @@
 //! This crate implements the Scrypt key derivation function as specified
 //! in \[1\].
 //!
-//! If you are not using convinience functions `scrypt_check` and `scrypt_simple`
-//! it's recommended to disable `scrypt` default features in your `Cargo.toml`:
+//! If you are only using the low-level [`scrypt`] function instead of the
+//! higher-level [`Scrypt`] struct to produce/verify hash strings,
+//! it's recommended to disable default features in your `Cargo.toml`:
+//!
 //! ```toml
 //! [dependencies]
 //! scrypt = { version = "0.2", default-features = false }
@@ -36,6 +38,7 @@
 //! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
 #[macro_use]
@@ -58,7 +61,7 @@ mod simple;
 #[cfg(feature = "simple")]
 pub use password_hash;
 
-pub use crate::params::ScryptParams;
+pub use crate::params::Params;
 #[cfg(feature = "simple")]
 pub use crate::simple::{Scrypt, ALG_ID};
 
@@ -78,7 +81,7 @@ pub use crate::simple::{Scrypt, ALG_ID};
 pub fn scrypt(
     password: &[u8],
     salt: &[u8],
-    params: &ScryptParams,
+    params: &Params,
     output: &mut [u8],
 ) -> Result<(), errors::InvalidOutputLen> {
     // This check required by Scrypt:

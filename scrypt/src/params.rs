@@ -15,14 +15,14 @@ const RECOMMENDED_LEN: usize = 32;
 
 /// The Scrypt parameter values.
 #[derive(Clone, Copy, Debug)]
-pub struct ScryptParams {
+pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
     pub(crate) len: usize,
 }
 
-impl ScryptParams {
+impl Params {
     /// Create a new instance of ScryptParams.
     ///
     /// # Arguments
@@ -33,7 +33,7 @@ impl ScryptParams {
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
-    pub fn new(log_n: u8, r: u32, p: u32) -> Result<ScryptParams, InvalidParams> {
+    pub fn new(log_n: u8, r: u32, p: u32) -> Result<Params, InvalidParams> {
         let cond1 = (log_n as usize) < size_of::<usize>() * 8;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
@@ -70,7 +70,7 @@ impl ScryptParams {
             return Err(InvalidParams);
         }
 
-        Ok(ScryptParams {
+        Ok(Params {
             log_n,
             r: r as u32,
             p: p as u32,
@@ -82,8 +82,8 @@ impl ScryptParams {
     /// - `log_n = 15` (`n = 32768`)
     /// - `r = 8`
     /// - `p = 1`
-    pub fn recommended() -> ScryptParams {
-        ScryptParams {
+    pub fn recommended() -> Params {
+        Params {
             log_n: RECOMMENDED_LOG_N,
             r: RECOMMENDED_R,
             p: RECOMMENDED_P,
@@ -92,15 +92,15 @@ impl ScryptParams {
     }
 }
 
-impl Default for ScryptParams {
-    fn default() -> ScryptParams {
-        ScryptParams::recommended()
+impl Default for Params {
+    fn default() -> Params {
+        Params::recommended()
     }
 }
 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-impl TryFrom<&ParamsString> for ScryptParams {
+impl TryFrom<&ParamsString> for Params {
     type Error = HasherError;
 
     fn try_from(input: &ParamsString) -> Result<Self, HasherError> {
@@ -122,16 +122,16 @@ impl TryFrom<&ParamsString> for ScryptParams {
             }
         }
 
-        ScryptParams::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue.into())
+        Params::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue.into())
     }
 }
 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-impl<'a> TryFrom<ScryptParams> for ParamsString {
+impl<'a> TryFrom<Params> for ParamsString {
     type Error = HasherError;
 
-    fn try_from(input: ScryptParams) -> Result<ParamsString, HasherError> {
+    fn try_from(input: Params) -> Result<ParamsString, HasherError> {
         let mut output = ParamsString::new();
         output.add_decimal("ln", input.log_n as u32)?;
         output.add_decimal("r", input.r)?;
