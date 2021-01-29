@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.6.0-pre"
+version = "0.6.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"
@@ -16,7 +16,7 @@ base64ct = { version = "0.1", default-features = false, features = ["alloc"], op
 hmac = "0.10"
 password-hash = { version = "0.1", default-features = false, optional = true }
 pbkdf2 = { version = "0.7", default-features = false, path = "../pbkdf2" }
-salsa20 = { version = "0.7.2", default-features = false, features = ["expose-core"] }
+salsa20 = { version = "0.7", default-features = false, features = ["expose-core"] }
 sha2 = { version = "0.9", default-features = false }
 
 [dev-dependencies]

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 (2021-01-29)
+### Added
+- PHC hash support using `password-hash` crate ([#111])
+
+### Changed
+- Rename `include_simple` features to `simple` ([#99])
+- Rename `ScryptParams` => `Params` ([#112])
+
+[#99]: https://github.com/RustCrypto/password-hashing/pull/99
+[#111]: https://github.com/RustCrypto/password-hashing/pull/111
+[#112]: https://github.com/RustCrypto/password-hashing/pull/112
+
 ## 0.5.0 (2020-10-18)
 ### Changed
 - Bump `crypto-mac` dependency to v0.10 ([#58])
