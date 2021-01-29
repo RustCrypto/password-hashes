@@ -8,25 +8,27 @@
 //! scrypt = { version = "0.2", default-features = false }
 //! ```
 //!
-//! # Usage
+//! # Usage (simple with default params)
 //!
 //! ```
-//! extern crate scrypt;
+//! # #[cfg(feature = "password-hash")]
+//! # {
+//! use scrypt::{
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     Scrypt
+//! };
+//! use rand_core::OsRng;
 //!
-//! # #[cfg(feature="simple")]
-//! # fn main() {
-//! use scrypt::{ScryptParams, scrypt_simple, scrypt_check};
+//! let password = b"hunter42"; // Bad password; don't actually use!
+//! let salt = SaltString::generate(&mut OsRng);
 //!
-//! // First setup the ScryptParams arguments with the recommended defaults
-//! let params = ScryptParams::recommended();
-//! // Hash the password for storage
-//! let hashed_password = scrypt_simple("Not so secure password", &params)
-//!     .expect("OS RNG should not fail");
-//! // Verifying a stored password
-//! assert!(scrypt_check("Not so secure password", &hashed_password).is_ok());
+//! // Hash password to PHC string ($scrypt$...)
+//! let password_hash = Scrypt.hash_password_simple(password, salt.as_ref()).unwrap().to_string();
+//!
+//! // Verify password against PHC string
+//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! assert!(Scrypt.verify_password(password, &parsed_hash).is_ok());
 //! # }
-//! # #[cfg(not(feature="simple"))]
-//! # fn main() {}
 //! ```
 //!
 //! # References
@@ -53,9 +55,12 @@ mod romix;
 #[cfg(feature = "simple")]
 mod simple;
 
+#[cfg(feature = "simple")]
+pub use password_hash;
+
 pub use crate::params::ScryptParams;
 #[cfg(feature = "simple")]
-pub use crate::simple::{scrypt_check, scrypt_simple};
+pub use crate::simple::{Scrypt, ALG_ID};
 
 /// The scrypt key derivation function.
 ///
