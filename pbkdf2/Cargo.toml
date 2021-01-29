@@ -19,7 +19,7 @@ base64 = { version = "0.13", default-features = false, features = ["alloc"], opt
 rand = { version = "0.8", default-features = false, optional = true }
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"], optional = true }
 hmac = { version = "0.10", default-features = false, optional = true }
-password-hash = { version = "0", default-features = false, features = ["alloc"], optional = true }
+password-hash = { version = "0.1", default-features = false, features = ["alloc"], optional = true }
 sha1 = { version = "0.9", package = "sha-1", default-features = false, optional = true }
 sha2 = { version = "0.9", default-features = false, optional = true }
 subtle = { version = "2", default-features = false, optional = true }
