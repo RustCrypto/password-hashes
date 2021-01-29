@@ -231,10 +231,11 @@ impl McfHasher for Pbkdf2 {
         let (rounds, salt, hash) = match buf {
             [Some(""), Some("rpbkdf2"), Some("0"), Some(count), Some(salt), Some(hash), Some(""), None] =>
             {
-                let count_arr = base64ct::padded::decode_vec(count)?
-                    .as_slice()
-                    .try_into()
-                    .map_err(|_| HasherError::Params(ParamsError::InvalidValue))?;
+                let mut count_arr = [0u8; 4];
+
+                if base64ct::padded::decode(count, &mut count_arr)?.len() != 4 {
+                    return Err(ParamsError::InvalidValue.into());
+                }
 
                 let count = u32::from_be_bytes(count_arr);
                 (count, salt, hash)
