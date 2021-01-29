@@ -287,12 +287,9 @@ dependencies = [
  "hex-literal",
  "hmac",
  "password-hash",
- "rand",
- "rand_core",
  "rayon",
  "sha-1",
  "sha2",
- "subtle",
 ]
 
 [[package]]
