@@ -17,7 +17,8 @@
 //! # #[cfg(feature = "password-hash")]
 //! # {
 //! use argon2::{
-//!     Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     Argon2
 //! };
 //! use rand_core::OsRng;
 //!
