@@ -6,6 +6,3 @@ members = [
     "scrypt",
     "sha-crypt"
 ]
-
-[patch.crates-io]
-password-hash = { git = "https://github.com/rustcrypto/traits" }
