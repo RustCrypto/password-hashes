@@ -44,11 +44,10 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-pub mod errors;
-pub mod params;
-
 mod b64;
 mod defs;
+mod errors;
+mod params;
 
 pub use crate::{
     defs::BLOCK_SIZE,
