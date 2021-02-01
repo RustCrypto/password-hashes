@@ -3,7 +3,7 @@
 //! # About
 //!
 //! Argon2 is a memory-hard [key derivation function] chosen as the winner of
-//! the 2015 [Password Hashing Competition] in July 2015.
+//! the [Password Hashing Competition] in July 2015.
 //!
 //! It provides three algorithmic variants (chosen via the [`Algorithm`] enum):
 //!
