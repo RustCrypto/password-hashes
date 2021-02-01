@@ -1,4 +1,7 @@
+//! Implementation of the `password-hash` crate API.
+
 use crate::{scrypt, Params};
+use base64ct::{Base64, Encoding};
 use core::convert::TryInto;
 use password_hash::{
     Decimal, HasherError, Ident, McfHasher, Output, OutputError, ParamsError, PasswordHash,
@@ -72,14 +75,14 @@ impl McfHasher for Scrypt {
 
         let (log_n, r, p, salt, hash) = match buf {
             [Some(""), Some("rscrypt"), Some("0"), Some(p), Some(s), Some(h), Some(""), None] => {
-                let pvec = base64ct::padded::decode_vec(p)?;
+                let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 3 {
                     return Err(ParamsError::InvalidValue.into());
                 }
                 (pvec[0], pvec[1] as u32, pvec[2] as u32, s, h)
             }
             [Some(""), Some("rscrypt"), Some("1"), Some(p), Some(s), Some(h), Some(""), None] => {
-                let pvec = base64ct::padded::decode_vec(p)?;
+                let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 9 {
                     return Err(ParamsError::InvalidValue.into());
                 }

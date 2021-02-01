@@ -1,6 +1,7 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::pbkdf2;
+use base64ct::{Base64, Encoding};
 use core::{
     convert::{TryFrom, TryInto},
     fmt::{self, Display},
@@ -233,7 +234,7 @@ impl McfHasher for Pbkdf2 {
             {
                 let mut count_arr = [0u8; 4];
 
-                if base64ct::padded::decode(count, &mut count_arr)?.len() != 4 {
+                if Base64::decode(count, &mut count_arr)?.len() != 4 {
                     return Err(ParamsError::InvalidValue.into());
                 }
 
