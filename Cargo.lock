@@ -19,9 +19,9 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "base64ct"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c502cbac2e4ffc38047434d0c88b54da5e7c76829ff16f0a479f90116336d9f3"
+checksum = "b245b005bb8924f38647aeb31388984784a139acbe7ac6d7435fb0a11c4c83d8"
 
 [[package]]
 name = "bcrypt-pbkdf"
