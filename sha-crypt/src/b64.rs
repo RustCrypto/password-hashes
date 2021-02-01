@@ -52,6 +52,20 @@ pub fn decode(source: &[u8]) -> Vec<u8> {
 }
 
 mod tests {
+    #[test]
+    fn encode_vector() {
+        let raw = [
+            0, 16, 131, 16, 81, 135, 32, 146, 139, 48, 211, 143, 65, 20, 147, 81, 85, 151, 97, 150,
+            155, 113, 215, 159, 130, 24, 163, 146, 89, 167, 162, 154, 171, 178, 219, 175, 195, 28,
+            179, 251, 240, 1, 8, 49, 5, 24, 114, 9, 40, 179, 13, 56, 244, 17, 73, 53, 21, 89, 118,
+            25, 105, 183, 29, 121,
+        ];
+        let encoded = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnyz./0123456789ABCDEFGHIJKLMNOPQRSE";
+
+        let e = super::encode(&raw);
+        assert_eq!(e, encoded);
+    }
+
     #[cfg(feature = "simple")]
     #[test]
     fn test_encode_decode() {
