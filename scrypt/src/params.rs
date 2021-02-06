@@ -90,6 +90,26 @@ impl Params {
             len: RECOMMENDED_LEN,
         }
     }
+
+    /// log2 of the Scrypt parameter `N`, the work factor.
+    ///
+    /// Memory and CPU usage scale linearly with `N`.
+    pub fn log_n(&self) -> u8 {
+        self.log_n
+    }
+
+    /// `r` parameter: resource usage.
+    ///
+    /// scrypt iterates 2*r times. Memory and CPU time scale linearly
+    /// with this parameter.
+    pub fn r(&self) -> u32 {
+        self.r
+    }
+
+    /// `p` parameter: parallelization.
+    pub fn p(&self) -> u32 {
+        self.p
+    }
 }
 
 impl Default for Params {
