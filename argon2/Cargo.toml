@@ -25,7 +25,8 @@ password-hash = { version = "0.1", features = ["rand_core"] }
 rand_core = { version = "0.6", features = ["std"] }
 
 [features]
-default = ["password-hash"]
+default = ["password-hash", "rand"]
+rand = ["password-hash/rand_core"]
 
 [package.metadata.docs.rs]
 all-features = true
