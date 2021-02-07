@@ -22,7 +22,7 @@
 //! ```toml
 //! [dependencies]
 //! argon2 = "0.1"
-//! rand_core = { version = "0.6", features = ["std"]
+//! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
 //! The following example demonstrates the high-level password hashing API:
