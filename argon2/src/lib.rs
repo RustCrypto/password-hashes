@@ -13,6 +13,20 @@
 //!
 //! # Usage (simple with default params)
 //!
+//! Note: this example requires the `rand_core` crate with the `std` feature
+//! enabled for `rand_core::OsRng` (embedded platforms can substitute their
+//! own RNG)
+//!
+//! Add the following to your crate's `Cargo.toml` to import it:
+//!
+//! ```toml
+//! [dependencies]
+//! argon2 = "0.1"
+//! rand_core = { version = "0.6", features = ["std"]
+//! ```
+//!
+//! The following example demonstrates the high-level password hashing API:
+//!
 //! ```
 //! # #[cfg(feature = "password-hash")]
 //! # {
