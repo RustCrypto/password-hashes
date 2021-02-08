@@ -7,7 +7,44 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = { version = "0.2", default-features = false }
+//! pbkdf2 = { version = "0.7", default-features = false }
+//! ```
+//!
+//! # Usage (simple with default params)
+//!
+//! Note: this example requires the `rand_core` crate with the `std` feature
+//! enabled for `rand_core::OsRng` (embedded platforms can substitute their
+//! own RNG)
+//!
+//! Add the following to your crate's `Cargo.toml` to import it:
+//!
+//! ```toml
+//! [dependencies]
+//! pbkdf2 = "0.7"
+//! rand_core = { version = "0.6", features = ["std"] }
+//! ```
+//!
+//! The following example demonstrates the high-level password hashing API:
+//!
+//! ```
+//! # #[cfg(feature = "password-hash")]
+//! # {
+//! use pbkdf2::{
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     Pbkdf2
+//! };
+//! use rand_core::OsRng;
+//!
+//! let password = b"hunter42"; // Bad password; don't actually use!
+//! let salt = SaltString::generate(&mut OsRng);
+//!
+//! // Hash password to PHC string ($pbkdf2-sha256$...)
+//! let password_hash = Pbkdf2.hash_password_simple(password, salt.as_ref()).unwrap().to_string();
+//!
+//! // Verify password against PHC string
+//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! assert!(Pbkdf2.verify_password(password, &parsed_hash).is_ok());
+//! # }
 //! ```
 
 #![no_std]

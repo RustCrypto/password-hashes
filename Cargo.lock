@@ -274,13 +274,14 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "base64ct",
  "crypto-mac 0.10.0",
  "hex-literal",
  "hmac",
  "password-hash",
+ "rand_core",
  "rayon",
  "sha-1",
  "sha2",
