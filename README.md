@@ -1,4 +1,4 @@
-# RustCrypto: password hashing ![Rust Version][rustc-image] [![Project Chat][chat-image]][chat-link]
+# RustCrypto: password hashes ![Rust Version][rustc-image] [![Project Chat][chat-image]][chat-link]
 
 Collection of password hashing algorithms, otherwise known as password-based key
 derivation functions, written in pure Rust.
