@@ -571,6 +571,22 @@ impl PasswordHasher for Argon2<'_> {
         )
         .map_err(|_| HasherError::Params(ParamsError::InvalidValue))?;
 
+        if MAX_PWD_LENGTH < password.len() {
+            return Err(HasherError::Password);
+        }
+
+        if !(MIN_SALT_LENGTH..=MAX_SALT_LENGTH).contains(&salt_bytes.len()) {
+            // TODO(tarcieri): better error types for this case
+            return Err(HasherError::Crypto);
+        }
+
+        // Validate associated data (optional param)
+        if MAX_AD_LENGTH < ad.len() {
+            // TODO(tarcieri): better error types for this case
+            return Err(HasherError::Crypto);
+        }
+
+        // TODO(tarcieri): improve this API to eliminate redundant checks above
         let output = password_hash::Output::init_with(params.output_length, |out| {
             hasher
                 .hash_password_into(algorithm, password, salt_bytes, ad, out)
@@ -580,7 +596,7 @@ impl PasswordHasher for Argon2<'_> {
                         Error::OutputTooLong => password_hash::OutputError::TooLong,
                         // Other cases are not returned from `hash_password_into`
                         // TODO(tarcieri): finer-grained error types?
-                        _ => unreachable!(),
+                        _ => panic!("unhandled error type: {}", e),
                     }
                 })
         })?;
@@ -669,5 +685,24 @@ impl<'a> TryFrom<Params> for ParamsString {
         output.add_decimal("t", params.t_cost)?;
         output.add_decimal("p", params.p_cost)?;
         Ok(output)
+    }
+}
+
+#[cfg(all(test, feature = "password-hash"))]
+mod tests {
+    use super::{Argon2, HasherError, Params, PasswordHasher, Salt};
+
+    /// Example password only: don't use this as a real password!!!
+    const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
+
+    #[test]
+    fn decoded_salt_too_short() {
+        let argon2 = Argon2::default();
+
+        // Too short after decoding
+        let salt = Salt::new("somesalt").unwrap();
+
+        let res = argon2.hash_password(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
+        assert_eq!(res, Err(HasherError::Crypto));
     }
 }
