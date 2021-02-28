@@ -32,7 +32,7 @@ sha2 = "0.9"
 default = ["simple"]
 parallel = ["rayon", "std"]
 simple = ["sha2", "hmac", "password-hash", "base64ct"]
-std = []
+std = ["password-hash/std"]
 
 [package.metadata.docs.rs]
 all-features = true
