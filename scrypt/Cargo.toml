@@ -12,7 +12,7 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-base64ct = { version = "0.2", default-features = false, features = ["alloc"], optional = true }
+base64ct = { version = "1", default-features = false, features = ["alloc"], optional = true }
 hmac = "0.10"
 password-hash = { version = "0.1", default-features = false, features = ["rand_core"], optional = true }
 pbkdf2 = { version = "0.7", default-features = false, path = "../pbkdf2" }
