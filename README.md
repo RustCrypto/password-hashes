@@ -13,6 +13,9 @@ derivation functions, written in pure Rust.
 | [scrypt](https://en.wikipedia.org/wiki/Scrypt)  | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt) | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) | ![Build](https://github.com/RustCrypto/password-hashes/workflows/scrypt/badge.svg?branch=master&event=push) |
 | [SHA-crypt](https://www.akkadia.org/drepper/SHA-crypt.txt)    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt) | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) | ![Build](https://github.com/RustCrypto/password-hashes/workflows/sha-crypt/badge.svg?branch=master&event=push) |
 
+Please see the [OWASP Password Storage Cheat Sheet] for assistance in selecting
+an appropriate algorithm for your use case.
+
 ## License
 
 All crates licensed under either of
@@ -35,3 +38,6 @@ for inclusion in the work by you, as defined in the Apache-2.0 license
 [deps-image]: https://deps.rs/repo/github/RustCrypto/password-hashes/status.svg
 [deps-link]: https://deps.rs/repo/github/RustCrypto/password-hashes
 
+[//]: # (general links)
+
+[OWASP Password Storage Cheat Sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
