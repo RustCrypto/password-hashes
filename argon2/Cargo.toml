@@ -26,6 +26,7 @@ rand_core = { version = "0.6", features = ["std"] }
 
 [features]
 default = ["password-hash", "rand"]
+parallel = []
 rand = ["password-hash/rand_core"]
 std = ["password-hash/std"]
 

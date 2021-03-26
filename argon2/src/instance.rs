@@ -8,6 +8,12 @@ use blake2::{
     Blake2b, Digest, VarBlake2b,
 };
 
+#[cfg(feature = "parallel")]
+use std::{
+    mem,
+    thread::{self, JoinHandle},
+};
+
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -115,10 +121,71 @@ impl<'a> Instance<'a> {
         Ok(instance)
     }
 
+    /// Create multiple mutable references for the current instance, one for every lane
+    #[cfg(feature = "parallel")]
+    #[allow(unsafe_code)]
+    unsafe fn mut_self_refs(&mut self) -> Vec<&'static mut Instance<'static>> {
+        let lanes = self.lanes;
+        // This transmute can be skipped when a scoped threadpool is used (or when `spawn_unchecked()` gets stabilised)
+        let this = mem::transmute::<_, &mut Instance<'static>>(self);
+        let this: *mut Instance<'static> = this;
+
+        // Dereference the raw pointer multiple times to create multiple mutable references
+        (0..lanes).map(|_| &mut *(this)).collect()
+    }
+
+    #[cfg(feature = "parallel")]
+    fn fill_memory_blocks_par(&mut self) {
+        for r in 0..self.passes {
+            for s in 0..SYNC_POINTS {
+                // Allocate a vector for the join handles
+                let mut join_handles: Vec<JoinHandle<()>> =
+                    Vec::with_capacity(self.threads as usize);
+
+                // Safety: - All threads that receive a references will be joined before the item gets dropped
+                //         - All the read and write operations *shouldn't* overlap
+                #[allow(unsafe_code)]
+                let self_refs = unsafe { self.mut_self_refs() };
+
+                for (l, self_ref) in (0..self.lanes).zip(self_refs) {
+                    // Join the first thread if the current lane index matches/exceeds the maximum number of threads
+                    if l >= self.threads {
+                        let handle = join_handles.remove(0);
+                        handle.join().unwrap();
+                    }
+
+                    // Spawn the thread
+                    let handle = thread::spawn(move || {
+                        self_ref.fill_segment(Position {
+                            pass: r,
+                            lane: l,
+                            slice: s,
+                            index: 0,
+                        });
+                    });
+
+                    join_handles.push(handle);
+                }
+
+                // Join all remaining threads
+                for handle in join_handles {
+                    handle.join().unwrap();
+                }
+            }
+
+            // GENKAT note: this is where `internal_kat` would be called
+        }
+    }
+
     /// Function that fills the entire memory t_cost times based on the first two
     /// blocks in each lane
     fn fill_memory_blocks(&mut self) {
-        // TODO(tarcieri): multithread support
+        #[cfg(feature = "parallel")]
+        if self.threads > 1 {
+            self.fill_memory_blocks_par();
+            return;
+        }
+
         // Single-threaded version for p=1 case
         for r in 0..self.passes {
             for s in 0..SYNC_POINTS {

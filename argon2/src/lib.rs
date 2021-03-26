@@ -62,13 +62,14 @@
 //! [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
 //! [Password Hashing Competition]: https://www.password-hashing.net/
 
-#![no_std]
+#![cfg_attr(not(feature = "parallel"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![forbid(unsafe_code)]
+#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
+#![cfg_attr(feature = "parallel", deny(unsafe_code))]
 #![warn(rust_2018_idioms, missing_docs)]
 
 #[macro_use]
