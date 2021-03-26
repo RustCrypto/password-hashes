@@ -9,9 +9,9 @@ use blake2::{
 };
 
 #[cfg(feature = "parallel")]
-use std::{
-    mem,
-    thread::{self, JoinHandle},
+use {
+    rayon::iter::{ParallelBridge, ParallelIterator},
+    std::mem,
 };
 
 #[cfg(feature = "zeroize")]
@@ -138,24 +138,15 @@ impl<'a> Instance<'a> {
     fn fill_memory_blocks_par(&mut self) {
         for r in 0..self.passes {
             for s in 0..SYNC_POINTS {
-                // Allocate a vector for the join handles
-                let mut join_handles: Vec<JoinHandle<()>> =
-                    Vec::with_capacity(self.threads as usize);
-
                 // Safety: - All threads that receive a references will be joined before the item gets dropped
                 //         - All the read and write operations *shouldn't* overlap
                 #[allow(unsafe_code)]
                 let self_refs = unsafe { self.mut_self_refs() };
 
-                for (l, self_ref) in (0..self.lanes).zip(self_refs) {
-                    // Join the first thread if the current lane index matches/exceeds the maximum number of threads
-                    if l >= self.threads {
-                        let handle = join_handles.remove(0);
-                        handle.join().unwrap();
-                    }
-
-                    // Spawn the thread
-                    let handle = thread::spawn(move || {
+                (0..self.lanes)
+                    .zip(self_refs)
+                    .par_bridge()
+                    .for_each(|(l, self_ref)| {
                         self_ref.fill_segment(Position {
                             pass: r,
                             lane: l,
@@ -163,14 +154,6 @@ impl<'a> Instance<'a> {
                             index: 0,
                         });
                     });
-
-                    join_handles.push(handle);
-                }
-
-                // Join all remaining threads
-                for handle in join_handles {
-                    handle.join().unwrap();
-                }
             }
 
             // GENKAT note: this is where `internal_kat` would be called
