@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.5 (2021-03-27)
+### Fixed
+- Pin `password-hash` to v0.1.2 or newer ([#151])
+
+[#151]: https://github.com/RustCrypto/password-hashing/pull/151
+
 ## 0.6.4 (2021-03-17)
 ### Changed
 - Bump `base64ct` dependency to v1.0 ([#144])

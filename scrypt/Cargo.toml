@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.6.4"
+version = "0.6.5"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"
