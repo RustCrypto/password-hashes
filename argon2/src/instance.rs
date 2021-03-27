@@ -10,8 +10,9 @@ use blake2::{
 
 #[cfg(feature = "parallel")]
 use {
+    alloc::vec::Vec,
+    core::mem,
     rayon::iter::{ParallelBridge, ParallelIterator},
-    std::mem,
 };
 
 #[cfg(feature = "zeroize")]

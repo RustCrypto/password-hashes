@@ -62,7 +62,7 @@
 //! [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
 //! [Password Hashing Competition]: https://www.password-hashing.net/
 
-#![cfg_attr(not(feature = "parallel"), no_std)]
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
