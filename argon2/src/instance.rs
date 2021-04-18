@@ -36,6 +36,39 @@ struct Position {
     index: u32,
 }
 
+/// Structure containing references to the memory blocks
+struct Memory<'a> {
+    /// Memory blocks
+    data: &'a mut [Block],
+
+    /// Size of the memory in blocks
+    size: usize,
+}
+
+impl<'a> Memory<'a> {
+    /// Instantiate a new memory struct
+    fn new(data: &'a mut [Block]) -> Self {
+        let size = data.len();
+
+        Self { data, size }
+    }
+
+    /// Get a copy of the block
+    fn get_block(&self, idx: usize) -> Block {
+        self.data[idx]
+    }
+
+    /// Get a mutable reference to the block
+    fn get_block_mut(&mut self, idx: usize) -> &mut Block {
+        &mut self.data[idx]
+    }
+
+    /// Size of the memory
+    fn len(&self) -> usize {
+        self.size
+    }
+}
+
 /// Argon2 instance: memory pointer, number of passes, amount of memory, type,
 /// and derived values.
 ///
@@ -43,7 +76,7 @@ struct Position {
 /// thread.
 pub(crate) struct Instance<'a> {
     /// Memory blocks
-    memory: &'a mut [Block],
+    memory: Memory<'a>,
 
     /// Version
     version: Version,
@@ -96,6 +129,8 @@ impl<'a> Instance<'a> {
         mut initial_hash: digest::Output<Blake2b>,
         memory: &'a mut [Block],
     ) -> Result<Self, Error> {
+        let memory = Memory::new(memory);
+
         let mut instance = Instance {
             version: context.version,
             memory,
@@ -125,14 +160,15 @@ impl<'a> Instance<'a> {
     /// Create multiple mutable references for the current instance, one for every lane
     #[cfg(feature = "parallel")]
     #[allow(unsafe_code)]
-    unsafe fn mut_self_refs(&mut self) -> Vec<&'static mut Instance<'static>> {
+    unsafe fn mut_self_refs(&mut self) -> Vec<usize> {
         let lanes = self.lanes;
         // This transmute can be skipped when a scoped threadpool is used (or when `spawn_unchecked()` gets stabilised)
         let this = mem::transmute::<_, &mut Instance<'static>>(self);
         let this: *mut Instance<'static> = this;
+        let this = this as usize;
 
         // Dereference the raw pointer multiple times to create multiple mutable references
-        (0..lanes).map(|_| &mut *(this)).collect()
+        core::iter::repeat(this).take(lanes as usize).collect()
     }
 
     #[cfg(feature = "parallel")]
@@ -148,6 +184,9 @@ impl<'a> Instance<'a> {
                     .zip(self_refs)
                     .par_bridge()
                     .for_each(|(l, self_ref)| {
+                        #[allow(unsafe_code)]
+                        let self_ref = unsafe { &mut *(self_ref as *mut Instance<'static>) };
+
                         self_ref.fill_segment(Position {
                             pass: r,
                             lane: l,
@@ -189,12 +228,12 @@ impl<'a> Instance<'a> {
 
     /// XORing the last block of each lane, hashing it, making the tag.
     fn finalize(&mut self, out: &mut [u8]) -> Result<(), Error> {
-        let mut blockhash = self.memory[(self.lane_length - 1) as usize];
+        let mut blockhash = self.memory.get_block((self.lane_length - 1) as usize);
 
         // XOR the last blocks
         for l in 1..self.lanes {
             let last_block_in_lane = l * self.lane_length + (self.lane_length - 1);
-            blockhash ^= self.memory[last_block_in_lane as usize];
+            blockhash ^= self.memory.get_block(last_block_in_lane as usize);
         }
 
         // Hash the result
@@ -224,7 +263,9 @@ impl<'a> Instance<'a> {
             // G(H0||1||i)
             for i in 0u32..2u32 {
                 blake2b_long(&[blockhash, &i.to_le_bytes(), &l.to_le_bytes()], &mut hash)?;
-                self.memory[(l * self.lane_length + i) as usize].load(&hash);
+                self.memory
+                    .get_block_mut((l * self.lane_length + i) as usize)
+                    .load(&hash);
             }
         }
 
@@ -290,7 +331,7 @@ impl<'a> Instance<'a> {
                 }
                 address_block[(i % ADDRESSES_IN_BLOCK) as usize]
             } else {
-                self.memory[prev_offset as usize][0]
+                self.memory.get_block(prev_offset as usize)[0]
             };
 
             // 1.2.2 Computing the lane of the reference block
@@ -311,12 +352,18 @@ impl<'a> Instance<'a> {
             );
 
             // 2 Creating a new block
-            let ref_block = self.memory[(self.lane_length * ref_lane + ref_index) as usize];
-            let prev_block = self.memory[prev_offset as usize];
+            let ref_block = self
+                .memory
+                .get_block((self.lane_length * ref_lane + ref_index) as usize);
+            let prev_block = self.memory.get_block(prev_offset as usize);
 
             // version 1.2.1 and earlier: overwrite, not XOR
             let without_xor = self.version == Version::V0x10 || position.pass == 0;
-            self.memory[curr_offset as usize].fill_block(prev_block, ref_block, !without_xor);
+            self.memory.get_block_mut(curr_offset as usize).fill_block(
+                prev_block,
+                ref_block,
+                !without_xor,
+            );
 
             curr_offset += 1;
             prev_offset += 1;
