@@ -8,6 +8,7 @@ dependencies = [
  "hex-literal",
  "password-hash",
  "rand_core",
+ "rayon",
  "zeroize",
 ]
 

@@ -68,7 +68,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 #![warn(rust_2018_idioms, missing_docs)]
 
 #[macro_use]
