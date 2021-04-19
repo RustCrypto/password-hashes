@@ -79,6 +79,7 @@ extern crate alloc;
 mod block;
 mod error;
 mod instance;
+mod memory;
 
 pub use crate::error::Error;
 
@@ -86,7 +87,7 @@ pub use crate::error::Error;
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 
-use crate::{block::Block, instance::Instance};
+use crate::{block::Block, instance::Instance, memory::Memory};
 use blake2::{digest, Blake2b, Digest};
 use core::{
     convert::TryFrom,
@@ -485,7 +486,7 @@ impl<'key> Argon2<'key> {
         // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
         let mut memory = vec![Block::default(); memory_blocks];
 
-        Instance::hash(self, alg, initial_hash, &mut memory, out)
+        Instance::hash(self, alg, initial_hash, Memory::new(&mut memory), out)
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
