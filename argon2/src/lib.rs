@@ -87,7 +87,11 @@ pub use crate::error::Error;
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 
-use crate::{block::Block, instance::Instance, memory::Memory};
+use crate::{
+    block::Block,
+    instance::Instance,
+    memory::{Memory, SYNC_POINTS},
+};
 use blake2::{digest, Blake2b, Digest};
 use core::{
     convert::TryFrom,
@@ -148,9 +152,6 @@ pub const MAX_SECRET: usize = 0xFFFFFFFF;
 
 /// Memory block size in bytes
 pub const BLOCK_SIZE: usize = 1024;
-
-/// Number of synchronization points between lanes per pass
-const SYNC_POINTS: u32 = 4;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
@@ -478,15 +479,17 @@ impl<'key> Argon2<'key> {
             return Err(Error::AdTooLong);
         }
 
-        let memory_blocks = (self.segment_length() * self.lanes * SYNC_POINTS) as usize;
-
         // Hashing all inputs
         let initial_hash = self.initial_hash(alg, pwd, salt, ad, out);
 
-        // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
-        let mut memory = vec![Block::default(); memory_blocks];
+        let segment_length = Memory::segment_length_for_params(self.m_cost, self.lanes);
+        let blocks_count = (segment_length * self.lanes * SYNC_POINTS) as usize;
 
-        Instance::hash(self, alg, initial_hash, Memory::new(&mut memory), out)
+        // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
+        let mut blocks = vec![Block::default(); blocks_count];
+
+        let memory = Memory::new(&mut blocks, segment_length);
+        Instance::hash(self, alg, initial_hash, memory, out)
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
@@ -520,18 +523,6 @@ impl<'key> Argon2<'key> {
         digest.update(&(ad.len() as u32).to_le_bytes());
         digest.update(ad);
         digest.finalize()
-    }
-
-    pub(crate) fn segment_length(&self) -> u32 {
-        // Align memory size
-        // Minimum memory_blocks = 8L blocks, where L is the number of lanes
-        let memory_blocks = if self.m_cost < 2 * SYNC_POINTS * self.lanes {
-            2 * SYNC_POINTS * self.lanes
-        } else {
-            self.m_cost
-        };
-
-        memory_blocks / (self.lanes * SYNC_POINTS)
     }
 }
 

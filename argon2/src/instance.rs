@@ -52,9 +52,6 @@ pub(crate) struct Instance<'a> {
     /// Number of passes
     passes: u32,
 
-    /// Segment length
-    segment_length: u32,
-
     /// Lane length
     lane_length: u32,
 
@@ -97,12 +94,13 @@ impl<'a> Instance<'a> {
         mut initial_hash: digest::Output<Blake2b>,
         memory: Memory<'a>,
     ) -> Result<Self, Error> {
+        let lane_length = memory.segment_length() * SYNC_POINTS;
+
         let mut instance = Instance {
             version: context.version,
             memory,
             passes: context.t_cost,
-            segment_length: context.segment_length(),
-            lane_length: context.segment_length() * SYNC_POINTS,
+            lane_length,
             lanes: context.lanes,
             threads: context.threads,
             alg,
@@ -272,7 +270,7 @@ impl<'a> Instance<'a> {
 
         // Offset of the current block
         let mut curr_offset = position.lane * self.lane_length
-            + position.slice * self.segment_length
+            + position.slice * self.memory.segment_length()
             + starting_index;
 
         let mut prev_offset = if 0 == curr_offset % self.lane_length {
@@ -283,7 +281,7 @@ impl<'a> Instance<'a> {
             curr_offset - 1
         };
 
-        for i in starting_index..self.segment_length {
+        for i in starting_index..self.memory.segment_length() {
             // 1.1 Rotating prev_offset if needed
             if curr_offset % self.lane_length == 1 {
                 prev_offset = curr_offset - 1;
@@ -361,16 +359,19 @@ impl<'a> Instance<'a> {
                 position.index - 1 // all but the previous
             } else if same_lane {
                 // The same lane => add current segment
-                position.slice * self.segment_length + position.index - 1
+                position.slice * self.memory.segment_length() + position.index - 1
             } else {
-                position.slice * self.segment_length - if position.index == 0 { 1 } else { 0 }
+                position.slice * self.memory.segment_length()
+                    - if position.index == 0 { 1 } else { 0 }
             }
         } else {
             // Second pass
             if same_lane {
-                self.lane_length - self.segment_length + position.index - 1
+                self.lane_length - self.memory.segment_length() + position.index - 1
             } else {
-                self.lane_length - self.segment_length - if position.index == 0 { 1 } else { 0 }
+                self.lane_length
+                    - self.memory.segment_length()
+                    - if position.index == 0 { 1 } else { 0 }
             }
         };
 
@@ -389,7 +390,7 @@ impl<'a> Instance<'a> {
             start_position = if position.slice == SYNC_POINTS - 1 {
                 0
             } else {
-                (position.slice + 1) * self.segment_length
+                (position.slice + 1) * self.memory.segment_length()
             }
         }
 
