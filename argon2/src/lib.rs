@@ -63,12 +63,14 @@
 //! [Password Hashing Competition]: https://www.password-hashing.net/
 
 #![no_std]
+// TODO(tarcieri): safe parallel implementation
+// See: https://github.com/RustCrypto/password-hashes/issues/154
+#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![deny(unsafe_code)]
 #![warn(rust_2018_idioms, missing_docs)]
 
 #[macro_use]
