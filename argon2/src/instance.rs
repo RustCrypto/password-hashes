@@ -1,7 +1,8 @@
 //! Argon2 instance (i.e. state)
 
 use crate::{
-    Algorithm, Argon2, Block, Error, Version, BLOCK_SIZE, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
+    Algorithm, Argon2, Block, Error, Memory, Version, BLOCK_SIZE, MAX_OUTLEN, MIN_OUTLEN,
+    SYNC_POINTS,
 };
 use blake2::{
     digest::{self, VariableOutput},
@@ -34,39 +35,6 @@ struct Position {
     lane: u32,
     slice: u32,
     index: u32,
-}
-
-/// Structure containing references to the memory blocks
-struct Memory<'a> {
-    /// Memory blocks
-    data: &'a mut [Block],
-
-    /// Size of the memory in blocks
-    size: usize,
-}
-
-impl<'a> Memory<'a> {
-    /// Instantiate a new memory struct
-    fn new(data: &'a mut [Block]) -> Self {
-        let size = data.len();
-
-        Self { data, size }
-    }
-
-    /// Get a copy of the block
-    fn get_block(&self, idx: usize) -> Block {
-        self.data[idx]
-    }
-
-    /// Get a mutable reference to the block
-    fn get_block_mut(&mut self, idx: usize) -> &mut Block {
-        &mut self.data[idx]
-    }
-
-    /// Size of the memory
-    fn len(&self) -> usize {
-        self.size
-    }
 }
 
 /// Argon2 instance: memory pointer, number of passes, amount of memory, type,
@@ -107,7 +75,7 @@ impl<'a> Instance<'a> {
         context: &Argon2<'_>,
         alg: Algorithm,
         initial_hash: digest::Output<Blake2b>,
-        memory: &'a mut [Block],
+        memory: Memory<'a>,
         out: &mut [u8],
     ) -> Result<(), Error> {
         let mut instance = Self::new(context, alg, initial_hash, memory)?;
@@ -127,10 +95,8 @@ impl<'a> Instance<'a> {
         context: &Argon2<'_>,
         alg: Algorithm,
         mut initial_hash: digest::Output<Blake2b>,
-        memory: &'a mut [Block],
+        memory: Memory<'a>,
     ) -> Result<Self, Error> {
-        let memory = Memory::new(memory);
-
         let mut instance = Instance {
             version: context.version,
             memory,
