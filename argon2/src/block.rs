@@ -1,6 +1,5 @@
 //! Argon2 memory block functions
 
-use crate::BLOCK_SIZE;
 use core::{
     convert::TryInto,
     num::Wrapping,
@@ -11,62 +10,23 @@ use core::{
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-/// Quadwords in block
-const QWORDS_IN_BLOCK: usize = BLOCK_SIZE / 8;
-
 /// Structure for the (1KB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct Block([u64; QWORDS_IN_BLOCK]);
+pub(crate) struct Block([u64; Self::SIZE / 8]);
 
 impl Default for Block {
     fn default() -> Self {
-        Self([0u64; QWORDS_IN_BLOCK])
-    }
-}
-
-impl BitXor for Block {
-    type Output = Self;
-
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        let mut res = self;
-        res ^= rhs;
-        res
-    }
-}
-
-impl BitXorAssign for Block {
-    fn bitxor_assign(&mut self, rhs: Self) {
-        for (a, b) in self.iter_mut().zip(rhs.iter()) {
-            *a ^= *b;
-        }
-    }
-}
-
-impl Index<usize> for Block {
-    type Output = u64;
-
-    fn index(&self, index: usize) -> &u64 {
-        &self.0[index]
-    }
-}
-
-impl IndexMut<usize> for Block {
-    fn index_mut(&mut self, index: usize) -> &mut u64 {
-        &mut self.0[index]
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for Block {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
+        Self([0u64; Self::SIZE / 8])
     }
 }
 
 impl Block {
+    /// Memory block size in bytes
+    pub const SIZE: usize = 1024;
+
     /// Load a block from a block-sized byte slice
     pub fn load(&mut self, input: &[u8]) {
-        debug_assert_eq!(input.len(), BLOCK_SIZE);
+        debug_assert_eq!(input.len(), Block::SIZE);
 
         for (i, chunk) in input.chunks(8).enumerate() {
             self[i] = u64::from_le_bytes(chunk.try_into().unwrap());
@@ -95,6 +55,13 @@ impl Block {
             block_tmp ^= *self;
             // Now block_r = ref_block + prev_block and
             // block_tmp = ref_block + prev_block + next_block
+        }
+
+        /// Designed by the Lyra PHC team
+        fn blake2_mult(x: u64, y: u64) -> u64 {
+            let m = 0xFFFFFFFF;
+            let xy = Wrapping((x & m) * (y & m)) * Wrapping(2);
+            (Wrapping(x) + Wrapping(y) + xy).0
         }
 
         /// Blake2 round function
@@ -178,9 +145,41 @@ impl Block {
     }
 }
 
-/// Designed by the Lyra PHC team
-fn blake2_mult(x: u64, y: u64) -> u64 {
-    let m = 0xFFFFFFFF;
-    let xy = Wrapping((x & m) * (y & m)) * Wrapping(2);
-    (Wrapping(x) + Wrapping(y) + xy).0
+impl BitXor for Block {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let mut res = self;
+        res ^= rhs;
+        res
+    }
+}
+
+impl BitXorAssign for Block {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        for (a, b) in self.iter_mut().zip(rhs.iter()) {
+            *a ^= *b;
+        }
+    }
+}
+
+impl Index<usize> for Block {
+    type Output = u64;
+
+    fn index(&self, index: usize) -> &u64 {
+        &self.0[index]
+    }
+}
+
+impl IndexMut<usize> for Block {
+    fn index_mut(&mut self, index: usize) -> &mut u64 {
+        &mut self.0[index]
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for Block {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
 }

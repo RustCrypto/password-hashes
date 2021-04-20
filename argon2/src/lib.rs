@@ -123,10 +123,10 @@ pub const MIN_OUTLEN: usize = 4;
 /// Maximum digest size in bytes
 pub const MAX_OUTLEN: usize = 0xFFFFFFFF;
 
-/// Minimum number of memory blocks (each of [`BLOCK_SIZE`] bytes)
+/// Minimum number of memory blocks.
 pub const MIN_MEMORY: u32 = 2 * SYNC_POINTS; // 2 blocks per slice
 
-/// Maximum number of memory blocks (each of [`BLOCK_SIZE`] bytes)
+/// Maximum number of memory blocks.
 pub const MAX_MEMORY: u32 = 0x0FFFFFFF;
 
 /// Minimum number of passes
@@ -151,7 +151,8 @@ pub const MAX_SALT_LENGTH: usize = 0xFFFFFFFF;
 pub const MAX_SECRET: usize = 0xFFFFFFFF;
 
 /// Memory block size in bytes
-pub const BLOCK_SIZE: usize = 1024;
+#[deprecated(since = "0.1.6", note = "use Block::SIZE instead")]
+pub const BLOCK_SIZE: usize = Block::SIZE;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
