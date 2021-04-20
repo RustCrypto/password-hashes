@@ -1,8 +1,7 @@
 //! Argon2 instance (i.e. state)
 
 use crate::{
-    Algorithm, Argon2, Block, Error, Memory, Version, BLOCK_SIZE, MAX_OUTLEN, MIN_OUTLEN,
-    SYNC_POINTS,
+    Algorithm, Argon2, Block, Error, Memory, Version, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
 };
 use blake2::{
     digest::{self, VariableOutput},
@@ -201,7 +200,7 @@ impl<'a> Instance<'a> {
         }
 
         // Hash the result
-        let mut blockhash_bytes = [0u8; BLOCK_SIZE];
+        let mut blockhash_bytes = [0u8; Block::SIZE];
 
         for (chunk, v) in blockhash_bytes.chunks_mut(8).zip(blockhash.iter()) {
             chunk.copy_from_slice(&v.to_le_bytes())
@@ -220,7 +219,7 @@ impl<'a> Instance<'a> {
 
     /// Function creates first 2 blocks per lane
     fn fill_first_blocks(&mut self, blockhash: &[u8]) -> Result<(), Error> {
-        let mut hash = [0u8; BLOCK_SIZE];
+        let mut hash = [0u8; Block::SIZE];
 
         for l in 0..self.lanes {
             // Make the first and second block in each lane as G(H0||0||i) or
