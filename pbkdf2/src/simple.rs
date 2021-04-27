@@ -9,8 +9,7 @@ use core::{
 };
 use hmac::Hmac;
 use password_hash::{
-    Decimal, HasherError, Ident, McfHasher, Output, ParamsError, ParamsString, PasswordHash,
-    PasswordHasher, Salt,
+    Error, Ident, McfHasher, Output, ParamsString, PasswordHash, PasswordHasher, Result, Salt,
 };
 use sha2::{Sha256, Sha512};
 
@@ -39,16 +38,11 @@ impl PasswordHasher for Pbkdf2 {
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
         params: Params,
-        salt: Salt<'a>,
-    ) -> Result<PasswordHash<'a>, HasherError> {
+        salt: impl Into<Salt<'a>>,
+    ) -> Result<PasswordHash<'a>> {
         let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256))?;
-
-        if version.is_some() {
-            return Err(HasherError::Version);
-        }
-
+        let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
@@ -95,7 +89,7 @@ pub enum Algorithm {
 
 impl Algorithm {
     /// Parse an [`Algorithm`] from the provided string.
-    pub fn new(id: impl AsRef<str>) -> Result<Self, HasherError> {
+    pub fn new(id: impl AsRef<str>) -> Result<Self> {
         id.as_ref().parse()
     }
 
@@ -128,9 +122,9 @@ impl Display for Algorithm {
 }
 
 impl FromStr for Algorithm {
-    type Err = HasherError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Algorithm, HasherError> {
+    fn from_str(s: &str) -> Result<Algorithm> {
         Ident::try_from(s)?.try_into()
     }
 }
@@ -142,15 +136,15 @@ impl From<Algorithm> for Ident<'static> {
 }
 
 impl<'a> TryFrom<Ident<'a>> for Algorithm {
-    type Error = HasherError;
+    type Error = Error;
 
-    fn try_from(ident: Ident<'a>) -> Result<Algorithm, HasherError> {
+    fn try_from(ident: Ident<'a>) -> Result<Algorithm> {
         match ident {
             #[cfg(feature = "sha1")]
             PBKDF2_SHA1 => Ok(Algorithm::Pbkdf2Sha1),
             PBKDF2_SHA256 => Ok(Algorithm::Pbkdf2Sha256),
             PBKDF2_SHA512 => Ok(Algorithm::Pbkdf2Sha512),
-            _ => Err(HasherError::Algorithm),
+            _ => Err(Error::Algorithm),
         }
     }
 }
@@ -175,33 +169,50 @@ impl Default for Params {
     }
 }
 
-impl TryFrom<&ParamsString> for Params {
-    type Error = HasherError;
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = Error;
 
-    fn try_from(input: &ParamsString) -> Result<Self, HasherError> {
-        let mut output = Params::default();
+    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self> {
+        let mut params = Params::default();
+        let mut output_length = None;
 
-        for (ident, value) in input.iter() {
+        if hash.version.is_some() {
+            return Err(Error::Version);
+        }
+
+        for (ident, value) in hash.params.iter() {
             match ident.as_str() {
-                "i" => output.rounds = value.decimal()?,
+                "i" => params.rounds = value.decimal()?,
                 "l" => {
-                    output.output_length = value
-                        .decimal()?
-                        .try_into()
-                        .map_err(|_| ParamsError::InvalidValue)?
+                    output_length = Some(
+                        value
+                            .decimal()?
+                            .try_into()
+                            .map_err(|_| Error::ParamValueInvalid)?,
+                    )
                 }
-                _ => return Err(ParamsError::InvalidName.into()),
+                _ => return Err(Error::ParamNameInvalid),
             }
         }
 
-        Ok(output)
+        if let Some(len) = output_length {
+            if let Some(hash) = &hash.hash {
+                if hash.len() != len {
+                    return Err(Error::ParamValueInvalid);
+                }
+            }
+
+            params.output_length = len;
+        }
+
+        Ok(params)
     }
 }
 
 impl<'a> TryFrom<Params> for ParamsString {
-    type Error = HasherError;
+    type Error = Error;
 
-    fn try_from(input: Params) -> Result<ParamsString, HasherError> {
+    fn try_from(input: Params) -> Result<ParamsString> {
         let mut output = ParamsString::new();
         output.add_decimal("i", input.rounds)?;
         output.add_decimal("l", input.output_length as u32)?;
@@ -210,9 +221,7 @@ impl<'a> TryFrom<Params> for ParamsString {
 }
 
 impl McfHasher for Pbkdf2 {
-    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>, HasherError> {
-        use password_hash::ParseError;
-
+    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>> {
         let mut parts = hash.split('$');
 
         // prevent dynamic allocations by using a fixed-size buffer
@@ -235,16 +244,13 @@ impl McfHasher for Pbkdf2 {
                 let mut count_arr = [0u8; 4];
 
                 if Base64::decode(count, &mut count_arr)?.len() != 4 {
-                    return Err(ParamsError::InvalidValue.into());
+                    return Err(Error::ParamValueInvalid);
                 }
 
                 let count = u32::from_be_bytes(count_arr);
                 (count, salt, hash)
             }
-            _ => {
-                // TODO(tarcieri): better errors here?
-                return Err(ParseError::InvalidChar('?').into());
-            }
+            _ => return Err(Error::ParamValueInvalid),
         };
 
         let salt = Salt::new(b64_strip(salt))?;

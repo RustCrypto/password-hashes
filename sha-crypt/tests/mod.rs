@@ -42,7 +42,7 @@ fn test_sha512_crypt() {
     for t in tests.iter() {
         let params = Sha512Params::new(t.rounds).expect("Rounds error");
         let result = sha512_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params).unwrap();
-        assert!(&result == t.result);
+        assert!(result == t.result);
     }
 }
 
