@@ -30,12 +30,12 @@ fn hash_with_default_algorithm() {
     };
 
     let hash = Pbkdf2
-        .hash_password(PASSWORD.as_bytes(), None, None, params.into(), salt)
+        .hash_password(PASSWORD.as_bytes(), None, params, salt)
         .unwrap();
 
     assert_eq!(hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
     assert_eq!(hash.salt.unwrap().as_str(), SALT_B64);
-    assert_eq!(Params::try_from(&hash.params).unwrap(), params);
+    assert_eq!(Params::try_from(&hash).unwrap(), params);
 
     let expected_output = hex!("c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a");
     assert_eq!(hash.hash.unwrap().as_ref(), expected_output);
@@ -48,7 +48,7 @@ fn upgrade_mcf_hash() {
 
     assert_eq!(phc_hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
 
-    let params = Params::try_from(&phc_hash.params).unwrap();
+    let params = Params::try_from(&phc_hash).unwrap();
     assert_eq!(params.rounds, 1024);
     assert_eq!(params.output_length, 32);
     assert_eq!(

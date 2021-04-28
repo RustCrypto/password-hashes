@@ -3,10 +3,7 @@
 use crate::{scrypt, Params};
 use base64ct::{Base64, Encoding};
 use core::convert::TryInto;
-use password_hash::{
-    Decimal, HasherError, Ident, McfHasher, Output, OutputError, ParamsError, PasswordHash,
-    PasswordHasher, Salt,
-};
+use password_hash::{Error, Ident, McfHasher, Output, PasswordHash, PasswordHasher, Result, Salt};
 
 /// Algorithm identifier
 pub const ALG_ID: Ident = Ident::new("scrypt");
@@ -23,26 +20,22 @@ impl PasswordHasher for Scrypt {
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
         params: Params,
-        salt: Salt<'a>,
-    ) -> Result<PasswordHash<'a>, HasherError> {
+        salt: impl Into<Salt<'a>>,
+    ) -> Result<PasswordHash<'a>> {
         match alg_id {
             Some(ALG_ID) | None => (),
-            _ => return Err(HasherError::Algorithm),
+            _ => return Err(Error::Algorithm),
         }
 
-        if version.is_some() {
-            return Err(HasherError::Version);
-        }
-
+        let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
         let output = Output::init_with(params.len, |out| {
             scrypt(password, &salt_bytes, &params, out).map_err(|_e| {
                 // TODO(tarcieri): handle output variants
-                OutputError::TooLong
+                Error::OutputTooLong
             })
         })?;
 
@@ -57,9 +50,7 @@ impl PasswordHasher for Scrypt {
 }
 
 impl McfHasher for Scrypt {
-    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>, HasherError> {
-        use password_hash::ParseError;
-
+    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>> {
         let mut parts = hash.split('$');
 
         let buf = [
@@ -77,27 +68,24 @@ impl McfHasher for Scrypt {
             [Some(""), Some("rscrypt"), Some("0"), Some(p), Some(s), Some(h), Some(""), None] => {
                 let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 3 {
-                    return Err(ParamsError::InvalidValue.into());
+                    return Err(Error::ParamValueInvalid);
                 }
                 (pvec[0], pvec[1] as u32, pvec[2] as u32, s, h)
             }
             [Some(""), Some("rscrypt"), Some("1"), Some(p), Some(s), Some(h), Some(""), None] => {
                 let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 9 {
-                    return Err(ParamsError::InvalidValue.into());
+                    return Err(Error::ParamValueInvalid);
                 }
                 let log_n = pvec[0];
                 let r = u32::from_le_bytes(pvec[1..5].try_into().unwrap());
                 let p = u32::from_le_bytes(pvec[5..9].try_into().unwrap());
                 (log_n, r, p, s, h)
             }
-            _ => {
-                // TODO(tarcieri): better errors here?
-                return Err(ParseError::InvalidChar('?').into());
-            }
+            _ => return Err(Error::ParamValueInvalid),
         };
 
-        let params = Params::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue)?;
+        let params = Params::new(log_n, r, p).map_err(|_| Error::ParamValueInvalid)?;
         let salt = Salt::new(b64_strip(salt))?;
         let hash = Output::b64_decode(b64_strip(hash))?;
 

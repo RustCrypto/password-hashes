@@ -1,11 +1,11 @@
-use core::{mem::size_of, usize};
+use core::mem::size_of;
 
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
 use {
     core::convert::{TryFrom, TryInto},
-    password_hash::{HasherError, ParamsError, ParamsString},
+    password_hash::{Error, ParamsString, PasswordHash},
 };
 
 const RECOMMENDED_LOG_N: u8 = 15;
@@ -120,38 +120,42 @@ impl Default for Params {
 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-impl TryFrom<&ParamsString> for Params {
-    type Error = HasherError;
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = password_hash::Error;
 
-    fn try_from(input: &ParamsString) -> Result<Self, HasherError> {
+    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self, password_hash::Error> {
         let mut log_n = RECOMMENDED_LOG_N;
         let mut r = RECOMMENDED_R;
         let mut p = RECOMMENDED_P;
 
-        for (ident, value) in input.iter() {
+        if hash.version.is_some() {
+            return Err(Error::Version);
+        }
+
+        for (ident, value) in hash.params.iter() {
             match ident.as_str() {
                 "ln" => {
                     log_n = value
                         .decimal()?
                         .try_into()
-                        .map_err(|_| ParamsError::InvalidValue)?
+                        .map_err(|_| Error::ParamValueInvalid)?
                 }
                 "r" => r = value.decimal()?,
                 "p" => p = value.decimal()?,
-                _ => return Err(ParamsError::InvalidName.into()),
+                _ => return Err(password_hash::Error::ParamNameInvalid),
             }
         }
 
-        Params::new(log_n, r, p).map_err(|_| ParamsError::InvalidValue.into())
+        Params::new(log_n, r, p).map_err(|_| password_hash::Error::ParamValueInvalid)
     }
 }
 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 impl<'a> TryFrom<Params> for ParamsString {
-    type Error = HasherError;
+    type Error = password_hash::Error;
 
-    fn try_from(input: Params) -> Result<ParamsString, HasherError> {
+    fn try_from(input: Params) -> Result<ParamsString, password_hash::Error> {
         let mut output = ParamsString::new();
         output.add_decimal("ln", input.log_n as u32)?;
         output.add_decimal("r", input.r)?;

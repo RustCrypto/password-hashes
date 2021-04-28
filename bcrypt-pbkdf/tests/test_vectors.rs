@@ -70,7 +70,7 @@ fn test_openbsd_vectors() {
 
     for t in tests.iter() {
         let mut out = vec![0; t.out.len()];
-        bcrypt_pbkdf(&t.password[..], &t.salt[..], t.rounds, &mut out).unwrap();
+        bcrypt_pbkdf(t.password, &t.salt[..], t.rounds, &mut out).unwrap();
         assert_eq!(out, t.out);
     }
 }

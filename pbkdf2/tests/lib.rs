@@ -1,5 +1,3 @@
-use pbkdf2;
-
 use hmac::Hmac;
 use sha1::Sha1;
 

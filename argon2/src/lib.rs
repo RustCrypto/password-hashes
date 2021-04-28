@@ -80,12 +80,19 @@ mod block;
 mod error;
 mod instance;
 mod memory;
+mod version;
 
-pub use crate::error::Error;
+#[cfg(feature = "password-hash")]
+mod params;
+
+pub use crate::{error::Error, version::Version};
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
+pub use {
+    params::Params,
+    password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
+};
 
 use crate::{
     block::Block,
@@ -94,15 +101,14 @@ use crate::{
 };
 use blake2::{digest, Blake2b, Digest};
 use core::{
-    convert::TryFrom,
     fmt::{self, Display},
     str::FromStr,
 };
 
 #[cfg(feature = "password-hash")]
 use {
-    core::convert::TryInto,
-    password_hash::{Decimal, HasherError, Ident, ParamsError, ParamsString, Salt},
+    core::convert::{TryFrom, TryInto},
+    password_hash::{Ident, Salt},
 };
 
 /// Minimum and maximum number of lanes (degree of parallelism)
@@ -269,60 +275,14 @@ impl From<Algorithm> for Ident<'static> {
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl<'a> TryFrom<Ident<'a>> for Algorithm {
-    type Error = HasherError;
+    type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> Result<Algorithm, HasherError> {
+    fn try_from(ident: Ident<'a>) -> Result<Algorithm, password_hash::Error> {
         match ident {
             ARGON2D_IDENT => Ok(Algorithm::Argon2d),
             ARGON2I_IDENT => Ok(Algorithm::Argon2i),
             ARGON2ID_IDENT => Ok(Algorithm::Argon2id),
-            _ => Err(HasherError::Algorithm),
-        }
-    }
-}
-
-/// Version of the algorithm.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
-pub enum Version {
-    /// Version 16 (0x10 in hex)
-    ///
-    /// Performs overwrite internally
-    V0x10 = 0x10,
-
-    /// Version 19 (0x13 in hex, default)
-    ///
-    /// Performs XOR internally
-    V0x13 = 0x13,
-}
-
-impl Version {
-    /// Serialize version as little endian bytes
-    fn to_le_bytes(self) -> [u8; 4] {
-        (self as u32).to_le_bytes()
-    }
-}
-
-impl Default for Version {
-    fn default() -> Self {
-        Self::V0x13
-    }
-}
-
-impl From<Version> for u32 {
-    fn from(version: Version) -> u32 {
-        version as u32
-    }
-}
-
-impl TryFrom<u32> for Version {
-    type Error = Error;
-
-    fn try_from(version_id: u32) -> Result<Version, Error> {
-        match version_id {
-            0x10 => Ok(Version::V0x10),
-            0x13 => Ok(Version::V0x13),
-            _ => Err(Error::VersionInvalid),
+            _ => Err(password_hash::Error::Algorithm),
         }
     }
 }
@@ -536,21 +496,15 @@ impl PasswordHasher for Argon2<'_> {
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
-        version_id: Option<Decimal>,
         params: Params,
-        salt: Salt<'a>,
-    ) -> Result<PasswordHash<'a>, HasherError> {
+        salt: impl Into<Salt<'a>>,
+    ) -> Result<PasswordHash<'a>, password_hash::Error> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
             .unwrap_or_default();
 
-        let version = version_id
-            .map(Version::try_from)
-            .transpose()
-            .map_err(|_| HasherError::Version)?
-            .unwrap_or(self.version);
-
+        let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
@@ -562,33 +516,33 @@ impl PasswordHasher for Argon2<'_> {
             params.t_cost,
             params.m_cost,
             params.p_cost,
-            version,
+            params.version,
         )
-        .map_err(|_| HasherError::Params(ParamsError::InvalidValue))?;
+        .map_err(|_| password_hash::Error::ParamValueInvalid)?;
 
         if MAX_PWD_LENGTH < password.len() {
-            return Err(HasherError::Password);
+            return Err(password_hash::Error::Password);
         }
 
         if !(MIN_SALT_LENGTH..=MAX_SALT_LENGTH).contains(&salt_bytes.len()) {
             // TODO(tarcieri): better error types for this case
-            return Err(HasherError::Crypto);
+            return Err(password_hash::Error::Crypto);
         }
 
         // Validate associated data (optional param)
         if MAX_AD_LENGTH < ad.len() {
             // TODO(tarcieri): better error types for this case
-            return Err(HasherError::Crypto);
+            return Err(password_hash::Error::Crypto);
         }
 
         // TODO(tarcieri): improve this API to eliminate redundant checks above
-        let output = password_hash::Output::init_with(params.output_length, |out| {
+        let output = password_hash::Output::init_with(params.output_size, |out| {
             hasher
                 .hash_password_into(algorithm, password, salt_bytes, ad, out)
                 .map_err(|e| {
                     match e {
-                        Error::OutputTooShort => password_hash::OutputError::TooShort,
-                        Error::OutputTooLong => password_hash::OutputError::TooLong,
+                        Error::OutputTooShort => password_hash::Error::OutputTooShort,
+                        Error::OutputTooLong => password_hash::Error::OutputTooLong,
                         // Other cases are not returned from `hash_password_into`
                         // TODO(tarcieri): finer-grained error types?
                         _ => panic!("unhandled error type: {}", e),
@@ -598,7 +552,7 @@ impl PasswordHasher for Argon2<'_> {
 
         let res = Ok(PasswordHash {
             algorithm: algorithm.ident(),
-            version: Some(version.into()),
+            version: Some(params.version.into()),
             params: params.try_into()?,
             salt: Some(salt),
             hash: Some(output),
@@ -608,84 +562,9 @@ impl PasswordHasher for Argon2<'_> {
     }
 }
 
-/// Argon2 password hash parameters.
-///
-/// These are parameters which can be encoded into a PHC hash string.
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Params {
-    /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
-    ///
-    /// Value is an integer in decimal (1 to 10 digits).
-    pub m_cost: u32,
-
-    /// Number of iterations, between 1 and (2^32)-1.
-    ///
-    /// Value is an integer in decimal (1 to 10 digits).
-    pub t_cost: u32,
-
-    /// Degree of parallelism, between 1 and 255.
-    ///
-    /// Value is an integer in decimal (1 to 3 digits).
-    pub p_cost: u32,
-
-    /// Size of the output (in bytes)
-    pub output_length: usize,
-}
-
-#[cfg(feature = "password-hash")]
-impl Default for Params {
-    fn default() -> Params {
-        let ctx = Argon2::default();
-
-        Params {
-            m_cost: ctx.m_cost,
-            t_cost: ctx.t_cost,
-            p_cost: ctx.threads,
-            output_length: 32,
-        }
-    }
-}
-
-#[cfg(feature = "password-hash")]
-impl TryFrom<&ParamsString> for Params {
-    type Error = HasherError;
-
-    fn try_from(input: &ParamsString) -> Result<Self, HasherError> {
-        let mut params = Params::default();
-
-        for (ident, value) in input.iter() {
-            match ident.as_str() {
-                "m" => params.m_cost = value.decimal()?,
-                "t" => params.t_cost = value.decimal()?,
-                "p" => params.p_cost = value.decimal()?,
-                "keyid" => (), // Ignored; correct key must be given to `Argon2` context
-                // TODO(tarcieri): `data` parameter
-                _ => return Err(ParamsError::InvalidName.into()),
-            }
-        }
-
-        Ok(params)
-    }
-}
-
-#[cfg(feature = "password-hash")]
-impl<'a> TryFrom<Params> for ParamsString {
-    type Error = HasherError;
-
-    fn try_from(params: Params) -> Result<ParamsString, HasherError> {
-        let mut output = ParamsString::new();
-        output.add_decimal("m", params.m_cost)?;
-        output.add_decimal("t", params.t_cost)?;
-        output.add_decimal("p", params.p_cost)?;
-        Ok(output)
-    }
-}
-
 #[cfg(all(test, feature = "password-hash"))]
 mod tests {
-    use super::{Argon2, HasherError, Params, PasswordHasher, Salt};
+    use super::{Argon2, Params, PasswordHasher, Salt};
 
     /// Example password only: don't use this as a real password!!!
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
@@ -697,7 +576,7 @@ mod tests {
         // Too short after decoding
         let salt = Salt::new("somesalt").unwrap();
 
-        let res = argon2.hash_password(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
-        assert_eq!(res, Err(HasherError::Crypto));
+        let res = argon2.hash_password(EXAMPLE_PASSWORD, None, Params::default(), salt);
+        assert_eq!(res, Err(password_hash::Error::Crypto));
     }
 }
