@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 (2021-04-29)
+### Changed
+- Bump `crypto-mac` dependency to v0.11 ([#165])
+- Bump `pbkdf2` to v0.8 ([#167])
+
+[#165]: https://github.com/RustCrypto/password-hashing/pull/165
+[#167]: https://github.com/RustCrypto/password-hashing/pull/167
+
 ## 0.5.0 (2021-01-29)
 ### Changed
 - Bump `pbkdf2` dependency to v0.7 ([#102])
