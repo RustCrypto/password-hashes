@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0 (2021-04-29)
+### Changed
+- Forbid unsafe code outside parallel implementation ([#157])
+- Bump `password-hash` crate dependency to v0.2 ([#164])
+
+### Removed
+- `argon2::BLOCK_SIZE` constant ([#161])
+
+[#157]: https://github.com/RustCrypto/password-hashes/pull/157
+[#161]: https://github.com/RustCrypto/password-hashes/pull/161
+[#164]: https://github.com/RustCrypto/password-hashes/pull/164
+
 ## 0.1.5 (2021-04-18)
 ### Added
 - Parallel lane processing using `rayon` ([#149])
