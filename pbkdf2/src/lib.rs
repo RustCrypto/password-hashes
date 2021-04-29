@@ -115,7 +115,7 @@ where
     F: Mac + NewMac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
-    let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
+    let prf = F::new_from_slice(password).expect("HMAC accepts all key sizes");
 
     res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
         pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
@@ -130,7 +130,7 @@ where
     F: Mac + NewMac + Clone + Sync,
 {
     let n = F::OutputSize::to_usize();
-    let prf = F::new_varkey(password).expect("HMAC accepts all key sizes");
+    let prf = F::new_from_slice(password).expect("HMAC accepts all key sizes");
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
         pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
