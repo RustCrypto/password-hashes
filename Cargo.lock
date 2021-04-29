@@ -277,7 +277,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.7.5"
+version = "0.8.0"
 dependencies = [
  "base64ct",
  "crypto-mac 0.11.0",
