@@ -1,7 +1,7 @@
 use core::convert::TryInto;
 
 /// The Salsa20/8 core function
-type Salsa20_8 = salsa20::Block<salsa20::R8>;
+type Salsa20_8 = salsa20::Core<salsa20::R8>;
 
 /// Execute the ROMix operation in-place.
 /// b - the data to operate on
