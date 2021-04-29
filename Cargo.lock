@@ -29,7 +29,7 @@ name = "bcrypt-pbkdf"
 version = "0.5.0"
 dependencies = [
  "blowfish",
- "crypto-mac 0.10.0",
+ "crypto-mac 0.11.0",
  "pbkdf2",
  "sha2",
  "zeroize",
@@ -159,6 +159,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto-mac"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25fab6889090c8133f3deb8f73ba3c65a7f456f66436fc012a1b1e272b1e103e"
+dependencies = [
+ "generic-array",
+ "subtle",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -271,7 +281,7 @@ name = "pbkdf2"
 version = "0.7.5"
 dependencies = [
  "base64ct",
- "crypto-mac 0.10.0",
+ "crypto-mac 0.11.0",
  "hex-literal",
  "hmac",
  "password-hash",
