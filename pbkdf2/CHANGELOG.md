@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.0 (2021-04-29)
+### Changed
+- Bump `password-hash` crate dependency to v0.2 ([#164])
+- Bump `hmac` and `crypto-mac` crate deps to v0.11 ([#165])
+
+[#164]: https://github.com/RustCrypto/password-hashing/pull/164
+[#165]: https://github.com/RustCrypto/password-hashing/pull/165
+
 ## 0.7.5 (2021-03-27)
 ### Fixed
 - Pin `password-hash` to v0.1.2 or newer ([#151])
