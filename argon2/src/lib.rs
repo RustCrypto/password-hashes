@@ -156,10 +156,6 @@ pub const MAX_SALT_LENGTH: usize = 0xFFFFFFFF;
 /// Maximum key length in bytes
 pub const MAX_SECRET: usize = 0xFFFFFFFF;
 
-/// Memory block size in bytes
-#[deprecated(since = "0.1.6", note = "use Block::SIZE instead")]
-pub const BLOCK_SIZE: usize = Block::SIZE;
-
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
