@@ -11,7 +11,7 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-blowfish = { version = "0.7", features = ["bcrypt"] }
+blowfish = { version = "0.8", features = ["bcrypt"] }
 crypto-mac = "0.11"
 pbkdf2 = { version = "0.8", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.9", default-features = false }
