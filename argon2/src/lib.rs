@@ -21,7 +21,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! argon2 = "0.1"
+//! argon2 = "0.2"
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
