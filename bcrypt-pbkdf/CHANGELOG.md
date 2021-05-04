@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.6.0 (2021-04-29)
+## 0.6.1 (2021-05-04)
+### Changed
+- Bump `blowfish` dependency to v0.8 ([#171])
+
+[#171]: https://github.com/RustCrypto/password-hashing/pull/171
+
+## 0.6.0 (2021-04-29) [YANKED]
 ### Changed
 - Bump `crypto-mac` dependency to v0.11 ([#165])
 - Bump `pbkdf2` to v0.8 ([#167])
