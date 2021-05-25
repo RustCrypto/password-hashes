@@ -4,12 +4,16 @@ use core::convert::TryInto;
 type Salsa20_8 = salsa20::Core<salsa20::R8>;
 
 /// Execute the ROMix operation in-place.
-/// b - the data to operate on
-/// v - a temporary variable to store the vector V
-/// t - a temporary variable to store the result of the xor
+/// b - the data to operate on; len must be a multiple of 128
+/// v - a temporary variable to store the vector V; len must be (n >> log_f) * b.len()
+/// t - a temporary variable; len must be b.len() * 2
 /// n - the scrypt parameter N
+/// log_f - a factor that reduces memory usage at the cost of computation; must always be less than or equal to log_n
+/// To get a sense of how log_f works, the following formula calculates the total number
+/// of operations performed for a given n and log_f:
+/// ops(n, log_f) = 2 * n + 0.5 * n * (2**log_f - 1)
 #[allow(clippy::many_single_char_names)]
-pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) {
+pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize, log_f: u32) {
     fn integerify(x: &[u8], n: usize) -> usize {
         // n is a power of 2, so n - 1 gives us a bitmask that we can use to perform a calculation
         // mod n using a simple bitwise and.
@@ -22,16 +26,54 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
     }
 
     let len = b.len();
+    let (t1, t2) = t.split_at_mut(len);
 
     for chunk in v.chunks_mut(len) {
         chunk.copy_from_slice(b);
-        scrypt_block_mix(chunk, b);
+
+        // Store 1 out of every 2**log_f values, so at 0 store every value, at 1 store every other value, etc.
+        if log_f == 0 {
+            scrypt_block_mix(chunk, b);
+        } else {
+            for _ in 0..((1 << log_f) >> 1) {
+                scrypt_block_mix(b, t1);
+                scrypt_block_mix(t1, b);
+            }
+        }
     }
+
+    let f_mask = (1 << log_f) - 1;
 
     for _ in 0..n {
         let j = integerify(b, n);
-        xor(b, &v[j * len..(j + 1) * len], t);
-        scrypt_block_mix(t, b);
+        // Shift by log_f to get the nearest available stored block, rounded down.
+        let chunk = &v[(j >> log_f) * len..((j >> log_f) + 1) * len];
+
+        // When log_f > 0 we need to hash the fetched block to re-compute the hash of our
+        // desired block.
+        let n_hashes = j & f_mask;
+
+        for i in 0..n_hashes {
+            if i == 0 {
+                scrypt_block_mix(chunk, t1);
+            } else if i & 1 == 1 {
+                scrypt_block_mix(t1, t2);
+            } else {
+                scrypt_block_mix(t2, t1);
+            }
+        }
+
+        // Finally we xor and mix like usual, but need to use the right temporary variables.
+        if n_hashes == 0 {
+            xor(b, chunk, t1);
+            scrypt_block_mix(t1, b);
+        } else if n_hashes & 1 == 0 {
+            xor(b, t2, t1);
+            scrypt_block_mix(t1, b);
+        } else {
+            xor(b, t1, t2);
+            scrypt_block_mix(t2, b);
+        }
     }
 }
 
