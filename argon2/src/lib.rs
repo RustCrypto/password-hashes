@@ -76,21 +76,20 @@
 #[macro_use]
 extern crate alloc;
 
+mod algorithm;
 mod block;
 mod error;
 mod instance;
 mod memory;
+mod params;
 mod version;
 
-#[cfg(feature = "password-hash")]
-mod params;
-
-pub use crate::{error::Error, version::Version};
+pub use crate::{algorithm::Algorithm, error::Error, params::Params, version::Version};
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use {
-    params::Params,
+    crate::algorithm::{ARGON2D_IDENT, ARGON2ID_IDENT, ARGON2I_IDENT},
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
@@ -100,10 +99,6 @@ use crate::{
     memory::{Memory, SYNC_POINTS},
 };
 use blake2::{digest, Blake2b, Digest};
-use core::{
-    fmt::{self, Display},
-    str::FromStr,
-};
 
 #[cfg(feature = "password-hash")]
 use {
@@ -156,133 +151,6 @@ pub const MAX_SALT_LENGTH: usize = 0xFFFFFFFF;
 /// Maximum key length in bytes
 pub const MAX_SECRET: usize = 0xFFFFFFFF;
 
-/// Argon2d algorithm identifier
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2D_IDENT: Ident<'_> = Ident::new("argon2d");
-
-/// Argon2i algorithm identifier
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2I_IDENT: Ident<'_> = Ident::new("argon2i");
-
-/// Argon2id algorithm identifier
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2ID_IDENT: Ident<'_> = Ident::new("argon2id");
-
-/// Argon2 primitive type: variants of the algorithm.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-pub enum Algorithm {
-    /// Optimizes against GPU cracking attacks but vulnerable to side-channels.
-    ///
-    /// Accesses the memory array in a password dependent order, reducing the
-    /// possibility of time–memory tradeoff (TMTO) attacks.
-    Argon2d = 0,
-
-    /// Optimized to resist side-channel attacks.
-    ///
-    /// Accesses the memory array in a password independent order, increasing the
-    /// possibility of time-memory tradeoff (TMTO) attacks.
-    Argon2i = 1,
-
-    /// Hybrid that mixes Argon2i and Argon2d passes (*default*).
-    ///
-    /// Uses the Argon2i approach for the first half pass over memory and
-    /// Argon2d approach for subsequent passes. This effectively places it in
-    /// the "middle" between the other two: it doesn't provide as good
-    /// TMTO/GPU cracking resistance as Argon2d, nor as good of side-channel
-    /// resistance as Argon2i, but overall provides the most well-rounded
-    /// approach to both classes of attacks.
-    Argon2id = 2,
-}
-
-impl Default for Algorithm {
-    fn default() -> Algorithm {
-        Algorithm::Argon2id
-    }
-}
-
-impl Algorithm {
-    /// Parse an [`Algorithm`] from the provided string.
-    pub fn new(id: impl AsRef<str>) -> Result<Self, Error> {
-        id.as_ref().parse()
-    }
-
-    /// Get the identifier string for this PBKDF2 [`Algorithm`].
-    pub fn as_str(&self) -> &str {
-        match self {
-            Algorithm::Argon2d => "argon2d",
-            Algorithm::Argon2i => "argon2i",
-            Algorithm::Argon2id => "argon2id",
-        }
-    }
-
-    /// Get the [`Ident`] that corresponds to this Argon2 [`Algorithm`].
-    #[cfg(feature = "password-hash")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-    pub fn ident(&self) -> Ident<'static> {
-        match self {
-            Algorithm::Argon2d => ARGON2D_IDENT,
-            Algorithm::Argon2i => ARGON2I_IDENT,
-            Algorithm::Argon2id => ARGON2ID_IDENT,
-        }
-    }
-
-    /// Serialize primitive type as little endian bytes
-    fn to_le_bytes(self) -> [u8; 4] {
-        (self as u32).to_le_bytes()
-    }
-}
-
-impl AsRef<str> for Algorithm {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl Display for Algorithm {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for Algorithm {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Algorithm, Error> {
-        match s {
-            "argon2d" => Ok(Algorithm::Argon2d),
-            "argon2i" => Ok(Algorithm::Argon2i),
-            "argon2id" => Ok(Algorithm::Argon2id),
-            _ => Err(Error::AlgorithmInvalid),
-        }
-    }
-}
-
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl From<Algorithm> for Ident<'static> {
-    fn from(alg: Algorithm) -> Ident<'static> {
-        alg.ident()
-    }
-}
-
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
-    type Error = password_hash::Error;
-
-    fn try_from(ident: Ident<'a>) -> Result<Algorithm, password_hash::Error> {
-        match ident {
-            ARGON2D_IDENT => Ok(Algorithm::Argon2d),
-            ARGON2I_IDENT => Ok(Algorithm::Argon2i),
-            ARGON2ID_IDENT => Ok(Algorithm::Argon2id),
-            _ => Err(password_hash::Error::Algorithm),
-        }
-    }
-}
-
 /// Argon2 context.
 ///
 /// Holds the following Argon2 inputs:
@@ -310,35 +178,53 @@ impl<'a> TryFrom<Ident<'a>> for Algorithm {
 ///
 /// You want to erase the password, but you're OK with last pass not being
 /// erased.
+// TODO(tarcieri): replace `Params`-related fields with an internally-stored struct
 #[derive(Clone)]
 pub struct Argon2<'key> {
     /// Key array
     secret: Option<&'key [u8]>,
 
-    /// Number of passes
-    t_cost: u32,
-
-    /// Amount of memory requested (kB)
-    m_cost: u32,
-
-    /// Number of lanes
-    lanes: u32,
-
-    /// Maximum number of threads
-    threads: u32,
+    /// Default algorithm.
+    algorithm: Option<Algorithm>,
 
     /// Version number
     version: Version,
+
+    /// Amount of memory requested (kB).
+    m_cost: u32,
+
+    /// Number of passes.
+    t_cost: u32,
+
+    /// Number of lanes.
+    lanes: u32,
+
+    /// Maximum number of threads.
+    threads: u32,
+
+    /// Enforce a required output size.
+    output_size: Option<usize>,
 }
 
 impl Default for Argon2<'_> {
     fn default() -> Self {
-        Self::new(None, 3, 4096, 1, Version::default()).expect("invalid default Argon2 params")
+        // TODO(tarcieri): use `Params` as argument to `Argon2::new` in the next breaking release
+        let params = Params::default();
+
+        Self::new(
+            None,
+            params.t_cost,
+            params.m_cost,
+            params.p_cost,
+            params.version,
+        )
+        .expect("invalid default Argon2 params")
     }
 }
 
 impl<'key> Argon2<'key> {
-    /// Create a new Argon2 context
+    /// Create a new Argon2 context.
+    // TODO(tarcieri): use `Params` as argument to `Argon2::new` in the next breaking release
     pub fn new(
         secret: Option<&'key [u8]>,
         t_cost: u32,
@@ -392,10 +278,12 @@ impl<'key> Argon2<'key> {
 
         Ok(Self {
             secret,
+            algorithm: None,
             t_cost,
             m_cost,
             lanes,
             threads: parallelism,
+            output_size: None,
             version,
         })
     }
@@ -409,12 +297,17 @@ impl<'key> Argon2<'key> {
         ad: &[u8],
         out: &mut [u8],
     ) -> Result<(), Error> {
+        // TODO(tarcieri): move algorithm selection entirely to `Argon2::new`
+        if self.algorithm.is_some() && Some(alg) != self.algorithm {
+            return Err(Error::AlgorithmInvalid);
+        }
+
         // Validate output length
-        if MIN_OUTLEN > out.len() {
+        if out.len() < self.output_size.unwrap_or(MIN_OUTLEN) {
             return Err(Error::OutputTooShort);
         }
 
-        if MAX_OUTLEN < out.len() {
+        if out.len() > self.output_size.unwrap_or(MAX_OUTLEN) {
             return Err(Error::OutputTooLong);
         }
 
@@ -446,6 +339,18 @@ impl<'key> Argon2<'key> {
 
         let memory = Memory::new(&mut blocks, segment_length);
         Instance::hash(self, alg, initial_hash, memory, out)
+    }
+
+    /// Get default configured [`Params`].
+    // TODO(tarcieri): store `Params` field in the `Argon2` struct.
+    pub fn params(&self) -> Params {
+        Params {
+            m_cost: self.m_cost,
+            t_cost: self.t_cost,
+            p_cost: self.threads,
+            output_size: self.output_size.unwrap_or(Params::DEFAULT_OUTPUT_SIZE),
+            version: self.version,
+        }
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
@@ -487,26 +392,52 @@ impl<'key> Argon2<'key> {
 impl PasswordHasher for Argon2<'_> {
     type Params = Params;
 
+    fn hash_password_simple<'a, S>(
+        &self,
+        password: &[u8],
+        salt: &'a S,
+    ) -> password_hash::Result<PasswordHash<'a>>
+    where
+        S: AsRef<str> + ?Sized,
+    {
+        let algorithm = self.algorithm.unwrap_or_default();
+
+        let salt = Salt::try_from(salt.as_ref())?;
+        let mut salt_arr = [0u8; 64];
+        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+
+        // TODO(tarcieri): support the `data` parameter (i.e. associated data)
+        let ad = b"";
+        let output_size = self.output_size.unwrap_or(Params::DEFAULT_OUTPUT_SIZE);
+
+        let output = password_hash::Output::init_with(output_size, |out| {
+            Ok(self.hash_password_into(algorithm, password, salt_bytes, ad, out)?)
+        })?;
+
+        Ok(PasswordHash {
+            algorithm: algorithm.ident(),
+            version: Some(self.version.into()),
+            params: self.params().try_into()?,
+            salt: Some(salt),
+            hash: Some(output),
+        })
+    }
+
     fn hash_password<'a>(
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
         params: Params,
         salt: impl Into<Salt<'a>>,
-    ) -> Result<PasswordHash<'a>, password_hash::Error> {
+    ) -> password_hash::Result<PasswordHash<'a>> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
             .unwrap_or_default();
 
         let salt = salt.into();
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
-        // TODO(tarcieri): support the `data` parameter (i.e. associated data)
-        let ad = b"";
-
-        let hasher = Self::new(
+        let mut hasher = Self::new(
             self.secret,
             params.t_cost,
             params.m_cost,
@@ -515,30 +446,23 @@ impl PasswordHasher for Argon2<'_> {
         )
         .map_err(|_| password_hash::Error::ParamValueInvalid)?;
 
-        if MAX_PWD_LENGTH < password.len() {
-            return Err(password_hash::Error::Password);
-        }
+        // TODO(tarcieri): pass these via `Params` when `Argon::new` accepts `Params`
+        hasher.algorithm = Some(algorithm);
+        hasher.output_size = Some(params.output_size);
 
-        let output = password_hash::Output::init_with(params.output_size, |out| {
-            Ok(hasher.hash_password_into(algorithm, password, salt_bytes, ad, out)?)
-        })?;
-
-        Ok(PasswordHash {
-            algorithm: algorithm.ident(),
-            version: Some(params.version.into()),
-            params: params.try_into()?,
-            salt: Some(salt),
-            hash: Some(output),
-        })
+        hasher.hash_password_simple(password, salt.as_str())
     }
 }
 
 #[cfg(all(test, feature = "password-hash"))]
 mod tests {
-    use super::{Argon2, Params, PasswordHasher, Salt};
+    use crate::{Argon2, Params, PasswordHasher, Salt, Version};
 
     /// Example password only: don't use this as a real password!!!
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
+
+    /// Example salt value. Don't use a static salt value!!!
+    const EXAMPLE_SALT: &str = "examplesalt";
 
     #[test]
     fn decoded_salt_too_short() {
@@ -549,5 +473,31 @@ mod tests {
 
         let res = argon2.hash_password(EXAMPLE_PASSWORD, None, Params::default(), salt);
         assert_eq!(res, Err(password_hash::Error::SaltTooShort));
+    }
+
+    #[test]
+    fn hash_simple_retains_configured_params() {
+        // Non-default but valid parameters
+        let t_cost = 4;
+        let m_cost = 2048;
+        let p_cost = 2;
+        let version = Version::V0x10;
+
+        let hasher = Argon2::new(None, t_cost, m_cost, p_cost, version).unwrap();
+        let hash = hasher
+            .hash_password_simple(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+            .unwrap();
+
+        assert_eq!(hash.version.unwrap(), version.into());
+
+        for &(param, value) in &[("t", t_cost), ("m", m_cost), ("p", p_cost)] {
+            assert_eq!(
+                hash.params
+                    .get(param)
+                    .and_then(|p| p.decimal().ok())
+                    .unwrap(),
+                value
+            );
+        }
     }
 }
