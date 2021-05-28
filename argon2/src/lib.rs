@@ -533,17 +533,7 @@ impl PasswordHasher for Argon2<'_> {
 
         // TODO(tarcieri): improve this API to eliminate redundant checks above
         let output = password_hash::Output::init_with(params.output_size, |out| {
-            hasher
-                .hash_password_into(algorithm, password, salt_bytes, ad, out)
-                .map_err(|e| {
-                    match e {
-                        Error::OutputTooShort => password_hash::Error::OutputTooShort,
-                        Error::OutputTooLong => password_hash::Error::OutputTooLong,
-                        // Other cases are not returned from `hash_password_into`
-                        // TODO(tarcieri): finer-grained error types?
-                        _ => panic!("unhandled error type: {}", e),
-                    }
-                })
+            Ok(hasher.hash_password_into(algorithm, password, salt_bytes, ad, out)?)
         })?;
 
         let res = Ok(PasswordHash {
