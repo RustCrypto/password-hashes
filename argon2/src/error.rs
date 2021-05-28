@@ -92,7 +92,7 @@ impl From<Error> for password_hash::Error {
             Error::PwdTooLong => password_hash::Error::Password,
             Error::OutputTooShort => password_hash::Error::OutputTooShort,
             Error::OutputTooLong => password_hash::Error::OutputTooLong,
-            Error::SaltTooShort => password_hash::Error::SaltTooLong,
+            Error::SaltTooShort => password_hash::Error::SaltTooShort,
             Error::SaltTooLong => password_hash::Error::SaltTooLong,
             Error::SecretTooLong => password_hash::Error::ParamValueInvalid,
             Error::ThreadsTooFew => password_hash::Error::ParamValueInvalid,
