@@ -438,7 +438,6 @@ impl<'key> Argon2<'key> {
 
         // Hashing all inputs
         let initial_hash = self.initial_hash(alg, pwd, salt, ad, out);
-
         let segment_length = Memory::segment_length_for_params(self.m_cost, self.lanes);
         let blocks_count = (segment_length * self.lanes * SYNC_POINTS) as usize;
 
@@ -520,31 +519,17 @@ impl PasswordHasher for Argon2<'_> {
             return Err(password_hash::Error::Password);
         }
 
-        if !(MIN_SALT_LENGTH..=MAX_SALT_LENGTH).contains(&salt_bytes.len()) {
-            // TODO(tarcieri): better error types for this case
-            return Err(password_hash::Error::Crypto);
-        }
-
-        // Validate associated data (optional param)
-        if MAX_AD_LENGTH < ad.len() {
-            // TODO(tarcieri): better error types for this case
-            return Err(password_hash::Error::Crypto);
-        }
-
-        // TODO(tarcieri): improve this API to eliminate redundant checks above
         let output = password_hash::Output::init_with(params.output_size, |out| {
             Ok(hasher.hash_password_into(algorithm, password, salt_bytes, ad, out)?)
         })?;
 
-        let res = Ok(PasswordHash {
+        Ok(PasswordHash {
             algorithm: algorithm.ident(),
             version: Some(params.version.into()),
             params: params.try_into()?,
             salt: Some(salt),
             hash: Some(output),
-        });
-
-        res
+        })
     }
 }
 
@@ -563,6 +548,6 @@ mod tests {
         let salt = Salt::new("somesalt").unwrap();
 
         let res = argon2.hash_password(EXAMPLE_PASSWORD, None, Params::default(), salt);
-        assert_eq!(res, Err(password_hash::Error::Crypto));
+        assert_eq!(res, Err(password_hash::Error::SaltTooShort));
     }
 }
