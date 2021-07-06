@@ -1,4 +1,4 @@
-use scrypt::{scrypt, Params};
+use scrypt::{scrypt, scrypt_log_f, scrypt_parallel, Params};
 
 #[cfg(feature = "simple")]
 use {
@@ -78,6 +78,63 @@ fn test_scrypt() {
         )
         .unwrap();
         assert!(result == t.expected);
+    }
+}
+
+/// Tests that scrypt_parallel works correctly, even when max_memory is small.
+#[test]
+fn test_scrypt_parallel() {
+    let tests = tests();
+    for t in tests.iter() {
+        let mut result = vec![0u8; t.expected.len()];
+        let params = Params::new(t.log_n, t.r, t.p).unwrap();
+        scrypt_parallel(
+            t.password.as_bytes(),
+            t.salt.as_bytes(),
+            &params,
+            1024 * 1024,
+            4,
+            &mut result,
+        )
+        .unwrap();
+        assert!(result == t.expected);
+    }
+
+    for t in tests.iter() {
+        let mut result = vec![0u8; t.expected.len()];
+        let params = Params::new(t.log_n, t.r, t.p).unwrap();
+        scrypt_parallel(
+            t.password.as_bytes(),
+            t.salt.as_bytes(),
+            &params,
+            4 * 1024 * 1024 * 1024,
+            4,
+            &mut result,
+        )
+        .unwrap();
+        assert!(result == t.expected);
+    }
+}
+
+/// Tests various log_f values to ensure implementation is correct.
+#[test]
+fn test_scrypt_log_f() {
+    let tests = tests();
+    for log_f in 0..2 {
+        for t in tests.iter() {
+            let mut result = vec![0u8; t.expected.len()];
+            let params = Params::new(t.log_n, t.r, t.p).unwrap();
+            scrypt_log_f(
+                t.password.as_bytes(),
+                t.salt.as_bytes(),
+                &params,
+                log_f,
+                1,
+                &mut result,
+            )
+            .unwrap();
+            assert!(result == t.expected);
+        }
     }
 }
 

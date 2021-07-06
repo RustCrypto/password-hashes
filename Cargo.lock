@@ -386,6 +386,7 @@ dependencies = [
  "password-hash",
  "pbkdf2",
  "rand_core",
+ "rayon",
  "salsa20",
  "sha2",
 ]
