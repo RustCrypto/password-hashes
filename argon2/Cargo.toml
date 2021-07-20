@@ -4,7 +4,7 @@ description = """
 Pure Rust implementation of the Argon2 password hashing function with support
 for the Argon2d, Argon2i, and Argon2id algorithmic variants
 """
-version = "0.2.1"
+version = "0.2.2" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/argon2"
@@ -18,7 +18,7 @@ readme = "README.md"
 blake2 = { version = "0.9", default-features = false }
 password-hash = { version = "0.2", optional = true }
 rayon = { version = "1", optional = true }
-zeroize = { version = "1", optional = true }
+zeroize = { version = "=1.3", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
