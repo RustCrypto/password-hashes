@@ -3,6 +3,7 @@
 use hex_literal::hex;
 
 #[test]
+#[rustfmt::skip]
 fn gost_test() {
     let pbkdf2 = pbkdf2::pbkdf2::<hmac::Hmac<streebog::Streebog512>>;
     let mut res64 = [0u8; 64];
