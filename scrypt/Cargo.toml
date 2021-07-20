@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.7.0"
+version = "0.7.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Scrypt password-based key derivation function"

@@ -1,10 +1,10 @@
 [package]
 name = "argon2"
+version = "0.2.2" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of the Argon2 password hashing function with support
 for the Argon2d, Argon2i, and Argon2id algorithmic variants
 """
-version = "0.2.2" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/argon2"
