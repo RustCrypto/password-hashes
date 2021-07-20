@@ -31,8 +31,9 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_root_url = "https://docs.rs/sha-crypt/0.2.1"
 )]
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`

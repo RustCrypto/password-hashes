@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.8.0"
+version = "0.8.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
