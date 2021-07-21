@@ -15,7 +15,7 @@ blowfish = { version = "0.8", features = ["bcrypt"] }
 crypto-mac = "0.11"
 pbkdf2 = { version = "0.8", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.9", default-features = false }
-zeroize = { version = "=1.3", default-features = false }
+zeroize = { version = "=1.4", default-features = false }
 
 [features]
 default = ["std"]
