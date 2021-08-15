@@ -220,7 +220,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
         .take(SALT_MAX_LEN)
         .collect();
 
-    let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), &params)?;
+    let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params)?;
 
     let mut result = String::new();
     result.push_str(SHA512_SALT_PREFIX);
