@@ -51,13 +51,6 @@
 //! # }
 //! ```
 //!
-//! # Notes
-//!
-//! Multithreading has not yet been implemented.
-//!
-//! Increasing the parallelism factor will still compute the correct results,
-//! but there will be no associated performance improvement.
-//!
 //! [Argon2]: https://en.wikipedia.org/wiki/Argon2
 //! [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
 //! [Password Hashing Competition]: https://www.password-hashing.net/
