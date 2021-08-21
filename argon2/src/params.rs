@@ -11,6 +11,7 @@ use {
 /// Argon2 password hash parameters.
 ///
 /// These are parameters which can be encoded into a PHC hash string.
+// TODO(tarcieri): make members private, ensure `Params` is always valid?
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
