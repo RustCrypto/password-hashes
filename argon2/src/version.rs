@@ -1,6 +1,6 @@
 //! Version of the algorithm.
 
-use crate::Error;
+use crate::{Error, Result};
 use core::convert::TryFrom;
 
 /// Version of the algorithm.
@@ -40,7 +40,7 @@ impl From<Version> for u32 {
 impl TryFrom<u32> for Version {
     type Error = Error;
 
-    fn try_from(version_id: u32) -> Result<Version, Error> {
+    fn try_from(version_id: u32) -> Result<Version> {
         match version_id {
             0x10 => Ok(Version::V0x10),
             0x13 => Ok(Version::V0x13),
