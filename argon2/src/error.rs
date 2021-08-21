@@ -2,6 +2,9 @@
 
 use core::fmt;
 
+/// Result with argon2's [`Error`] type.
+pub type Result<T> = core::result::Result<T, Error>;
+
 /// Error type.
 // TODO(tarcieri): consolidate/replace with `password_hash::Error`
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

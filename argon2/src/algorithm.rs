@@ -1,6 +1,6 @@
 //! Argon2 algorithms (e.g. Argon2d, Argon2i, Argon2id).
 
-use crate::Error;
+use crate::{Error, Result};
 use core::{
     fmt::{self, Display},
     str::FromStr,
@@ -58,7 +58,7 @@ impl Default for Algorithm {
 
 impl Algorithm {
     /// Parse an [`Algorithm`] from the provided string.
-    pub fn new(id: impl AsRef<str>) -> Result<Self, Error> {
+    pub fn new(id: impl AsRef<str>) -> Result<Self> {
         id.as_ref().parse()
     }
 
@@ -103,7 +103,7 @@ impl Display for Algorithm {
 impl FromStr for Algorithm {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Algorithm, Error> {
+    fn from_str(s: &str) -> Result<Algorithm> {
         match s {
             "argon2d" => Ok(Algorithm::Argon2d),
             "argon2i" => Ok(Algorithm::Argon2i),
@@ -126,7 +126,7 @@ impl From<Algorithm> for Ident<'static> {
 impl<'a> TryFrom<Ident<'a>> for Algorithm {
     type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> Result<Algorithm, password_hash::Error> {
+    fn try_from(ident: Ident<'a>) -> password_hash::Result<Algorithm> {
         match ident {
             ARGON2D_IDENT => Ok(Algorithm::Argon2d),
             ARGON2I_IDENT => Ok(Algorithm::Argon2i),

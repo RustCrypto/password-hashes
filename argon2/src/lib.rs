@@ -81,7 +81,12 @@ mod memory;
 mod params;
 mod version;
 
-pub use crate::{algorithm::Algorithm, error::Error, params::Params, version::Version};
+pub use crate::{
+    algorithm::Algorithm,
+    error::{Error, Result},
+    params::Params,
+    version::Version,
+};
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
@@ -229,7 +234,7 @@ impl<'key> Argon2<'key> {
         m_cost: u32,
         parallelism: u32,
         version: Version,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self> {
         let lanes = parallelism;
 
         if let Some(secret) = &secret {
@@ -294,7 +299,7 @@ impl<'key> Argon2<'key> {
         salt: &[u8],
         ad: &[u8],
         out: &mut [u8],
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         // TODO(tarcieri): move algorithm selection entirely to `Argon2::new`
         if self.algorithm.is_some() && Some(alg) != self.algorithm {
             return Err(Error::AlgorithmInvalid);
@@ -455,7 +460,7 @@ impl PasswordHasher for Argon2<'_> {
 impl<'key> TryFrom<Params> for Argon2<'key> {
     type Error = Error;
 
-    fn try_from(params: Params) -> Result<Self, Error> {
+    fn try_from(params: Params) -> Result<Self> {
         Argon2::try_from(&params)
     }
 }
@@ -463,7 +468,7 @@ impl<'key> TryFrom<Params> for Argon2<'key> {
 impl<'key> TryFrom<&Params> for Argon2<'key> {
     type Error = Error;
 
-    fn try_from(params: &Params) -> Result<Self, Error> {
+    fn try_from(params: &Params) -> Result<Self> {
         let mut argon2 = Argon2::new(
             None,
             params.t_cost,

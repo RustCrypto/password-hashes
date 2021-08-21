@@ -68,7 +68,7 @@ impl Default for Params {
 impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
     type Error = password_hash::Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self, password_hash::Error> {
+    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
         let mut params = Params::default();
 
         for (ident, value) in hash.params.iter() {
@@ -101,7 +101,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
 impl<'a> TryFrom<Params> for ParamsString {
     type Error = password_hash::Error;
 
-    fn try_from(params: Params) -> Result<ParamsString, password_hash::Error> {
+    fn try_from(params: Params) -> password_hash::Result<ParamsString> {
         let mut output = ParamsString::new();
         output.add_decimal("m", params.m_cost)?;
         output.add_decimal("t", params.t_cost)?;

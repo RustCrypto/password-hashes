@@ -1,7 +1,7 @@
 //! Argon2 instance (i.e. state)
 
 use crate::{
-    Algorithm, Argon2, Block, Error, Memory, Version, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
+    Algorithm, Argon2, Block, Error, Memory, Result, Version, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
 };
 use blake2::{
     digest::{self, VariableOutput},
@@ -73,7 +73,7 @@ impl<'a> Instance<'a> {
         initial_hash: digest::Output<Blake2b>,
         memory: Memory<'a>,
         out: &mut [u8],
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let mut instance = Self::new(context, alg, initial_hash, memory)?;
 
         // Filling memory
@@ -92,7 +92,7 @@ impl<'a> Instance<'a> {
         alg: Algorithm,
         mut initial_hash: digest::Output<Blake2b>,
         memory: Memory<'a>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self> {
         let lane_length = memory.segment_length() * SYNC_POINTS;
 
         let mut instance = Instance {
@@ -190,7 +190,7 @@ impl<'a> Instance<'a> {
     }
 
     /// XORing the last block of each lane, hashing it, making the tag.
-    fn finalize(&mut self, out: &mut [u8]) -> Result<(), Error> {
+    fn finalize(&mut self, out: &mut [u8]) -> Result<()> {
         let mut blockhash = self.memory.get_block((self.lane_length - 1) as usize);
 
         // XOR the last blocks
@@ -218,7 +218,7 @@ impl<'a> Instance<'a> {
     }
 
     /// Function creates first 2 blocks per lane
-    fn fill_first_blocks(&mut self, blockhash: &[u8]) -> Result<(), Error> {
+    fn fill_first_blocks(&mut self, blockhash: &[u8]) -> Result<()> {
         let mut hash = [0u8; Block::SIZE];
 
         for l in 0..self.lanes {
@@ -405,8 +405,8 @@ fn next_addresses(address_block: &mut Block, input_block: &mut Block, zero_block
     address_block.fill_block(*zero_block, *address_block, false);
 }
 
-/// BLAKE2b with an extended output
-fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<(), Error> {
+/// BLAKE2b with an extended output, as described in the Argon2 paper
+fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<()> {
     if out.len() < MIN_OUTLEN as usize {
         return Err(Error::OutputTooLong);
     }
