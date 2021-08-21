@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4 (2021-08-21)
+### Added
+- Impl `std::error::Error` for `argon2::Error` ([#200])
+- Impl `TryFrom<Params>` for `Argon2` ([#202])
+- `Result` type alias ([#203])
+- `ParamsBuilder` ([#204])
+
+[#200]: https://github.com/RustCrypto/password-hashes/pull/200
+[#202]: https://github.com/RustCrypto/password-hashes/pull/202
+[#203]: https://github.com/RustCrypto/password-hashes/pull/203
+[#204]: https://github.com/RustCrypto/password-hashes/pull/204
+
 ## 0.2.3 (2021-08-15)
 ### Changed
 - Relax `zeroize` requirements to `>=1, <1.4` ([#195])
