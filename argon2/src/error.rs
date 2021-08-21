@@ -1,5 +1,8 @@
 //! Error type
 
+#[cfg(feature = "std")]
+extern crate std;
+
 use core::fmt;
 
 /// Error type.
@@ -102,3 +105,6 @@ impl From<Error> for password_hash::Error {
         }
     }
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
