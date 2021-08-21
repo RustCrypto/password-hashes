@@ -1,8 +1,5 @@
 //! Error type
 
-#[cfg(feature = "std")]
-extern crate std;
-
 use core::fmt;
 
 /// Error type.
