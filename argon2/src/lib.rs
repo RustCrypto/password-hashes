@@ -96,10 +96,11 @@ use crate::{
     memory::{Memory, SYNC_POINTS},
 };
 use blake2::{digest, Blake2b, Digest};
+use core::convert::TryFrom;
 
 #[cfg(feature = "password-hash")]
 use {
-    core::convert::{TryFrom, TryInto},
+    core::convert::TryInto,
     password_hash::{Ident, Salt},
 };
 
@@ -448,6 +449,31 @@ impl PasswordHasher for Argon2<'_> {
         hasher.output_size = Some(params.output_size);
 
         hasher.hash_password_simple(password, salt.as_str())
+    }
+}
+
+impl<'key> TryFrom<Params> for Argon2<'key> {
+    type Error = Error;
+
+    fn try_from(params: Params) -> Result<Self, Error> {
+        Argon2::try_from(&params)
+    }
+}
+
+impl<'key> TryFrom<&Params> for Argon2<'key> {
+    type Error = Error;
+
+    fn try_from(params: &Params) -> Result<Self, Error> {
+        let mut argon2 = Argon2::new(
+            None,
+            params.t_cost,
+            params.m_cost,
+            params.p_cost,
+            params.version,
+        )?;
+
+        argon2.output_size = Some(params.output_size);
+        Ok(argon2)
     }
 }
 
