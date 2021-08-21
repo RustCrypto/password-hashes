@@ -84,7 +84,7 @@ mod version;
 pub use crate::{
     algorithm::Algorithm,
     error::{Error, Result},
-    params::Params,
+    params::{Params, ParamsBuilder},
     version::Version,
 };
 

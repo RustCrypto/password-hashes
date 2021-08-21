@@ -29,10 +29,10 @@ pub struct Params {
     /// Value is an integer in decimal (1 to 3 digits).
     pub p_cost: u32,
 
-    /// Size of the output (in bytes)
+    /// Size of the output (in bytes).
     pub output_size: usize,
 
-    /// Algorithm version
+    /// Algorithm version.
     // TODO(tarcieri): make this separate from params in the next breaking release?
     pub version: Version,
 }
@@ -107,5 +107,68 @@ impl<'a> TryFrom<Params> for ParamsString {
         output.add_decimal("t", params.t_cost)?;
         output.add_decimal("p", params.p_cost)?;
         Ok(output)
+    }
+}
+
+/// Builder for Argon2 [`Params`].
+pub struct ParamsBuilder {
+    /// Parameters being constructed
+    params: Params,
+}
+
+impl ParamsBuilder {
+    /// Create a new builder with the default parameters.
+    pub fn new() -> Self {
+        Self {
+            params: Params::default(),
+        }
+    }
+
+    /// Set memory size, expressed in kilobytes, between 1 and (2^32)-1.
+    pub fn m_cost(mut self, m_cost: u32) -> Self {
+        self.params.m_cost = m_cost;
+        self
+    }
+
+    /// Set number of iterations, between 1 and (2^32)-1.
+    pub fn t_cost(mut self, t_cost: u32) -> Self {
+        self.params.t_cost = t_cost;
+        self
+    }
+
+    /// Set degree of parallelism, between 1 and 255.
+    pub fn p_cost(mut self, p_cost: u32) -> Self {
+        self.params.p_cost = p_cost;
+        self
+    }
+
+    /// Set size of the output (in bytes).
+    pub fn output_size(mut self, output_size: usize) -> Self {
+        self.params.output_size = output_size;
+        self
+    }
+
+    /// Set algorithm version.
+    // TODO(tarcieri): make this separate from params in the next breaking release?
+    pub fn version(mut self, version: Version) -> Self {
+        self.params.version = version;
+        self
+    }
+
+    /// Get the finished [`Params`].
+    pub fn params(self) -> Params {
+        self.params
+    }
+}
+
+impl Default for ParamsBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl From<ParamsBuilder> for Params {
+    fn from(builder: ParamsBuilder) -> Params {
+        builder.params
     }
 }
