@@ -2,6 +2,7 @@
 
 use crate::pbkdf2;
 use base64ct::{Base64, Encoding};
+use core::cmp::Ordering;
 use core::{
     convert::{TryFrom, TryInto},
     fmt::{self, Display},
@@ -9,7 +10,8 @@ use core::{
 };
 use hmac::Hmac;
 use password_hash::{
-    Error, Ident, McfHasher, Output, ParamsString, PasswordHash, PasswordHasher, Result, Salt,
+    errors::InvalidValue, Error, Ident, McfHasher, Output, ParamsString, PasswordHash,
+    PasswordHasher, Result, Salt,
 };
 use sha2::{Sha256, Sha512};
 
@@ -188,7 +190,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                         value
                             .decimal()?
                             .try_into()
-                            .map_err(|_| Error::ParamValueInvalid)?,
+                            .map_err(|_| Error::ParamValueInvalid(InvalidValue::Malformed))?,
                     )
                 }
                 _ => return Err(Error::ParamNameInvalid),
@@ -197,8 +199,12 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
 
         if let Some(len) = output_length {
             if let Some(hash) = &hash.hash {
-                if hash.len() != len {
-                    return Err(Error::ParamValueInvalid);
+                match hash.len().cmp(&len) {
+                    Ordering::Less => return Err(Error::ParamValueInvalid(InvalidValue::TooShort)),
+                    Ordering::Greater => {
+                        return Err(Error::ParamValueInvalid(InvalidValue::TooLong))
+                    }
+                    Ordering::Equal => (),
                 }
             }
 
@@ -244,13 +250,13 @@ impl McfHasher for Pbkdf2 {
                 let mut count_arr = [0u8; 4];
 
                 if Base64::decode(count, &mut count_arr)?.len() != 4 {
-                    return Err(Error::ParamValueInvalid);
+                    return Err(Error::ParamValueInvalid(InvalidValue::Malformed));
                 }
 
                 let count = u32::from_be_bytes(count_arr);
                 (count, salt, hash)
             }
-            _ => return Err(Error::ParamValueInvalid),
+            _ => return Err(Error::ParamValueInvalid(InvalidValue::Malformed)),
         };
 
         let salt = Salt::new(b64_strip(salt))?;

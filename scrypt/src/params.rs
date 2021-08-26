@@ -5,7 +5,7 @@ use crate::errors::InvalidParams;
 #[cfg(feature = "simple")]
 use {
     core::convert::{TryFrom, TryInto},
-    password_hash::{Error, ParamsString, PasswordHash},
+    password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash},
 };
 
 const RECOMMENDED_LOG_N: u8 = 15;
@@ -138,7 +138,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                     log_n = value
                         .decimal()?
                         .try_into()
-                        .map_err(|_| Error::ParamValueInvalid)?
+                        .map_err(|_| Error::ParamValueInvalid(InvalidValue::Malformed))?
                 }
                 "r" => r = value.decimal()?,
                 "p" => p = value.decimal()?,
@@ -146,7 +146,8 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
-        Params::new(log_n, r, p).map_err(|_| password_hash::Error::ParamValueInvalid)
+        Params::new(log_n, r, p)
+            .map_err(|_| password_hash::Error::ParamValueInvalid(InvalidValue::Malformed))
     }
 }
 

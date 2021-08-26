@@ -446,8 +446,7 @@ impl PasswordHasher for Argon2<'_> {
             params.m_cost,
             params.p_cost,
             params.version,
-        )
-        .map_err(|_| password_hash::Error::ParamValueInvalid)?;
+        )?;
 
         // TODO(tarcieri): pass these via `Params` when `Argon::new` accepts `Params`
         hasher.algorithm = Some(algorithm);
@@ -500,7 +499,12 @@ mod tests {
         let salt = Salt::new("somesalt").unwrap();
 
         let res = argon2.hash_password(EXAMPLE_PASSWORD, None, Params::default(), salt);
-        assert_eq!(res, Err(password_hash::Error::SaltTooShort));
+        assert_eq!(
+            res,
+            Err(password_hash::Error::SaltInvalid(
+                password_hash::errors::InvalidValue::TooShort
+            ))
+        );
     }
 
     #[test]

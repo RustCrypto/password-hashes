@@ -17,7 +17,7 @@ crypto-mac = "0.11"
 rayon = { version = "1", optional = true }
 base64ct = { version = "1", default-features = false, optional = true }
 hmac = { version = "0.11", default-features = false, optional = true }
-password-hash = { version = "0.2", default-features = false, optional = true, features = ["rand_core"]  }
+password-hash = { version = "=0.3.0-pre.1", default-features = false, optional = true, features = ["rand_core"]  }
 sha1 = { version = "0.9", package = "sha-1", default-features = false, optional = true }
 sha2 = { version = "0.9", default-features = false, optional = true }
 
