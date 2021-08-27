@@ -138,7 +138,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                     log_n = value
                         .decimal()?
                         .try_into()
-                        .map_err(|_| Error::ParamValueInvalid(InvalidValue::Malformed))?
+                        .map_err(|_| InvalidValue::Malformed.param_error())?
                 }
                 "r" => r = value.decimal()?,
                 "p" => p = value.decimal()?,
@@ -146,8 +146,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
-        Params::new(log_n, r, p)
-            .map_err(|_| password_hash::Error::ParamValueInvalid(InvalidValue::Malformed))
+        Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())
     }
 }
 

@@ -197,7 +197,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                         value
                             .decimal()?
                             .try_into()
-                            .map_err(|_| Error::ParamValueInvalid(InvalidValue::Malformed))?,
+                            .map_err(|_| InvalidValue::Malformed.param_error())?,
                     )
                 }
                 _ => return Err(Error::ParamNameInvalid),
@@ -207,10 +207,8 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         if let Some(len) = output_length {
             if let Some(hash) = &hash.hash {
                 match hash.len().cmp(&len) {
-                    Ordering::Less => return Err(Error::ParamValueInvalid(InvalidValue::TooShort)),
-                    Ordering::Greater => {
-                        return Err(Error::ParamValueInvalid(InvalidValue::TooLong))
-                    }
+                    Ordering::Less => return Err(InvalidValue::TooShort.param_error()),
+                    Ordering::Greater => return Err(InvalidValue::TooLong.param_error()),
                     Ordering::Equal => (),
                 }
             }
@@ -257,13 +255,13 @@ impl McfHasher for Pbkdf2 {
                 let mut count_arr = [0u8; 4];
 
                 if Base64::decode(count, &mut count_arr)?.len() != 4 {
-                    return Err(Error::ParamValueInvalid(InvalidValue::Malformed));
+                    return Err(InvalidValue::Malformed.param_error());
                 }
 
                 let count = u32::from_be_bytes(count_arr);
                 (count, salt, hash)
             }
-            _ => return Err(Error::ParamValueInvalid(InvalidValue::Malformed)),
+            _ => return Err(InvalidValue::Malformed.param_error()),
         };
 
         let salt = Salt::new(b64_strip(salt))?;

@@ -76,25 +76,24 @@ impl McfHasher for Scrypt {
             [Some(""), Some("rscrypt"), Some("0"), Some(p), Some(s), Some(h), Some(""), None] => {
                 let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 3 {
-                    return Err(Error::ParamValueInvalid(InvalidValue::Malformed));
+                    return Err(InvalidValue::Malformed.param_error());
                 }
                 (pvec[0], pvec[1] as u32, pvec[2] as u32, s, h)
             }
             [Some(""), Some("rscrypt"), Some("1"), Some(p), Some(s), Some(h), Some(""), None] => {
                 let pvec = Base64::decode_vec(p)?;
                 if pvec.len() != 9 {
-                    return Err(Error::ParamValueInvalid(InvalidValue::Malformed));
+                    return Err(InvalidValue::Malformed.param_error());
                 }
                 let log_n = pvec[0];
                 let r = u32::from_le_bytes(pvec[1..5].try_into().unwrap());
                 let p = u32::from_le_bytes(pvec[5..9].try_into().unwrap());
                 (log_n, r, p, s, h)
             }
-            _ => return Err(Error::ParamValueInvalid(InvalidValue::Malformed)),
+            _ => return Err(InvalidValue::Malformed.param_error()),
         };
 
-        let params = Params::new(log_n, r, p)
-            .map_err(|_| Error::ParamValueInvalid(InvalidValue::Malformed))?;
+        let params = Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())?;
 
         let salt = Salt::new(b64_strip(salt))?;
         let hash = Output::b64_decode(b64_strip(hash))?;
