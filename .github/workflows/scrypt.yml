@@ -17,34 +17,33 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-# TODO(tarcieri): test when new cargo resolver is available (RFC 2957)
-#  build:
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        rust:
-#          - 1.47.0 # MSRV
-#          - stable
-#        target:
-#          - thumbv7em-none-eabi
-#          - wasm32-unknown-unknown
-#    steps:
-#      - uses: actions/checkout@v1
-#      - uses: actions-rs/toolchain@v1
-#        with:
-#          profile: minimal
-#          toolchain: ${{ matrix.rust }}
-#          target: ${{ matrix.target }}
-#          override: true
-#      - run: cargo build --target ${{ matrix.target }} --release --no-default-features
-#      - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features simple
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.51.0 # MSRV
+          - stable
+        target:
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+      - run: cargo build --target ${{ matrix.target }} --release --no-default-features
+      - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features simple
 
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
-          - 1.47.0 # MSRV
+          - 1.51.0 # MSRV
           - stable
     steps:
       - uses: actions/checkout@v1
