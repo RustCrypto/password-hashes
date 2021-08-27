@@ -1,8 +1,6 @@
 //! Argon2 instance (i.e. state)
 
-use crate::{
-    Algorithm, Argon2, Block, Error, Memory, Result, Version, MAX_OUTLEN, MIN_OUTLEN, SYNC_POINTS,
-};
+use crate::{Algorithm, Argon2, Block, Error, Memory, Params, Result, Version, SYNC_POINTS};
 use blake2::{
     digest::{self, VariableOutput},
     Blake2b, Digest, VarBlake2b,
@@ -98,10 +96,10 @@ impl<'a> Instance<'a> {
         let mut instance = Instance {
             version: context.version,
             memory,
-            passes: context.t_cost,
+            passes: context.params.t_cost(),
             lane_length,
-            lanes: context.lanes,
-            threads: context.threads,
+            lanes: context.lanes(),
+            threads: context.params.t_cost(),
             alg,
         };
 
@@ -407,11 +405,11 @@ fn next_addresses(address_block: &mut Block, input_block: &mut Block, zero_block
 
 /// BLAKE2b with an extended output, as described in the Argon2 paper
 fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<()> {
-    if out.len() < MIN_OUTLEN as usize {
+    if out.len() < Params::MIN_OUTPUT_LENGTH as usize {
         return Err(Error::OutputTooLong);
     }
 
-    if out.len() > MAX_OUTLEN as usize {
+    if out.len() > Params::MAX_OUTPUT_LENGTH as usize {
         return Err(Error::OutputTooLong);
     }
 

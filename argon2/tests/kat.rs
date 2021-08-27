@@ -7,7 +7,7 @@
 // TODO(tarcieri): test full set of vectors from the reference implementation:
 // https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
 
-use argon2::{Algorithm, Argon2, Version};
+use argon2::{Algorithm, Argon2, Params, Version};
 use hex_literal::hex;
 
 /// =======================================
@@ -30,6 +30,7 @@ use hex_literal::hex;
 ///     a5 dd 1f 5c bf 08 b2 67 0d a6 8a 02 85 ab f3 2b
 #[test]
 fn argon2d_v0x10() {
+    let algorithm = Algorithm::Argon2d;
     let version = Version::V0x10;
     let m_cost = 32;
     let t_cost = 3;
@@ -45,10 +46,11 @@ fn argon2d_v0x10() {
     "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -74,6 +76,7 @@ fn argon2d_v0x10() {
 ///    e6 47 a5 de e0 8f 7c 05 e0 2f cb 76 33 35 d0 fd
 #[test]
 fn argon2i_v0x10() {
+    let algorithm = Algorithm::Argon2i;
     let version = Version::V0x10;
     let m_cost = 32;
     let t_cost = 3;
@@ -89,10 +92,11 @@ fn argon2i_v0x10() {
     "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -118,6 +122,7 @@ fn argon2i_v0x10() {
 ///     ae 35 0b 6b fc bb 0f c9 51 41 ea 8f 32 26 13 c0
 #[test]
 fn argon2id_v0x10() {
+    let algorithm = Algorithm::Argon2id;
     let version = Version::V0x10;
     let m_cost = 32;
     let t_cost = 3;
@@ -133,10 +138,11 @@ fn argon2id_v0x10() {
     "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -173,6 +179,7 @@ fn argon2id_v0x10() {
 ///     a1 3a 4d b9 fa be 4a cb
 #[test]
 fn argon2d_v0x13() {
+    let algorithm = Algorithm::Argon2d;
     let version = Version::V0x13;
     let m_cost = 32;
     let t_cost = 3;
@@ -190,10 +197,11 @@ fn argon2d_v0x13() {
         "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2d, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -230,6 +238,7 @@ fn argon2d_v0x13() {
 ///     99 52 a4 c4 67 2b 6c e8
 #[test]
 fn argon2i_v0x13() {
+    let algorithm = Algorithm::Argon2i;
     let version = Version::V0x13;
     let m_cost = 32;
     let t_cost = 3;
@@ -247,10 +256,11 @@ fn argon2i_v0x13() {
     "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2i, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
@@ -277,6 +287,7 @@ fn argon2i_v0x13() {
 ///     d0 1e f0 45 2d 75 b6 5e b5 25 20 e9 6b 01 e6 59
 #[test]
 fn argon2id_v0x13() {
+    let algorithm = Algorithm::Argon2id;
     let version = Version::V0x13;
     let m_cost = 32;
     let t_cost = 3;
@@ -292,10 +303,11 @@ fn argon2id_v0x13() {
     "
     );
 
-    let ctx = Argon2::new(Some(&secret), t_cost, m_cost, parallelism, version).unwrap();
+    let params = Params::new(m_cost, t_cost, parallelism, None).unwrap();
+    let ctx = Argon2::new_with_secret(&secret, algorithm, version, params).unwrap();
 
     let mut out = [0u8; 32];
-    ctx.hash_password_into(Algorithm::Argon2id, &password, &salt, &ad, &mut out)
+    ctx.hash_password_into(&password, &salt, &ad, &mut out)
         .unwrap();
 
     assert_eq!(out, expected_tag);
