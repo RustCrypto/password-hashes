@@ -15,7 +15,6 @@ readme = "README.md"
 crypto-mac = "0.11"
 
 rayon = { version = "1", optional = true }
-base64ct = { version = "1", default-features = false, optional = true }
 hmac = { version = "0.11", default-features = false, optional = true }
 password-hash = { version = "0.3", default-features = false, optional = true, features = ["rand_core"]  }
 sha1 = { version = "0.9", package = "sha-1", default-features = false, optional = true }
@@ -31,7 +30,7 @@ streebog = "0.9"
 [features]
 default = ["simple"]
 parallel = ["rayon", "std"]
-simple = ["sha2", "hmac", "password-hash", "base64ct"]
+simple = ["hmac", "password-hash", "sha2"]
 std = ["password-hash/std"]
 
 [package.metadata.docs.rs]

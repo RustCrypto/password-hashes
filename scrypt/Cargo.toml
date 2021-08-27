@@ -12,7 +12,6 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-base64ct = { version = "1", default-features = false, features = ["alloc"], optional = true }
 hmac = "0.11"
 password-hash = { version = "0.3", default-features = false, features = ["rand_core"], optional = true }
 pbkdf2 = { version = "0.8", default-features = false, path = "../pbkdf2" }
@@ -24,7 +23,7 @@ password-hash = { version = "0.3", features = ["rand_core"] }
 
 [features]
 default = ["simple", "std"]
-simple = ["password-hash", "base64ct"]
+simple = ["password-hash"]
 std = ["password-hash/std"]
 
 [package.metadata.docs.rs]
