@@ -2,8 +2,8 @@ use scrypt::{scrypt, Params};
 
 #[cfg(feature = "simple")]
 use {
-    password_hash::{McfHasher, PasswordHash, PasswordVerifier},
-    scrypt::{Scrypt, ALG_ID},
+    password_hash::{PasswordHash, PasswordVerifier},
+    scrypt::Scrypt,
 };
 
 struct Test {
@@ -100,30 +100,4 @@ fn simple_verify_password() {
 fn simple_reject_incorrect_password() {
     let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
     assert!(Scrypt.verify_password(b"invalid", &hash).is_err());
-}
-
-#[cfg(feature = "simple")]
-fn upgrade_mcf_hash(mcf_hash: &str) {
-    let password = "password";
-    let phc_hash = Scrypt.upgrade_mcf_hash(&mcf_hash).unwrap();
-
-    assert_eq!(phc_hash.algorithm, ALG_ID);
-    assert_eq!(
-        Scrypt.verify_mcf_hash(password.as_bytes(), &mcf_hash),
-        Ok(())
-    );
-}
-
-#[cfg(feature = "simple")]
-#[test]
-fn upgrade_mcf_hash_compact() {
-    upgrade_mcf_hash(
-        "$rscrypt$0$BwgB$flwNu8vqUpUSgFzZSajHLw==$RxR+nD/NG8J5ISXHlLlt+K9ObCFtt7JlFuToDKf1dwY=$",
-    );
-}
-
-#[cfg(feature = "simple")]
-#[test]
-fn upgrade_mcf_hash_expanded() {
-    upgrade_mcf_hash("$rscrypt$1$AwEAAAAAAQAA$e+yvke4tpXh81X6xjumIDg==$P05p56eFrxfrnULgondqX0s/Kj6Ht+vCI03AO9kvMHU=$");
 }

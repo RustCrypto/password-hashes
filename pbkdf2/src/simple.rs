@@ -1,7 +1,6 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::pbkdf2;
-use base64ct::{Base64, Encoding};
 use core::cmp::Ordering;
 use core::{
     convert::{TryFrom, TryInto},
@@ -10,7 +9,7 @@ use core::{
 };
 use hmac::Hmac;
 use password_hash::{
-    errors::InvalidValue, Decimal, Error, Ident, McfHasher, Output, ParamsString, PasswordHash,
+    errors::InvalidValue, Decimal, Error, Ident, Output, ParamsString, PasswordHash,
     PasswordHasher, Result, Salt,
 };
 use sha2::{Sha256, Sha512};
@@ -229,63 +228,4 @@ impl<'a> TryFrom<Params> for ParamsString {
         output.add_decimal("l", input.output_length as u32)?;
         Ok(output)
     }
-}
-
-impl McfHasher for Pbkdf2 {
-    fn upgrade_mcf_hash<'a>(&self, hash: &'a str) -> Result<PasswordHash<'a>> {
-        let mut parts = hash.split('$');
-
-        // prevent dynamic allocations by using a fixed-size buffer
-        let buf = [
-            parts.next(),
-            parts.next(),
-            parts.next(),
-            parts.next(),
-            parts.next(),
-            parts.next(),
-            parts.next(),
-            parts.next(),
-        ];
-
-        // check the format of the input: there may be no tokens before the first
-        // and after the last `$`, tokens must have correct information and length.
-        let (rounds, salt, hash) = match buf {
-            [Some(""), Some("rpbkdf2"), Some("0"), Some(count), Some(salt), Some(hash), Some(""), None] =>
-            {
-                let mut count_arr = [0u8; 4];
-
-                if Base64::decode(count, &mut count_arr)?.len() != 4 {
-                    return Err(InvalidValue::Malformed.param_error());
-                }
-
-                let count = u32::from_be_bytes(count_arr);
-                (count, salt, hash)
-            }
-            _ => return Err(InvalidValue::Malformed.param_error()),
-        };
-
-        let salt = Salt::new(b64_strip(salt))?;
-        let hash = Output::b64_decode(b64_strip(hash))?;
-
-        let params = Params {
-            rounds,
-            output_length: hash.len(),
-        };
-
-        Ok(PasswordHash {
-            algorithm: PBKDF2_SHA256,
-            version: None,
-            params: params.try_into()?,
-            salt: Some(salt),
-            hash: Some(hash),
-        })
-    }
-}
-
-/// Strip trailing `=` signs off a Base64 value to make a valid B64 value
-pub fn b64_strip(mut s: &str) -> &str {
-    while s.ends_with('=') {
-        s = &s[..(s.len() - 1)]
-    }
-    s
 }
