@@ -219,7 +219,7 @@ impl Default for Argon2<'_> {
             params.t_cost,
             params.m_cost,
             params.p_cost,
-            params.version,
+            Version::default(),
         )
         .expect("invalid default Argon2 params")
     }
@@ -352,7 +352,6 @@ impl<'key> Argon2<'key> {
             t_cost: self.t_cost,
             p_cost: self.threads,
             output_size: self.output_size.unwrap_or(Params::DEFAULT_OUTPUT_SIZE),
-            version: self.version,
         }
     }
 
@@ -439,6 +438,11 @@ impl PasswordHasher for Argon2<'_> {
             .transpose()?
             .unwrap_or_default();
 
+        let version = version
+            .map(Version::try_from)
+            .transpose()?
+            .unwrap_or_default();
+
         let salt = salt.into();
 
         let mut hasher = Self::new(
@@ -446,10 +450,7 @@ impl PasswordHasher for Argon2<'_> {
             params.t_cost,
             params.m_cost,
             params.p_cost,
-            version
-                .map(Version::try_from)
-                .transpose()?
-                .unwrap_or_else(|| params.version),
+            version,
         )?;
 
         // TODO(tarcieri): pass these via `Params` when `Argon::new` accepts `Params`
@@ -477,7 +478,7 @@ impl<'key> TryFrom<&Params> for Argon2<'key> {
             params.t_cost,
             params.m_cost,
             params.p_cost,
-            params.version,
+            Version::default(),
         )?;
 
         argon2.output_size = Some(params.output_size);
