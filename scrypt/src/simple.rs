@@ -4,8 +4,8 @@ use crate::{scrypt, Params};
 use base64ct::{Base64, Encoding};
 use core::convert::TryInto;
 use password_hash::{
-    errors::InvalidValue, Error, Ident, McfHasher, Output, PasswordHash, PasswordHasher, Result,
-    Salt,
+    errors::InvalidValue, Decimal, Error, Ident, McfHasher, Output, PasswordHash, PasswordHasher,
+    Result, Salt,
 };
 
 /// Algorithm identifier
@@ -19,16 +19,21 @@ pub struct Scrypt;
 impl PasswordHasher for Scrypt {
     type Params = Params;
 
-    fn hash_password<'a>(
+    fn hash_password_customized<'a>(
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
+        version: Option<Decimal>,
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> Result<PasswordHash<'a>> {
-        match alg_id {
-            Some(ALG_ID) | None => (),
-            _ => return Err(Error::Algorithm),
+        if !matches!(alg_id, Some(ALG_ID) | None) {
+            return Err(Error::Algorithm);
+        }
+
+        // Versions unsupported
+        if version.is_some() {
+            return Err(Error::Version);
         }
 
         let salt = salt.into();

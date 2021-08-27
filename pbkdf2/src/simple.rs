@@ -10,7 +10,7 @@ use core::{
 };
 use hmac::Hmac;
 use password_hash::{
-    errors::InvalidValue, Error, Ident, McfHasher, Output, ParamsString, PasswordHash,
+    errors::InvalidValue, Decimal, Error, Ident, McfHasher, Output, ParamsString, PasswordHash,
     PasswordHasher, Result, Salt,
 };
 use sha2::{Sha256, Sha512};
@@ -36,14 +36,21 @@ pub struct Pbkdf2;
 impl PasswordHasher for Pbkdf2 {
     type Params = Params;
 
-    fn hash_password<'a>(
+    fn hash_password_customized<'a>(
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
+        version: Option<Decimal>,
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> Result<PasswordHash<'a>> {
         let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256))?;
+
+        // Versions unsupported
+        if version.is_some() {
+            return Err(Error::Version);
+        }
+
         let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;

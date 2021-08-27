@@ -25,7 +25,7 @@
 //! let salt = SaltString::generate(&mut OsRng);
 //!
 //! // Hash password to PHC string ($scrypt$...)
-//! let password_hash = Scrypt.hash_password_simple(password, salt.as_ref()).unwrap().to_string();
+//! let password_hash = Scrypt.hash_password(password, salt.as_ref()).unwrap().to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash).unwrap();

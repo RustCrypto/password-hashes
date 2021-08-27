@@ -43,7 +43,7 @@
 //! let argon2 = Argon2::default();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password_simple(password, salt.as_ref()).unwrap().to_string();
+//! let password_hash = argon2.hash_password(password, salt.as_ref()).unwrap().to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
@@ -106,7 +106,7 @@ use core::convert::TryFrom;
 #[cfg(feature = "password-hash")]
 use {
     core::convert::TryInto,
-    password_hash::{Ident, Salt},
+    password_hash::{Decimal, Ident, Salt},
 };
 
 /// Minimum and maximum number of lanes (degree of parallelism)
@@ -395,7 +395,7 @@ impl<'key> Argon2<'key> {
 impl PasswordHasher for Argon2<'_> {
     type Params = Params;
 
-    fn hash_password_simple<'a, S>(
+    fn hash_password<'a, S>(
         &self,
         password: &[u8],
         salt: &'a S,
@@ -426,10 +426,11 @@ impl PasswordHasher for Argon2<'_> {
         })
     }
 
-    fn hash_password<'a>(
+    fn hash_password_customized<'a>(
         &self,
         password: &[u8],
         alg_id: Option<Ident<'a>>,
+        version: Option<Decimal>,
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> password_hash::Result<PasswordHash<'a>> {
@@ -445,14 +446,17 @@ impl PasswordHasher for Argon2<'_> {
             params.t_cost,
             params.m_cost,
             params.p_cost,
-            params.version,
+            version
+                .map(Version::try_from)
+                .transpose()?
+                .unwrap_or_else(|| params.version),
         )?;
 
         // TODO(tarcieri): pass these via `Params` when `Argon::new` accepts `Params`
         hasher.algorithm = Some(algorithm);
         hasher.output_size = Some(params.output_size);
 
-        hasher.hash_password_simple(password, salt.as_str())
+        hasher.hash_password(password, salt.as_str())
     }
 }
 
@@ -498,7 +502,8 @@ mod tests {
         // Too short after decoding
         let salt = Salt::new("somesalt").unwrap();
 
-        let res = argon2.hash_password(EXAMPLE_PASSWORD, None, Params::default(), salt);
+        let res =
+            argon2.hash_password_customized(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
         assert_eq!(
             res,
             Err(password_hash::Error::SaltInvalid(
@@ -517,7 +522,7 @@ mod tests {
 
         let hasher = Argon2::new(None, t_cost, m_cost, p_cost, version).unwrap();
         let hash = hasher
-            .hash_password_simple(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+            .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
             .unwrap();
 
         assert_eq!(hash.version.unwrap(), version.into());

@@ -30,7 +30,7 @@ fn hash_with_default_algorithm() {
     };
 
     let hash = Pbkdf2
-        .hash_password(PASSWORD.as_bytes(), None, params, salt)
+        .hash_password_customized(PASSWORD.as_bytes(), None, None, params, salt)
         .unwrap();
 
     assert_eq!(hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
