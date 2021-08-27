@@ -1,10 +1,8 @@
 //! Argon2 password hash parameters.
 
-use crate::Version;
-
 #[cfg(feature = "password-hash")]
 use {
-    core::convert::{TryFrom, TryInto},
+    core::convert::TryFrom,
     password_hash::{ParamsString, PasswordHash},
 };
 
@@ -31,10 +29,6 @@ pub struct Params {
 
     /// Size of the output (in bytes).
     pub output_size: usize,
-
-    /// Algorithm version.
-    // TODO(tarcieri): make this separate from params in the next breaking release?
-    pub version: Version,
 }
 
 impl Params {
@@ -58,7 +52,6 @@ impl Default for Params {
             t_cost: Self::DEFAULT_T_COST,
             p_cost: Self::DEFAULT_P_COST,
             output_size: Self::DEFAULT_OUTPUT_SIZE,
-            version: Version::default(),
         }
     }
 }
@@ -80,12 +73,6 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                 // TODO(tarcieri): `data` parameter
                 _ => return Err(password_hash::Error::ParamNameInvalid),
             }
-        }
-
-        if let Some(version) = hash.version {
-            params.version = version
-                .try_into()
-                .map_err(|_| password_hash::Error::Version)?;
         }
 
         if let Some(output) = &hash.hash {
@@ -145,13 +132,6 @@ impl ParamsBuilder {
     /// Set size of the output (in bytes).
     pub fn output_size(mut self, output_size: usize) -> Self {
         self.params.output_size = output_size;
-        self
-    }
-
-    /// Set algorithm version.
-    // TODO(tarcieri): make this separate from params in the next breaking release?
-    pub fn version(mut self, version: Version) -> Self {
-        self.params.version = version;
         self
     }
 
