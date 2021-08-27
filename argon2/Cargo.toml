@@ -25,10 +25,11 @@ hex-literal = "0.3"
 password-hash = { version = "=0.3.0-pre.1", features = ["rand_core"] }
 
 [features]
-default = ["password-hash", "rand"]
+default = ["alloc", "password-hash", "rand"]
+alloc = []
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
-std = ["password-hash/std"]
+std = ["alloc", "password-hash/std"]
 
 [package.metadata.docs.rs]
 all-features = true

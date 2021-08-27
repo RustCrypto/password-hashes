@@ -12,7 +12,7 @@ use zeroize::Zeroize;
 
 /// Structure for the (1KB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct Block([u64; Self::SIZE / 8]);
+pub struct Block([u64; Self::SIZE / 8]);
 
 impl Default for Block {
     fn default() -> Self {
@@ -25,7 +25,7 @@ impl Block {
     pub const SIZE: usize = 1024;
 
     /// Load a block from a block-sized byte slice
-    pub fn load(&mut self, input: &[u8]) {
+    pub(crate) fn load(&mut self, input: &[u8]) {
         debug_assert_eq!(input.len(), Block::SIZE);
 
         for (i, chunk) in input.chunks(8).enumerate() {
@@ -34,18 +34,18 @@ impl Block {
     }
 
     /// Iterate over the `u64` values contained in this block
-    pub fn iter(&self) -> slice::Iter<'_, u64> {
+    pub(crate) fn iter(&self) -> slice::Iter<'_, u64> {
         self.0.iter()
     }
 
     /// Iterate mutably over the `u64` values contained in this block
-    pub fn iter_mut(&mut self) -> slice::IterMut<'_, u64> {
+    pub(crate) fn iter_mut(&mut self) -> slice::IterMut<'_, u64> {
         self.0.iter_mut()
     }
 
     /// Function fills a new memory block and optionally XORs the old block over the new one.
     // TODO(tarcieri): optimized implementation (i.e. from opt.c instead of ref.c)
-    pub fn fill_block(&mut self, prev_block: Block, ref_block: Block, with_xor: bool) {
+    pub(crate) fn fill_block(&mut self, prev_block: Block, ref_block: Block, with_xor: bool) {
         let mut block_r = ref_block ^ prev_block;
         let mut block_tmp = block_r;
 

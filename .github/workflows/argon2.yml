@@ -37,6 +37,7 @@ jobs:
 #          target: ${{ matrix.target }}
 #          override: true
 #      - run: cargo build --target ${{ matrix.target }} --release --no-default-features
+#      - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features password-hash
 #      - run: cargo build --target ${{ matrix.target }} --release
 #      - run: cargo build --target ${{ matrix.target }} --release --features zeroize
 
@@ -55,5 +56,6 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release --no-default-features
+      - run: cargo test --release --no-default-features --features password-hash
       - run: cargo test --release
       - run: cargo test --release --all-features

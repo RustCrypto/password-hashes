@@ -15,19 +15,6 @@ pub(crate) struct Memory<'a> {
 }
 
 impl<'a> Memory<'a> {
-    /// Align memory size.
-    ///
-    /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
-    pub(crate) fn segment_length_for_params(m_cost: u32, lanes: u32) -> u32 {
-        let memory_blocks = if m_cost < 2 * SYNC_POINTS * lanes {
-            2 * SYNC_POINTS * lanes
-        } else {
-            m_cost
-        };
-
-        memory_blocks / (lanes * SYNC_POINTS)
-    }
-
     /// Instantiate a new memory struct
     pub(crate) fn new(data: &'a mut [Block], segment_length: u32) -> Self {
         Self {
