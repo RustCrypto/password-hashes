@@ -41,7 +41,7 @@ impl PasswordHasher for Scrypt {
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
         let output = Output::init_with(params.len, |out| {
-            scrypt(password, &salt_bytes, &params, out).map_err(|_e| {
+            scrypt(password, salt_bytes, &params, out).map_err(|_e| {
                 // TODO(tarcieri): handle output variants
                 Error::OutputTooLong
             })

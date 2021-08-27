@@ -27,23 +27,28 @@
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
-//! # #[cfg(feature = "password-hash")]
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # #[cfg(all(feature = "password-hash", feature = "std"))]
 //! # {
 //! use pbkdf2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     password_hash::{
+//!         rand_core::OsRng,
+//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+//!     },
 //!     Pbkdf2
 //! };
-//! use rand_core::OsRng;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //! let salt = SaltString::generate(&mut OsRng);
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
-//! let password_hash = Pbkdf2.hash_password(password, salt.as_ref()).unwrap().to_string();
+//! let password_hash = Pbkdf2.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string
-//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(Pbkdf2.verify_password(password, &parsed_hash).is_ok());
+//! # }
+//! # Ok(())
 //! # }
 //! ```
 

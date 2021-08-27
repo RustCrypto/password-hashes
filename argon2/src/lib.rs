@@ -9,7 +9,7 @@
 //!
 //! - **Argon2d**: maximizes resistance to GPU cracking attacks
 //! - **Argon2i**: optimized to resist side-channel attacks
-//! - **Argon2id**: (default) hybrid version
+//! - **Argon2id**: (default) hybrid version combining both Argon2i and Argon2d
 //!
 //! # Usage (simple with default params)
 //!
@@ -28,13 +28,16 @@
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
-//! # #[cfg(feature = "password-hash")]
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # #[cfg(all(feature = "password-hash", feature = "std"))]
 //! # {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     password_hash::{
+//!         rand_core::OsRng,
+//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+//!     },
 //!     Argon2
 //! };
-//! use rand_core::OsRng;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //! let salt = SaltString::generate(&mut OsRng);
@@ -43,11 +46,13 @@
 //! let argon2 = Argon2::default();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, salt.as_ref()).unwrap().to_string();
+//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string
-//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(argon2.verify_password(password, &parsed_hash).is_ok());
+//! # }
+//! # Ok(())
 //! # }
 //! ```
 //!

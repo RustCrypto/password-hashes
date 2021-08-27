@@ -13,23 +13,28 @@
 //! # Usage (simple with default params)
 //!
 //! ```
-//! # #[cfg(feature = "password-hash")]
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # #[cfg(all(feature = "password-hash", feature = "std"))]
 //! # {
 //! use scrypt::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     password_hash::{
+//!         rand_core::OsRng,
+//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+//!     },
 //!     Scrypt
 //! };
-//! use rand_core::OsRng;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //! let salt = SaltString::generate(&mut OsRng);
 //!
 //! // Hash password to PHC string ($scrypt$...)
-//! let password_hash = Scrypt.hash_password(password, salt.as_ref()).unwrap().to_string();
+//! let password_hash = Scrypt.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string
-//! let parsed_hash = PasswordHash::new(&password_hash).unwrap();
+//! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(Scrypt.verify_password(password, &parsed_hash).is_ok());
+//! # }
+//! # Ok(())
 //! # }
 //! ```
 //!
@@ -102,7 +107,7 @@ pub fn scrypt(
     let nr128 = n * r128;
 
     let mut b = vec![0u8; pr128];
-    pbkdf2::<Hmac<Sha256>>(&password, salt, 1, &mut b);
+    pbkdf2::<Hmac<Sha256>>(password, salt, 1, &mut b);
 
     let mut v = vec![0u8; nr128];
     let mut t = vec![0u8; r128];
@@ -111,6 +116,6 @@ pub fn scrypt(
         romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
     }
 
-    pbkdf2::<Hmac<Sha256>>(&password, &b, 1, output);
+    pbkdf2::<Hmac<Sha256>>(password, &b, 1, output);
     Ok(())
 }

@@ -9,7 +9,6 @@ dependencies = [
  "blake2",
  "hex-literal",
  "password-hash",
- "rand_core",
  "rayon",
  "zeroize",
 ]
@@ -286,7 +285,6 @@ dependencies = [
  "hex-literal",
  "hmac",
  "password-hash",
- "rand_core",
  "rayon",
  "sha-1",
  "sha2",
@@ -387,7 +385,6 @@ dependencies = [
  "hmac",
  "password-hash",
  "pbkdf2",
- "rand_core",
  "salsa20",
  "sha2",
 ]
