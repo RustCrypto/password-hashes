@@ -110,6 +110,29 @@ impl Params {
     pub fn output_len(self) -> Option<usize> {
         self.output_len
     }
+
+    /// Get the number of lanes.
+    pub(crate) fn lanes(self) -> u32 {
+        self.p_cost
+    }
+
+    /// Get the segment length given the configured `m_cost` and `p_cost`.
+    ///
+    /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
+    pub(crate) fn segment_length(self) -> u32 {
+        let memory_blocks = if self.m_cost < 2 * SYNC_POINTS * self.lanes() {
+            2 * SYNC_POINTS * self.lanes()
+        } else {
+            self.m_cost
+        };
+
+        memory_blocks / (self.lanes() * SYNC_POINTS)
+    }
+
+    /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
+    pub(crate) fn block_count(self) -> usize {
+        (self.segment_length() * self.p_cost * SYNC_POINTS) as usize
+    }
 }
 
 impl Default for Params {

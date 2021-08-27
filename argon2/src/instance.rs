@@ -98,7 +98,7 @@ impl<'a> Instance<'a> {
             memory,
             passes: context.params.t_cost(),
             lane_length,
-            lanes: context.lanes(),
+            lanes: context.params.lanes(),
             threads: context.params.t_cost(),
             alg,
         };

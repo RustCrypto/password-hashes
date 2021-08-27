@@ -2,7 +2,7 @@
 //!
 //! Adapted from: <https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c>
 
-#![cfg(feature = "password-hash")]
+#![cfg(all(feature = "alloc", feature = "password-hash"))]
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 

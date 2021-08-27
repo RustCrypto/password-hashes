@@ -11,6 +11,9 @@
 //! - **Argon2i**: optimized to resist side-channel attacks
 //! - **Argon2id**: (default) hybrid version combining both Argon2i and Argon2d
 //!
+//! Support is provided for embedded (i.e. `no_std`) environments, including
+//! ones without `alloc` support.
+//!
 //! # Usage (simple with default params)
 //!
 //! Note: this example requires the `rand_core` crate with the `std` feature
@@ -72,6 +75,7 @@
 )]
 #![warn(rust_2018_idioms, missing_docs)]
 
+#[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
 
@@ -88,6 +92,7 @@ mod version;
 
 pub use crate::{
     algorithm::Algorithm,
+    block::Block,
     error::{Error, Result},
     params::{Params, ParamsBuilder},
     version::Version,
@@ -101,13 +106,12 @@ pub use {
 };
 
 use crate::{
-    block::Block,
     instance::Instance,
     memory::{Memory, SYNC_POINTS},
 };
 use blake2::{digest, Blake2b, Digest};
 
-#[cfg(feature = "password-hash")]
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
 use {
     core::convert::{TryFrom, TryInto},
     password_hash::{Decimal, Ident, Salt},
@@ -208,12 +212,35 @@ impl<'key> Argon2<'key> {
     }
 
     /// Hash a password and associated parameters into the provided output buffer.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_password_into(
         &self,
         pwd: &[u8],
         salt: &[u8],
         ad: &[u8],
         out: &mut [u8],
+    ) -> Result<()> {
+        let mut blocks = vec![Block::default(); self.params.block_count()];
+        self.hash_password_into_with_memory(pwd, salt, ad, out, &mut blocks)
+    }
+
+    /// Hash a password and associated parameters into the provided output buffer.
+    ///
+    /// This method takes an explicit `memory_blocks` parameter which allows
+    /// the caller to provide the backing storage for the algorithm's state:
+    ///
+    /// - Users with the `alloc` feature enabled can use [`Argon2::hash_password_into`]
+    ///   to have it allocated for them.
+    /// - `no_std` users on "heapless" targets can use an array of the [`Block`] type
+    ///   to stack allocate this buffer.
+    pub fn hash_password_into_with_memory(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        ad: &[u8],
+        out: &mut [u8],
+        mut memory_blocks: impl AsMut<[Block]>,
     ) -> Result<()> {
         // Validate output length
         if out.len()
@@ -255,26 +282,20 @@ impl<'key> Argon2<'key> {
         // Hashing all inputs
         let initial_hash = self.initial_hash(pwd, salt, ad, out);
 
-        let segment_length =
-            Memory::segment_length_for_params(self.params.m_cost(), self.params.p_cost());
+        let segment_length = self.params.segment_length();
+        let block_count = self.params.block_count();
+        let memory_blocks = memory_blocks
+            .as_mut()
+            .get_mut(..block_count)
+            .ok_or(Error::MemoryTooLittle)?;
 
-        let blocks_count = (segment_length * self.params.p_cost() * SYNC_POINTS) as usize;
-
-        // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
-        let mut blocks = vec![Block::default(); blocks_count];
-
-        let memory = Memory::new(&mut blocks, segment_length);
+        let memory = Memory::new(memory_blocks, segment_length);
         Instance::hash(self, self.algorithm, initial_hash, memory, out)
     }
 
     /// Get default configured [`Params`].
     pub fn params(&self) -> &Params {
         &self.params
-    }
-
-    /// Get the number of lanes.
-    pub(crate) fn lanes(&self) -> u32 {
-        self.params.p_cost()
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
@@ -286,7 +307,7 @@ impl<'key> Argon2<'key> {
         out: &[u8],
     ) -> digest::Output<Blake2b> {
         let mut digest = Blake2b::new();
-        digest.update(&self.lanes().to_le_bytes());
+        digest.update(&self.params.lanes().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
         digest.update(&self.params.m_cost().to_le_bytes());
         digest.update(&self.params.t_cost().to_le_bytes());
@@ -310,7 +331,8 @@ impl<'key> Argon2<'key> {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl PasswordHasher for Argon2<'_> {
     type Params = Params;
@@ -389,7 +411,7 @@ impl<'key> From<&Params> for Argon2<'key> {
     }
 }
 
-#[cfg(all(test, feature = "password-hash"))]
+#[cfg(all(test, feature = "alloc", feature = "password-hash"))]
 mod tests {
     use crate::{Algorithm, Argon2, Params, PasswordHasher, Salt, Version};
 
