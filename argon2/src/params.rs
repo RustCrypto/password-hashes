@@ -1,8 +1,11 @@
 //! Argon2 password hash parameters.
 
+use crate::{Error, Result, SYNC_POINTS};
+use core::convert::TryFrom;
+
 #[cfg(feature = "password-hash")]
 use {
-    core::convert::TryFrom,
+    core::convert::TryInto,
     password_hash::{ParamsString, PasswordHash},
 };
 
@@ -15,34 +18,98 @@ pub struct Params {
     /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
-    pub m_cost: u32,
+    m_cost: u32,
 
     /// Number of iterations, between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
-    pub t_cost: u32,
+    t_cost: u32,
 
     /// Degree of parallelism, between 1 and 255.
     ///
     /// Value is an integer in decimal (1 to 3 digits).
-    pub p_cost: u32,
+    p_cost: u32,
 
     /// Size of the output (in bytes).
-    pub output_size: usize,
+    output_len: Option<usize>,
 }
 
 impl Params {
     /// Default memory cost.
     pub const DEFAULT_M_COST: u32 = 4096;
 
-    /// Default number of iterations.
+    /// Minimum number of memory blocks.
+    pub const MIN_M_COST: u32 = 2 * SYNC_POINTS; // 2 blocks per slice
+
+    /// Maximum number of memory blocks.
+    pub const MAX_M_COST: u32 = 0x0FFFFFFF;
+
+    /// Default number of iterations (i.e. "time").
     pub const DEFAULT_T_COST: u32 = 3;
+
+    /// Minimum number of passes.
+    pub const MIN_T_COST: u32 = 1;
+
+    /// Maximum number of passes.
+    pub const MAX_T_COST: u32 = u32::MAX;
 
     /// Default degree of parallelism.
     pub const DEFAULT_P_COST: u32 = 1;
 
-    /// Default output size.
-    pub const DEFAULT_OUTPUT_SIZE: usize = 32;
+    /// Minimum and maximum number of threads (i.e. parallelism).
+    pub const MIN_P_COST: u32 = 1;
+
+    /// Minimum and maximum number of threads (i.e. parallelism).
+    pub const MAX_P_COST: u32 = 0xFFFFFF;
+
+    /// Default output length.
+    pub const DEFAULT_OUTPUT_LENGTH: usize = 32;
+
+    /// Minimum digest size in bytes.
+    pub const MIN_OUTPUT_LENGTH: usize = 4;
+
+    /// Maximum digest size in bytes.
+    pub const MAX_OUTPUT_LENGTH: usize = 0xFFFFFFFF;
+
+    /// Create new parameters.
+    pub fn new(m_cost: u32, t_cost: u32, p_cost: u32, output_len: Option<usize>) -> Result<Self> {
+        let mut builder = ParamsBuilder::new()
+            .m_cost(m_cost)?
+            .t_cost(t_cost)?
+            .p_cost(p_cost)?;
+
+        if let Some(len) = output_len {
+            builder = builder.output_len(len)?;
+        }
+
+        builder.params()
+    }
+
+    /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
+    ///
+    /// Value is an integer in decimal (1 to 10 digits).
+    pub fn m_cost(self) -> u32 {
+        self.m_cost
+    }
+
+    /// Number of iterations, between 1 and (2^32)-1.
+    ///
+    /// Value is an integer in decimal (1 to 10 digits).
+    pub fn t_cost(self) -> u32 {
+        self.t_cost
+    }
+
+    /// Degree of parallelism, between 1 and 255.
+    ///
+    /// Value is an integer in decimal (1 to 3 digits).
+    pub fn p_cost(self) -> u32 {
+        self.p_cost
+    }
+
+    /// Length of the output (in bytes).
+    pub fn output_len(self) -> Option<usize> {
+        self.output_len
+    }
 }
 
 impl Default for Params {
@@ -51,7 +118,7 @@ impl Default for Params {
             m_cost: Self::DEFAULT_M_COST,
             t_cost: Self::DEFAULT_T_COST,
             p_cost: Self::DEFAULT_P_COST,
-            output_size: Self::DEFAULT_OUTPUT_SIZE,
+            output_len: None,
         }
     }
 }
@@ -62,13 +129,13 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
     type Error = password_hash::Error;
 
     fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
-        let mut params = Params::default();
+        let mut params = ParamsBuilder::new();
 
         for (ident, value) in hash.params.iter() {
             match ident.as_str() {
-                "m" => params.m_cost = value.decimal()?,
-                "t" => params.t_cost = value.decimal()?,
-                "p" => params.p_cost = value.decimal()?,
+                "m" => params = params.m_cost(value.decimal()?)?,
+                "t" => params = params.t_cost(value.decimal()?)?,
+                "p" => params = params.p_cost(value.decimal()?)?,
                 "keyid" => (), // Ignored; correct key must be given to `Argon2` context
                 // TODO(tarcieri): `data` parameter
                 _ => return Err(password_hash::Error::ParamNameInvalid),
@@ -76,10 +143,10 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         }
 
         if let Some(output) = &hash.hash {
-            params.output_size = output.len();
+            params = params.output_len(output.len())?;
         }
 
-        Ok(params)
+        Ok(params.try_into()?)
     }
 }
 
@@ -112,32 +179,71 @@ impl ParamsBuilder {
     }
 
     /// Set memory size, expressed in kilobytes, between 1 and (2^32)-1.
-    pub fn m_cost(mut self, m_cost: u32) -> Self {
+    pub fn m_cost(mut self, m_cost: u32) -> Result<Self> {
+        if m_cost < Params::MIN_M_COST {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if m_cost > Params::MAX_M_COST {
+            return Err(Error::MemoryTooMuch);
+        }
+
         self.params.m_cost = m_cost;
-        self
+        Ok(self)
     }
 
     /// Set number of iterations, between 1 and (2^32)-1.
-    pub fn t_cost(mut self, t_cost: u32) -> Self {
+    pub fn t_cost(mut self, t_cost: u32) -> Result<Self> {
+        if t_cost < Params::MIN_T_COST {
+            return Err(Error::TimeTooSmall);
+        }
+
+        // Note: we don't need to check `MAX_T_COST`, since it's `u32::MAX`
+
         self.params.t_cost = t_cost;
-        self
+        Ok(self)
     }
 
     /// Set degree of parallelism, between 1 and 255.
-    pub fn p_cost(mut self, p_cost: u32) -> Self {
+    pub fn p_cost(mut self, p_cost: u32) -> Result<Self> {
+        if p_cost < Params::MIN_P_COST {
+            return Err(Error::ThreadsTooFew);
+        }
+
+        if p_cost > Params::MAX_P_COST {
+            return Err(Error::ThreadsTooMany);
+        }
+
         self.params.p_cost = p_cost;
-        self
+        Ok(self)
     }
 
-    /// Set size of the output (in bytes).
-    pub fn output_size(mut self, output_size: usize) -> Self {
-        self.params.output_size = output_size;
-        self
+    /// Set length of the output (in bytes).
+    pub fn output_len(mut self, len: usize) -> Result<Self> {
+        if len < Params::MIN_OUTPUT_LENGTH {
+            return Err(Error::OutputTooShort);
+        }
+
+        if len > Params::MAX_OUTPUT_LENGTH {
+            return Err(Error::OutputTooLong);
+        }
+
+        self.params.output_len = Some(len);
+        Ok(self)
     }
 
     /// Get the finished [`Params`].
-    pub fn params(self) -> Params {
-        self.params
+    ///
+    /// This performs further validations to ensure that the given parameters
+    /// are compatible with each other, and will return an error if they are not.
+    ///
+    /// The main validation is that `m_cost` < `p_cost * 8`
+    pub fn params(self) -> Result<Params> {
+        if self.params.m_cost < self.params.p_cost * 8 {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        Ok(self.params)
     }
 }
 
@@ -147,8 +253,10 @@ impl Default for ParamsBuilder {
     }
 }
 
-impl From<ParamsBuilder> for Params {
-    fn from(builder: ParamsBuilder) -> Params {
-        builder.params
+impl TryFrom<ParamsBuilder> for Params {
+    type Error = Error;
+
+    fn try_from(builder: ParamsBuilder) -> Result<Params> {
+        builder.params()
     }
 }

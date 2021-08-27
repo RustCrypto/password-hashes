@@ -101,58 +101,27 @@ use crate::{
     memory::{Memory, SYNC_POINTS},
 };
 use blake2::{digest, Blake2b, Digest};
-use core::convert::TryFrom;
 
 #[cfg(feature = "password-hash")]
 use {
-    core::convert::TryInto,
+    core::convert::{TryFrom, TryInto},
     password_hash::{Decimal, Ident, Salt},
 };
 
-/// Minimum and maximum number of lanes (degree of parallelism)
-pub const MIN_LANES: u32 = 1;
-
-/// Minimum and maximum number of lanes (degree of parallelism)
-pub const MAX_LANES: u32 = 0xFFFFFF;
-
-/// Minimum and maximum number of threads
-pub const MIN_THREADS: u32 = 1;
-
-/// Minimum and maximum number of threads
-pub const MAX_THREADS: u32 = 0xFFFFFF;
-
-/// Minimum digest size in bytes
-pub const MIN_OUTLEN: usize = 4;
-
-/// Maximum digest size in bytes
-pub const MAX_OUTLEN: usize = 0xFFFFFFFF;
-
-/// Minimum number of memory blocks.
-pub const MIN_MEMORY: u32 = 2 * SYNC_POINTS; // 2 blocks per slice
-
-/// Maximum number of memory blocks.
-pub const MAX_MEMORY: u32 = 0x0FFFFFFF;
-
-/// Minimum number of passes
-pub const MIN_TIME: u32 = 1;
-
-/// Maximum number of passes
-pub const MAX_TIME: u32 = 0xFFFFFFFF;
-
-/// Maximum password length in bytes
+/// Maximum password length in bytes.
 pub const MAX_PWD_LENGTH: usize = 0xFFFFFFFF;
 
-/// Minimum and maximum associated data length in bytes
+/// Minimum and maximum associated data length in bytes.
 pub const MAX_AD_LENGTH: usize = 0xFFFFFFFF;
 
-/// Minimum and maximum salt length in bytes
+/// Minimum and maximum salt length in bytes.
 pub const MIN_SALT_LENGTH: usize = 8;
 
-/// Maximum salt length in bytes
+/// Maximum salt length in bytes.
 pub const MAX_SALT_LENGTH: usize = 0xFFFFFFFF;
 
-/// Maximum key length in bytes
-pub const MAX_SECRET: usize = 0xFFFFFFFF;
+/// Maximum secret key length in bytes.
+pub const MAX_SECRET_LENGTH: usize = 0xFFFFFFFF;
 
 /// Argon2 context.
 ///
@@ -184,193 +153,140 @@ pub const MAX_SECRET: usize = 0xFFFFFFFF;
 // TODO(tarcieri): replace `Params`-related fields with an internally-stored struct
 #[derive(Clone)]
 pub struct Argon2<'key> {
-    /// Key array
-    secret: Option<&'key [u8]>,
-
-    /// Default algorithm.
-    algorithm: Option<Algorithm>,
+    /// Algorithm to use
+    algorithm: Algorithm,
 
     /// Version number
     version: Version,
 
-    /// Amount of memory requested (kB).
-    m_cost: u32,
+    /// Algorithm parameters
+    params: Params,
 
-    /// Number of passes.
-    t_cost: u32,
-
-    /// Number of lanes.
-    lanes: u32,
-
-    /// Maximum number of threads.
-    threads: u32,
-
-    /// Enforce a required output size.
-    output_size: Option<usize>,
+    /// Key array
+    secret: Option<&'key [u8]>,
 }
 
 impl Default for Argon2<'_> {
     fn default() -> Self {
-        // TODO(tarcieri): use `Params` as argument to `Argon2::new` in the next breaking release
-        let params = Params::default();
-
-        Self::new(
-            None,
-            params.t_cost,
-            params.m_cost,
-            params.p_cost,
-            Version::default(),
-        )
-        .expect("invalid default Argon2 params")
+        Self::new(Algorithm::default(), Version::default(), Params::default())
     }
 }
 
 impl<'key> Argon2<'key> {
     /// Create a new Argon2 context.
-    // TODO(tarcieri): use `Params` as argument to `Argon2::new` in the next breaking release
-    pub fn new(
-        secret: Option<&'key [u8]>,
-        t_cost: u32,
-        m_cost: u32,
-        parallelism: u32,
+    pub fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {
+        Self {
+            algorithm,
+            version,
+            params,
+            secret: None,
+        }
+    }
+
+    /// Create a new Argon2 context.
+    pub fn new_with_secret(
+        secret: &'key [u8],
+        algorithm: Algorithm,
         version: Version,
+        params: Params,
     ) -> Result<Self> {
-        let lanes = parallelism;
-
-        if let Some(secret) = &secret {
-            if MAX_SECRET < secret.len() {
-                return Err(Error::SecretTooLong);
-            }
-        }
-
-        // Validate memory cost
-        if MIN_MEMORY > m_cost {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        if MAX_MEMORY < m_cost {
-            return Err(Error::MemoryTooMuch);
-        }
-
-        if m_cost < 8 * lanes {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        // Validate time cost
-        if t_cost < MIN_TIME {
-            return Err(Error::TimeTooSmall);
-        }
-
-        // Validate lanes
-        if MIN_LANES > lanes {
-            return Err(Error::LanesTooFew);
-        }
-
-        if MAX_LANES < parallelism {
-            return Err(Error::LanesTooMany);
-        }
-
-        // Validate threads
-        if MIN_THREADS > lanes {
-            return Err(Error::ThreadsTooFew);
-        }
-
-        if MAX_THREADS < parallelism {
-            return Err(Error::ThreadsTooMany);
+        if MAX_SECRET_LENGTH < secret.len() {
+            return Err(Error::SecretTooLong);
         }
 
         Ok(Self {
-            secret,
-            algorithm: None,
-            t_cost,
-            m_cost,
-            lanes,
-            threads: parallelism,
-            output_size: None,
+            algorithm,
             version,
+            params,
+            secret: Some(secret),
         })
     }
 
     /// Hash a password and associated parameters into the provided output buffer.
     pub fn hash_password_into(
         &self,
-        alg: Algorithm,
         pwd: &[u8],
         salt: &[u8],
         ad: &[u8],
         out: &mut [u8],
     ) -> Result<()> {
-        // TODO(tarcieri): move algorithm selection entirely to `Argon2::new`
-        if self.algorithm.is_some() && Some(alg) != self.algorithm {
-            return Err(Error::AlgorithmInvalid);
-        }
-
         // Validate output length
-        if out.len() < self.output_size.unwrap_or(MIN_OUTLEN) {
+        if out.len()
+            < self
+                .params
+                .output_len()
+                .unwrap_or(Params::MIN_OUTPUT_LENGTH)
+        {
             return Err(Error::OutputTooShort);
         }
 
-        if out.len() > self.output_size.unwrap_or(MAX_OUTLEN) {
+        if out.len()
+            > self
+                .params
+                .output_len()
+                .unwrap_or(Params::MAX_OUTPUT_LENGTH)
+        {
             return Err(Error::OutputTooLong);
         }
 
-        if MAX_PWD_LENGTH < pwd.len() {
+        if pwd.len() > MAX_PWD_LENGTH {
             return Err(Error::PwdTooLong);
         }
 
         // Validate salt (required param)
-        if MIN_SALT_LENGTH > salt.len() {
+        if salt.len() < MIN_SALT_LENGTH {
             return Err(Error::SaltTooShort);
         }
 
-        if MAX_SALT_LENGTH < salt.len() {
+        if salt.len() > MAX_SALT_LENGTH {
             return Err(Error::SaltTooLong);
         }
 
         // Validate associated data (optional param)
-        if MAX_AD_LENGTH < ad.len() {
+        if ad.len() > MAX_AD_LENGTH {
             return Err(Error::AdTooLong);
         }
 
         // Hashing all inputs
-        let initial_hash = self.initial_hash(alg, pwd, salt, ad, out);
-        let segment_length = Memory::segment_length_for_params(self.m_cost, self.lanes);
-        let blocks_count = (segment_length * self.lanes * SYNC_POINTS) as usize;
+        let initial_hash = self.initial_hash(pwd, salt, ad, out);
+
+        let segment_length =
+            Memory::segment_length_for_params(self.params.m_cost(), self.params.p_cost());
+
+        let blocks_count = (segment_length * self.params.p_cost() * SYNC_POINTS) as usize;
 
         // TODO(tarcieri): support for stack-allocated memory blocks (i.e. no alloc)
         let mut blocks = vec![Block::default(); blocks_count];
 
         let memory = Memory::new(&mut blocks, segment_length);
-        Instance::hash(self, alg, initial_hash, memory, out)
+        Instance::hash(self, self.algorithm, initial_hash, memory, out)
     }
 
     /// Get default configured [`Params`].
-    // TODO(tarcieri): store `Params` field in the `Argon2` struct.
-    pub fn params(&self) -> Params {
-        Params {
-            m_cost: self.m_cost,
-            t_cost: self.t_cost,
-            p_cost: self.threads,
-            output_size: self.output_size.unwrap_or(Params::DEFAULT_OUTPUT_SIZE),
-        }
+    pub fn params(&self) -> &Params {
+        &self.params
+    }
+
+    /// Get the number of lanes.
+    pub(crate) fn lanes(&self) -> u32 {
+        self.params.p_cost()
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
     pub(crate) fn initial_hash(
         &self,
-        alg: Algorithm,
         pwd: &[u8],
         salt: &[u8],
         ad: &[u8],
         out: &[u8],
     ) -> digest::Output<Blake2b> {
         let mut digest = Blake2b::new();
-        digest.update(&self.lanes.to_le_bytes());
+        digest.update(&self.lanes().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
-        digest.update(&self.m_cost.to_le_bytes());
-        digest.update(&self.t_cost.to_le_bytes());
+        digest.update(&self.params.m_cost().to_le_bytes());
+        digest.update(&self.params.t_cost().to_le_bytes());
         digest.update(&self.version.to_le_bytes());
-        digest.update(&alg.to_le_bytes());
+        digest.update(&self.algorithm.to_le_bytes());
         digest.update(&(pwd.len() as u32).to_le_bytes());
         digest.update(pwd);
         digest.update(&(salt.len() as u32).to_le_bytes());
@@ -402,24 +318,25 @@ impl PasswordHasher for Argon2<'_> {
     where
         S: AsRef<str> + ?Sized,
     {
-        let algorithm = self.algorithm.unwrap_or_default();
-
         let salt = Salt::try_from(salt.as_ref())?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
         // TODO(tarcieri): support the `data` parameter (i.e. associated data)
         let ad = b"";
-        let output_size = self.output_size.unwrap_or(Params::DEFAULT_OUTPUT_SIZE);
+        let output_len = self
+            .params
+            .output_len()
+            .unwrap_or(Params::DEFAULT_OUTPUT_LENGTH);
 
-        let output = password_hash::Output::init_with(output_size, |out| {
-            Ok(self.hash_password_into(algorithm, password, salt_bytes, ad, out)?)
+        let output = password_hash::Output::init_with(output_len, |out| {
+            Ok(self.hash_password_into(password, salt_bytes, ad, out)?)
         })?;
 
         Ok(PasswordHash {
-            algorithm: algorithm.ident(),
+            algorithm: self.algorithm.ident(),
             version: Some(self.version.into()),
-            params: self.params().try_into()?,
+            params: self.params.try_into()?,
             salt: Some(salt),
             hash: Some(output),
         })
@@ -445,50 +362,31 @@ impl PasswordHasher for Argon2<'_> {
 
         let salt = salt.into();
 
-        let mut hasher = Self::new(
-            self.secret,
-            params.t_cost,
-            params.m_cost,
-            params.p_cost,
+        Self {
+            secret: self.secret,
+            algorithm,
             version,
-        )?;
-
-        // TODO(tarcieri): pass these via `Params` when `Argon::new` accepts `Params`
-        hasher.algorithm = Some(algorithm);
-        hasher.output_size = Some(params.output_size);
-
-        hasher.hash_password(password, salt.as_str())
+            params,
+        }
+        .hash_password(password, salt.as_str())
     }
 }
 
-impl<'key> TryFrom<Params> for Argon2<'key> {
-    type Error = Error;
-
-    fn try_from(params: Params) -> Result<Self> {
-        Argon2::try_from(&params)
+impl<'key> From<Params> for Argon2<'key> {
+    fn from(params: Params) -> Self {
+        Self::new(Algorithm::default(), Version::default(), params)
     }
 }
 
-impl<'key> TryFrom<&Params> for Argon2<'key> {
-    type Error = Error;
-
-    fn try_from(params: &Params) -> Result<Self> {
-        let mut argon2 = Argon2::new(
-            None,
-            params.t_cost,
-            params.m_cost,
-            params.p_cost,
-            Version::default(),
-        )?;
-
-        argon2.output_size = Some(params.output_size);
-        Ok(argon2)
+impl<'key> From<&Params> for Argon2<'key> {
+    fn from(params: &Params) -> Self {
+        Self::from(*params)
     }
 }
 
 #[cfg(all(test, feature = "password-hash"))]
 mod tests {
-    use crate::{Argon2, Params, PasswordHasher, Salt, Version};
+    use crate::{Algorithm, Argon2, Params, PasswordHasher, Salt, Version};
 
     /// Example password only: don't use this as a real password!!!
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
@@ -521,7 +419,8 @@ mod tests {
         let p_cost = 2;
         let version = Version::V0x10;
 
-        let hasher = Argon2::new(None, t_cost, m_cost, p_cost, version).unwrap();
+        let params = Params::new(m_cost, t_cost, p_cost, None).unwrap();
+        let hasher = Argon2::new(Algorithm::default(), version, params);
         let hash = hasher
             .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
             .unwrap();

@@ -12,49 +12,43 @@ pub type Result<T> = core::result::Result<T, Error>;
 // TODO(tarcieri): consolidate/replace with `password_hash::Error`
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
-    /// Associated data is too long
+    /// Associated data is too long.
     AdTooLong,
 
-    /// Algorithm identifier invalid
+    /// Algorithm identifier invalid.
     AlgorithmInvalid,
 
-    /// Too few lanes
-    LanesTooFew,
-
-    /// Too many lanes
-    LanesTooMany,
-
-    /// Memory cost is too small
+    /// Memory cost is too small.
     MemoryTooLittle,
 
-    /// Memory cost is too large
+    /// Memory cost is too large.
     MemoryTooMuch,
 
-    /// Output is too short
+    /// Output is too short.
     OutputTooShort,
 
-    /// Output is too long
+    /// Output is too long.
     OutputTooLong,
 
-    /// Password is too long
+    /// Password is too long.
     PwdTooLong,
 
-    /// Salt is too short
+    /// Salt is too short.
     SaltTooShort,
 
-    /// Salt is too long
+    /// Salt is too long.
     SaltTooLong,
 
-    /// Secret is too long
+    /// Secret is too long.
     SecretTooLong,
 
-    /// Not enough threads
+    /// Not enough threads.
     ThreadsTooFew,
 
-    /// Too many threads
+    /// Too many threads.
     ThreadsTooMany,
 
-    /// Time cost is too small
+    /// Time cost is too small.
     TimeTooSmall,
 
     /// Invalid version
@@ -66,8 +60,6 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Error::AdTooLong => "associated data is too long",
             Error::AlgorithmInvalid => "algorithm identifier invalid",
-            Error::LanesTooFew => "too few lanes",
-            Error::LanesTooMany => "too many lanes",
             Error::MemoryTooLittle => "memory cost is too small",
             Error::MemoryTooMuch => "memory cost is too large",
             Error::OutputTooShort => "output is too short",
@@ -91,8 +83,6 @@ impl From<Error> for password_hash::Error {
         match err {
             Error::AdTooLong => password_hash::Error::ParamValueInvalid(InvalidValue::TooLong),
             Error::AlgorithmInvalid => password_hash::Error::Algorithm,
-            Error::LanesTooFew => password_hash::Error::ParamValueInvalid(InvalidValue::TooShort),
-            Error::LanesTooMany => password_hash::Error::ParamValueInvalid(InvalidValue::TooLong),
             Error::MemoryTooLittle => {
                 password_hash::Error::ParamValueInvalid(InvalidValue::TooShort)
             }
