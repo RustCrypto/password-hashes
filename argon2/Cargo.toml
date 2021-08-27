@@ -17,13 +17,13 @@ readme = "README.md"
 [dependencies]
 base64ct = "1"
 blake2 = { version = "0.9", default-features = false }
-password-hash = { version = "=0.3.0-pre.1", optional = true }
+password-hash = { version = "0.3", optional = true }
 rayon = { version = "1", optional = true }
 zeroize = { version = ">=1, <1.4", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
-password-hash = { version = "=0.3.0-pre.1", features = ["rand_core"] }
+password-hash = { version = "0.3", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
