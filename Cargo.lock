@@ -6,6 +6,7 @@ version = 3
 name = "argon2"
 version = "0.2.4"
 dependencies = [
+ "base64ct",
  "blake2",
  "hex-literal",
  "password-hash",
@@ -269,7 +270,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "password-hash"
 version = "0.3.0-pre.1"
-source = "git+https://github.com/rustcrypto/traits.git#9e0de9d0aa33f0a7c687d7ae0809e3194027ba6c"
+source = "git+https://github.com/rustcrypto/traits.git#c759117b348ec195fab4ec835c260f0b4c402389"
 dependencies = [
  "base64ct",
  "rand_core",

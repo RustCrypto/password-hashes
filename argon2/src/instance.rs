@@ -34,7 +34,7 @@ struct Position {
     index: u32,
 }
 
-/// Argon2 instance: memory pointer, number of passes, amount of memory, type,
+/// Argon2 instance: memory buffer, number of passes, amount of memory, type,
 /// and derived values.
 ///
 /// Used to evaluate the number and location of blocks to construct in each
@@ -405,11 +405,11 @@ fn next_addresses(address_block: &mut Block, input_block: &mut Block, zero_block
 
 /// BLAKE2b with an extended output, as described in the Argon2 paper
 fn blake2b_long(inputs: &[&[u8]], mut out: &mut [u8]) -> Result<()> {
-    if out.len() < Params::MIN_OUTPUT_LENGTH as usize {
+    if out.len() < Params::MIN_OUTPUT_LEN as usize {
         return Err(Error::OutputTooLong);
     }
 
-    if out.len() > Params::MAX_OUTPUT_LENGTH as usize {
+    if out.len() > Params::MAX_OUTPUT_LEN as usize {
         return Err(Error::OutputTooLong);
     }
 

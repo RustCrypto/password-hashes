@@ -113,53 +113,30 @@ use blake2::{digest, Blake2b, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use {
-    core::convert::{TryFrom, TryInto},
-    password_hash::{Decimal, Ident, Salt},
+    core::convert::TryFrom,
+    password_hash::{Decimal, Ident, ParamsString, Salt},
 };
 
 /// Maximum password length in bytes.
-pub const MAX_PWD_LENGTH: usize = 0xFFFFFFFF;
-
-/// Minimum and maximum associated data length in bytes.
-pub const MAX_AD_LENGTH: usize = 0xFFFFFFFF;
+pub const MAX_PWD_LEN: usize = 0xFFFFFFFF;
 
 /// Minimum and maximum salt length in bytes.
-pub const MIN_SALT_LENGTH: usize = 8;
+pub const MIN_SALT_LEN: usize = 8;
 
 /// Maximum salt length in bytes.
-pub const MAX_SALT_LENGTH: usize = 0xFFFFFFFF;
+pub const MAX_SALT_LEN: usize = 0xFFFFFFFF;
 
 /// Maximum secret key length in bytes.
-pub const MAX_SECRET_LENGTH: usize = 0xFFFFFFFF;
+pub const MAX_SECRET_LEN: usize = 0xFFFFFFFF;
 
 /// Argon2 context.
 ///
-/// Holds the following Argon2 inputs:
+/// This is the primary type of this crate's API, and contains the following:
 ///
-/// - output array and its length,
-/// - password and its length,
-/// - salt and its length,
-/// - secret and its length,
-/// - associated data and its length,
-/// - number of passes, amount of used memory (in KBytes, can be rounded up a bit)
-/// - number of parallel threads that will be run.
-///
-/// All the parameters above affect the output hash value.
-/// Additionally, two function pointers can be provided to allocate and
-/// deallocate the memory (if NULL, memory will be allocated internally).
-/// Also, three flags indicate whether to erase password, secret as soon as they
-/// are pre-hashed (and thus not needed anymore), and the entire memory
-///
-/// Simplest situation: you have output array `out[8]`, password is stored in
-/// `pwd[32]`, salt is stored in `salt[16]`, you do not have keys nor associated
-/// data.
-///
-/// You need to spend 1 GB of RAM and you run 5 passes of Argon2d with
-/// 4 parallel lanes.
-///
-/// You want to erase the password, but you're OK with last pass not being
-/// erased.
-// TODO(tarcieri): replace `Params`-related fields with an internally-stored struct
+/// - Argon2 [`Algorithm`] variant to be used
+/// - Argon2 [`Version`] to be used
+/// - Default set of [`Params`] to be used
+/// - (Optional) Secret key a.k.a. "pepper" to be used
 #[derive(Clone)]
 pub struct Argon2<'key> {
     /// Algorithm to use
@@ -199,7 +176,7 @@ impl<'key> Argon2<'key> {
         version: Version,
         params: Params,
     ) -> Result<Self> {
-        if MAX_SECRET_LENGTH < secret.len() {
+        if MAX_SECRET_LEN < secret.len() {
             return Err(Error::SecretTooLong);
         }
 
@@ -214,15 +191,9 @@ impl<'key> Argon2<'key> {
     /// Hash a password and associated parameters into the provided output buffer.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn hash_password_into(
-        &self,
-        pwd: &[u8],
-        salt: &[u8],
-        ad: &[u8],
-        out: &mut [u8],
-    ) -> Result<()> {
+    pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
         let mut blocks = vec![Block::default(); self.params.block_count()];
-        self.hash_password_into_with_memory(pwd, salt, ad, out, &mut blocks)
+        self.hash_password_into_with_memory(pwd, salt, out, &mut blocks)
     }
 
     /// Hash a password and associated parameters into the provided output buffer.
@@ -238,49 +209,33 @@ impl<'key> Argon2<'key> {
         &self,
         pwd: &[u8],
         salt: &[u8],
-        ad: &[u8],
         out: &mut [u8],
         mut memory_blocks: impl AsMut<[Block]>,
     ) -> Result<()> {
         // Validate output length
-        if out.len()
-            < self
-                .params
-                .output_len()
-                .unwrap_or(Params::MIN_OUTPUT_LENGTH)
-        {
+        if out.len() < self.params.output_len().unwrap_or(Params::MIN_OUTPUT_LEN) {
             return Err(Error::OutputTooShort);
         }
 
-        if out.len()
-            > self
-                .params
-                .output_len()
-                .unwrap_or(Params::MAX_OUTPUT_LENGTH)
-        {
+        if out.len() > self.params.output_len().unwrap_or(Params::MAX_OUTPUT_LEN) {
             return Err(Error::OutputTooLong);
         }
 
-        if pwd.len() > MAX_PWD_LENGTH {
+        if pwd.len() > MAX_PWD_LEN {
             return Err(Error::PwdTooLong);
         }
 
         // Validate salt (required param)
-        if salt.len() < MIN_SALT_LENGTH {
+        if salt.len() < MIN_SALT_LEN {
             return Err(Error::SaltTooShort);
         }
 
-        if salt.len() > MAX_SALT_LENGTH {
+        if salt.len() > MAX_SALT_LEN {
             return Err(Error::SaltTooLong);
         }
 
-        // Validate associated data (optional param)
-        if ad.len() > MAX_AD_LENGTH {
-            return Err(Error::AdTooLong);
-        }
-
         // Hashing all inputs
-        let initial_hash = self.initial_hash(pwd, salt, ad, out);
+        let initial_hash = self.initial_hash(pwd, salt, out);
 
         let segment_length = self.params.segment_length();
         let block_count = self.params.block_count();
@@ -298,12 +253,11 @@ impl<'key> Argon2<'key> {
         &self.params
     }
 
-    /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LENGTH]`.
+    /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
     pub(crate) fn initial_hash(
         &self,
         pwd: &[u8],
         salt: &[u8],
-        ad: &[u8],
         out: &[u8],
     ) -> digest::Output<Blake2b> {
         let mut digest = Blake2b::new();
@@ -325,8 +279,8 @@ impl<'key> Argon2<'key> {
             digest.update(0u32.to_le_bytes());
         }
 
-        digest.update(&(ad.len() as u32).to_le_bytes());
-        digest.update(ad);
+        digest.update(&(self.params.data().len() as u32).to_le_bytes());
+        digest.update(self.params.data());
         digest.finalize()
     }
 }
@@ -348,22 +302,19 @@ impl PasswordHasher for Argon2<'_> {
         let salt = Salt::try_from(salt.as_ref())?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
-
-        // TODO(tarcieri): support the `data` parameter (i.e. associated data)
-        let ad = b"";
         let output_len = self
             .params
             .output_len()
-            .unwrap_or(Params::DEFAULT_OUTPUT_LENGTH);
+            .unwrap_or(Params::DEFAULT_OUTPUT_LEN);
 
         let output = password_hash::Output::init_with(output_len, |out| {
-            Ok(self.hash_password_into(password, salt_bytes, ad, out)?)
+            Ok(self.hash_password_into(password, salt_bytes, out)?)
         })?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),
             version: Some(self.version.into()),
-            params: self.params.try_into()?,
+            params: ParamsString::try_from(&self.params)?,
             salt: Some(salt),
             hash: Some(output),
         })
@@ -407,7 +358,7 @@ impl<'key> From<Params> for Argon2<'key> {
 
 impl<'key> From<&Params> for Argon2<'key> {
     fn from(params: &Params) -> Self {
-        Self::from(*params)
+        Self::from(params.clone())
     }
 }
 
