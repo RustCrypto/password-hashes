@@ -28,7 +28,7 @@ checksum = "8a32fd6af2b5827bce66c29053ba0e7c42b9dcab01835835058558c10851a46b"
 
 [[package]]
 name = "bcrypt-pbkdf"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "blowfish",
  "crypto-mac 0.11.0",
