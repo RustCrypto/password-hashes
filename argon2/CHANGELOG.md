@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 (2021-08-27)
+### Added
+- `alloc` feature ([#215])
+- `Params` now supports `keyid` and `data` fields ([#216])
+
+### Changed
+- `Argon2::new` now has explicit `version` and `params` ([#213])
+- Factored apart `Argon2::new` and `Argon2::new_with_secret`, making the
+  former infallible ([#213])
+- `Params` struct is now opaque with field accessors, and ensured to
+  always represent a valid set of parameters ([#213])
+- Removed `version` parameter from `hash_password_into`, using the one
+  supplied to `Argon2::new` ([#213])
+- Bump `password-hash` to v0.3 ([#217], [RustCrypto/traits#724])
+- Use `resolver = "2"`; MSRV 1.51+ ([#220])
+
+### Removed
+- `Params` no longer has a `version` field ([#211])
+
+[#211]: https://github.com/RustCrypto/password-hashes/pull/211
+[#213]: https://github.com/RustCrypto/password-hashes/pull/213
+[#215]: https://github.com/RustCrypto/password-hashes/pull/215
+[#216]: https://github.com/RustCrypto/password-hashes/pull/216
+[#217]: https://github.com/RustCrypto/password-hashes/pull/217
+[#220]: https://github.com/RustCrypto/password-hashes/pull/220
+[RustCrypto/traits#724]: https://github.com/RustCrypto/traits/pull/724
+
 ## 0.2.4 (2021-08-21)
 ### Added
 - Impl `std::error::Error` for `argon2::Error` ([#200])
