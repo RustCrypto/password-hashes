@@ -8,7 +8,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/bcrypt-pbkdf/0.7.0"
+    html_root_url = "https://docs.rs/bcrypt-pbkdf/0.7.1"
 )]
 
 extern crate alloc;

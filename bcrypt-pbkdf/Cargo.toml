@@ -1,6 +1,6 @@
 [package]
 name = "bcrypt-pbkdf"
-version = "0.7.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.7.1" # Also update html_root_url in lib.rs when bumping this
 description = "bcrypt-pbkdf password-based key derivation function"
 authors = ["RustCrypto Developers"]
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbkdf"

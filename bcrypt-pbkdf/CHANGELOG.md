@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.7.0 (2021-08-27)
+## 0.7.1 (2021-08-27)
+### Changed
+- Bump `pbkdf2` dependency to v0.9 ([#223])
+
+[#223]: https://github.com/RustCrypto/password-hashes/pull/223
+
+## 0.7.0 (2021-08-27) [YANKED]
 ### Changed
 - Relax `zeroize` requirements ([#195])
 - Use `resolver = "2"`; MSRV 1.51+ ([#220])
