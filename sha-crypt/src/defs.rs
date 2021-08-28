@@ -1,7 +1,14 @@
+/// Block size
 pub const BLOCK_SIZE: usize = 64;
+
+/// Maximum length of a salt
 #[cfg(feature = "simple")]
 pub const SALT_MAX_LEN: usize = 16;
+
+/// Encoding table.
 pub static TAB: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+/// Inverse encoding map.
 pub const MAP: [(u8, u8, u8, u8); 22] = [
     (42, 21, 0, 4),
     (1, 43, 22, 4),

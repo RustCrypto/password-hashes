@@ -8,14 +8,21 @@ use alloc::string::String;
 #[cfg(feature = "std")]
 use std::io;
 
+/// Error type.
 #[derive(Debug)]
 pub enum CryptError {
     /// Should be within range defs::ROUNDS_MIN < defs::ROUNDS_MIN
     RoundsError,
+
+    /// RNG failed.
     RandomError,
+
+    /// I/O error.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     IoError(io::Error),
+
+    /// UTF-8 error.
     StringError(string::FromUtf8Error),
 }
 

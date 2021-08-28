@@ -33,10 +33,10 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/sha-crypt/0.2.1"
+    html_root_url = "https://docs.rs/sha-crypt/0.3.0"
 )]
 #![deny(unsafe_code)]
-#![warn(rust_2018_idioms)] // TODO(tarcieri): add `missing_docs`
+#![warn(missing_docs, rust_2018_idioms)]
 
 // TODO(tarcieri): heapless support
 #[macro_use]
