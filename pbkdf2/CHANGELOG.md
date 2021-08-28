@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.0 (2021-08-27)
+### Added
+- GOST test vectors ([#191])
+
+### Changed
+- Bump `password-hash` to v0.3 ([#217], [RustCrypto/traits#724])
+- Use `resolver = "2"`; MSRV 1.51+ ([#220])
+
+### Removed
+- `McfHasher` impl on `Pbkdf2` ([#219])
+
+[#191]: https://github.com/RustCrypto/password-hashing/pull/191
+[#217]: https://github.com/RustCrypto/password-hashing/pull/217
+[#219]: https://github.com/RustCrypto/password-hashing/pull/219
+[#220]: https://github.com/RustCrypto/password-hashing/pull/220
+[RustCrypto/traits#724]: https://github.com/RustCrypto/traits/pull/724
+
 ## 0.8.0 (2021-04-29)
 ### Changed
 - Bump `password-hash` crate dependency to v0.2 ([#164])
