@@ -17,6 +17,8 @@ readme = "README.md"
 [dependencies]
 base64ct = "1"
 blake2 = { version = "0.9", default-features = false }
+
+# optional dependencies
 password-hash = { version = "0.3", optional = true }
 rayon = { version = "1", optional = true }
 zeroize = { version = ">=1, <1.5", optional = true }
