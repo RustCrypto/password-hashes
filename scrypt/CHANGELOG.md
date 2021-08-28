@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.0 (2021-08-27)
+### Changed
+- Bump `password-hash` to v0.3 ([#217])
+- Use `resolver = "2"`; MSRV 1.51+ ([#220])
+- Bump `pbkdf2` dependency to v0.9 ([#233])
+
+### Removed
+- `McfHasher` impls for `Scrypt` ([#219])
+
+[#217]: https://github.com/RustCrypto/password-hashing/pull/217
+[#219]: https://github.com/RustCrypto/password-hashing/pull/219
+[#220]: https://github.com/RustCrypto/password-hashing/pull/220
+[#233]: https://github.com/RustCrypto/password-hashing/pull/233
+
 ## 0.7.0 (2021-04-29)
 ### Changed
 - Bump `password-hash` crate dependency to v0.2 ([#164])
