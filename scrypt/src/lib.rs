@@ -47,7 +47,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/scrypt/0.7.0"
+    html_root_url = "https://docs.rs/scrypt/0.8.0"
 )]
 
 #[macro_use]
@@ -64,13 +64,15 @@ use sha2::Sha256;
 pub mod errors;
 mod params;
 mod romix;
+
 #[cfg(feature = "simple")]
 mod simple;
+
+pub use crate::params::Params;
 
 #[cfg(feature = "simple")]
 pub use password_hash;
 
-pub use crate::params::Params;
 #[cfg(feature = "simple")]
 pub use crate::simple::{Scrypt, ALG_ID};
 
