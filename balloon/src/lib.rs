@@ -235,9 +235,11 @@ impl<'key, D: Digest> Balloon<'key, D> {
                     digest.update(&u32::try_from(t).unwrap().to_le_bytes());
                     digest.update(&u32::try_from(m).unwrap().to_le_bytes());
                     digest.update(&i.to_le_bytes());
-                    let other =
-                        u32::from_le_bytes(digest.finalize_reset()[..4].try_into().unwrap())
-                            % self.params.s_cost.get();
+                    let other = u32::from_le_bytes(
+                        digest.finalize_reset()[..core::mem::size_of::<u32>()]
+                            .try_into()
+                            .unwrap(),
+                    ) % self.params.s_cost.get();
                     let other = usize::try_from(other).unwrap();
 
                     // buf[m] = hash(cnt++, buf[m], buf[other])
