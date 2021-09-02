@@ -1,10 +1,12 @@
 //! Argon2 password hash parameters.
 
 use crate::{Error, Result};
-use core::convert::TryFrom;
 use core::num::NonZeroU32;
 #[cfg(feature = "password-hash")]
-use password_hash::{errors::InvalidValue, ParamsString, PasswordHash};
+use {
+    core::convert::TryFrom,
+    password_hash::{errors::InvalidValue, ParamsString, PasswordHash},
+};
 
 /// Argon2 password hash parameters.
 ///

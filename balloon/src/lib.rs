@@ -139,8 +139,9 @@ impl<'key, D: Digest> Balloon<'key, D> {
 
                         // add thread index to salt
                         let byte = salt[..U32_SIZE].try_into().unwrap();
-                        salt[..U32_SIZE]
-                            .copy_from_slice(&(u32::from_le_bytes(byte).wrapping_add(index)).to_le_bytes());
+                        salt[..U32_SIZE].copy_from_slice(
+                            &(u32::from_le_bytes(byte).wrapping_add(index)).to_le_bytes(),
+                        );
                         Self::new(*params, *secret).hash(pwd, &salt)
                     })
                     .try_reduce(GenericArray::default, |a, b| {
