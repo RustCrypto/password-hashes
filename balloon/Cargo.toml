@@ -19,7 +19,6 @@ password-hash = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1", optional = true }
 
 [dev-dependencies]
-hex = "0.4"
 sha2 = "0.9"
 
 [features]

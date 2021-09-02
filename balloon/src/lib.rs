@@ -140,7 +140,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
                         // add thread index to salt
                         let byte = salt[..U32_SIZE].try_into().unwrap();
                         salt[..U32_SIZE]
-                            .copy_from_slice(&(u32::from_le_bytes(byte) + index).to_le_bytes());
+                            .copy_from_slice(&(u32::from_le_bytes(byte).wrapping_add(index)).to_le_bytes());
                         Self::new(*params, *secret).hash(pwd, &salt)
                     })
                     .try_reduce(GenericArray::default, |a, b| {
@@ -187,7 +187,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
         // Step 1. Expand input into buffer.
         // buf[0] = hash(cnt++, passwd, salt)
         digest.update(cnt.to_le_bytes());
-        cnt += 1;
+        cnt = cnt.wrapping_add(1);
         digest.update(pwd);
         digest.update(salt);
 
@@ -201,7 +201,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
         for m in 1..s_cost {
             // buf[m] = hash(cnt++, buf[m-1])
             digest.update(&cnt.to_le_bytes());
-            cnt += 1;
+            cnt = cnt.wrapping_add(1);
             digest.update(&memory_blocks[m - 1]);
             memory_blocks[m] = digest.finalize_reset();
         }
@@ -218,7 +218,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
 
                 // buf[m] = hash(cnt++, prev, buf[m])
                 digest.update(&cnt.to_le_bytes());
-                cnt += 1;
+                cnt = cnt.wrapping_add(1);
                 digest.update(prev);
                 digest.update(&memory_blocks[m]);
                 memory_blocks[m] = digest.finalize_reset();
@@ -229,7 +229,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
                     // block_t idx_block = ints_to_block(t, m, i)
                     // int other = to_int(hash(cnt++, salt, idx_block)) mod s_cost
                     digest.update(&cnt.to_le_bytes());
-                    cnt += 1;
+                    cnt = cnt.wrapping_add(1);
                     digest.update(salt);
                     digest.update(&u32::try_from(t).unwrap().to_le_bytes());
                     digest.update(&u32::try_from(m).unwrap().to_le_bytes());
@@ -241,7 +241,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
 
                     // buf[m] = hash(cnt++, buf[m], buf[other])
                     digest.update(&cnt.to_le_bytes());
-                    cnt += 1;
+                    cnt = cnt.wrapping_add(1);
                     digest.update(&memory_blocks[m]);
                     digest.update(&memory_blocks[other]);
                     memory_blocks[m] = digest.finalize_reset();
