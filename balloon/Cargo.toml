@@ -1,0 +1,34 @@
+[package]
+name = "balloon-hash"
+version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+description = "Pure Rust implementation of the Balloon password hashing function"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/balloon-hash"
+repository = "https://github.com/RustCrypto/password-hashes/tree/master/balloon"
+keywords = ["crypto", "password", "hashing"]
+categories = ["cryptography", "no-std"]
+edition = "2018"
+readme = "README.md"
+
+[dependencies]
+digest = { version = "0.9", default-features = false }
+
+# optional dependencies
+password-hash = { version = "0.3", default-features = false, optional = true }
+rayon = { version = "1", optional = true }
+
+[dev-dependencies]
+hex = "0.4"
+sha2 = "0.9"
+
+[features]
+default = ["alloc", "password-hash", "rand"]
+alloc = []
+parallel = ["rayon", "std"]
+rand = ["password-hash/rand_core"]
+std = ["alloc", "password-hash/std"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
