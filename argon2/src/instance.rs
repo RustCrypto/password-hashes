@@ -99,7 +99,7 @@ impl<'a> Instance<'a> {
             passes: context.params.t_cost(),
             lane_length,
             lanes: context.params.lanes(),
-            threads: context.params.t_cost(),
+            threads: context.params.p_cost(),
             alg,
         };
 
