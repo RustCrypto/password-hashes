@@ -111,38 +111,28 @@ impl<'key, D: Digest> Balloon<'key, D> {
     pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<GenericArray<u8, D::OutputSize>> {
         if self.params.p_cost.get() == 1 {
             let mut memory = alloc::vec![GenericArray::default(); usize::try_from(self.params.s_cost.get()).unwrap()];
-            self.hash_with_memory(pwd, salt, &mut memory)
+            self.hash_internal(pwd, salt, &mut memory, None)
         } else {
             #[cfg(not(feature = "parallel"))]
             return Err(Error::ThreadsTooMany);
             #[cfg(feature = "parallel")]
             {
-                use core::num::NonZeroU32;
                 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-                let mut params = self.params;
-                params.p_cost = NonZeroU32::new(1).unwrap();
-
-                (1..=self.params.p_cost.get())
+                (1..=u64::from(self.params.p_cost.get()))
                     .into_par_iter()
-                    .map_with((params, self.secret), |(params, secret), index| {
-                        const U32_SIZE: usize = core::mem::size_of::<u32>();
-
-                        // expand salt if necessary
-                        let mut salt = if salt.len() < U32_SIZE {
-                            let mut new_salt = [0; U32_SIZE];
-                            new_salt[..salt.len()].copy_from_slice(salt);
-                            new_salt.to_vec()
-                        } else {
-                            salt.to_vec()
-                        };
-
-                        // add thread index to salt
-                        let byte = salt[..U32_SIZE].try_into().unwrap();
-                        salt[..U32_SIZE].copy_from_slice(
-                            &(u32::from_le_bytes(byte).wrapping_add(index)).to_le_bytes(),
-                        );
-                        Self::new(*params, *secret).hash(pwd, &salt)
+                    .map_with((self.params, self.secret), |(params, secret), index| {
+                        let mut memory = alloc::vec![
+                            GenericArray::default(); usize::try_from(params.s_cost.get()).unwrap()
+                        ];
+                        // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we build a
+                        // new `Balloon`, which is free
+                        Self::new(*params, *secret).hash_internal(
+                            pwd,
+                            salt,
+                            &mut memory,
+                            Some(index),
+                        )
                     })
                     .try_reduce(GenericArray::default, |a, b| {
                         Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
@@ -159,7 +149,7 @@ impl<'key, D: Digest> Balloon<'key, D> {
     /// - Users with the `alloc` feature enabled can use [`Balloon::hash`]
     ///   to have it allocated for them.
     /// - `no_std` users on "heapless" targets can use an array of the [`GenericArray`] type
-    ///   to stack allocate this buffer.
+    ///   to stack allocate this buffer. It needs a minimum size of `s_cost`.
     pub fn hash_with_memory(
         &self,
         pwd: &[u8],
@@ -170,59 +160,73 @@ impl<'key, D: Digest> Balloon<'key, D> {
             return Err(Error::ThreadsTooMany);
         }
 
+        self.hash_internal(pwd, salt, memory_blocks, None)
+    }
+
+    fn hash_internal(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
+        thread_id: Option<u64>,
+    ) -> Result<GenericArray<u8, D::OutputSize>> {
+        // we will use `s_cost` to index arrays regularly
         let s_cost = usize::try_from(self.params.s_cost.get()).unwrap();
-        let t_cost = usize::try_from(self.params.t_cost.get()).unwrap();
 
         let mut digest = D::new();
 
         // This is a direct translation of the `Balloon` from <https://eprint.iacr.org/2016/027.pdf> chapter 3.1.
         // int delta = 3 // Number of dependencies per block
-        const DELTA: u32 = 3;
+        const DELTA: u64 = 3;
         // int cnt = 0 // A counter (used in security proof)
-        let mut cnt: u32 = 0;
+        let mut cnt: u64 = 0;
         // block_t buf[s_cost]): // The main buffer
-        let memory_blocks = memory_blocks
+        let buf = memory_blocks
             .get_mut(..s_cost)
             .ok_or(Error::MemoryTooLittle)?;
 
         // Step 1. Expand input into buffer.
         // buf[0] = hash(cnt++, passwd, salt)
         digest.update(cnt.to_le_bytes());
-        cnt = cnt.wrapping_add(1);
+        cnt += 1;
         digest.update(pwd);
         digest.update(salt);
+
+        if let Some(thread_id) = thread_id {
+            digest.update(thread_id.to_le_bytes());
+        }
 
         if let Some(secret) = self.secret {
             digest.update(secret);
         }
 
-        memory_blocks[0] = digest.finalize_reset();
+        buf[0] = digest.finalize_reset();
 
         // for m from 1 to s_cost-1:
         for m in 1..s_cost {
             // buf[m] = hash(cnt++, buf[m-1])
             digest.update(&cnt.to_le_bytes());
-            cnt = cnt.wrapping_add(1);
-            digest.update(&memory_blocks[m - 1]);
-            memory_blocks[m] = digest.finalize_reset();
+            cnt += 1;
+            digest.update(&buf[m - 1]);
+            buf[m] = digest.finalize_reset();
         }
 
         // Step 2. Mix buffer contents.
         // for t from 0 to t_cost-1:
-        for t in 0..t_cost {
+        for t in 0..u64::from(self.params.t_cost.get()) {
             // for m from 0 to s_cost-1:
             for m in 0..s_cost {
                 // Step 2a. Hash last and current blocks.
                 // block_t prev = buf[(m-1) mod s_cost]
                 let prev = if m == 0 { s_cost - 1 } else { m - 1 };
-                let prev = &memory_blocks[prev];
+                let prev = &buf[prev];
 
                 // buf[m] = hash(cnt++, prev, buf[m])
                 digest.update(&cnt.to_le_bytes());
-                cnt = cnt.wrapping_add(1);
+                cnt += 1;
                 digest.update(prev);
-                digest.update(&memory_blocks[m]);
-                memory_blocks[m] = digest.finalize_reset();
+                digest.update(&buf[m]);
+                buf[m] = digest.finalize_reset();
 
                 // Step 2b. Hash in pseudorandomly chosen blocks.
                 // for i from 0 to delta-1:
@@ -230,31 +234,36 @@ impl<'key, D: Digest> Balloon<'key, D> {
                     // block_t idx_block = ints_to_block(t, m, i)
                     // int other = to_int(hash(cnt++, salt, idx_block)) mod s_cost
                     digest.update(&cnt.to_le_bytes());
-                    cnt = cnt.wrapping_add(1);
+                    cnt += 1;
                     digest.update(salt);
-                    digest.update(&u32::try_from(t).unwrap().to_le_bytes());
-                    digest.update(&u32::try_from(m).unwrap().to_le_bytes());
+
+                    if let Some(thread_id) = thread_id {
+                        digest.update(thread_id.to_le_bytes());
+                    }
+
+                    digest.update(&t.to_le_bytes());
+                    digest.update(&u64::try_from(m).unwrap().to_le_bytes());
                     digest.update(&i.to_le_bytes());
-                    let other = u32::from_le_bytes(
-                        digest.finalize_reset()[..core::mem::size_of::<u32>()]
+                    let other = u64::from_le_bytes(
+                        digest.finalize_reset()[..core::mem::size_of::<u64>()]
                             .try_into()
                             .unwrap(),
-                    ) % self.params.s_cost.get();
+                    ) % u64::from(self.params.s_cost.get());
                     let other = usize::try_from(other).unwrap();
 
                     // buf[m] = hash(cnt++, buf[m], buf[other])
                     digest.update(&cnt.to_le_bytes());
-                    cnt = cnt.wrapping_add(1);
-                    digest.update(&memory_blocks[m]);
-                    digest.update(&memory_blocks[other]);
-                    memory_blocks[m] = digest.finalize_reset();
+                    cnt += 1;
+                    digest.update(&buf[m]);
+                    digest.update(&buf[other]);
+                    buf[m] = digest.finalize_reset();
                 }
             }
         }
 
         // Step 3. Extract output from buffer.
         // return buf[s_cost-1]
-        Ok(memory_blocks[s_cost - 1].clone())
+        Ok(buf[s_cost - 1].clone())
     }
 }
 
@@ -313,7 +322,7 @@ impl<D: Digest> PasswordHasher for Balloon<'_, D> {
     }
 }
 
-#[cfg(all(test, feature = "alloc", feature = "password-hash"))]
+#[cfg(all(test, feature = "parallel", feature = "password-hash"))]
 #[test]
 fn hash_simple_retains_configured_params() {
     use sha2::Sha256;
