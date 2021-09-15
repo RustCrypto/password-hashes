@@ -26,7 +26,7 @@ impl Params {
     pub const DEFAULT_S_COST: u32 = 1024;
 
     /// Default number of iterations (i.e. "time").
-    pub const DEFAULT_T_COST: u32 = 1;
+    pub const DEFAULT_T_COST: u32 = 3;
 
     /// Default degree of parallelism.
     pub const DEFAULT_P_COST: u32 = 1;
