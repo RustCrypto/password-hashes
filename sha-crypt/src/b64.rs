@@ -3,6 +3,9 @@
 use crate::defs::{MAP, TAB};
 use alloc::vec::Vec;
 
+#[cfg(feature = "simple")]
+use crate::errors::DecodeError;
+
 pub fn encode(source: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![];
     for entry in &MAP {
@@ -24,31 +27,32 @@ pub fn encode(source: &[u8]) -> Vec<u8> {
 }
 
 #[cfg(feature = "simple")]
-pub fn decode(source: &[u8]) -> Vec<u8> {
+pub fn decode(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
     let mut out: [u8; 64] = [0; 64];
+
     for iter in MAP.iter().enumerate() {
         let (i, entry) = iter;
 
         let mut w: usize = 0;
 
         for k in (0..entry.3).rev() {
-            let pos = TAB
-                .iter()
-                .position(|&x| x == source[i * 4 + k as usize])
-                .unwrap();
+            let byte = source.get(i * 4 + k as usize).ok_or(DecodeError)?;
+            let pos = TAB.iter().position(|x| x == byte).ok_or(DecodeError)?;
             w <<= 6;
             w |= pos as usize;
         }
 
         out[entry.0 as usize] = (w & 0xff) as u8;
         w >>= 8;
+
         if entry.3 > 2 {
             out[entry.1 as usize] = (w & 0xff) as u8;
             w >>= 8;
             out[entry.2 as usize] = (w & 0xff) as u8;
         }
     }
-    out.to_vec()
+
+    Ok(out.to_vec())
 }
 
 mod tests {
@@ -62,9 +66,10 @@ mod tests {
             0x15, 0xdd, 0x79, 0x14, 0x45, 0xac, 0x66, 0x60, 0x25, 0x94, 0x97, 0x5e, 0x0f, 0x7f,
             0x5f, 0xaf, 0x1a, 0xe5, 0x08, 0xe7, 0x7d, 0xd4,
         ];
-        let e = super::encode(&original);
 
-        let d = super::decode(&e);
+        let e = super::encode(&original);
+        let d = super::decode(&e).unwrap();
+
         for i in 0..d.len() {
             assert_eq!(&original[i], &d[i]);
         }
