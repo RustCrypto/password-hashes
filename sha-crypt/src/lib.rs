@@ -305,7 +305,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         Err(e) => return Err(CheckError::Crypt(e)),
     };
 
-    let hash = b64::decode(hash.as_bytes());
+    let hash = b64::decode(hash.as_bytes())?;
 
     use subtle::ConstantTimeEq;
     if output.ct_eq(&hash).into() {

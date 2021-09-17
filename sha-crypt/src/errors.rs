@@ -47,3 +47,16 @@ pub enum CheckError {
     Crypt(CryptError),
     HashMismatch,
 }
+
+/// Decoding errors.
+#[cfg(feature = "simple")]
+#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
+#[derive(Debug)]
+pub struct DecodeError;
+
+#[cfg(feature = "simple")]
+impl From<DecodeError> for CheckError {
+    fn from(_: DecodeError) -> CheckError {
+        CheckError::InvalidFormat("invalid B64".into())
+    }
+}
