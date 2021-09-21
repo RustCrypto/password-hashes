@@ -163,7 +163,7 @@ dependencies = [
 [[package]]
 name = "crypto-bigint"
 version = "0.2.9"
-source = "git+https://github.com/daxpedda/crypto-bigint?branch=nonzero-div-rem#d37468d38f7c20463be000fcf263a05cc4a746fd"
+source = "git+https://github.com/RustCrypto/crypto-bigint#193a2ae82a536e85f01b123436bdfe4f7892bb7a"
 dependencies = [
  "generic-array",
  "rand_core",
