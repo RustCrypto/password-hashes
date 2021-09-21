@@ -71,6 +71,9 @@ pub use crate::{
 };
 use core::convert::{TryFrom, TryInto};
 use core::marker::PhantomData;
+use core::mem;
+use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
+use digest::generic_array::typenum::Unsigned;
 use digest::generic_array::GenericArray;
 use digest::Digest;
 #[cfg(feature = "password-hash")]
@@ -78,6 +81,7 @@ use digest::Digest;
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
+use std::ops::Rem;
 
 /// Balloon context.
 ///
@@ -86,7 +90,15 @@ use password_hash::{Decimal, Ident, ParamsString, Salt};
 /// - Default set of [`Params`] to be used
 /// - (Optional) Secret key a.k.a. "pepper" to be used
 #[derive(Clone, Default)]
-pub struct Balloon<'key, D: Digest> {
+pub struct Balloon<'key, D: Digest>
+where
+    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
+        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
+    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
+        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
+    >>::Output: ArrayEncoding,
+{
     /// Storing which hash function is used
     pub digest: PhantomData<D>,
     /// Algorithm parameters
@@ -95,7 +107,15 @@ pub struct Balloon<'key, D: Digest> {
     pub secret: Option<&'key [u8]>,
 }
 
-impl<'key, D: Digest> Balloon<'key, D> {
+impl<'key, D: Digest> Balloon<'key, D>
+where
+    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
+        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
+    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
+        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
+    >>::Output: ArrayEncoding,
+{
     /// Create a new Balloon context.
     pub fn new(params: Params, secret: Option<&'key [u8]>) -> Self {
         Self {
@@ -244,12 +264,18 @@ impl<'key, D: Digest> Balloon<'key, D> {
                     digest.update(&t.to_le_bytes());
                     digest.update(&u64::try_from(m).unwrap().to_le_bytes());
                     digest.update(&i.to_le_bytes());
-                    let other = u64::from_le_bytes(
-                        digest.finalize_reset()[..core::mem::size_of::<u64>()]
+                    let s_cost = {
+                        let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
+                        s_cost[D::OutputSize::USIZE - mem::size_of::<u32>()..]
+                            .copy_from_slice(&self.params.s_cost.get().to_le_bytes());
+                        NonZero::new(s_cost.into_bigint_le()).unwrap()
+                    };
+                    let other = digest.finalize_reset().into_bigint_le() % s_cost;
+                    let other = usize::from_le_bytes(
+                        other.to_le_byte_array()[D::OutputSize::USIZE - mem::size_of::<usize>()..]
                             .try_into()
                             .unwrap(),
-                    ) % u64::from(self.params.s_cost.get());
-                    let other = usize::try_from(other).unwrap();
+                    );
 
                     // buf[m] = hash(cnt++, buf[m], buf[other])
                     digest.update(&cnt.to_le_bytes());
@@ -270,7 +296,15 @@ impl<'key, D: Digest> Balloon<'key, D> {
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<D: Digest> PasswordHasher for Balloon<'_, D> {
+impl<D: Digest> PasswordHasher for Balloon<'_, D>
+where
+    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
+        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
+    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
+        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
+    >>::Output: ArrayEncoding,
+{
     type Params = Params;
 
     fn hash_password<'a, S>(

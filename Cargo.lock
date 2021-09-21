@@ -24,6 +24,7 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 name = "balloon-hash"
 version = "0.1.0"
 dependencies = [
+ "crypto-bigint",
  "digest 0.9.0",
  "password-hash",
  "rayon",
@@ -157,6 +158,16 @@ checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
 dependencies = [
  "cfg-if",
  "lazy_static",
+]
+
+[[package]]
+name = "crypto-bigint"
+version = "0.2.9"
+source = "git+https://github.com/daxpedda/crypto-bigint?branch=nonzero-div-rem#d37468d38f7c20463be000fcf263a05cc4a746fd"
+dependencies = [
+ "generic-array",
+ "rand_core",
+ "subtle",
 ]
 
 [[package]]

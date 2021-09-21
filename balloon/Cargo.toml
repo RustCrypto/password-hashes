@@ -13,6 +13,7 @@ readme = "README.md"
 
 [dependencies]
 digest = { version = "0.9", default-features = false }
+crypto-bigint = { version = "0.2", git = "https://github.com/daxpedda/crypto-bigint", branch = "nonzero-div-rem", features = ["generic-array"] }
 
 # optional dependencies
 password-hash = { version = "0.3", default-features = false, optional = true }
