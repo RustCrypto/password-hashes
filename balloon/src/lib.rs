@@ -269,13 +269,13 @@ where
                     digest.update(idx_block);
                     let s_cost = {
                         let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
-                        s_cost[D::OutputSize::USIZE - mem::size_of::<u32>()..]
+                        s_cost[..mem::size_of::<u32>()]
                             .copy_from_slice(&self.params.s_cost.get().to_le_bytes());
                         NonZero::new(s_cost.into_bigint_le()).unwrap()
                     };
                     let other = digest.finalize_reset().into_bigint_le() % s_cost;
                     let other = usize::from_le_bytes(
-                        other.to_le_byte_array()[D::OutputSize::USIZE - mem::size_of::<usize>()..]
+                        other.to_le_byte_array()[..mem::size_of::<usize>()]
                             .try_into()
                             .unwrap(),
                     );
