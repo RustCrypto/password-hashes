@@ -170,7 +170,7 @@ dependencies = [
 [[package]]
 name = "crypto-bigint"
 version = "0.2.9"
-source = "git+https://github.com/RustCrypto/crypto-bigint#b8c8832153aad97782638cb7027af54b0cca9de6"
+source = "git+https://github.com/RustCrypto/crypto-bigint#66795aed2bf33dce565cb51e6169c66cf39010f0"
 dependencies = [
  "generic-array",
  "subtle",

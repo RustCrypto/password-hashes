@@ -72,7 +72,6 @@ pub use crate::{
 use core::convert::{TryFrom, TryInto};
 use core::marker::PhantomData;
 use core::mem;
-use core::ops::Rem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::generic_array::GenericArray;
 use digest::Digest;
@@ -92,11 +91,6 @@ use password_hash::{Decimal, Ident, ParamsString, Salt};
 pub struct Balloon<'key, D: Digest>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
-    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
-        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
-    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
-        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
-    >>::Output: ArrayEncoding,
 {
     /// Storing which hash function is used
     pub digest: PhantomData<D>,
@@ -109,11 +103,6 @@ where
 impl<'key, D: Digest> Balloon<'key, D>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
-    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
-        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
-    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
-        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
-    >>::Output: ArrayEncoding,
 {
     /// Create a new Balloon context.
     pub fn new(params: Params, secret: Option<&'key [u8]>) -> Self {
@@ -308,11 +297,6 @@ where
 impl<D: Digest> PasswordHasher for Balloon<'_, D>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
-    <GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output:
-        Rem<NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>>,
-    <<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output as Rem<
-        NonZero<<GenericArray<u8, D::OutputSize> as ArrayDecoding>::Output>,
-    >>::Output: ArrayEncoding,
 {
     type Params = Params;
 
