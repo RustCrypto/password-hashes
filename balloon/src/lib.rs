@@ -211,12 +211,12 @@ where
         digest.update(pwd);
         digest.update(salt);
 
-        if let Some(thread_id) = thread_id {
-            digest.update(thread_id.to_le_bytes());
-        }
-
         if let Some(secret) = self.secret {
             digest.update(secret);
+        }
+
+        if let Some(thread_id) = thread_id {
+            digest.update(thread_id.to_le_bytes());
         }
 
         buf[0] = digest.finalize_reset();
@@ -260,6 +260,10 @@ where
                     digest.update(&cnt.to_le_bytes());
                     cnt += 1;
                     digest.update(salt);
+
+                    if let Some(secret) = self.secret {
+                        digest.update(secret);
+                    }
 
                     if let Some(thread_id) = thread_id {
                         digest.update(thread_id.to_le_bytes());
