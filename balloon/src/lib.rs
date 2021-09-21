@@ -383,35 +383,3 @@ fn hash_simple_retains_configured_params() {
         );
     }
 }
-
-#[cfg(feature = "alloc")]
-#[test]
-fn nachonavarro() {
-    let balloon = Balloon::<sha2::Sha256>::new(Params::default(), None);
-
-    const TEST_VECTOR: [u8; 32] = [
-        113, 96, 67, 223, 247, 119, 180, 74, 167, 184, 141, 203, 171, 18, 192, 120, 171, 236, 250,
-        201, 210, 137, 197, 181, 25, 89, 103, 170, 99, 68, 13, 251,
-    ];
-
-    assert_eq!(
-        TEST_VECTOR,
-        balloon
-            .hash(b"hunter42", b"examplesalt")
-            .unwrap()
-            .as_slice()
-    );
-
-    assert_eq!(
-        TEST_VECTOR,
-        nachonavarro_balloon::balloon(
-            "hunter42",
-            "examplesalt",
-            balloon.params.s_cost.get(),
-            balloon.params.t_cost.get(),
-            3
-        )
-        .unwrap()
-        .as_slice()
-    );
-}
