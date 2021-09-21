@@ -72,6 +72,7 @@ pub use crate::{
 use core::convert::{TryFrom, TryInto};
 use core::marker::PhantomData;
 use core::mem;
+use core::ops::Rem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::generic_array::typenum::Unsigned;
 use digest::generic_array::GenericArray;
@@ -81,7 +82,6 @@ use digest::Digest;
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
-use std::ops::Rem;
 
 /// Balloon context.
 ///
