@@ -237,8 +237,11 @@ where
             for m in 0..s_cost {
                 // Step 2a. Hash last and current blocks.
                 // block_t prev = buf[(m-1) mod s_cost]
-                let prev = if m == 0 { s_cost - 1 } else { m - 1 };
-                let prev = &buf[prev];
+                let prev = if m == 0 {
+                    buf.last().unwrap()
+                } else {
+                    &buf[m - 1]
+                };
 
                 // buf[m] = hash(cnt++, prev, buf[m])
                 digest.update(&cnt.to_le_bytes());
@@ -295,7 +298,7 @@ where
 
         // Step 3. Extract output from buffer.
         // return buf[s_cost-1]
-        Ok(buf[s_cost - 1].clone())
+        Ok(buf.last().unwrap().clone())
     }
 }
 
