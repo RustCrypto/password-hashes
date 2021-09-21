@@ -74,7 +74,6 @@ use core::marker::PhantomData;
 use core::mem;
 use core::ops::Rem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
-use digest::generic_array::typenum::Unsigned;
 use digest::generic_array::GenericArray;
 use digest::Digest;
 #[cfg(feature = "password-hash")]
