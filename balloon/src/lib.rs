@@ -252,6 +252,11 @@ where
                 // for i from 0 to delta-1:
                 for i in 0..DELTA {
                     // block_t idx_block = ints_to_block(t, m, i)
+                    digest.update(&t.to_le_bytes());
+                    digest.update(&u64::try_from(m).unwrap().to_le_bytes());
+                    digest.update(&i.to_le_bytes());
+                    let idx_block = digest.finalize_reset();
+
                     // int other = to_int(hash(cnt++, salt, idx_block)) mod s_cost
                     digest.update(&cnt.to_le_bytes());
                     cnt += 1;
@@ -261,9 +266,7 @@ where
                         digest.update(thread_id.to_le_bytes());
                     }
 
-                    digest.update(&t.to_le_bytes());
-                    digest.update(&u64::try_from(m).unwrap().to_le_bytes());
-                    digest.update(&i.to_le_bytes());
+                    digest.update(idx_block);
                     let s_cost = {
                         let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
                         s_cost[D::OutputSize::USIZE - mem::size_of::<u32>()..]
