@@ -9,7 +9,7 @@ use core::{
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-/// Structure for the (1KB) memory block implemented as 128 64-bit words.
+/// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
 pub struct Block([u64; Self::SIZE / 8]);
 
