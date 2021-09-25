@@ -225,13 +225,11 @@ macro_rules! param_buf {
             }
 
             /// Get the length in bytes.
-            #[allow(dead_code)]
             pub fn len(&self) -> usize {
                 self.len
             }
 
             /// Is this value empty?
-            #[allow(dead_code)]
             pub fn is_empty(&self) -> bool {
                 self.len() == 0
             }
