@@ -68,8 +68,6 @@ extern crate std;
 mod algorithm;
 mod block;
 mod error;
-mod instance;
-mod memory;
 mod params;
 mod version;
 
@@ -88,10 +86,6 @@ pub use {
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
-use crate::{
-    instance::Instance,
-    memory::{Memory, SYNC_POINTS},
-};
 use blake2::{digest::Output, Blake2b512, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
@@ -108,6 +102,9 @@ pub const MAX_SALT_LEN: usize = 0xFFFFFFFF;
 
 /// Maximum secret key length in bytes.
 pub const MAX_SECRET_LEN: usize = 0xFFFFFFFF;
+
+/// Number of synchronization points between lanes per pass
+pub(crate) const SYNC_POINTS: u32 = 4;
 
 /// Argon2 context.
 ///
@@ -224,8 +221,7 @@ impl<'key> Argon2<'key> {
             .get_mut(..block_count)
             .ok_or(Error::MemoryTooLittle)?;
 
-        let memory = Memory::new(memory_blocks, segment_length);
-        Instance::hash(self, self.algorithm, initial_hash, memory, out)
+        todo!()
     }
 
     /// Get default configured [`Params`].
