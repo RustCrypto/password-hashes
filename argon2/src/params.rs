@@ -12,7 +12,7 @@ use password_hash::{ParamsString, PasswordHash};
 /// These are parameters which can be encoded into a PHC hash string.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Params {
-    /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
+    /// Memory size, expressed in kibibytes, between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     m_cost: u32,
@@ -93,7 +93,7 @@ impl Params {
         builder.build()
     }
 
-    /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
+    /// Memory size, expressed in kibibytes, between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     pub fn m_cost(&self) -> u32 {
@@ -364,7 +364,7 @@ impl ParamsBuilder {
         Self::default()
     }
 
-    /// Set memory size, expressed in kilobytes, between 1 and (2^32)-1.
+    /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
     pub fn m_cost(&mut self, m_cost: u32) -> &mut Self {
         self.m_cost = m_cost;
         self
