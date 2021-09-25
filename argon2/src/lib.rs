@@ -77,7 +77,7 @@ pub use crate::{
     algorithm::Algorithm,
     block::Block,
     error::{Error, Result},
-    params::{Params, ParamsBuilder},
+    params::{AssociatedData, KeyId, Params, ParamsBuilder},
     version::Version,
 };
 
@@ -386,7 +386,7 @@ mod tests {
                     .get(param)
                     .and_then(|p| p.decimal().ok())
                     .unwrap(),
-                value
+                value,
             );
         }
     }

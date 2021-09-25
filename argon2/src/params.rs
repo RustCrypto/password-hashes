@@ -83,15 +83,14 @@ impl Params {
     /// Create new parameters.
     pub fn new(m_cost: u32, t_cost: u32, p_cost: u32, output_len: Option<usize>) -> Result<Self> {
         let mut builder = ParamsBuilder::new();
-        builder.m_cost(m_cost)?;
-        builder.t_cost(t_cost)?;
-        builder.p_cost(p_cost)?;
+
+        builder.m_cost(m_cost).t_cost(t_cost).p_cost(p_cost);
 
         if let Some(len) = output_len {
-            builder.output_len(len)?;
+            builder.output_len(len);
         }
 
-        builder.params()
+        builder.build()
     }
 
     /// Memory size, expressed in kilobytes, between 1 and (2^32)-1.
@@ -206,6 +205,7 @@ macro_rules! param_buf {
                 let mut bytes = [0u8; Self::MAX_LEN];
                 let len = slice.len();
                 bytes.get_mut(..len).ok_or($error)?.copy_from_slice(slice);
+
                 Ok(Self { bytes, len })
             }
 
@@ -214,7 +214,9 @@ macro_rules! param_buf {
             #[doc = " from a B64 string"]
             pub fn from_b64(s: &str) -> Result<Self> {
                 let mut bytes = [0u8; Self::MAX_LEN];
-                Self::new(B64::decode(s, &mut bytes)?)
+                let len = B64::decode(s, &mut bytes)?.len();
+
+                Ok(Self { bytes, len })
             }
 
             /// Borrow the inner value as a byte slice.
@@ -288,35 +290,35 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         for (ident, value) in hash.params.iter() {
             match ident.as_str() {
                 "m" => {
-                    builder.m_cost(value.decimal()?)?;
+                    builder.m_cost(value.decimal()?);
                 }
                 "t" => {
-                    builder.t_cost(value.decimal()?)?;
+                    builder.t_cost(value.decimal()?);
                 }
                 "p" => {
-                    builder.p_cost(value.decimal()?)?;
+                    builder.p_cost(value.decimal()?);
                 }
                 "keyid" => {
-                    builder.params.keyid = value.as_str().parse()?;
+                    builder.keyid(value.as_str().parse()?);
                 }
                 "data" => {
-                    builder.params.data = value.as_str().parse()?;
+                    builder.data(value.as_str().parse()?);
                 }
                 _ => return Err(password_hash::Error::ParamNameInvalid),
             }
         }
 
         if let Some(output) = &hash.hash {
-            builder.output_len(output.len())?;
+            builder.output_len(output.len());
         }
 
-        Ok(builder.try_into()?)
+        Ok(builder.build()?)
     }
 }
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<'a> TryFrom<Params> for ParamsString {
+impl TryFrom<Params> for ParamsString {
     type Error = password_hash::Error;
 
     fn try_from(params: Params) -> password_hash::Result<ParamsString> {
@@ -326,7 +328,7 @@ impl<'a> TryFrom<Params> for ParamsString {
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<'a> TryFrom<&Params> for ParamsString {
+impl TryFrom<&Params> for ParamsString {
     type Error = password_hash::Error;
 
     fn try_from(params: &Params) -> password_hash::Result<ParamsString> {
@@ -348,102 +350,127 @@ impl<'a> TryFrom<&Params> for ParamsString {
 }
 
 /// Builder for Argon2 [`Params`].
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParamsBuilder {
-    /// Parameters being constructed
-    params: Params,
+    m_cost: u32,
+    t_cost: u32,
+    p_cost: u32,
+    keyid: Option<KeyId>,
+    data: Option<AssociatedData>,
+    output_len: Option<usize>,
 }
 
 impl ParamsBuilder {
     /// Create a new builder with the default parameters.
     pub fn new() -> Self {
-        Self {
-            params: Params::default(),
-        }
+        Self::default()
     }
 
     /// Set memory size, expressed in kilobytes, between 1 and (2^32)-1.
-    pub fn m_cost(&mut self, m_cost: u32) -> Result<&mut Self> {
-        if m_cost < Params::MIN_M_COST {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        if m_cost > Params::MAX_M_COST {
-            return Err(Error::MemoryTooMuch);
-        }
-
-        self.params.m_cost = m_cost;
-        Ok(self)
+    pub fn m_cost(&mut self, m_cost: u32) -> &mut Self {
+        self.m_cost = m_cost;
+        self
     }
 
     /// Set number of iterations, between 1 and (2^32)-1.
-    pub fn t_cost(&mut self, t_cost: u32) -> Result<&mut Self> {
-        if t_cost < Params::MIN_T_COST {
+    pub fn t_cost(&mut self, t_cost: u32) -> &mut Self {
+        self.t_cost = t_cost;
+        self
+    }
+
+    /// Set degree of parallelism, between 1 and 255.
+    pub fn p_cost(&mut self, p_cost: u32) -> &mut Self {
+        self.p_cost = p_cost;
+        self
+    }
+
+    /// Set key identifier.
+    pub fn keyid(&mut self, keyid: KeyId) -> &mut Self {
+        self.keyid = Some(keyid);
+        self
+    }
+
+    /// Set associated data.
+    pub fn data(&mut self, data: AssociatedData) -> &mut Self {
+        self.data = Some(data);
+        self
+    }
+
+    /// Set length of the output (in bytes).
+    pub fn output_len(&mut self, len: usize) -> &mut Self {
+        self.output_len = Some(len);
+        self
+    }
+
+    /// Get the finished [`Params`].
+    ///
+    /// This performs validations to ensure that the given parameters are valid
+    /// and compatible with each other, and will return an error if they are not.
+    pub fn build(&self) -> Result<Params> {
+        if self.m_cost < Params::MIN_M_COST {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if self.m_cost > Params::MAX_M_COST {
+            return Err(Error::MemoryTooMuch);
+        }
+
+        if self.m_cost < self.p_cost * 8 {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if self.t_cost < Params::MIN_T_COST {
             return Err(Error::TimeTooSmall);
         }
 
         // Note: we don't need to check `MAX_T_COST`, since it's `u32::MAX`
 
-        self.params.t_cost = t_cost;
-        Ok(self)
-    }
-
-    /// Set degree of parallelism, between 1 and 255.
-    pub fn p_cost(&mut self, p_cost: u32) -> Result<&mut Self> {
-        if p_cost < Params::MIN_P_COST {
+        if self.p_cost < Params::MIN_P_COST {
             return Err(Error::ThreadsTooFew);
         }
 
-        if p_cost > Params::MAX_P_COST {
+        if self.p_cost > Params::MAX_P_COST {
             return Err(Error::ThreadsTooMany);
         }
 
-        self.params.p_cost = p_cost;
-        Ok(self)
-    }
+        if let Some(len) = self.output_len {
+            if len < Params::MIN_OUTPUT_LEN {
+                return Err(Error::OutputTooShort);
+            }
 
-    /// Set key identifier.
-    ///
-    /// Must be 8-bytes or less.
-    pub fn keyid(&mut self, keyid: &[u8]) -> Result<&mut Self> {
-        self.params.keyid = KeyId::new(keyid)?;
-        Ok(self)
-    }
-
-    /// Set associated data.
-    ///
-    /// Must be 32-bytes or less.
-    pub fn data(&mut self, bytes: &[u8]) -> Result<&mut Self> {
-        self.params.data = AssociatedData::new(bytes)?;
-        Ok(self)
-    }
-
-    /// Set length of the output (in bytes).
-    pub fn output_len(&mut self, len: usize) -> Result<&mut Self> {
-        if len < Params::MIN_OUTPUT_LEN {
-            return Err(Error::OutputTooShort);
+            if len > Params::MAX_OUTPUT_LEN {
+                return Err(Error::OutputTooLong);
+            }
         }
 
-        if len > Params::MAX_OUTPUT_LEN {
-            return Err(Error::OutputTooLong);
-        }
+        let keyid = self.keyid.unwrap_or_default();
 
-        self.params.output_len = Some(len);
-        Ok(self)
+        let data = self.data.unwrap_or_default();
+
+        let params = Params {
+            m_cost: self.m_cost,
+            t_cost: self.t_cost,
+            p_cost: self.p_cost,
+            keyid,
+            data,
+            output_len: self.output_len,
+        };
+
+        Ok(params)
     }
+}
 
-    /// Get the finished [`Params`].
-    ///
-    /// This performs further validations to ensure that the given parameters
-    /// are compatible with each other, and will return an error if they are not.
-    ///
-    /// The main validation is that `m_cost` < `p_cost * 8`
-    pub fn params(self) -> Result<Params> {
-        if self.params.m_cost < self.params.p_cost * 8 {
-            return Err(Error::MemoryTooLittle);
+impl Default for ParamsBuilder {
+    fn default() -> Self {
+        let params = Params::default();
+        Self {
+            m_cost: params.m_cost,
+            t_cost: params.t_cost,
+            p_cost: params.p_cost,
+            keyid: None,
+            data: None,
+            output_len: params.output_len,
         }
-
-        Ok(self.params)
     }
 }
 
@@ -451,7 +478,7 @@ impl TryFrom<ParamsBuilder> for Params {
     type Error = Error;
 
     fn try_from(builder: ParamsBuilder) -> Result<Params> {
-        builder.params()
+        builder.build()
     }
 }
 
@@ -462,41 +489,46 @@ mod tests {
 
     #[test]
     fn params_builder_bad_values() {
-        let mut builder = ParamsBuilder::new();
-
         assert_eq!(
-            builder.m_cost(Params::MIN_M_COST - 1),
+            ParamsBuilder::new().m_cost(Params::MIN_M_COST - 1).build(),
             Err(Error::MemoryTooLittle)
         );
         assert_eq!(
-            builder.m_cost(Params::MAX_M_COST + 1),
+            ParamsBuilder::new().m_cost(Params::MAX_M_COST + 1).build(),
             Err(Error::MemoryTooMuch)
         );
         assert_eq!(
-            builder.t_cost(Params::MIN_T_COST - 1),
+            ParamsBuilder::new().t_cost(Params::MIN_T_COST - 1).build(),
             Err(Error::TimeTooSmall)
         );
         assert_eq!(
-            builder.p_cost(Params::MIN_P_COST - 1),
+            ParamsBuilder::new().p_cost(Params::MIN_P_COST - 1).build(),
             Err(Error::ThreadsTooFew)
         );
         assert_eq!(
-            builder.p_cost(Params::MAX_P_COST + 1),
+            ParamsBuilder::new()
+                .m_cost(Params::DEFAULT_P_COST * 8 - 1)
+                .build(),
+            Err(Error::MemoryTooLittle)
+        );
+        assert_eq!(
+            ParamsBuilder::new()
+                .m_cost((Params::MAX_P_COST + 1) * 8)
+                .p_cost(Params::MAX_P_COST + 1)
+                .build(),
             Err(Error::ThreadsTooMany)
         );
     }
 
     #[test]
-    fn params_builder_data_too_long() {
-        let mut builder = ParamsBuilder::new();
-        let ret = builder.data(&[0u8; Params::MAX_DATA_LEN + 1]);
+    fn associated_data_too_long() {
+        let ret = AssociatedData::new(&[0u8; Params::MAX_DATA_LEN + 1]);
         assert_eq!(ret, Err(Error::AdTooLong));
     }
 
     #[test]
-    fn params_builder_keyid_too_long() {
-        let mut builder = ParamsBuilder::new();
-        let ret = builder.keyid(&[0u8; Params::MAX_KEYID_LEN + 1]);
+    fn keyid_too_long() {
+        let ret = KeyId::new(&[0u8; Params::MAX_KEYID_LEN + 1]);
         assert_eq!(ret, Err(Error::KeyIdTooLong));
     }
 }
