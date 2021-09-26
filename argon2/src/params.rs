@@ -150,6 +150,11 @@ impl Params {
         self.p_cost
     }
 
+    /// Get the number of blocks in a lane.
+    pub(crate) fn lane_length(&self) -> u32 {
+        self.segment_length() * SYNC_POINTS
+    }
+
     /// Get the segment length given the configured `m_cost` and `p_cost`.
     ///
     /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.

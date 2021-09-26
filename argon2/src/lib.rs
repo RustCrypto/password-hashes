@@ -87,7 +87,9 @@ pub use {
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
-use blake2::{digest::Output, Blake2b512, Digest};
+use crate::variable_hash::variable_length_hash;
+use blake2::{digest::{self, Output}, Blake2b512, Digest};
+use byte_slice_cast::AsMutByteSlice;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -215,14 +217,53 @@ impl<'key> Argon2<'key> {
         // Hashing all inputs
         let initial_hash = self.initial_hash(pwd, salt, out);
 
-        let segment_length = self.params.segment_length();
+        self.initialize_memory(memory_blocks, initial_hash)?;
+
+        todo!()
+    }
+
+    /// Use a password and associated parameters only to fill the given memory blocks.
+    ///
+    /// This method omits the calculation of a hash and can be used when only the
+    /// filled memory is required. It is not necessary to call this method
+    /// before calling any of the hashing functions.
+    pub fn fill_memory(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        memory_blocks: impl AsMut<[Block]>,
+    ) -> Result<()> {
+        Self::verify_inputs(pwd, salt)?;
+
+        let initial_hash = self.initial_hash(pwd, salt, &[]);
+
+        self.initialize_memory(memory_blocks, initial_hash)
+    }
+
+    #[allow(unused_mut)]
+    fn initialize_memory(
+        &self,
+        mut memory_blocks: impl AsMut<[Block]>,
+        mut initial_hash: digest::Output<Blake2b512>,
+    ) -> Result<()> {
         let block_count = self.params.block_count();
         let memory_blocks = memory_blocks
             .as_mut()
             .get_mut(..block_count)
             .ok_or(Error::MemoryTooLittle)?;
 
-        todo!()
+        // Initialize the first two blocks
+        for (l, lane) in memory_blocks.chunks_exact_mut(self.params.lane_length() as usize).enumerate() {
+            Self::fill_first_blocks(l.try_into().unwrap(), lane, &initial_hash);
+        }
+
+        #[cfg(feature = "zeroize")]
+        initial_hash.zeroize();
+
+        // Initialize the rest of the blocks
+        todo!();
+
+        Ok(())
     }
 
     /// Get default configured [`Params`].
@@ -230,8 +271,18 @@ impl<'key> Argon2<'key> {
         &self.params
     }
 
+    fn fill_first_blocks(l: u32, lane: &mut [Block], initial_hash: &[u8]) {
+        for (i, block) in lane[..2].iter_mut().enumerate() {
+            let i = u32::try_from(i).unwrap();
+            let inputs = &[initial_hash, &i.to_le_bytes(), &l.to_le_bytes()];
+
+            let buf = block.as_mut_byte_slice();
+            variable_length_hash(inputs, buf).unwrap();
+        }
+    }
+
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
-    pub(crate) fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
+    fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
         let mut digest = Blake2b512::new();
         digest.update(&self.params.lanes().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
@@ -254,6 +305,23 @@ impl<'key> Argon2<'key> {
         digest.update(&(self.params.data().len() as u32).to_le_bytes());
         digest.update(self.params.data());
         digest.finalize()
+    }
+
+    fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
+        if pwd.len() > MAX_PWD_LEN {
+            return Err(Error::PwdTooLong);
+        }
+
+        // Validate salt (required param)
+        if salt.len() < MIN_SALT_LEN {
+            return Err(Error::SaltTooShort);
+        }
+
+        if salt.len() > MAX_SALT_LEN {
+            return Err(Error::SaltTooLong);
+        }
+
+        Ok(())
     }
 }
 

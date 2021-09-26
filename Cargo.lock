@@ -8,6 +8,7 @@ version = "0.4.0"
 dependencies = [
  "base64ct",
  "blake2",
+ "byte-slice-cast",
  "hex-literal",
  "password-hash",
  "rayon",
@@ -76,6 +77,12 @@ dependencies = [
  "byteorder",
  "cipher",
 ]
+
+[[package]]
+name = "byte-slice-cast"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca0796d76a983651b4a0ddda16203032759f2fd9103d9181f7c65c06ee8872e6"
 
 [[package]]
 name = "byteorder"

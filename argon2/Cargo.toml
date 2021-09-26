@@ -18,6 +18,7 @@ rust-version = "1.57"
 [dependencies]
 base64ct = "1"
 blake2 = { version = "0.10.4", default-features = false }
+byte-slice-cast = { version = "1", default-features = false }
 
 # optional dependencies
 password-hash = { version = "0.4", optional = true }
@@ -33,7 +34,7 @@ default = ["alloc", "password-hash", "rand"]
 alloc = []
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
-std = ["alloc", "password-hash/std"]
+std = ["alloc", "password-hash/std", "byte-slice-cast/std"]
 
 [package.metadata.docs.rs]
 all-features = true

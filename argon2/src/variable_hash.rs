@@ -4,7 +4,7 @@ use crate::{Error, Result};
 
 use blake2::{
     digest::{self, Digest, VariableOutput},
-    Blake2b, VarBlake2b,
+    Blake2b512, Blake2bVar,
 };
 
 use core::convert::TryFrom;
@@ -20,22 +20,22 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     };
 
     // Use blake2b directly if the output is small enough.
-    if out.len() <= Blake2b::output_size() {
-        let mut digest = VarBlake2b::new(out.len()).unwrap();
+    if out.len() <= Blake2b512::output_size() {
+        let mut digest = Blake2bVar::new(out.len()).unwrap();
 
         // Conflicting method name from `Digest` and `Update` traits
-        digest::Update::update(&mut digest, len_bytes);
+        digest::Update::update(&mut digest, &len_bytes);
         for input in inputs {
             digest::Update::update(&mut digest, input);
         }
 
-        digest.finalize_variable(|result| out.copy_from_slice(result));
+        digest.finalize_variable(out).expect("invalid Blake2bVar out length");
         return Ok(());
     }
 
     // Calculate longer hashes by first calculating a full 64 byte hash
-    let half_hash_len = Blake2b::output_size() / 2;
-    let mut digest = Blake2b::new();
+    let half_hash_len = Blake2b512::output_size() / 2;
+    let mut digest = Blake2b512::new();
 
     digest.update(len_bytes);
     for input in inputs {
@@ -63,10 +63,10 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     // Calculate the last block with VarBlake2b.
     let whole_block_byte_count = half_hash_len * (whole_block_count + 1);
     let last_block_size = out.len() - whole_block_byte_count;
-    let mut digest = VarBlake2b::new(last_block_size).unwrap();
+    let mut digest = Blake2bVar::new(last_block_size).unwrap();
 
     digest::Update::update(&mut digest, &last_output);
-    digest.finalize_variable(|result| out[whole_block_byte_count..].copy_from_slice(result));
+    digest.finalize_variable(&mut out[whole_block_byte_count..]).expect("invalid Blake2bVar out length");
 
     Ok(())
 }
