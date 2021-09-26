@@ -69,6 +69,7 @@ mod algorithm;
 mod block;
 mod error;
 mod params;
+mod variable_hash;
 mod version;
 
 pub use crate::{
