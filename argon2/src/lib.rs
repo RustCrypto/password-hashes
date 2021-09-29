@@ -92,7 +92,7 @@ use blake2::{
     digest::{self, Output},
     Blake2b512, Digest,
 };
-use byte_slice_cast::AsMutByteSlice;
+use byte_slice_cast::{AsByteSlice, AsMutByteSlice};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -212,9 +212,8 @@ impl<'key> Argon2<'key> {
         // Hashing all inputs
         let initial_hash = self.initial_hash(pwd, salt, out);
 
-        self.fill_blocks(memory_blocks, initial_hash)?;
-
-        todo!()
+        self.fill_blocks(memory_blocks.as_mut(), initial_hash)?;
+        self.finalize(memory_blocks.as_mut(), out)
     }
 
     /// Use a password and associated parameters only to fill the given memory blocks.
@@ -226,24 +225,23 @@ impl<'key> Argon2<'key> {
         &self,
         pwd: &[u8],
         salt: &[u8],
-        memory_blocks: impl AsMut<[Block]>,
+        mut memory_blocks: impl AsMut<[Block]>,
     ) -> Result<()> {
         Self::verify_inputs(pwd, salt)?;
 
         let initial_hash = self.initial_hash(pwd, salt, &[]);
 
-        self.fill_blocks(memory_blocks, initial_hash)
+        self.fill_blocks(memory_blocks.as_mut(), initial_hash)
     }
 
     #[allow(unused_mut)]
     fn fill_blocks(
         &self,
-        mut memory_blocks: impl AsMut<[Block]>,
+        memory_blocks: &mut [Block],
         mut initial_hash: digest::Output<Blake2b512>,
     ) -> Result<()> {
         let block_count = self.params.block_count();
         let memory_blocks = memory_blocks
-            .as_mut()
             .get_mut(..block_count)
             .ok_or(Error::MemoryTooLittle)?;
 
@@ -256,14 +254,15 @@ impl<'key> Argon2<'key> {
         for (l, lane) in memory_blocks.chunks_exact_mut(lane_length).enumerate() {
             for (i, block) in lane[..2].iter_mut().enumerate() {
                 let i = u32::try_from(i).unwrap();
+                let l = u32::try_from(l).unwrap();
+
                 let inputs = &[
                     initial_hash.as_ref(),
                     &i.to_le_bytes()[..],
                     &l.to_le_bytes()[..],
                 ];
-                let buf = block.as_mut_byte_slice();
 
-                variable_length_hash(inputs, buf).unwrap();
+                variable_length_hash(inputs, block.as_mut_byte_slice()).unwrap();
             }
         }
 
@@ -273,16 +272,16 @@ impl<'key> Argon2<'key> {
         // Run passes on blocks
         for pass in 0..iterations {
             for slice in 0..SYNC_POINTS {
-                let mut address_block = Block::default();
-                let mut input_block = Block::default();
-                let zero_block = Block::default();
-
                 let data_independent_addressing = self.algorithm == Algorithm::Argon2i
                     || (self.algorithm == Algorithm::Argon2id
                         && pass == 0
                         && slice < SYNC_POINTS / 2);
 
                 for lane in 0..lanes {
+                    let mut address_block = Block::default();
+                    let mut input_block = Block::default();
+                    let zero_block = Block::default();
+
                     if data_independent_addressing {
                         (&mut input_block.as_mut()[..6]).copy_from_slice(&[
                             pass as u64,
@@ -372,7 +371,7 @@ impl<'key> Argon2<'key> {
                         map = (map * map) >> 32;
                         let relative_position = reference_area_size
                             - 1
-                            - (((reference_area_size as u64 * map) >> 32) as usize);
+                            - ((reference_area_size as u64 * map) >> 32) as usize;
 
                         // 1.2.5 Computing starting position
                         let start_position = if pass != 0 && slice != SYNC_POINTS - 1 {
@@ -381,7 +380,7 @@ impl<'key> Argon2<'key> {
                             0
                         };
 
-                        let lane_index = start_position + relative_position % lane_length;
+                        let lane_index = (start_position + relative_position) % lane_length;
                         let ref_index = ref_lane * lane_length + lane_index;
 
                         // Calculate new block
@@ -409,6 +408,25 @@ impl<'key> Argon2<'key> {
         &self.params
     }
 
+    fn finalize(&self, memory_blocks: &[Block], out: &mut [u8]) -> Result<()> {
+        let lane_length = self.params.lane_length();
+
+        let mut blockhash = memory_blocks[lane_length - 1];
+
+        // XOR the last blocks
+        for l in 1..self.params.lanes() {
+            let last_block_in_lane = l * lane_length + (lane_length - 1);
+            blockhash ^= &memory_blocks[last_block_in_lane];
+        }
+
+        variable_length_hash(&[blockhash.as_byte_slice()], out)?;
+
+        #[cfg(feature = "zeroize")]
+        blockhash.zeroize();
+
+        Ok(())
+    }
+
     fn update_address_block(
         address_block: &mut Block,
         input_block: &mut Block,
@@ -422,7 +440,7 @@ impl<'key> Argon2<'key> {
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
     fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
         let mut digest = Blake2b512::new();
-        digest.update(&self.params.lanes().to_le_bytes());
+        digest.update(&self.params.p_cost().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
         digest.update(&self.params.m_cost().to_le_bytes());
         digest.update(&self.params.t_cost().to_le_bytes());

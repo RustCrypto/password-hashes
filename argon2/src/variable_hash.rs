@@ -43,7 +43,7 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     for input in inputs {
         digest.update(input);
     }
-    let mut last_output = digest.finalize_reset();
+    let mut last_output = digest.finalize();
 
     // Then we write the first 32 bytes of this hash to the output
     out[..half_hash_len].copy_from_slice(&last_output[..half_hash_len]);
@@ -52,24 +52,26 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     // Each block is the first 32 bytes of the hash of the last block.
     // The very last block of the output is excluded, and has a variable
     // length in range [1, 32].
-    let whole_block_count = ((out.len() - 1) / half_hash_len) - 1;
+    let mut counter = 0;
+    let out_len = out.len();
     for chunk in out[half_hash_len..]
         .chunks_exact_mut(half_hash_len)
-        .take(whole_block_count)
+        .take_while(|_| {
+            counter += half_hash_len;
+            out_len - counter > 64
+        })
     {
-        digest.update(&last_output);
-        last_output = digest.finalize_reset();
+        last_output = Blake2b512::digest(&last_output);
         chunk.copy_from_slice(&last_output[..half_hash_len]);
     }
 
     // Calculate the last block with VarBlake2b.
-    let whole_block_byte_count = half_hash_len * (whole_block_count + 1);
-    let last_block_size = out.len() - whole_block_byte_count;
+    let last_block_size = out.len() - counter;
     let mut digest = Blake2bVar::new(last_block_size).unwrap();
 
     digest::Update::update(&mut digest, &last_output);
     digest
-        .finalize_variable(&mut out[whole_block_byte_count..])
+        .finalize_variable(&mut out[counter..])
         .expect("invalid Blake2bVar out length");
 
     Ok(())

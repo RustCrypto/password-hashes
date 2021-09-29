@@ -1,7 +1,7 @@
 //! Argon2 memory block functions
 
 use core::{
-    convert::{AsMut, AsRef, TryInto},
+    convert::{AsMut, AsRef},
     num::Wrapping,
     ops::{BitXor, BitXorAssign},
 };
@@ -9,8 +9,47 @@ use core::{
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+const TRUNC: u64 = u32::MAX as u64;
+
+macro_rules! permutate_step {
+    ($a:expr, $b:expr, $c:expr, $d:expr) => {
+        $a =
+            (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
+        $d = ($d ^ $a).rotate_right(32);
+        $c =
+            (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
+        $b = ($b ^ $c).rotate_right(24);
+
+        $a =
+            (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
+        $d = ($d ^ $a).rotate_right(16);
+        $c =
+            (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
+        $b = ($b ^ $c).rotate_right(63);
+    };
+}
+
+macro_rules! permutate {
+    (
+        $v0:expr, $v1:expr, $v2:expr, $v3:expr,
+        $v4:expr, $v5:expr, $v6:expr, $v7:expr,
+        $v8:expr, $v9:expr, $v10:expr, $v11:expr,
+        $v12:expr, $v13:expr, $v14:expr, $v15:expr,
+    ) => {
+        permutate_step!($v0, $v4, $v8, $v12);
+        permutate_step!($v1, $v5, $v9, $v13);
+        permutate_step!($v2, $v6, $v10, $v14);
+        permutate_step!($v3, $v7, $v11, $v15);
+        permutate_step!($v0, $v5, $v10, $v15);
+        permutate_step!($v1, $v6, $v11, $v12);
+        permutate_step!($v2, $v7, $v8, $v13);
+        permutate_step!($v3, $v4, $v9, $v14);
+    };
+}
+
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
+#[repr(align(64))]
 pub struct Block([u64; Self::SIZE / 8]);
 
 impl Block {
@@ -23,35 +62,34 @@ impl Block {
         // Apply permutations rowwise
         let mut q = r;
         for chunk in q.0.chunks_exact_mut(16) {
-            permutate(
-                &mut chunk[0..2].try_into().unwrap(),
-                &mut chunk[2..4].try_into().unwrap(),
-                &mut chunk[4..6].try_into().unwrap(),
-                &mut chunk[6..8].try_into().unwrap(),
-                &mut chunk[8..10].try_into().unwrap(),
-                &mut chunk[10..12].try_into().unwrap(),
-                &mut chunk[12..14].try_into().unwrap(),
-                &mut chunk[14..16].try_into().unwrap(),
+            #[rustfmt::skip]
+            permutate!(
+                chunk[0], chunk[1], chunk[2], chunk[3],
+                chunk[4], chunk[5], chunk[6], chunk[7],
+                chunk[8], chunk[9], chunk[10], chunk[11],
+                chunk[12], chunk[13], chunk[14], chunk[15],
             );
         }
 
         // Apply permutations columnwise
-        let mut z = q;
-        for chunk in z.0.chunks_exact_mut(128) {
-            permutate(
-                &mut chunk[0..2].try_into().unwrap(),
-                &mut chunk[16..18].try_into().unwrap(),
-                &mut chunk[32..34].try_into().unwrap(),
-                &mut chunk[48..50].try_into().unwrap(),
-                &mut chunk[64..66].try_into().unwrap(),
-                &mut chunk[80..82].try_into().unwrap(),
-                &mut chunk[96..98].try_into().unwrap(),
-                &mut chunk[112..114].try_into().unwrap(),
+        for i in 0..8 {
+            let b = i * 2;
+
+            #[rustfmt::skip]
+            permutate!(
+                q.0[b], q.0[b + 1],
+                q.0[b + 16], q.0[b + 17],
+                q.0[b + 32], q.0[b + 33],
+                q.0[b + 48], q.0[b + 49],
+                q.0[b + 64], q.0[b + 65],
+                q.0[b + 80], q.0[b + 81],
+                q.0[b + 96], q.0[b + 97],
+                q.0[b + 112], q.0[b + 113],
             );
         }
 
-        z ^= &r;
-        z
+        q ^= &r;
+        q
     }
 }
 
@@ -95,54 +133,4 @@ impl Zeroize for Block {
     fn zeroize(&mut self) {
         self.0.zeroize();
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn permutate(
-    r0: &mut [u64; 2],
-    r1: &mut [u64; 2],
-    r2: &mut [u64; 2],
-    r3: &mut [u64; 2],
-    r4: &mut [u64; 2],
-    r5: &mut [u64; 2],
-    r6: &mut [u64; 2],
-    r7: &mut [u64; 2],
-) {
-    fn step(a: &mut u64, b: &mut u64, c: &mut u64, d: &mut u64) {
-        const TRUNC: u64 = u32::MAX as u64;
-
-        *a = (Wrapping(*a)
-            + Wrapping(*b)
-            + (Wrapping(2) * Wrapping(*a & TRUNC) * Wrapping(*b & TRUNC)))
-        .0;
-        *d = (*d ^ *a).rotate_right(32);
-        *c = (Wrapping(*c)
-            + Wrapping(*d)
-            + (Wrapping(2) * Wrapping(*c & TRUNC) * Wrapping(*d & TRUNC)))
-        .0;
-        *b = (*b ^ *c).rotate_right(24);
-
-        *a = (Wrapping(*a)
-            + Wrapping(*b)
-            + (Wrapping(2) * Wrapping(*a & TRUNC) * Wrapping(*b & TRUNC)))
-        .0;
-        *d = (*d ^ *a).rotate_right(16);
-        *c = (Wrapping(*c)
-            + Wrapping(*d)
-            + (Wrapping(2) * Wrapping(*c & TRUNC) * Wrapping(*d & TRUNC)))
-        .0;
-        *b = (*b ^ *c).rotate_right(63);
-    }
-
-    step(&mut r0[0], &mut r2[0], &mut r4[0], &mut r6[0]);
-    step(&mut r0[1], &mut r2[1], &mut r4[1], &mut r6[1]);
-
-    step(&mut r1[0], &mut r3[0], &mut r5[0], &mut r7[0]);
-    step(&mut r1[1], &mut r3[1], &mut r5[1], &mut r7[1]);
-
-    step(&mut r0[0], &mut r2[1], &mut r5[0], &mut r7[1]);
-    step(&mut r0[1], &mut r3[0], &mut r5[1], &mut r6[0]);
-
-    step(&mut r1[0], &mut r3[1], &mut r4[0], &mut r6[1]);
-    step(&mut r1[1], &mut r2[0], &mut r4[1], &mut r7[0]);
 }
