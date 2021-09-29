@@ -17,7 +17,7 @@ impl Block {
     /// Memory block size in bytes
     pub const SIZE: usize = 1024;
 
-    fn compress(a: &Self, b: &Self) -> Self {
+    pub(crate) fn compress(a: &Self, b: &Self) -> Self {
         let r = *a ^ b;
 
         // Apply permutations rowwise

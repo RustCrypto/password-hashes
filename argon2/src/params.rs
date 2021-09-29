@@ -42,7 +42,7 @@ impl Params {
     pub const DEFAULT_M_COST: u32 = 4096;
 
     /// Minimum number of memory blocks.
-    pub const MIN_M_COST: u32 = 2 * SYNC_POINTS; // 2 blocks per slice
+    pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
     /// Maximum number of memory blocks.
     pub const MAX_M_COST: u32 = 0x0FFFFFFF;
@@ -146,23 +146,25 @@ impl Params {
     }
 
     /// Get the number of lanes.
-    pub(crate) fn lanes(&self) -> u32 {
-        self.p_cost
+    pub(crate) fn lanes(&self) -> usize {
+        usize::try_from(self.p_cost).unwrap()
     }
 
     /// Get the number of blocks in a lane.
-    pub(crate) fn lane_length(&self) -> u32 {
+    pub(crate) fn lane_length(&self) -> usize {
         self.segment_length() * SYNC_POINTS
     }
 
     /// Get the segment length given the configured `m_cost` and `p_cost`.
     ///
     /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
-    pub(crate) fn segment_length(&self) -> u32 {
-        let memory_blocks = if self.m_cost < 2 * SYNC_POINTS * self.lanes() {
+    pub(crate) fn segment_length(&self) -> usize {
+        let m_cost = usize::try_from(self.m_cost).unwrap();
+
+        let memory_blocks = if m_cost < 2 * SYNC_POINTS * self.lanes() {
             2 * SYNC_POINTS * self.lanes()
         } else {
-            self.m_cost
+            m_cost
         };
 
         memory_blocks / (self.lanes() * SYNC_POINTS)
@@ -170,7 +172,7 @@ impl Params {
 
     /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
     pub fn block_count(&self) -> usize {
-        (self.segment_length() * self.p_cost * SYNC_POINTS) as usize
+        (self.segment_length() * self.lanes() * SYNC_POINTS) as usize
     }
 }
 

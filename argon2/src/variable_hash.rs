@@ -29,7 +29,9 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
             digest::Update::update(&mut digest, input);
         }
 
-        digest.finalize_variable(out).expect("invalid Blake2bVar out length");
+        digest
+            .finalize_variable(out)
+            .expect("invalid Blake2bVar out length");
         return Ok(());
     }
 
@@ -66,7 +68,9 @@ pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     let mut digest = Blake2bVar::new(last_block_size).unwrap();
 
     digest::Update::update(&mut digest, &last_output);
-    digest.finalize_variable(&mut out[whole_block_byte_count..]).expect("invalid Blake2bVar out length");
+    digest
+        .finalize_variable(&mut out[whole_block_byte_count..])
+        .expect("invalid Blake2bVar out length");
 
     Ok(())
 }
