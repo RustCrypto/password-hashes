@@ -87,7 +87,7 @@ pub use {
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
-use crate::variable_hash::variable_length_hash;
+use crate::variable_hash::blake2b_long;
 use blake2::{
     digest::{self, Output},
     Blake2b512, Digest,
@@ -262,7 +262,7 @@ impl<'key> Argon2<'key> {
                     &l.to_le_bytes()[..],
                 ];
 
-                variable_length_hash(inputs, block.as_mut_byte_slice()).unwrap();
+                blake2b_long(inputs, block.as_mut_byte_slice()).unwrap();
             }
         }
 
