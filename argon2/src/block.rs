@@ -17,8 +17,8 @@ impl Block {
     /// Memory block size in bytes
     pub const SIZE: usize = 1024;
 
-    pub(crate) fn compress(a: &Self, b: &Self) -> Self {
-        let r = *a ^ b;
+    pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
+        let r = *rhs ^ lhs;
 
         // Apply permutations rowwise
         let mut q = r;
@@ -97,6 +97,7 @@ impl Zeroize for Block {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn permutate(
     r0: &mut [u64; 2],
     r1: &mut [u64; 2],

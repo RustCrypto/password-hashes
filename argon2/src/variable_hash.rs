@@ -10,7 +10,7 @@ use blake2::{
 use core::convert::TryFrom;
 
 pub fn variable_length_hash(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
-    if out.len() == 0 {
+    if out.is_empty() {
         return Err(Error::OutputTooShort);
     }
 
