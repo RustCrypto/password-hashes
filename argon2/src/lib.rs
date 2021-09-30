@@ -419,7 +419,7 @@ impl<'key> Argon2<'key> {
             blockhash ^= &memory_blocks[last_block_in_lane];
         }
 
-        variable_length_hash(&[blockhash.as_byte_slice()], out)?;
+        blake2b_long(&[blockhash.as_byte_slice()], out)?;
 
         #[cfg(feature = "zeroize")]
         blockhash.zeroize();
