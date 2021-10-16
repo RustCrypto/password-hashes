@@ -288,10 +288,10 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                     builder.p_cost(value.decimal()?)?;
                 }
                 "keyid" => {
-                    builder.params.keyid = ident.as_str().parse()?;
+                    builder.params.keyid = value.as_str().parse()?;
                 }
                 "data" => {
-                    builder.params.data = ident.as_str().parse()?;
+                    builder.params.data = value.as_str().parse()?;
                 }
                 _ => return Err(password_hash::Error::ParamNameInvalid),
             }
