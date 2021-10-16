@@ -121,6 +121,14 @@ impl Params {
     /// Key identifier: byte slice between 0 and 8 bytes in length.
     ///
     /// Defaults to an empty byte slice.
+    ///
+    /// Note this field is only present as a helper for reading/storing in
+    /// the PHC hash string format (i.e. it is totally ignored from a
+    /// cryptographical standpoint).
+    ///
+    /// On top of that, this field is not longer part of the argon2 standard
+    /// (see: https://github.com/P-H-C/phc-winner-argon2/pull/173), and should
+    /// not be used for any non-legacy work.
     pub fn keyid(&self) -> &[u8] {
         self.keyid.as_bytes()
     }
@@ -128,6 +136,10 @@ impl Params {
     /// Associated data: byte slice between 0 and 32 bytes in length.
     ///
     /// Defaults to an empty byte slice.
+    ///
+    /// This field is not longer part of the argon2 standard
+    /// (see: https://github.com/P-H-C/phc-winner-argon2/pull/173), and should
+    /// not be used for any non-legacy work.
     pub fn data(&self) -> &[u8] {
         self.data.as_bytes()
     }
