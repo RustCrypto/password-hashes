@@ -445,3 +445,49 @@ impl TryFrom<ParamsBuilder> for Params {
         builder.params()
     }
 }
+
+#[cfg(all(test, feature = "alloc", feature = "password-hash"))]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn params_builder_bad_values() {
+        let mut builder = ParamsBuilder::new();
+
+        assert_eq!(
+            builder.m_cost(Params::MIN_M_COST - 1),
+            Err(Error::MemoryTooLittle)
+        );
+        assert_eq!(
+            builder.m_cost(Params::MAX_M_COST + 1),
+            Err(Error::MemoryTooMuch)
+        );
+        assert_eq!(
+            builder.t_cost(Params::MIN_T_COST - 1),
+            Err(Error::TimeTooSmall)
+        );
+        assert_eq!(
+            builder.p_cost(Params::MIN_P_COST - 1),
+            Err(Error::ThreadsTooFew)
+        );
+        assert_eq!(
+            builder.p_cost(Params::MAX_P_COST + 1),
+            Err(Error::ThreadsTooMany)
+        );
+    }
+
+    #[test]
+    fn params_builder_data_too_long() {
+        let mut builder = ParamsBuilder::new();
+        let ret = builder.data(&[0u8; Params::MAX_DATA_LEN + 1]);
+        assert_eq!(ret, Err(Error::AdTooLong));
+    }
+
+    #[test]
+    fn params_builder_keyid_too_long() {
+        let mut builder = ParamsBuilder::new();
+        let ret = builder.keyid(&[0u8; Params::MAX_KEYID_LEN + 1]);
+        assert_eq!(ret, Err(Error::KeyIdTooLong));
+    }
+}
