@@ -117,6 +117,9 @@ where
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<GenericArray<u8, D::OutputSize>> {
+        #[cfg(not(feature = "parallel"))]
+        let mut memory = alloc::vec![GenericArray::default(); self.params.s_cost.get() as usize];
+        #[cfg(feature = "parallel")]
         let mut memory = alloc::vec![GenericArray::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
         self.hash_with_memory(pwd, salt, &mut memory)
     }
@@ -129,7 +132,8 @@ where
     /// - Users with the `alloc` feature enabled can use [`Balloon::hash`]
     ///   to have it allocated for them.
     /// - `no_std` users on "heapless" targets can use an array of the [`GenericArray`] type
-    ///   to stack allocate this buffer. It needs a minimum size of `s_cost * p_cost`.
+    ///   to stack allocate this buffer. It needs a minimum size of `s_cost` or `s_cost * p_cost`
+    ///   with the `parallel` feature enabled.
     pub fn hash_with_memory(
         &self,
         pwd: &[u8],
@@ -139,19 +143,12 @@ where
         if self.params.p_cost.get() == 1 {
             self.hash_internal(pwd, salt, memory_blocks, None)
         } else {
-            if memory_blocks.len() < (self.params.s_cost.get() * self.params.p_cost.get()) as usize
-            {
-                return Err(Error::MemoryTooLittle);
-            }
-
             #[cfg(not(feature = "parallel"))]
             {
                 let mut result = GenericArray::default();
 
-                for (thread, memory) in (1..=u64::from(self.params.p_cost.get()))
-                    .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
-                {
-                    let hash = self.hash_internal(pwd, salt, memory, Some(thread))?;
+                for thread in 1..=u64::from(self.params.p_cost.get()) {
+                    let hash = self.hash_internal(pwd, salt, memory_blocks, Some(thread))?;
                     result = result.into_iter().zip(hash).map(|(a, b)| a ^ b).collect();
                 }
 
@@ -160,6 +157,12 @@ where
             #[cfg(feature = "parallel")]
             {
                 use rayon::iter::{ParallelBridge, ParallelIterator};
+
+                if memory_blocks.len()
+                    < (self.params.s_cost.get() * self.params.p_cost.get()) as usize
+                {
+                    return Err(Error::MemoryTooLittle);
+                }
 
                 (1..=u64::from(self.params.p_cost.get()))
                     .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
