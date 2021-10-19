@@ -69,7 +69,7 @@ pub use crate::{
     error::{Error, Result},
     params::Params,
 };
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryInto;
 use core::marker::PhantomData;
 use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
@@ -321,6 +321,8 @@ where
     where
         S: AsRef<str> + ?Sized,
     {
+        use core::convert::TryFrom;
+
         let salt = Salt::try_from(salt.as_ref())?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
