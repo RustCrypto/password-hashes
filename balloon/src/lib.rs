@@ -117,36 +117,8 @@ where
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<GenericArray<u8, D::OutputSize>> {
-        if self.params.p_cost.get() == 1 {
-            let mut memory = alloc::vec![GenericArray::default(); usize::try_from(self.params.s_cost.get()).unwrap()];
-            self.hash_internal(pwd, salt, &mut memory, None)
-        } else {
-            #[cfg(not(feature = "parallel"))]
-            return Err(Error::ThreadsTooMany);
-            #[cfg(feature = "parallel")]
-            {
-                use rayon::iter::{IntoParallelIterator, ParallelIterator};
-
-                (1..=u64::from(self.params.p_cost.get()))
-                    .into_par_iter()
-                    .map_with((self.params, self.secret), |(params, secret), index| {
-                        let mut memory = alloc::vec![
-                            GenericArray::default(); usize::try_from(params.s_cost.get()).unwrap()
-                        ];
-                        // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we build a
-                        // new `Balloon`, which is free
-                        Self::new(*params, *secret).hash_internal(
-                            pwd,
-                            salt,
-                            &mut memory,
-                            Some(index),
-                        )
-                    })
-                    .try_reduce(GenericArray::default, |a, b| {
-                        Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
-                    })
-            }
-        }
+        let mut memory = alloc::vec![GenericArray::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
+        self.hash_with_memory(pwd, salt, &mut memory)
     }
 
     /// Hash a password and associated parameters.
@@ -157,18 +129,59 @@ where
     /// - Users with the `alloc` feature enabled can use [`Balloon::hash`]
     ///   to have it allocated for them.
     /// - `no_std` users on "heapless" targets can use an array of the [`GenericArray`] type
-    ///   to stack allocate this buffer. It needs a minimum size of `s_cost`.
+    ///   to stack allocate this buffer. It needs a minimum size of `s_cost * p_cost`.
     pub fn hash_with_memory(
         &self,
         pwd: &[u8],
         salt: &[u8],
         memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
     ) -> Result<GenericArray<u8, D::OutputSize>> {
-        if self.params.p_cost.get() > 1 {
-            return Err(Error::ThreadsTooMany);
-        }
+        if self.params.p_cost.get() == 1 {
+            self.hash_internal(pwd, salt, memory_blocks, None)
+        } else {
+            if memory_blocks.len() < (self.params.s_cost.get() * self.params.p_cost.get()) as usize
+            {
+                return Err(Error::MemoryTooLittle);
+            }
 
-        self.hash_internal(pwd, salt, memory_blocks, None)
+            #[cfg(not(feature = "parallel"))]
+            {
+                let mut result = GenericArray::default();
+
+                for (thread, memory) in (1..=u64::from(self.params.p_cost.get()))
+                    .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
+                {
+                    let hash = self.hash_internal(pwd, salt, memory, Some(thread))?;
+                    result = result.into_iter().zip(hash).map(|(a, b)| a ^ b).collect();
+                }
+
+                Ok(result)
+            }
+            #[cfg(feature = "parallel")]
+            {
+                use rayon::iter::{ParallelBridge, ParallelIterator};
+
+                (1..=u64::from(self.params.p_cost.get()))
+                    .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
+                    .par_bridge()
+                    .map_with(
+                        (self.params, self.secret),
+                        |(params, secret), (thread, memory)| {
+                            // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we build a
+                            // new `Balloon`, which is free
+                            Self::new(*params, *secret).hash_internal(
+                                pwd,
+                                salt,
+                                memory,
+                                Some(thread),
+                            )
+                        },
+                    )
+                    .try_reduce(GenericArray::default, |a, b| {
+                        Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
+                    })
+            }
+        }
     }
 
     fn hash_internal(
@@ -179,7 +192,7 @@ where
         thread_id: Option<u64>,
     ) -> Result<GenericArray<u8, D::OutputSize>> {
         // we will use `s_cost` to index arrays regularly
-        let s_cost = usize::try_from(self.params.s_cost.get()).unwrap();
+        let s_cost = self.params.s_cost.get() as usize;
 
         let mut digest = D::new();
 
@@ -244,7 +257,7 @@ where
                 for i in 0..DELTA {
                     // block_t idx_block = ints_to_block(t, m, i)
                     digest.update(&t.to_le_bytes());
-                    digest.update(&u64::try_from(m).unwrap().to_le_bytes());
+                    digest.update(&(m as u64).to_le_bytes());
                     digest.update(&i.to_le_bytes());
                     let idx_block = digest.finalize_reset();
 
@@ -349,7 +362,7 @@ where
     }
 }
 
-#[cfg(all(feature = "parallel", feature = "password-hash"))]
+#[cfg(feature = "password-hash")]
 #[test]
 fn hash_simple_retains_configured_params() {
     use sha2::Sha256;

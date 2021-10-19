@@ -15,8 +15,6 @@ pub enum Error {
     MemoryTooLittle,
     /// Not enough threads.
     ThreadsTooFew,
-    /// Too many threads.
-    ThreadsTooMany,
     /// Time cost is too small.
     TimeTooSmall,
 }
@@ -26,7 +24,6 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Error::MemoryTooLittle => "memory cost is too small",
             Error::ThreadsTooFew => "not enough threads",
-            Error::ThreadsTooMany => "too many threads",
             Error::TimeTooSmall => "time cost is too small",
         })
     }
@@ -39,7 +36,6 @@ impl From<Error> for password_hash::Error {
         match err {
             Error::MemoryTooLittle => InvalidValue::TooShort.param_error(),
             Error::ThreadsTooFew => InvalidValue::TooShort.param_error(),
-            Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
             Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
         }
     }
