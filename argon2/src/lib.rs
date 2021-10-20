@@ -53,7 +53,8 @@
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
-//! assert!(argon2.verify_password(password, &parsed_hash).is_ok());
+//! // Note hash params from `parsed_hash` are used instead of what is configured in the `Argron2` instance
+//! assert!(Argon2::default().verify_password(password, &parsed_hash).is_ok());
 //! # }
 //! # Ok(())
 //! # }
