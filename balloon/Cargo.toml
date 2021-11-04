@@ -20,7 +20,7 @@ password-hash = { version = "0.3", default-features = false, optional = true }
 rayon = { version = "1", optional = true }
 
 [dev-dependencies]
-nachonavarro-balloon = { git = "https://github.com/khonsulabs/nachonavarro-balloon" }
+pyo3 = "0.15"
 sha2 = "0.9"
 
 [features]

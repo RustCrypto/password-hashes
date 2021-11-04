@@ -93,3 +93,30 @@ fn test() {
         );
     }
 }
+
+mod nachonavarro_balloon {
+    use pyo3::{types::PyModule, PyResult, Python};
+
+    pub fn balloon(
+        password: &str,
+        salt: &str,
+        space_cost: u32,
+        time_cost: u32,
+        delta: u32,
+    ) -> PyResult<Vec<u8>> {
+        pyo3::prepare_freethreaded_python();
+
+        Python::with_gil(|py| {
+            let balloon = PyModule::from_code(
+                py,
+                include_str!("../balloon-hashing/balloon.py"),
+                "balloon",
+                "balloon",
+            )?;
+            balloon
+                .getattr("balloon")?
+                .call1((password, salt, space_cost, time_cost, delta))?
+                .extract()
+        })
+    }
+}
