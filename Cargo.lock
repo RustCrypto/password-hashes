@@ -300,7 +300,7 @@ dependencies = [
 [[package]]
 name = "nachonavarro-balloon"
 version = "0.0.0"
-source = "git+https://github.com/daxpedda/nachonavarro-balloon#3ee06fa415fa76b91723bb1df681c25ab55568e4"
+source = "git+https://github.com/khonsulabs/nachonavarro-balloon#e4de7a46b20a0141aa1ac97f169c7cee55659d4e"
 dependencies = [
  "pyo3",
 ]
@@ -385,9 +385,9 @@ checksum = "ed0cfbc8191465bed66e1718596ee0b0b35d5ee1f41c5df2189d0fe8bde535ba"
 
 [[package]]
 name = "pyo3"
-version = "0.14.5"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35100f9347670a566a67aa623369293703322bb9db77d99d7df7313b575ae0c8"
+checksum = "64664505ce285a59b8b7e940fbe54ad65b1758a0810eddc5bc26df6f6ec8c557"
 dependencies = [
  "cfg-if",
  "libc",
@@ -397,9 +397,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-build-config"
-version = "0.14.5"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d12961738cacbd7f91b7c43bc25cfeeaa2698ad07a04b3be0aa88b950865738f"
+checksum = "5f1e4a72de84cdcd69f62211b62f62753d0c11b7b5715f3467f3754dab22a7ca"
 dependencies = [
  "once_cell",
 ]
