@@ -29,6 +29,8 @@ jobs:
           - wasm32-unknown-unknown
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -48,6 +50,8 @@ jobs:
           - stable
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
