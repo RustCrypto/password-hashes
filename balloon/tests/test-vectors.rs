@@ -10,6 +10,7 @@ struct TestVector {
     output: [u8; 32],
 }
 
+/// Created and tested here: <https://github.com/khonsulabs/nachonavarro-balloon>.
 const TEST_VECTORS: &[TestVector] = &[
     TestVector {
         password: b"hunter42",
