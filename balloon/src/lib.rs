@@ -196,6 +196,12 @@ where
     ) -> Result<GenericArray<u8, D::OutputSize>> {
         // we will use `s_cost` to index arrays regularly
         let s_cost = self.params.s_cost.get() as usize;
+        let s_cost_bigint = {
+            let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
+            s_cost[..mem::size_of::<u32>()]
+                .copy_from_slice(&self.params.s_cost.get().to_le_bytes());
+            NonZero::new(s_cost.into_uint_le()).unwrap()
+        };
 
         let mut digest = D::new();
 
@@ -278,13 +284,7 @@ where
                     }
 
                     digest.update(idx_block);
-                    let s_cost = {
-                        let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
-                        s_cost[..mem::size_of::<u32>()]
-                            .copy_from_slice(&self.params.s_cost.get().to_le_bytes());
-                        NonZero::new(s_cost.into_uint_le()).unwrap()
-                    };
-                    let other = digest.finalize_reset().into_uint_le() % s_cost;
+                    let other = digest.finalize_reset().into_uint_le() % s_cost_bigint;
                     let other = usize::from_le_bytes(
                         other.to_le_byte_array()[..mem::size_of::<usize>()]
                             .try_into()
