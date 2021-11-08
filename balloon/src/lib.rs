@@ -62,10 +62,12 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+mod algorithm;
 mod error;
 mod params;
 
 pub use crate::{
+    algorithm::Algorithm,
     error::{Error, Result},
     params::Params,
 };
@@ -79,7 +81,10 @@ use digest::Digest;
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use password_hash::{Decimal, Ident, ParamsString, Salt};
+use {
+    core::convert::TryFrom,
+    password_hash::{Decimal, Ident, ParamsString, Salt},
+};
 
 /// Balloon context.
 ///
@@ -94,6 +99,8 @@ where
 {
     /// Storing which hash function is used
     pub digest: PhantomData<D>,
+    /// Algorithm to use
+    pub algorithm: Algorithm,
     /// Algorithm parameters
     pub params: Params,
     /// Key array
@@ -105,9 +112,10 @@ where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {
     /// Create a new Balloon context.
-    pub fn new(params: Params, secret: Option<&'key [u8]>) -> Self {
+    pub fn new(algorithm: Algorithm, params: Params, secret: Option<&'key [u8]>) -> Self {
         Self {
             digest: PhantomData,
+            algorithm,
             params,
             secret,
         }
@@ -140,11 +148,20 @@ where
         salt: &[u8],
         memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
     ) -> Result<GenericArray<u8, D::OutputSize>> {
-        if self.params.p_cost.get() == 1 {
-            self.hash_internal(pwd, salt, memory_blocks, None)
-        } else {
+        if matches!(self.algorithm, Algorithm::Balloon) && self.params.p_cost.get() > 1 {
+            return Err(Error::ThreadsTooMany);
+        }
+
+        match self.algorithm {
+            Algorithm::Balloon => {
+                if self.params.p_cost.get() == 1 {
+                    self.hash_internal(pwd, salt, memory_blocks, None)
+                } else {
+                    Err(Error::ThreadsTooMany)
+                }
+            }
             #[cfg(not(feature = "parallel"))]
-            {
+            Algorithm::BalloonM => {
                 let mut result = GenericArray::default();
 
                 for thread in 1..=u64::from(self.params.p_cost.get()) {
@@ -155,7 +172,7 @@ where
                 Ok(result)
             }
             #[cfg(feature = "parallel")]
-            {
+            Algorithm::BalloonM => {
                 use rayon::iter::{ParallelBridge, ParallelIterator};
 
                 if memory_blocks.len()
@@ -164,25 +181,41 @@ where
                     return Err(Error::MemoryTooLittle);
                 }
 
-                (1..=u64::from(self.params.p_cost.get()))
-                    .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
-                    .par_bridge()
-                    .map_with(
-                        (self.params, self.secret),
-                        |(params, secret), (thread, memory)| {
-                            // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we build a
-                            // new `Balloon`, which is free
-                            Self::new(*params, *secret).hash_internal(
-                                pwd,
-                                salt,
-                                memory,
-                                Some(thread),
-                            )
-                        },
-                    )
-                    .try_reduce(GenericArray::default, |a, b| {
-                        Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
-                    })
+                // Shortcut if p_cost is one.
+                let output = if self.params.p_cost.get() == 1 {
+                    self.hash_internal(pwd, salt, memory_blocks, Some(1))
+                } else {
+                    (1..=u64::from(self.params.p_cost.get()))
+                        .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
+                        .par_bridge()
+                        .map_with(
+                            (self.algorithm, self.params, self.secret),
+                            |(algorithm, params, secret), (thread, memory)| {
+                                // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we
+                                // build a new `Balloon`, which is free.
+                                Self::new(*algorithm, *params, *secret).hash_internal(
+                                    pwd,
+                                    salt,
+                                    memory,
+                                    Some(thread),
+                                )
+                            },
+                        )
+                        .try_reduce(GenericArray::default, |a, b| {
+                            Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
+                        })
+                }?;
+
+                let mut digest = D::new();
+                digest.update(pwd);
+                digest.update(salt);
+
+                if let Some(secret) = self.secret {
+                    digest.update(secret);
+                }
+
+                digest.update(output);
+                Ok(digest.finalize_reset())
             }
         }
     }
@@ -324,8 +357,6 @@ where
     where
         S: AsRef<str> + ?Sized,
     {
-        use core::convert::TryFrom;
-
         let salt = Salt::try_from(salt.as_ref())?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
@@ -333,7 +364,7 @@ where
         let output = password_hash::Output::new(&self.hash(password, salt_bytes)?)?;
 
         Ok(PasswordHash {
-            algorithm: Ident::new("balloon"),
+            algorithm: self.algorithm.ident(),
             version: Some(1),
             params: ParamsString::try_from(&self.params)?,
             salt: Some(salt),
@@ -349,11 +380,10 @@ where
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> password_hash::Result<PasswordHash<'a>> {
-        if let Some(alg_id) = alg_id {
-            if alg_id.as_str() != "balloon" {
-                return Err(password_hash::Error::Algorithm);
-            }
-        }
+        let algorithm = alg_id
+            .map(Algorithm::try_from)
+            .transpose()?
+            .unwrap_or_default();
 
         if let Some(version) = version {
             if version != 1 {
@@ -363,7 +393,16 @@ where
 
         let salt = salt.into();
 
-        Self::new(params, self.secret).hash_password(password, salt.as_str())
+        Self::new(algorithm, params, self.secret).hash_password(password, salt.as_str())
+    }
+}
+
+impl<'key, D: Digest> From<Params> for Balloon<'key, D>
+where
+    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+{
+    fn from(params: Params) -> Self {
+        Self::new(Algorithm::default(), params, None)
     }
 }
 
@@ -384,7 +423,7 @@ fn hash_simple_retains_configured_params() {
     let p_cost = 2;
 
     let params = Params::new(s_cost, t_cost, p_cost).unwrap();
-    let hasher = Balloon::<Sha256>::new(params, None);
+    let hasher = Balloon::<Sha256>::new(Algorithm::default(), params, None);
     let hash = hasher
         .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
         .unwrap();

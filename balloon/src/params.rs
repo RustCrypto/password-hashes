@@ -18,6 +18,8 @@ pub struct Params {
     /// Time cost, expressed in number of rounds.
     pub t_cost: NonZeroU32,
     /// Degree of parallelism, expressed in number of threads.
+    /// Only allowed to be higher then 1 when used in combination
+    /// with [`Algorithm::BalloonM`](crate::Algorithm::BalloonM).
     pub p_cost: NonZeroU32,
 }
 

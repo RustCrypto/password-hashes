@@ -1,6 +1,6 @@
 #![cfg(feature = "alloc")]
 
-use balloon_hash::{Balloon, Params};
+use balloon_hash::{Algorithm, Balloon, Params};
 use hex_literal::hex;
 
 struct TestVector {
@@ -11,7 +11,9 @@ struct TestVector {
     output: [u8; 32],
 }
 
-/// Created and tested here: <https://github.com/khonsulabs/nachonavarro-balloon>.
+/// Tested with the following implementations:
+/// - <https://github.com/nachonavarro/balloon-hashing>
+/// - <https://github.com/nogoegst/balloon>
 const TEST_VECTORS: &[TestVector] = &[
     TestVector {
         password: b"hunter42",
@@ -54,16 +56,17 @@ const TEST_VECTORS: &[TestVector] = &[
 fn test() {
     for test_vector in TEST_VECTORS {
         let balloon = Balloon::<sha2::Sha256>::new(
+            Algorithm::Balloon,
             Params::new(test_vector.s_cost, test_vector.t_cost, 1).unwrap(),
             None,
         );
 
         assert_eq!(
-            test_vector.output,
             balloon
                 .hash(test_vector.password, test_vector.salt)
                 .unwrap()
-                .as_slice()
+                .as_slice(),
+            test_vector.output,
         );
     }
 }
