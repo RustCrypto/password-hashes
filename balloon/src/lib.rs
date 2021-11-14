@@ -160,51 +160,54 @@ where
                     Err(Error::ThreadsTooMany)
                 }
             }
-            #[cfg(not(feature = "parallel"))]
             Algorithm::BalloonM => {
-                let mut result = GenericArray::default();
+                #[cfg(not(feature = "parallel"))]
+                let output = {
+                    let mut output = GenericArray::<_, D::OutputSize>::default();
 
-                for thread in 1..=u64::from(self.params.p_cost.get()) {
-                    let hash = self.hash_internal(pwd, salt, memory_blocks, Some(thread))?;
-                    result = result.into_iter().zip(hash).map(|(a, b)| a ^ b).collect();
-                }
+                    for thread in 1..=u64::from(self.params.p_cost.get()) {
+                        let hash = self.hash_internal(pwd, salt, memory_blocks, Some(thread))?;
+                        output = output.into_iter().zip(hash).map(|(a, b)| a ^ b).collect();
+                    }
 
-                Ok(result)
-            }
-            #[cfg(feature = "parallel")]
-            Algorithm::BalloonM => {
-                use rayon::iter::{ParallelBridge, ParallelIterator};
+                    output
+                };
 
-                if memory_blocks.len()
-                    < (self.params.s_cost.get() * self.params.p_cost.get()) as usize
-                {
-                    return Err(Error::MemoryTooLittle);
-                }
+                #[cfg(feature = "parallel")]
+                let output = {
+                    use rayon::iter::{ParallelBridge, ParallelIterator};
 
-                // Shortcut if p_cost is one.
-                let output = if self.params.p_cost.get() == 1 {
-                    self.hash_internal(pwd, salt, memory_blocks, Some(1))
-                } else {
-                    (1..=u64::from(self.params.p_cost.get()))
-                        .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
-                        .par_bridge()
-                        .map_with(
-                            (self.algorithm, self.params, self.secret),
-                            |(algorithm, params, secret), (thread, memory)| {
-                                // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we
-                                // build a new `Balloon`, which is free.
-                                Self::new(*algorithm, *params, *secret).hash_internal(
-                                    pwd,
-                                    salt,
-                                    memory,
-                                    Some(thread),
-                                )
-                            },
-                        )
-                        .try_reduce(GenericArray::default, |a, b| {
-                            Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
-                        })
-                }?;
+                    if memory_blocks.len()
+                        < (self.params.s_cost.get() * self.params.p_cost.get()) as usize
+                    {
+                        return Err(Error::MemoryTooLittle);
+                    }
+
+                    // Shortcut if p_cost is one.
+                    if self.params.p_cost.get() == 1 {
+                        self.hash_internal(pwd, salt, memory_blocks, Some(1))
+                    } else {
+                        (1..=u64::from(self.params.p_cost.get()))
+                            .zip(memory_blocks.chunks_exact_mut(self.params.s_cost.get() as usize))
+                            .par_bridge()
+                            .map_with(
+                                (self.algorithm, self.params, self.secret),
+                                |(algorithm, params, secret), (thread, memory)| {
+                                    // `PhantomData<D>` doesn't implement `Sync` unless `D` does, so we
+                                    // build a new `Balloon`, which is free.
+                                    Self::new(*algorithm, *params, *secret).hash_internal(
+                                        pwd,
+                                        salt,
+                                        memory,
+                                        Some(thread),
+                                    )
+                                },
+                            )
+                            .try_reduce(GenericArray::default, |a, b| {
+                                Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
+                            })
+                    }?
+                };
 
                 let mut digest = D::new();
                 digest.update(pwd);
