@@ -1,4 +1,4 @@
-//! Argon2 password hash parameters.
+//! Balloon password hash parameters.
 
 use crate::{Error, Result};
 use core::num::NonZeroU32;
@@ -8,7 +8,7 @@ use {
     password_hash::{errors::InvalidValue, ParamsString, PasswordHash},
 };
 
-/// Argon2 password hash parameters.
+/// Balloon password hash parameters.
 ///
 /// These are parameters which can be encoded into a PHC hash string.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -18,7 +18,7 @@ pub struct Params {
     /// Time cost, expressed in number of rounds.
     pub t_cost: NonZeroU32,
     /// Degree of parallelism, expressed in number of threads.
-    /// Only allowed to be higher then 1 when used in combination
+    /// Only allowed to be higher than 1 when used in combination
     /// with [`Algorithm::BalloonM`](crate::Algorithm::BalloonM).
     pub p_cost: NonZeroU32,
 }
