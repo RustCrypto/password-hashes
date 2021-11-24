@@ -4,7 +4,6 @@ use scrypt::{scrypt, Params};
 use {
     password_hash::{PasswordHash, PasswordVerifier},
     scrypt::Scrypt,
-	
 };
 
 struct Test {

@@ -77,7 +77,7 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            len: len,
+            len,
         })
     }
 
