@@ -29,15 +29,18 @@ impl Params {
     /// - `log_n` - The log2 of the Scrypt parameter `N`
     /// - `r` - The Scrypt parameter `r`
     /// - `p` - The Scrypt parameter `p`
+    /// - `len` - The Scrypt parameter `Key length`
     /// # Conditions
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
-    pub fn new(log_n: u8, r: u32, p: u32) -> Result<Params, InvalidParams> {
+    /// - `len` must be greater than `9` and less than or equal to `64`
+    pub fn new(log_n: u8, r: u32, p: u32, len: usize) -> Result<Params, InvalidParams> {
         let cond1 = (log_n as usize) < size_of::<usize>() * 8;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
-        if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
+        let cond4 = len >= 10 && len <= 64;
+        if !(r > 0 && p > 0 && cond1 && (cond2 || cond3) && cond4) {
             return Err(InvalidParams);
         }
 
@@ -74,7 +77,7 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            len: RECOMMENDED_LEN,
+            len: len,
         })
     }
 
@@ -146,7 +149,11 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
-        Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())
+        let len = match hash.hash {
+            Some(hash) => hash.len(),
+            None => RECOMMENDED_LEN,
+        };
+        Params::new(log_n, r, p, len).map_err(|_| InvalidValue::Malformed.param_error())
     }
 }
 
