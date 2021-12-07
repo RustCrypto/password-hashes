@@ -19,6 +19,7 @@ pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
+    #[allow(dead_code)] // this field is used only with the `PasswordHasher` impl
     pub(crate) len: usize,
 }
 

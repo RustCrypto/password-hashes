@@ -1,6 +1,6 @@
 [package]
 name = "argon2"
-version = "0.3.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.3.2" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of the Argon2 password hashing function with support
 for the Argon2d, Argon2i, and Argon2id algorithmic variants
@@ -16,7 +16,7 @@ readme = "README.md"
 
 [dependencies]
 base64ct = "1"
-blake2 = { version = "0.9", default-features = false }
+blake2 = { version = "0.10", default-features = false }
 
 # optional dependencies
 password-hash = { version = "0.3", optional = true }

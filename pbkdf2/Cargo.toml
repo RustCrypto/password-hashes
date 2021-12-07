@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.9.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.10.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
@@ -12,21 +12,21 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-crypto-mac = "0.11"
+digest = { version = "0.10", features = ["mac"] }
 
 # optional dependencies
 rayon = { version = "1", optional = true }
-hmac = { version = "0.11", default-features = false, optional = true }
 password-hash = { version = "0.3", default-features = false, optional = true, features = ["rand_core"]  }
-sha1 = { version = "0.9", package = "sha-1", default-features = false, optional = true }
-sha2 = { version = "0.9", default-features = false, optional = true }
+hmac = { version = "0.12", default-features = false, optional = true }
+sha1 = { version = "0.10", package = "sha-1", default-features = false, optional = true }
+sha2 = { version = "0.10", default-features = false, optional = true }
 
 [dev-dependencies]
+hmac = "0.12"
 hex-literal = "0.3"
-hmac = "0.11"
-sha1 = { version = "0.9", package = "sha-1" }
-sha2 = "0.9"
-streebog = "0.9"
+sha1 = { version = "0.10", package = "sha-1" }
+sha2 = "0.10"
+streebog = "0.10"
 
 [features]
 default = ["simple"]

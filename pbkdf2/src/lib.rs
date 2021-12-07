@@ -57,7 +57,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/pbkdf2/0.9.0"
+    html_root_url = "https://docs.rs/pbkdf2/0.10.0"
 )]
 
 #[cfg(feature = "std")]
@@ -79,8 +79,7 @@ pub use crate::simple::{Algorithm, Params, Pbkdf2};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use crypto_mac::generic_array::typenum::Unsigned;
-use crypto_mac::{Mac, NewMac};
+use digest::{generic_array::typenum::Unsigned, FixedOutput, KeyInit, Update};
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -89,9 +88,9 @@ fn xor(res: &mut [u8], salt: &[u8]) {
 }
 
 #[inline(always)]
-fn pbkdf2_body<F>(i: u32, chunk: &mut [u8], prf: &F, salt: &[u8], rounds: u32)
+fn pbkdf2_body<PRF>(i: u32, chunk: &mut [u8], prf: &PRF, salt: &[u8], rounds: u32)
 where
-    F: Mac + Clone,
+    PRF: KeyInit + Update + FixedOutput + Clone,
 {
     for v in chunk.iter_mut() {
         *v = 0;
@@ -102,7 +101,7 @@ where
         prfc.update(salt);
         prfc.update(&(i + 1).to_be_bytes());
 
-        let salt = prfc.finalize().into_bytes();
+        let salt = prfc.finalize_fixed();
         xor(chunk, &salt);
         salt
     };
@@ -110,38 +109,40 @@ where
     for _ in 1..rounds {
         let mut prfc = prf.clone();
         prfc.update(&salt);
-        salt = prfc.finalize().into_bytes();
+        salt = prfc.finalize_fixed();
 
         xor(chunk, &salt);
     }
 }
 
 /// Generic implementation of PBKDF2 algorithm.
-#[cfg(feature = "parallel")]
-#[inline]
-pub fn pbkdf2<F>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
-where
-    F: Mac + NewMac + Clone + Sync,
-{
-    let n = F::OutputSize::to_usize();
-    let prf = F::new_from_slice(password).expect("HMAC accepts all key sizes");
-
-    res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
-        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
-    });
-}
-
-/// Generic implementation of PBKDF2 algorithm.
 #[cfg(not(feature = "parallel"))]
 #[inline]
-pub fn pbkdf2<F>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+pub fn pbkdf2<PRF>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
-    F: Mac + NewMac + Clone + Sync,
+    PRF: KeyInit + Update + FixedOutput + Clone + Sync,
 {
-    let n = F::OutputSize::to_usize();
-    let prf = F::new_from_slice(password).expect("HMAC accepts all key sizes");
+    let n = PRF::OutputSize::to_usize();
+    // note: HMAC can be initialized with keys of any size,
+    // so this panic never happens with it
+    let prf = PRF::new_from_slice(password).expect("PRF initialization failure");
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
         pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
     }
+}
+
+/// Generic implementation of PBKDF2 algorithm.
+#[cfg(feature = "parallel")]
+#[inline]
+pub fn pbkdf2<PRF>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+where
+    PRF: KeyInit + Update + FixedOutput + Clone + Sync,
+{
+    let n = PRF::OutputSize::to_usize();
+    let prf = PRF::new_from_slice(password).expect("PRF initialization failure");
+
+    res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
+        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
+    });
 }

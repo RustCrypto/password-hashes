@@ -7,3 +7,6 @@ members = [
     "scrypt",
     "sha-crypt"
 ]
+
+[profile.dev]
+opt-level = 2

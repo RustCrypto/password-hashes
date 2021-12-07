@@ -74,7 +74,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/argon2/0.3.0"
+    html_root_url = "https://docs.rs/argon2/0.3.2"
 )]
 #![warn(rust_2018_idioms, missing_docs)]
 
@@ -112,7 +112,7 @@ use crate::{
     instance::Instance,
     memory::{Memory, SYNC_POINTS},
 };
-use blake2::{digest, Blake2b, Digest};
+use blake2::{digest::Output, Blake2b512, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use {
@@ -257,13 +257,8 @@ impl<'key> Argon2<'key> {
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
-    pub(crate) fn initial_hash(
-        &self,
-        pwd: &[u8],
-        salt: &[u8],
-        out: &[u8],
-    ) -> digest::Output<Blake2b> {
-        let mut digest = Blake2b::new();
+    pub(crate) fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
+        let mut digest = Blake2b512::new();
         digest.update(&self.params.lanes().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
         digest.update(&self.params.m_cost().to_le_bytes());
