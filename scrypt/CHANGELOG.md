@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.1 (2021-11-25)
+### Changed
+- Bump `sha2` dependency to v0.10, `pbkdf2` to v0.10, `hmac` to v0.12 ([#254])
+
+[#254]: https://github.com/RustCrypto/password-hashes/pull/254
+
 ## 0.8.0 (2021-08-27)
 ### Changed
 - Bump `password-hash` to v0.3 ([#217])

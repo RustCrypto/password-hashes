@@ -1,6 +1,6 @@
 [package]
 name = "bcrypt-pbkdf"
-version = "0.7.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.7.2" # Also update html_root_url in lib.rs when bumping this
 description = "bcrypt-pbkdf password-based key derivation function"
 authors = ["RustCrypto Developers"]
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbkdf"
@@ -12,10 +12,10 @@ readme = "README.md"
 
 [dependencies]
 blowfish = { version = "0.8", features = ["bcrypt"] }
-crypto-mac = "0.11"
-pbkdf2 = { version = "0.9", default-features = false, path = "../pbkdf2" }
-sha2 = { version = "0.9", default-features = false }
-zeroize = { version = ">=1, <1.5", default-features = false }
+pbkdf2 = { version = "0.10", default-features = false, path = "../pbkdf2" }
+sha2 = { version = "0.10", default-features = false }
+zeroize = { version = ">=1, <1.5", default-features = false, optional = true }
+hex-literal = "0.3"
 
 [features]
 default = ["std"]

@@ -1,6 +1,6 @@
 [package]
 name = "sha-crypt"
-version = "0.3.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.3.2" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of the SHA-crypt password hash based on SHA-512
 as implemented by the POSIX crypt C library
@@ -15,7 +15,7 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-sha2 = { version = "0.9", default-features = false }
+sha2 = { version = "0.10", default-features = false }
 
 # optional dependencies
 rand = { version = "0.8", optional = true }

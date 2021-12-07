@@ -293,9 +293,9 @@ fn argon2id_v0x13() {
     assert_eq!(out, expected_tag);
 }
 
-/// =======================================
-/// Basic error checks
-/// =======================================
+// =======================================
+// Basic error checks
+// =======================================
 
 #[test]
 fn salt_bad_length() {
@@ -306,7 +306,7 @@ fn salt_bad_length() {
     let ret = ctx.hash_password_into(b"password", &too_short_salt, &mut out);
     assert_eq!(ret, Err(Error::SaltTooShort));
 
-    // 4Go of RAM seems big, but as long as we ask for a zero-initialized vector
+    // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
     // optimizations kicks in an nothing is really allocated
     let too_long_salt = vec![0u8; argon2::MAX_SALT_LEN + 1];
     let ret = ctx.hash_password_into(b"password", &too_long_salt, &mut out);
@@ -320,17 +320,17 @@ fn output_bad_length() {
     let ret = ctx.hash_password_into(b"password", b"diffsalt", &mut out);
     assert_eq!(ret, Err(Error::OutputTooShort));
 
-    // 4Go of RAM seems big, but as long as we ask for a zero-initialized vector
+    // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
     // optimizations kicks in an nothing is really allocated
     let mut out = vec![0u8; Params::MAX_OUTPUT_LEN + 1];
     let ret = ctx.hash_password_into(b"password", b"diffsalt", &mut out);
     assert_eq!(ret, Err(Error::OutputTooLong));
 }
 
-/// =======================================
-/// Reference implementation's test suite
-/// =======================================
-/// Taken from https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
+// =======================================
+// Reference implementation's test suite
+// =======================================
+// Taken from https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
 
 fn hashtest(
     algorithm: Algorithm,
