@@ -13,7 +13,7 @@ rust-version = "1.56.1"
 readme = "README.md"
 
 [dependencies]
-digest = { version = "0.9", default-features = false }
+digest = { version = "0.10", default-features = false }
 crypto-bigint = { version = "0.3", default-features = false, features = ["generic-array"] }
 
 # optional dependencies
@@ -22,7 +22,7 @@ rayon = { version = "1", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
-sha2 = "0.9"
+sha2 = "0.10"
 
 [features]
 default = ["alloc", "password-hash", "rand"]

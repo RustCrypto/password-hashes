@@ -76,7 +76,7 @@ use core::marker::PhantomData;
 use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::generic_array::GenericArray;
-use digest::Digest;
+use digest::{Digest, FixedOutputReset};
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -93,7 +93,7 @@ use {
 /// - Default set of [`Params`] to be used
 /// - (Optional) Secret key a.k.a. "pepper" to be used
 #[derive(Clone, Default)]
-pub struct Balloon<'key, D: Digest>
+pub struct Balloon<'key, D: Digest + FixedOutputReset>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {
@@ -107,7 +107,7 @@ where
     pub secret: Option<&'key [u8]>,
 }
 
-impl<'key, D: Digest> Balloon<'key, D>
+impl<'key, D: Digest + FixedOutputReset> Balloon<'key, D>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {
@@ -210,14 +210,14 @@ where
                 };
 
                 let mut digest = D::new();
-                digest.update(pwd);
-                digest.update(salt);
+                Digest::update(&mut digest, pwd);
+                Digest::update(&mut digest, salt);
 
                 if let Some(secret) = self.secret {
-                    digest.update(secret);
+                    Digest::update(&mut digest, secret);
                 }
 
-                digest.update(output);
+                Digest::update(&mut digest, output);
                 Ok(digest.finalize_reset())
             }
         }
@@ -253,17 +253,17 @@ where
 
         // Step 1. Expand input into buffer.
         // buf[0] = hash(cnt++, passwd, salt)
-        digest.update(cnt.to_le_bytes());
+        Digest::update(&mut digest, cnt.to_le_bytes());
         cnt += 1;
-        digest.update(pwd);
-        digest.update(salt);
+        Digest::update(&mut digest, pwd);
+        Digest::update(&mut digest, salt);
 
         if let Some(secret) = self.secret {
-            digest.update(secret);
+            Digest::update(&mut digest, secret);
         }
 
         if let Some(thread_id) = thread_id {
-            digest.update(thread_id.to_le_bytes());
+            Digest::update(&mut digest, thread_id.to_le_bytes());
         }
 
         buf[0] = digest.finalize_reset();
@@ -271,9 +271,9 @@ where
         // for m from 1 to s_cost-1:
         for m in 1..s_cost {
             // buf[m] = hash(cnt++, buf[m-1])
-            digest.update(&cnt.to_le_bytes());
+            Digest::update(&mut digest, &cnt.to_le_bytes());
             cnt += 1;
-            digest.update(&buf[m - 1]);
+            Digest::update(&mut digest, &buf[m - 1]);
             buf[m] = digest.finalize_reset();
         }
 
@@ -291,35 +291,35 @@ where
                 };
 
                 // buf[m] = hash(cnt++, prev, buf[m])
-                digest.update(&cnt.to_le_bytes());
+                Digest::update(&mut digest, &cnt.to_le_bytes());
                 cnt += 1;
-                digest.update(prev);
-                digest.update(&buf[m]);
+                Digest::update(&mut digest, prev);
+                Digest::update(&mut digest, &buf[m]);
                 buf[m] = digest.finalize_reset();
 
                 // Step 2b. Hash in pseudorandomly chosen blocks.
                 // for i from 0 to delta-1:
                 for i in 0..DELTA {
                     // block_t idx_block = ints_to_block(t, m, i)
-                    digest.update(&t.to_le_bytes());
-                    digest.update(&(m as u64).to_le_bytes());
-                    digest.update(&i.to_le_bytes());
+                    Digest::update(&mut digest, &t.to_le_bytes());
+                    Digest::update(&mut digest, &(m as u64).to_le_bytes());
+                    Digest::update(&mut digest, &i.to_le_bytes());
                     let idx_block = digest.finalize_reset();
 
                     // int other = to_int(hash(cnt++, salt, idx_block)) mod s_cost
-                    digest.update(&cnt.to_le_bytes());
+                    Digest::update(&mut digest, &cnt.to_le_bytes());
                     cnt += 1;
-                    digest.update(salt);
+                    Digest::update(&mut digest, salt);
 
                     if let Some(secret) = self.secret {
-                        digest.update(secret);
+                        Digest::update(&mut digest, secret);
                     }
 
                     if let Some(thread_id) = thread_id {
-                        digest.update(thread_id.to_le_bytes());
+                        Digest::update(&mut digest, thread_id.to_le_bytes());
                     }
 
-                    digest.update(idx_block);
+                    Digest::update(&mut digest, idx_block);
                     let other = digest.finalize_reset().into_uint_le() % s_cost_bigint;
                     let other = usize::from_le_bytes(
                         other.to_le_byte_array()[..mem::size_of::<usize>()]
@@ -328,10 +328,10 @@ where
                     );
 
                     // buf[m] = hash(cnt++, buf[m], buf[other])
-                    digest.update(&cnt.to_le_bytes());
+                    Digest::update(&mut digest, &cnt.to_le_bytes());
                     cnt += 1;
-                    digest.update(&buf[m]);
-                    digest.update(&buf[other]);
+                    Digest::update(&mut digest, &buf[m]);
+                    Digest::update(&mut digest, &buf[other]);
                     buf[m] = digest.finalize_reset();
                 }
             }
@@ -346,7 +346,7 @@ where
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<D: Digest> PasswordHasher for Balloon<'_, D>
+impl<D: Digest + FixedOutputReset> PasswordHasher for Balloon<'_, D>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {
@@ -400,7 +400,7 @@ where
     }
 }
 
-impl<'key, D: Digest> From<Params> for Balloon<'key, D>
+impl<'key, D: Digest + FixedOutputReset> From<Params> for Balloon<'key, D>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {

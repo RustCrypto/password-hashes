@@ -25,11 +25,11 @@ name = "balloon-hash"
 version = "0.1.0"
 dependencies = [
  "crypto-bigint",
- "digest 0.9.0",
+ "digest",
  "hex-literal",
  "password-hash",
  "rayon",
- "sha2 0.9.8",
+ "sha2",
 ]
 
 [[package]]
@@ -45,7 +45,7 @@ dependencies = [
  "blowfish",
  "hex-literal",
  "pbkdf2",
- "sha2 0.10.0",
+ "sha2",
  "zeroize",
 ]
 
@@ -55,16 +55,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a58bdf5134c5beae6fc382002c4d88950bad1feea20f8f7165494b6b43b049de"
 dependencies = [
- "digest 0.10.0",
-]
-
-[[package]]
-name = "block-buffer"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
-dependencies = [
- "generic-array",
+ "digest",
 ]
 
 [[package]]
@@ -182,20 +173,11 @@ dependencies = [
 
 [[package]]
 name = "digest"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
-name = "digest"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8549e6bfdecd113b7e221fe60b433087f6957387a20f8118ebca9b12af19143d"
 dependencies = [
- "block-buffer 0.10.0",
+ "block-buffer",
  "crypto-common",
  "generic-array",
  "subtle",
@@ -249,7 +231,7 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddca131f3e7f2ce2df364b57949a9d47915cfbd35e46cfee355ccebbf794d6a2"
 dependencies = [
- "digest 0.10.0",
+ "digest",
 ]
 
 [[package]]
@@ -304,13 +286,13 @@ dependencies = [
 name = "pbkdf2"
 version = "0.10.0"
 dependencies = [
- "digest 0.10.0",
+ "digest",
  "hex-literal",
  "hmac",
  "password-hash",
  "rayon",
  "sha-1",
- "sha2 0.10.0",
+ "sha2",
  "streebog",
 ]
 
@@ -408,7 +390,7 @@ dependencies = [
  "password-hash",
  "pbkdf2",
  "salsa20",
- "sha2 0.10.0",
+ "sha2",
 ]
 
 [[package]]
@@ -419,7 +401,7 @@ checksum = "028f48d513f9678cda28f6e4064755b3fbb2af6acd672f2c209b62323f7aea0f"
 dependencies = [
  "cfg-if",
  "cpufeatures",
- "digest 0.10.0",
+ "digest",
 ]
 
 [[package]]
@@ -427,21 +409,8 @@ name = "sha-crypt"
 version = "0.3.2"
 dependencies = [
  "rand",
- "sha2 0.10.0",
+ "sha2",
  "subtle",
-]
-
-[[package]]
-name = "sha2"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b69f9a4c9740d74c5baa3fd2e547f9525fa8088a8a958e0ca2409a514e33f5fa"
-dependencies = [
- "block-buffer 0.9.0",
- "cfg-if",
- "cpufeatures",
- "digest 0.9.0",
- "opaque-debug",
 ]
 
 [[package]]
@@ -452,7 +421,7 @@ checksum = "900d964dd36bb15bcf2f2b35694c072feab74969a54f2bbeec7a2d725d2bdcb6"
 dependencies = [
  "cfg-if",
  "cpufeatures",
- "digest 0.10.0",
+ "digest",
 ]
 
 [[package]]
@@ -461,7 +430,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f2a93b52a311873ee038192d8a95dc3bad1d638ac926c2afee0ea9887ecfaf0"
 dependencies = [
- "digest 0.10.0",
+ "digest",
 ]
 
 [[package]]
