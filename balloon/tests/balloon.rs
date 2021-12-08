@@ -1,6 +1,5 @@
-#![cfg(feature = "alloc")]
-
 use balloon_hash::{Algorithm, Balloon, Params};
+use digest::generic_array::GenericArray;
 use hex_literal::hex;
 
 struct TestVector {
@@ -53,7 +52,7 @@ const TEST_VECTORS: &[TestVector] = &[
 ];
 
 #[test]
-fn test() {
+fn test_vectors() {
     for test_vector in TEST_VECTORS {
         let balloon = Balloon::<sha2::Sha256>::new(
             Algorithm::Balloon,
@@ -61,9 +60,11 @@ fn test() {
             None,
         );
 
+        let mut memory = vec![GenericArray::default(); balloon.params.s_cost.get() as usize];
+
         assert_eq!(
             balloon
-                .hash(test_vector.password, test_vector.salt)
+                .hash_with_memory(test_vector.password, test_vector.salt, &mut memory)
                 .unwrap()
                 .as_slice(),
             test_vector.output,

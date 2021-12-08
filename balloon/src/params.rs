@@ -13,7 +13,7 @@ use {
 /// These are parameters which can be encoded into a PHC hash string.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Params {
-    /// Space cost, expressed in of blocks.
+    /// Space cost, expressed in number of blocks.
     pub s_cost: NonZeroU32,
     /// Time cost, expressed in number of rounds.
     pub t_cost: NonZeroU32,

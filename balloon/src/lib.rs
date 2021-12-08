@@ -50,7 +50,7 @@
 //!
 //! [Balloon]: https://en.wikipedia.org/wiki/Balloon_hashing
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -61,6 +61,9 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 mod algorithm;
 mod error;
