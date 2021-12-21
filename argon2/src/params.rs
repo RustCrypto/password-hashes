@@ -168,7 +168,7 @@ impl Params {
     }
 
     /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
-    pub(crate) fn block_count(&self) -> usize {
+    pub fn block_count(&self) -> usize {
         (self.segment_length() * self.p_cost * SYNC_POINTS) as usize
     }
 }
