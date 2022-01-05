@@ -21,6 +21,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
+name = "balloon-hash"
+version = "0.1.0"
+dependencies = [
+ "crypto-bigint",
+ "digest",
+ "hex-literal",
+ "password-hash",
+ "rayon",
+ "sha2",
+]
+
+[[package]]
 name = "base64ct"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -138,6 +150,16 @@ checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
 dependencies = [
  "cfg-if",
  "lazy_static",
+]
+
+[[package]]
+name = "crypto-bigint"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "476ecdba12db8402a1664482de8c37fff7dc96241258bd0de1f0d70e760a45fd"
+dependencies = [
+ "generic-array",
+ "subtle",
 ]
 
 [[package]]
