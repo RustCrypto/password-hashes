@@ -1,6 +1,13 @@
-//! Pure Rust implementation of the [Balloon] password hashing function as
-//! specified in [this paper](https://eprint.iacr.org/2016/027.pdf).
-//!
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc = include_str!("../README.md")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_root_url = "https://docs.rs/balloon-hash/0.0.0"
+)]
+#![warn(rust_2018_idioms, missing_docs)]
+
 //! # Usage (simple with default params)
 //!
 //! Note: this example requires the `rand_core` crate with the `std` feature
@@ -49,15 +56,6 @@
 //! ```
 //!
 //! [Balloon]: https://en.wikipedia.org/wiki/Balloon_hashing
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/balloon-hash/0.1.0"
-)]
-#![warn(rust_2018_idioms, missing_docs)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

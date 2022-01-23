@@ -1,16 +1,16 @@
-name: balloon
+name: balloon-hash
 
 on:
   pull_request:
     paths:
-      - "balloon/**"
+      - "balloon-hash/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: balloon
+    working-directory: balloon-hash
 
 env:
   CARGO_INCREMENTAL: 0
