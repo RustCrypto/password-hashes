@@ -1,4 +1,4 @@
-# RustCrypto: Balloon
+# RustCrypto: Balloon Hash
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -10,6 +10,19 @@
 Pure Rust implementation of the [Balloon] password hashing function.
 
 [Documentation][docs-link]
+
+## About
+
+This crate contains an implementation of the Balloon password hashing
+function as specified in the paper
+[Balloon Hashing: A Memory-Hard Function Providing Provable Protection Against Sequential Attacks][paper].
+
+This algorithm is first practical password hashing function that provides:
+
+- Memory hardness which is proven in the random-oracle model
+- Password-independent access
+- Performance which meets or exceeds the best heuristically secure
+  password-hashing algorithms
 
 ## Minimum Supported Rust Version
 
@@ -54,3 +67,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [Balloon]: https://en.wikipedia.org/wiki/Balloon_hashing
+[Paper]: https://eprint.iacr.org/2016/027.pdf

@@ -1,6 +1,6 @@
 [package]
 name = "balloon-hash"
-version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
 description = "Pure Rust implementation of the Balloon password hashing function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -9,7 +9,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/balloon"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
 edition = "2021"
-rust-version = "1.56.1"
+rust-version = "1.56"
 readme = "README.md"
 
 [dependencies]

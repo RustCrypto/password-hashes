@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "argon2",
-    "balloon",
+    "balloon-hash",
     "bcrypt-pbkdf",
     "pbkdf2",
     "scrypt",
