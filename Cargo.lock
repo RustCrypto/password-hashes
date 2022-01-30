@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "argon2"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64ct",
  "blake2",
