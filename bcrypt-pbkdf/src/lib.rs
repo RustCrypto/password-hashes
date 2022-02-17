@@ -8,7 +8,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/bcrypt-pbkdf/0.7.2"
+    html_root_url = "https://docs.rs/bcrypt-pbkdf/0.8.0"
 )]
 
 extern crate alloc;
@@ -54,7 +54,7 @@ fn bhash(sha2_pass: &Output<Sha512>, sha2_salt: &Output<Sha512>) -> Output<Bhash
 
     for _ in 0..64 {
         for i in (0..BHASH_WORDS).step_by(2) {
-            let (l, r) = blowfish.bc_encrypt(cdata[i], cdata[i + 1]);
+            let [l, r] = blowfish.bc_encrypt([cdata[i], cdata[i + 1]]);
             cdata[i] = l;
             cdata[i + 1] = r;
         }

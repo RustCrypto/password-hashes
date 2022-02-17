@@ -3,10 +3,7 @@ use core::mem::size_of;
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
-use {
-    core::convert::{TryFrom, TryInto},
-    password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash},
-};
+use password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash};
 
 const RECOMMENDED_LOG_N: u8 = 15;
 const RECOMMENDED_R: u32 = 8;

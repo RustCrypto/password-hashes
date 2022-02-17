@@ -39,6 +39,20 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features password-hash
       - run: cargo build --target ${{ matrix.target }} --release
 
+  minimal-versions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        profile: minimal
+    - run: rm ../Cargo.toml
+    - run: cargo update -Z minimal-versions
+    - run: cargo test --release
+    - run: cargo test --release --all-features
+
   test:
     runs-on: ubuntu-latest
     strategy:

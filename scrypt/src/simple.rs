@@ -1,7 +1,6 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::{scrypt, Params};
-use core::convert::TryInto;
 use password_hash::{Decimal, Error, Ident, Output, PasswordHash, PasswordHasher, Result, Salt};
 
 /// Algorithm identifier

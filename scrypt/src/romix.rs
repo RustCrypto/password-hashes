@@ -1,8 +1,3 @@
-use core::convert::TryInto;
-
-/// The Salsa20/8 core function
-type Salsa20_8 = salsa20::Core<salsa20::R8>;
-
 /// Execute the ROMix operation in-place.
 /// b - the data to operate on
 /// v - a temporary variable to store the vector V
@@ -39,6 +34,13 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
 /// input - the input vector. The length must be a multiple of 128.
 /// output - the output vector. Must be the same length as input.
 fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
+    use salsa20::{
+        cipher::{typenum::U4, StreamCipherCore},
+        SalsaCore,
+    };
+
+    type Salsa20_8 = SalsaCore<U4>;
+
     let mut x = [0u8; 64];
     x.copy_from_slice(&input[input.len() - 64..]);
 
@@ -53,7 +55,7 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
             *b = u32::from_le_bytes(c.try_into().unwrap());
         }
 
-        Salsa20_8::from(t2).generate(&mut x);
+        Salsa20_8::from_raw_state(t2).write_keystream_block((&mut x).into());
 
         let pos = if i % 2 == 0 {
             (i / 2) * 64

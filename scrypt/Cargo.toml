@@ -1,20 +1,21 @@
 [package]
 name = "scrypt"
-version = "0.8.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.9.0" # Also update html_root_url in lib.rs when bumping this
+description = "Scrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
-description = "Scrypt password-based key derivation function"
+edition = "2021"
+rust-version = "1.56"
+readme = "README.md"
 documentation = "https://docs.rs/scrypt"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/scrypt"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography"]
-edition = "2018"
-readme = "README.md"
 
 [dependencies]
-hmac = "0.12"
-pbkdf2 = { version = "0.10", default-features = false, path = "../pbkdf2" }
-salsa20 = { version = "0.9", default-features = false, features = ["expose-core"] }
+hmac = "0.12.1"
+pbkdf2 = { version = "0.10.1", default-features = false, path = "../pbkdf2" }
+salsa20 = { version = "0.10.2", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 
 # optional dependencies
