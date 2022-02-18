@@ -28,7 +28,7 @@
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "password-hash", feature = "std"))]
+//! # #[cfg(all(feature = "simple", feature = "std"))]
 //! # {
 //! use pbkdf2::{
 //!     password_hash::{
