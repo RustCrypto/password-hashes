@@ -224,38 +224,3 @@ where
         Self::new(Algorithm::default(), params, None)
     }
 }
-
-#[cfg(feature = "password-hash")]
-#[test]
-fn hash_simple_retains_configured_params() {
-    use sha2::Sha256;
-
-    /// Example password only: don't use this as a real password!!!
-    const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
-
-    /// Example salt value. Don't use a static salt value!!!
-    const EXAMPLE_SALT: &str = "examplesalt";
-
-    // Non-default but valid parameters
-    let t_cost = 4;
-    let s_cost = 2048;
-    let p_cost = 2;
-
-    let params = Params::new(s_cost, t_cost, p_cost).unwrap();
-    let hasher = Balloon::<Sha256>::new(Algorithm::default(), params, None);
-    let hash = hasher
-        .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
-        .unwrap();
-
-    assert_eq!(hash.version.unwrap(), 1);
-
-    for &(param, value) in &[("t", t_cost), ("s", s_cost), ("p", p_cost)] {
-        assert_eq!(
-            hash.params
-                .get(param)
-                .and_then(|p| p.decimal().ok())
-                .unwrap(),
-            value
-        );
-    }
-}

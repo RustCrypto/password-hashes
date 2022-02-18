@@ -4,7 +4,7 @@
 //! `draft-irtf-cfrg-argon2-12` Section 5:
 //! <https://datatracker.ietf.org/doc/draft-irtf-cfrg-argon2/>
 
-#![cfg(feature = "alloc")]
+#![cfg(all(feature = "alloc", feature = "password-hash"))]
 
 // TODO(tarcieri): test full set of vectors from the reference implementation:
 // https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c

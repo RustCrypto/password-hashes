@@ -14,7 +14,7 @@
 //!
 //! ```
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "password-hash", feature = "std"))]
+//! # #[cfg(all(feature = "simple", feature = "std"))]
 //! # {
 //! use scrypt::{
 //!     password_hash::{
