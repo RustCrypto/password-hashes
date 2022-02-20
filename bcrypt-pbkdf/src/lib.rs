@@ -126,12 +126,13 @@ impl Drop for Bhash {
 /// - `Err(Error::InvalidRounds)` if `rounds == 0`.
 /// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
 pub fn bcrypt_pbkdf(
-    passphrase: &str,
+    passphrase: impl AsRef<[u8]>,
     salt: &[u8],
     rounds: u32,
     output: &mut [u8],
 ) -> Result<(), Error> {
     // Validate inputs in same way as OpenSSH implementation
+    let passphrase = passphrase.as_ref();
     if passphrase.is_empty() || salt.is_empty() {
         return Err(errors::Error::InvalidParamLen);
     } else if rounds == 0 {
@@ -153,12 +154,7 @@ pub fn bcrypt_pbkdf(
     };
 
     // Run the regular PBKDF2 algorithm with bhash as the MAC.
-    pbkdf2::pbkdf2::<Bhash>(
-        &Sha512::digest(passphrase.as_bytes()),
-        salt,
-        rounds,
-        generated,
-    );
+    pbkdf2::pbkdf2::<Bhash>(&Sha512::digest(passphrase), salt, rounds, generated);
 
     // Apply the bcrypt_pbkdf non-linear transformation on the output.
     for (i, out_byte) in output.iter_mut().enumerate() {
