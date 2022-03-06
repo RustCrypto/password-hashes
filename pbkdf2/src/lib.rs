@@ -7,7 +7,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = { version = "0.7", default-features = false }
+//! pbkdf2 = { version = "0.10", default-features = false }
 //! ```
 //!
 //! # Usage (simple with default params)
@@ -20,7 +20,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = "0.7"
+//! pbkdf2 = "0.10"
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
