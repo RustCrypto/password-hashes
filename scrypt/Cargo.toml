@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.9.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.10.0-pre" # Also update html_root_url in lib.rs when bumping this
 description = "Scrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -14,15 +14,15 @@ categories = ["cryptography"]
 
 [dependencies]
 hmac = "0.12.1"
-pbkdf2 = { version = "0.10.1", default-features = false, path = "../pbkdf2" }
+pbkdf2 = { version = "=0.11.0-pre", default-features = false, path = "../pbkdf2" }
 salsa20 = { version = "0.10.2", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 
 # optional dependencies
-password-hash = { version = "0.3", default-features = false, features = ["rand_core"], optional = true }
+password-hash = { version = "0.4", default-features = false, features = ["rand_core"], optional = true }
 
 [dev-dependencies]
-password-hash = { version = "0.3", features = ["rand_core"] }
+password-hash = { version = "0.4", features = ["rand_core"] }
 
 [features]
 default = ["simple", "std"]

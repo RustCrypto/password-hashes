@@ -4,7 +4,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/balloon-hash/0.1.1"
+    html_root_url = "https://docs.rs/balloon-hash/0.2.0-pre"
 )]
 #![warn(rust_2018_idioms, missing_docs)]
 
@@ -18,7 +18,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! balloon-hash = "0.1"
+//! balloon-hash = "0.2"
 //! rand_core = { version = "0.6", features = ["std"] }
 //! sha2 = "0.9"
 //! ```

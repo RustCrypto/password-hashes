@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "argon2"
-version = "0.3.4"
+version = "0.4.0-pre"
 dependencies = [
  "base64ct",
  "blake2",
@@ -22,7 +22,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "balloon-hash"
-version = "0.1.1"
+version = "0.2.0-pre"
 dependencies = [
  "crypto-bigint",
  "digest",
@@ -276,9 +276,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d791538a6dcc1e7cb7fe6f6b58aca40e7f79403c45b2bc274008b5e647af1d8"
+checksum = "aa26fd5c3cd6e6bb83dd9c0cef40fbeb77d7596339ca46c18a6f66919bb07769"
 dependencies = [
  "base64ct",
  "rand_core",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.10.1"
+version = "0.11.0-pre"
 dependencies = [
  "digest",
  "hex-literal",
@@ -377,7 +377,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "scrypt"
-version = "0.9.0"
+version = "0.10.0-pre"
 dependencies = [
  "hmac",
  "password-hash",

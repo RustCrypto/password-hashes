@@ -7,7 +7,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = { version = "0.10", default-features = false }
+//! pbkdf2 = { version = "0.11", default-features = false }
 //! ```
 //!
 //! # Usage (simple with default params)
@@ -57,7 +57,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/pbkdf2/0.10.1"
+    html_root_url = "https://docs.rs/pbkdf2/0.11.0-pre"
 )]
 
 #[cfg(feature = "std")]

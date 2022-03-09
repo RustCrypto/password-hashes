@@ -19,13 +19,13 @@ use sha1::Sha1;
 
 /// PBKDF2 (SHA-1)
 #[cfg(feature = "sha1")]
-pub const PBKDF2_SHA1: Ident = Ident::new("pbkdf2");
+pub const PBKDF2_SHA1: Ident = Ident::new_unwrap("pbkdf2");
 
 /// PBKDF2 (SHA-256)
-pub const PBKDF2_SHA256: Ident = Ident::new("pbkdf2-sha256");
+pub const PBKDF2_SHA256: Ident = Ident::new_unwrap("pbkdf2-sha256");
 
 /// PBKDF2 (SHA-512)
-pub const PBKDF2_SHA512: Ident = Ident::new("pbkdf2-sha512");
+pub const PBKDF2_SHA512: Ident = Ident::new_unwrap("pbkdf2-sha512");
 
 /// PBKDF2 type for use with [`PasswordHasher`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

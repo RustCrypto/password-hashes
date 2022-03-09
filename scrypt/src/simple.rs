@@ -4,7 +4,7 @@ use crate::{scrypt, Params};
 use password_hash::{Decimal, Error, Ident, Output, PasswordHash, PasswordHasher, Result, Salt};
 
 /// Algorithm identifier
-pub const ALG_ID: Ident = Ident::new("scrypt");
+pub const ALG_ID: Ident = Ident::new_unwrap("scrypt");
 
 /// scrypt type for use with [`PasswordHasher`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
