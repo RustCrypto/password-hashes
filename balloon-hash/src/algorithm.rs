@@ -32,12 +32,12 @@ impl Algorithm {
     /// Balloon algorithm identifier
     #[cfg(feature = "password-hash")]
     #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-    pub const BALLOON_IDENT: Ident<'static> = Ident::new("balloon");
+    pub const BALLOON_IDENT: Ident<'static> = Ident::new_unwrap("balloon");
 
     /// BalloonM algorithm identifier
     #[cfg(feature = "password-hash")]
     #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-    pub const BALLOON_M_IDENT: Ident<'static> = Ident::new("balloon-m");
+    pub const BALLOON_M_IDENT: Ident<'static> = Ident::new_unwrap("balloon-m");
 
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {

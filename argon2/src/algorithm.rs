@@ -12,17 +12,17 @@ use {core::convert::TryFrom, password_hash::Ident};
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2D_IDENT: Ident<'_> = Ident::new("argon2d");
+pub const ARGON2D_IDENT: Ident<'_> = Ident::new_unwrap("argon2d");
 
 /// Argon2i algorithm identifier
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2I_IDENT: Ident<'_> = Ident::new("argon2i");
+pub const ARGON2I_IDENT: Ident<'_> = Ident::new_unwrap("argon2i");
 
 /// Argon2id algorithm identifier
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const ARGON2ID_IDENT: Ident<'_> = Ident::new("argon2id");
+pub const ARGON2ID_IDENT: Ident<'_> = Ident::new_unwrap("argon2id");
 
 /// Argon2 primitive type: variants of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
