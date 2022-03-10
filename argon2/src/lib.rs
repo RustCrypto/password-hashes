@@ -1,20 +1,17 @@
-//! Pure Rust implementation of the [Argon2] password hashing function.
-//!
-//! # About
-//!
-//! Argon2 is a memory-hard [key derivation function] chosen as the winner of
-//! the [Password Hashing Competition] in July 2015.
-//!
-//! It provides three algorithmic variants (chosen via the [`Algorithm`] enum):
-//!
-//! - **Argon2d**: maximizes resistance to GPU cracking attacks
-//! - **Argon2i**: optimized to resist side-channel attacks
-//! - **Argon2id**: (default) hybrid version combining both Argon2i and Argon2d
-//!
-//! Support is provided for embedded (i.e. `no_std`) environments, including
-//! ones without `alloc` support.
-//!
-//! # Usage (simple with default params)
+#![no_std]
+// TODO(tarcieri): safe parallel implementation
+// See: https://github.com/RustCrypto/password-hashes/issues/154
+#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc = include_str!("../README.md")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_root_url = "https://docs.rs/argon2/0.4.0-pre"
+)]
+#![warn(rust_2018_idioms, missing_docs)]
+
+//! ## Usage (simple with default params)
 //!
 //! Note: this example requires the `rand_core` crate with the `std` feature
 //! enabled for `rand_core::OsRng` (embedded platforms can substitute their
@@ -61,22 +58,6 @@
 //! # Ok(())
 //! # }
 //! ```
-//!
-//! [Argon2]: https://en.wikipedia.org/wiki/Argon2
-//! [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
-//! [Password Hashing Competition]: https://www.password-hashing.net/
-
-#![no_std]
-// TODO(tarcieri): safe parallel implementation
-// See: https://github.com/RustCrypto/password-hashes/issues/154
-#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_root_url = "https://docs.rs/argon2/0.4.0-pre"
-)]
-#![warn(rust_2018_idioms, missing_docs)]
 
 #[cfg(feature = "alloc")]
 #[macro_use]
@@ -115,10 +96,7 @@ use crate::{
 use blake2::{digest::Output, Blake2b512, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use {
-    core::convert::TryFrom,
-    password_hash::{Decimal, Ident, ParamsString, Salt},
-};
+use password_hash::{Decimal, Ident, ParamsString, Salt};
 
 /// Maximum password length in bytes.
 pub const MAX_PWD_LEN: usize = 0xFFFFFFFF;

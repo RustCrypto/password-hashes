@@ -1,12 +1,7 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::pbkdf2;
-use core::cmp::Ordering;
-use core::{
-    convert::{TryFrom, TryInto},
-    fmt::{self, Display},
-    str::FromStr,
-};
+use core::{cmp::Ordering, fmt, str::FromStr};
 use hmac::Hmac;
 use password_hash::{
     errors::InvalidValue, Decimal, Error, Ident, Output, ParamsString, PasswordHash,
@@ -123,7 +118,7 @@ impl AsRef<str> for Algorithm {
     }
 }
 
-impl Display for Algorithm {
+impl fmt::Display for Algorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }

@@ -11,6 +11,20 @@ Pure Rust implementation of the [Argon2] password hashing function.
 
 [Documentation][docs-link]
 
+# About
+
+Argon2 is a memory-hard [key derivation function] chosen as the winner of
+the [Password Hashing Competition] in July 2015.
+
+It implements the following three three algorithmic variants:
+
+- **Argon2d**: maximizes resistance to GPU cracking attacks
+- **Argon2i**: optimized to resist side-channel attacks
+- **Argon2id**: (default) hybrid version combining both Argon2i and Argon2d
+
+Support is provided for embedded (i.e. `no_std`) environments, including
+ones without `alloc` support.
+
 ## Minimum Supported Rust Version
 
 Rust **1.57** or higher.
@@ -54,3 +68,5 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [Argon2]: https://en.wikipedia.org/wiki/Argon2
+[key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
+[Password Hashing Competition]: https://www.password-hashing.net/

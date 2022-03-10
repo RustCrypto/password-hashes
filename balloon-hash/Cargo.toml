@@ -8,9 +8,9 @@ documentation = "https://docs.rs/balloon-hash"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/balloon-hash"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
-edition = "2021"
-rust-version = "1.56"
 readme = "README.md"
+edition = "2021"
+rust-version = "1.57"
 
 [dependencies]
 digest = { version = "0.10.3", default-features = false }

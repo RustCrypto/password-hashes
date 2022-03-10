@@ -4,13 +4,13 @@ version = "0.10.0-pre" # Also update html_root_url in lib.rs when bumping this
 description = "Scrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
-edition = "2021"
-rust-version = "1.56"
 readme = "README.md"
 documentation = "https://docs.rs/scrypt"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/scrypt"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography"]
+edition = "2021"
+rust-version = "1.56"
 
 [dependencies]
 hmac = "0.12.1"
