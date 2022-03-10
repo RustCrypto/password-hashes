@@ -7,7 +7,7 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use {core::convert::TryFrom, password_hash::Ident};
+use password_hash::Ident;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]

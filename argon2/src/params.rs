@@ -2,13 +2,10 @@
 
 use crate::{Error, Result, SYNC_POINTS};
 use base64ct::{Base64Unpadded as B64, Encoding};
-use core::{convert::TryFrom, str::FromStr};
+use core::str::FromStr;
 
 #[cfg(feature = "password-hash")]
-use {
-    core::convert::TryInto,
-    password_hash::{ParamsString, PasswordHash},
-};
+use password_hash::{ParamsString, PasswordHash};
 
 /// Argon2 password hash parameters.
 ///
@@ -127,7 +124,7 @@ impl Params {
     /// cryptographical standpoint).
     ///
     /// On top of that, this field is not longer part of the argon2 standard
-    /// (see: https://github.com/P-H-C/phc-winner-argon2/pull/173), and should
+    /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
     pub fn keyid(&self) -> &[u8] {
         self.keyid.as_bytes()
@@ -138,7 +135,7 @@ impl Params {
     /// Defaults to an empty byte slice.
     ///
     /// This field is not longer part of the argon2 standard
-    /// (see: https://github.com/P-H-C/phc-winner-argon2/pull/173), and should
+    /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
     pub fn data(&self) -> &[u8] {
         self.data.as_bytes()

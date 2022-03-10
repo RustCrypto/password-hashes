@@ -11,8 +11,9 @@ documentation = "https://docs.rs/argon2"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/argon2"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
-edition = "2018"
 readme = "README.md"
+edition = "2021"
+rust-version = "1.57"
 
 [dependencies]
 base64ct = "1"

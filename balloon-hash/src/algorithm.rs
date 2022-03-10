@@ -7,7 +7,7 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use {core::convert::TryFrom, password_hash::Ident};
+use password_hash::Ident;
 
 /// Balloon primitive type: variants of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]

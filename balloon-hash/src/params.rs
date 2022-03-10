@@ -2,11 +2,9 @@
 
 use crate::{Error, Result};
 use core::num::NonZeroU32;
+
 #[cfg(feature = "password-hash")]
-use {
-    core::convert::TryFrom,
-    password_hash::{errors::InvalidValue, ParamsString, PasswordHash},
-};
+use password_hash::{errors::InvalidValue, ParamsString, PasswordHash};
 
 /// Balloon password hash parameters.
 ///

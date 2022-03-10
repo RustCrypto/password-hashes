@@ -9,7 +9,6 @@ use pbkdf2::{
     password_hash::{PasswordHasher, Salt},
     Algorithm, Params, Pbkdf2,
 };
-use std::convert::TryFrom;
 
 const PASSWORD: &str = "password";
 const SALT_B64: &str = "c2FsdA"; // "salt"

@@ -8,8 +8,9 @@ documentation = "https://docs.rs/pbkdf2"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/pbkdf2"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography", "no-std"]
-edition = "2018"
 readme = "README.md"
+edition = "2021"
+rust-version = "1.57"
 
 [dependencies]
 digest = { version = "0.10.3", features = ["mac"] }

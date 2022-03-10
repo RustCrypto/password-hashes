@@ -57,7 +57,6 @@ pub use crate::{
 };
 
 use alloc::{string::String, vec::Vec};
-use core::convert::TryInto;
 use sha2::{Digest, Sha512};
 
 #[cfg(feature = "simple")]

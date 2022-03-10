@@ -1,7 +1,6 @@
 //! Version of the algorithm.
 
 use crate::{Error, Result};
-use core::convert::TryFrom;
 
 /// Version of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]

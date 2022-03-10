@@ -15,8 +15,11 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+mod errors;
+
+pub use errors::Error;
+
 use blowfish::Blowfish;
-use core::convert::TryInto;
 use sha2::{
     digest::{
         crypto_common::{Key, KeyInit, KeySizeUser},
@@ -25,12 +28,9 @@ use sha2::{
     },
     Digest, Sha512,
 };
+
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
-
-mod errors;
-
-pub use errors::Error;
 
 const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;

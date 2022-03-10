@@ -73,18 +73,18 @@ pub use crate::{
     error::{Error, Result},
     params::Params,
 };
+
+#[cfg(feature = "password-hash")]
+#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
+pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
+
 use core::marker::PhantomData;
 use crypto_bigint::ArrayDecoding;
 use digest::generic_array::GenericArray;
 use digest::{Digest, FixedOutputReset};
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
+
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use {
-    core::convert::TryFrom,
-    password_hash::{Decimal, Ident, ParamsString, Salt},
-};
+use password_hash::{Decimal, Ident, ParamsString, Salt};
 
 /// Balloon context.
 ///

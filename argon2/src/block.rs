@@ -1,7 +1,6 @@
 //! Argon2 memory block functions
 
 use core::{
-    convert::TryInto,
     num::Wrapping,
     ops::{BitXor, BitXorAssign, Index, IndexMut},
     slice,
