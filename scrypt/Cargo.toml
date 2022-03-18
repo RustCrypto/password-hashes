@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.10.0-pre"
+version = "0.10.0"
 description = "Scrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -10,7 +10,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/scrypt"
 keywords = ["crypto", "password", "hashing"]
 categories = ["cryptography"]
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.57"
 
 [dependencies]
 hmac = "0.12.1"
