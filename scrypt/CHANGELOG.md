@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 (2022-03-18)
+### Changed
+- Bump `password-hash` dependency to v0.4; MSRV 1.57 ([#283])
+- Bump `pbkdf2` dependency to v0.11 ([#291])
+
+[#283]: https://github.com/RustCrypto/password-hashes/pull/283
+[#291]: https://github.com/RustCrypto/password-hashes/pull/291
+
 ## 0.9.0 (2022-02-17)
 ### Changed
 - Bump `salsa20` dependency to v0.10, edition to 2021, and MSRV to 1.56 ([#273])
