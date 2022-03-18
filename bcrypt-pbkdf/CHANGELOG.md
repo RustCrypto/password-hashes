@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.0 (2022-03-18)
+### Changed
+- 2021 edition upgrade ([#284])
+- Bump `pbkdf2` dependency to v0.11; MSRV 1.57 ([#291])
+
+[#284]: https://github.com/RustCrypto/password-hashes/pull/284
+[#291]: https://github.com/RustCrypto/password-hashes/pull/291
+
 ## 0.8.1 (2022-02-20)
 ### Changed
 - Change `passphrase` to be `impl AsRef<[u8]>` allowing non-UTF8 passphrases ([#277])
