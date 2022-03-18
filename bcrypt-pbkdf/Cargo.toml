@@ -1,6 +1,6 @@
 [package]
 name = "bcrypt-pbkdf"
-version = "0.9.0-pre" # Also update html_root_url in lib.rs when bumping this
+version = "0.9.0" # Also update html_root_url in lib.rs when bumping this
 description = "bcrypt-pbkdf password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
