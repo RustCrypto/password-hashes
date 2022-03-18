@@ -56,7 +56,7 @@ impl Block {
             // block_tmp = ref_block + prev_block + next_block
         }
 
-        /// Designed by the Lyra PHC team
+        /// Note: designed by the Lyra PHC team
         fn blake2_mult(x: u64, y: u64) -> u64 {
             let m = 0xFFFFFFFF;
             let xy = Wrapping((x & m) * (y & m)) * Wrapping(2);
@@ -64,7 +64,6 @@ impl Block {
         }
 
         /// Blake2 round function
-        // TODO(tarcieri): use the `blake2` crate
         macro_rules! blake2_round {
             (
                 $v0:expr, $v1:expr, $v2:expr, $v3:expr, $v4:expr, $v5:expr, $v6:expr, $v7:expr,
