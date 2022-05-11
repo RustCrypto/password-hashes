@@ -16,7 +16,7 @@ rust-version = "1.57"
 digest = { version = "0.10.3", features = ["mac"] }
 
 # optional dependencies
-rayon = { version = "1.2", optional = true }
+rayon = { version = "1.5", optional = true }
 password-hash = { version = "0.4", default-features = false, optional = true, features = ["rand_core"]  }
 hmac = { version = "0.12", default-features = false, optional = true }
 sha1 = { version = "0.10", package = "sha-1", default-features = false, optional = true }

@@ -18,7 +18,7 @@ crypto-bigint = { version = "0.4", default-features = false, features = ["generi
 
 # optional dependencies
 password-hash = { version = "0.4", default-features = false, optional = true }
-rayon = { version = "1.2", optional = true }
+rayon = { version = "1.5", optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
