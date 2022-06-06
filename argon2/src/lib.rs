@@ -97,6 +97,9 @@ use byte_slice_cast::{AsByteSlice, AsMutByteSlice};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 /// Maximum password length in bytes.
 pub const MAX_PWD_LEN: usize = 0xFFFFFFFF;
 
