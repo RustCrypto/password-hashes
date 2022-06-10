@@ -107,9 +107,7 @@ pub const MIN_SALT_LEN: usize = 8;
 pub const MAX_SALT_LEN: usize = 0xFFFFFFFF;
 
 /// Recommended salt length for password hashing in bytes.
-#[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-pub const RECOMMENDED_SALT_LEN: usize = password_hash::Salt::RECOMMENDED_LENGTH;
+pub const RECOMMENDED_SALT_LEN: usize = 16;
 
 /// Maximum secret key length in bytes.
 pub const MAX_SECRET_LEN: usize = 0xFFFFFFFF;
