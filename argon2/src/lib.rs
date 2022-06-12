@@ -20,7 +20,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! argon2 = "0.3"
+//! argon2 = "0.4"
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
