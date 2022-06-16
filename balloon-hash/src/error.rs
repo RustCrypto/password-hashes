@@ -10,6 +10,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 /// Error type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum Error {
     /// Algorithm identifier invalid.
     AlgorithmInvalid,
