@@ -139,6 +139,8 @@ where
     }
 
     /// Hash a password and associated parameters.
+    ///
+    /// The `output` has to have the same size as the hash output size: `D::OutputSize`.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
@@ -162,7 +164,7 @@ where
     ///   to have it allocated for them.
     /// - `no_std` users on "heapless" targets can use an array of the [`GenericArray`] type
     ///   to stack allocate this buffer. It needs a minimum size of `s_cost` or `s_cost * p_cost`
-    ///   with the `parallel` feature enabled.
+    ///   with the `parallel` crate feature enabled.
     pub fn hash_with_memory(
         &self,
         pwd: &[u8],
@@ -176,6 +178,8 @@ where
     }
 
     /// Hash a password and associated parameters into the provided `output` buffer.
+    ///
+    /// The `output` has to have the same size as the hash output size: `D::OutputSize`.
     ///
     /// See [`Balloon::hash_with_memory`] for more details.
     pub fn hash_into_with_memory(
