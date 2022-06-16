@@ -15,11 +15,11 @@ rust-version = "1.57"
 [dependencies]
 digest = { version = "0.10.3", default-features = false }
 crypto-bigint = { version = "0.4", default-features = false, features = ["generic-array"] }
-zeroize = { version = "1", default-features = false }
 
 # optional dependencies
 password-hash = { version = "0.4", default-features = false, optional = true }
 rayon = { version = "1.5", optional = true }
+zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"

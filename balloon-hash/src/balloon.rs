@@ -4,6 +4,8 @@ use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::generic_array::GenericArray;
 use digest::{Digest, FixedOutputReset};
+
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 pub fn balloon<D: Digest + FixedOutputReset>(
@@ -38,9 +40,11 @@ where
         let mut output = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(1))?;
 
         for thread in 2..=u64::from(params.p_cost.get()) {
+            #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
             let mut hash =
                 hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
             output.iter_mut().zip(&hash).for_each(|(a, b)| *a ^= b);
+            #[cfg(feature = "zeroize")]
             hash.zeroize();
         }
 
@@ -65,12 +69,16 @@ where
                 .map_with((params, secret), |(params, secret), (thread, memory)| {
                     hash_internal::<D>(pwd, salt, *secret, *params, memory, Some(thread))
                 })
-                .try_reduce(GenericArray::default, |mut a, mut b| {
-                    a.iter_mut().zip(&b).for_each(|(a, b)| *a ^= b);
-                    b.zeroize();
+                .try_reduce(
+                    GenericArray::default,
+                    |mut a, #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))] mut b| {
+                        a.iter_mut().zip(&b).for_each(|(a, b)| *a ^= b);
+                        #[cfg(feature = "zeroize")]
+                        b.zeroize();
 
-                    Ok(a)
-                })
+                        Ok(a)
+                    },
+                )
         }?
     };
 
@@ -206,6 +214,7 @@ where
     // Step 3. Extract output from buffer.
     // return buf[s_cost-1]
     let out = buf.last().unwrap().clone();
+    #[cfg(feature = "zeroize")]
     buf.iter_mut().for_each(|block| block.zeroize());
 
     Ok(out)
