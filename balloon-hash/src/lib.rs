@@ -131,16 +131,30 @@ where
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<GenericArray<u8, D::OutputSize>> {
+        let mut output = GenericArray::default();
+        self.hash_into(pwd, salt, &mut output)?;
+
+        Ok(output)
+    }
+
+    /// Hash a password and associated parameters.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn hash_into(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        output: &mut GenericArray<u8, D::OutputSize>,
+    ) -> Result<()> {
         #[cfg(not(feature = "parallel"))]
         let mut memory = alloc::vec![GenericArray::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
         let mut memory = alloc::vec![GenericArray::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
 
-        #[cfg_attr(not(feature = "zeroize"), allow(clippy::let_and_return))]
-        let output = self.hash_with_memory(pwd, salt, &mut memory);
+        self.hash_into_with_memory(pwd, salt, &mut memory, output)?;
         #[cfg(feature = "zeroize")]
         memory.iter_mut().for_each(|block| block.zeroize());
-        output
+        Ok(())
     }
 
     /// Hash a password and associated parameters.
@@ -159,12 +173,32 @@ where
         salt: &[u8],
         memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
     ) -> Result<GenericArray<u8, D::OutputSize>> {
+        let mut output = GenericArray::default();
+        self.hash_into_with_memory(pwd, salt, memory_blocks, &mut output)?;
+
+        Ok(output)
+    }
+
+    /// Hash a password and associated parameters into the provided `output` buffer.
+    ///
+    /// See [`Balloon::hash_with_memory`] for more details.
+    pub fn hash_into_with_memory(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
+        output: &mut GenericArray<u8, D::OutputSize>,
+    ) -> Result<()> {
         match self.algorithm {
             Algorithm::Balloon => {
-                balloon::balloon::<D>(pwd, salt, self.secret, self.params, memory_blocks)
+                balloon::balloon::<D>(pwd, salt, self.secret, self.params, memory_blocks).map(
+                    |hash| {
+                        output.copy_from_slice(&hash);
+                    },
+                )
             }
             Algorithm::BalloonM => {
-                balloon::balloon_m::<D>(pwd, salt, self.secret, self.params, memory_blocks)
+                balloon::balloon_m::<D>(pwd, salt, self.secret, self.params, memory_blocks, output)
             }
         }
     }
