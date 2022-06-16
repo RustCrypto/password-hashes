@@ -84,6 +84,7 @@ pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 use core::marker::PhantomData;
 use crypto_bigint::ArrayDecoding;
 use digest::generic_array::GenericArray;
+use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
@@ -140,12 +141,7 @@ where
     /// Hash a password and associated parameters.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn hash_into(
-        &self,
-        pwd: &[u8],
-        salt: &[u8],
-        output: &mut GenericArray<u8, D::OutputSize>,
-    ) -> Result<()> {
+    pub fn hash_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
         #[cfg(not(feature = "parallel"))]
         let mut memory = alloc::vec![GenericArray::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
@@ -187,8 +183,14 @@ where
         pwd: &[u8],
         salt: &[u8],
         memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
-        output: &mut GenericArray<u8, D::OutputSize>,
+        output: &mut [u8],
     ) -> Result<()> {
+        let output = if output.len() == D::OutputSize::USIZE {
+            GenericArray::from_mut_slice(output)
+        } else {
+            return Err(Error::OutputSize);
+        };
+
         match self.algorithm {
             Algorithm::Balloon => {
                 balloon::balloon::<D>(pwd, salt, self.secret, self.params, memory_blocks).map(

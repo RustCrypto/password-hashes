@@ -21,6 +21,8 @@ pub enum Error {
     ThreadsTooMany,
     /// Time cost is too small.
     TimeTooSmall,
+    /// Output size not correct.
+    OutputSize,
 }
 
 impl fmt::Display for Error {
@@ -31,6 +33,7 @@ impl fmt::Display for Error {
             Error::ThreadsTooFew => "not enough threads",
             Error::ThreadsTooMany => "too many threads",
             Error::TimeTooSmall => "time cost is too small",
+            Error::OutputSize => "output size not correct",
         })
     }
 }
@@ -45,6 +48,7 @@ impl From<Error> for password_hash::Error {
             Error::ThreadsTooFew => InvalidValue::TooShort.param_error(),
             Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
             Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
+            Error::OutputSize => password_hash::Error::OutputTooShort,
         }
     }
 }
