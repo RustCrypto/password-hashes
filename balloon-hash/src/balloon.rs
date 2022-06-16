@@ -4,6 +4,7 @@ use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::generic_array::GenericArray;
 use digest::{Digest, FixedOutputReset};
+use zeroize::Zeroize;
 
 pub fn balloon<D: Digest + FixedOutputReset>(
     pwd: &[u8],
@@ -34,11 +35,13 @@ where
 {
     #[cfg(not(feature = "parallel"))]
     let output = {
-        let mut output = GenericArray::<_, D::OutputSize>::default();
+        let mut output = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(1))?;
 
-        for thread in 1..=u64::from(params.p_cost.get()) {
-            let hash = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
-            output = output.into_iter().zip(hash).map(|(a, b)| a ^ b).collect();
+        for thread in 2..=u64::from(params.p_cost.get()) {
+            let mut hash =
+                hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
+            output.iter_mut().zip(&hash).for_each(|(a, b)| *a ^= b);
+            hash.zeroize();
         }
 
         output
@@ -62,8 +65,11 @@ where
                 .map_with((params, secret), |(params, secret), (thread, memory)| {
                     hash_internal::<D>(pwd, salt, *secret, *params, memory, Some(thread))
                 })
-                .try_reduce(GenericArray::default, |a, b| {
-                    Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
+                .try_reduce(GenericArray::default, |mut a, mut b| {
+                    a.iter_mut().zip(&b).for_each(|(a, b)| *a ^= b);
+                    b.zeroize();
+
+                    Ok(a)
                 })
         }?
     };
@@ -199,5 +205,8 @@ where
 
     // Step 3. Extract output from buffer.
     // return buf[s_cost-1]
-    Ok(buf.last().unwrap().clone())
+    let out = buf.last().unwrap().clone();
+    buf.iter_mut().for_each(|block| block.zeroize());
+
+    Ok(out)
 }
