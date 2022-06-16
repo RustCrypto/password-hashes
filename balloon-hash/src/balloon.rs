@@ -38,16 +38,15 @@ where
     #[cfg(not(feature = "parallel"))]
     let output = {
         let mut output = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(1))?;
+        let mut hash = GenericArray::default();
 
         for thread in 2..=u64::from(params.p_cost.get()) {
-            #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-            let mut hash =
-                hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
+            hash = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
             output.iter_mut().zip(&hash).for_each(|(a, b)| *a ^= b);
-            #[cfg(feature = "zeroize")]
-            hash.zeroize();
         }
 
+        #[cfg(feature = "zeroize")]
+        hash.zeroize();
         output
     };
 
