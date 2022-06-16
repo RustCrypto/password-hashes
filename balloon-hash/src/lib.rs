@@ -22,6 +22,10 @@
 //! sha2 = "0.9"
 //! ```
 //!
+//! The `zeroize` crate feature will zeroize allocated memory created when
+//! using the [`Balloon::hash`] function. It will do nothing when the `alloc`
+//! crate feature is not active.
+//!
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
@@ -86,7 +90,7 @@ use digest::{Digest, FixedOutputReset};
 use password_hash::{Decimal, Ident, ParamsString, Salt};
 
 #[cfg(feature = "zeroize")]
-use zeroize_::Zeroize;
+use zeroize::Zeroize;
 
 /// Balloon context.
 ///
