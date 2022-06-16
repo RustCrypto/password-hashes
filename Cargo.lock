@@ -30,6 +30,7 @@ dependencies = [
  "password-hash",
  "rayon",
  "sha2",
+ "zeroize",
 ]
 
 [[package]]

@@ -22,6 +22,10 @@
 //! sha2 = "0.9"
 //! ```
 //!
+//! The `zeroize` crate feature will zeroize allocated memory created when
+//! using the [`Balloon::hash`] function. It will do nothing when the `alloc`
+//! crate feature is not active.
+//!
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
@@ -85,6 +89,9 @@ use digest::{Digest, FixedOutputReset};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 /// Balloon context.
 ///
 /// This is the primary type of this crate's API, and contains the following:
@@ -128,7 +135,12 @@ where
         let mut memory = alloc::vec![GenericArray::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
         let mut memory = alloc::vec![GenericArray::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
-        self.hash_with_memory(pwd, salt, &mut memory)
+
+        #[cfg_attr(not(feature = "zeroize"), allow(clippy::let_and_return))]
+        let output = self.hash_with_memory(pwd, salt, &mut memory);
+        #[cfg(feature = "zeroize")]
+        memory.iter_mut().for_each(|block| block.zeroize());
+        output
     }
 
     /// Hash a password and associated parameters.
