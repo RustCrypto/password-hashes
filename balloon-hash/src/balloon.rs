@@ -137,7 +137,7 @@ where
     // for m from 1 to s_cost-1:
     for m in 1..s_cost {
         // buf[m] = hash(cnt++, buf[m-1])
-        Digest::update(&mut digest, &cnt.to_le_bytes());
+        Digest::update(&mut digest, cnt.to_le_bytes());
         cnt += 1;
         Digest::update(&mut digest, &buf[m - 1]);
         buf[m] = digest.finalize_reset();
@@ -157,7 +157,7 @@ where
             };
 
             // buf[m] = hash(cnt++, prev, buf[m])
-            Digest::update(&mut digest, &cnt.to_le_bytes());
+            Digest::update(&mut digest, cnt.to_le_bytes());
             cnt += 1;
             Digest::update(&mut digest, prev);
             Digest::update(&mut digest, &buf[m]);
@@ -167,13 +167,13 @@ where
             // for i from 0 to delta-1:
             for i in 0..DELTA {
                 // block_t idx_block = ints_to_block(t, m, i)
-                Digest::update(&mut digest, &t.to_le_bytes());
-                Digest::update(&mut digest, &(m as u64).to_le_bytes());
-                Digest::update(&mut digest, &i.to_le_bytes());
+                Digest::update(&mut digest, t.to_le_bytes());
+                Digest::update(&mut digest, (m as u64).to_le_bytes());
+                Digest::update(&mut digest, i.to_le_bytes());
                 let idx_block = digest.finalize_reset();
 
                 // int other = to_int(hash(cnt++, salt, idx_block)) mod s_cost
-                Digest::update(&mut digest, &cnt.to_le_bytes());
+                Digest::update(&mut digest, cnt.to_le_bytes());
                 cnt += 1;
                 Digest::update(&mut digest, salt);
 
@@ -194,7 +194,7 @@ where
                 );
 
                 // buf[m] = hash(cnt++, buf[m], buf[other])
-                Digest::update(&mut digest, &cnt.to_le_bytes());
+                Digest::update(&mut digest, cnt.to_le_bytes());
                 cnt += 1;
                 Digest::update(&mut digest, &buf[m]);
                 Digest::update(&mut digest, &buf[other]);
