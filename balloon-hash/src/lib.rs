@@ -192,7 +192,10 @@ where
         let output = if output.len() == D::OutputSize::USIZE {
             GenericArray::from_mut_slice(output)
         } else {
-            return Err(Error::OutputSize);
+            return Err(Error::OutputSize {
+                actual: output.len(),
+                expected: D::OutputSize::USIZE,
+            });
         };
 
         match self.algorithm {
