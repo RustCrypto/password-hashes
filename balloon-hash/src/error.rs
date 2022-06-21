@@ -3,7 +3,7 @@
 use core::fmt;
 
 #[cfg(feature = "password-hash")]
-use ::{core::cmp::Ordering, password_hash::errors::InvalidValue};
+use {core::cmp::Ordering, password_hash::errors::InvalidValue};
 
 /// Result with balloon's [`Error`] type.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -56,6 +56,7 @@ impl From<Error> for password_hash::Error {
             Error::ThreadsTooFew => InvalidValue::TooShort.param_error(),
             Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
             Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
+            // TODO: Update after RustCrypto/traits#1026.
             Error::OutputSize { actual, expected } => match actual.cmp(&expected) {
                 Ordering::Less => password_hash::Error::OutputTooShort,
                 Ordering::Greater => password_hash::Error::OutputTooLong,
