@@ -28,12 +28,13 @@ pub fn balloon_m<D: Digest + FixedOutputReset>(
     secret: Option<&[u8]>,
     params: Params,
     memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
-) -> Result<GenericArray<u8, D::OutputSize>>
+    output: &mut GenericArray<u8, D::OutputSize>,
+) -> Result<()>
 where
     GenericArray<u8, D::OutputSize>: ArrayDecoding,
 {
     #[cfg(not(feature = "parallel"))]
-    let output = {
+    let output_xor = {
         let mut output = GenericArray::<_, D::OutputSize>::default();
 
         for thread in 1..=u64::from(params.p_cost.get()) {
@@ -45,7 +46,7 @@ where
     };
 
     #[cfg(feature = "parallel")]
-    let output = {
+    let output_xor = {
         use rayon::iter::{ParallelBridge, ParallelIterator};
 
         if memory_blocks.len() < (params.s_cost.get() * params.p_cost.get()) as usize {
@@ -76,8 +77,10 @@ where
         Digest::update(&mut digest, secret);
     }
 
-    Digest::update(&mut digest, output);
-    Ok(digest.finalize_reset())
+    Digest::update(&mut digest, output_xor);
+    Digest::finalize_into(digest, output);
+
+    Ok(())
 }
 
 fn hash_internal<D: Digest + FixedOutputReset>(
