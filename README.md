@@ -1,8 +1,8 @@
 # RustCrypto: Password Hashes
 
 [![Project Chat][chat-image]][chat-link]
-[![dependency status][deps-image]][deps-link]
 ![Apache2/MIT licensed][license-image]
+[![Dependency Status][deps-image]][deps-link]
 
 Collection of password hashing algorithms, otherwise known as password-based key derivation functions, written in pure Rust.
 
