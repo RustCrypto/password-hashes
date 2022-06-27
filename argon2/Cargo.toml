@@ -1,6 +1,6 @@
 [package]
 name = "argon2"
-version = "0.4.0"
+version = "0.4.1"
 description = """
 Pure Rust implementation of the Argon2 password hashing function with support
 for the Argon2d, Argon2i, and Argon2id algorithmic variants
