@@ -348,7 +348,7 @@ mod tests {
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
 
     /// Example salt value. Don't use a static salt value!!!
-    const EXAMPLE_SALT: &str = "examplesalt";
+    const EXAMPLE_SALT: &str = "examplesaltvalue";
 
     #[test]
     fn decoded_salt_too_short() {

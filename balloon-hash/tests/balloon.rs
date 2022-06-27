@@ -82,7 +82,7 @@ fn hash_simple_retains_configured_params() {
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
 
     /// Example salt value. Don't use a static salt value!!!
-    const EXAMPLE_SALT: &str = "examplesalt";
+    const EXAMPLE_SALT: &str = "examplesaltvalue";
 
     // Non-default but valid parameters
     let t_cost = 4;
