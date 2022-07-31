@@ -120,7 +120,7 @@ pub fn sha512_crypt(
 
     // 16.
     // Create byte sequence P.
-    let p_vec = produce_byte_seq(pw_len, &dp, BLOCK_SIZE);
+    let p_vec = produce_byte_seq(pw_len, &dp);
 
     // 17.
     hasher_alt = Sha512::default();
@@ -137,7 +137,7 @@ pub fn sha512_crypt(
 
     // 20.
     // Create byte sequence S.
-    let s_vec = produce_byte_seq(salt_len, &ds, BLOCK_SIZE);
+    let s_vec = produce_byte_seq(salt_len, &ds);
 
     let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA512 to burn
@@ -330,15 +330,15 @@ impl Distribution<char> for ShaCryptDistribution {
     }
 }
 
-fn produce_byte_seq(len: usize, fill_from: &[u8], bs: usize) -> Vec<u8> {
+fn produce_byte_seq(len: usize, fill_from: &[u8]) -> Vec<u8> {
+    let bs = fill_from.len();
     let mut seq: Vec<u8> = vec![0; len];
     let mut offset: usize = 0;
     for _ in 0..(len / bs) {
-        let from_slice = &fill_from[..offset + bs];
-        seq[offset..offset + bs].clone_from_slice(from_slice);
+        seq[offset..offset + bs].clone_from_slice(fill_from);
         offset += bs;
     }
-    let from_slice = &fill_from[..offset + (len % bs)];
+    let from_slice = &fill_from[..(len % bs)];
     seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
     seq
 }
