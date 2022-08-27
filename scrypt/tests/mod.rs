@@ -69,7 +69,7 @@ fn test_scrypt() {
     let tests = tests();
     for t in tests.iter() {
         let mut result = vec![0u8; t.expected.len()];
-        let params = Params::new(t.log_n, t.r, t.p).unwrap();
+        let params = Params::new(t.log_n, t.r, t.p, t.expected.len()).unwrap();
         scrypt(
             t.password.as_bytes(),
             t.salt.as_bytes(),
