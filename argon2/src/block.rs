@@ -11,39 +11,36 @@ use zeroize::Zeroize;
 
 const TRUNC: u64 = u32::MAX as u64;
 
-macro_rules! permutate_step {
+#[rustfmt::skip]
+macro_rules! permute_step {
     ($a:expr, $b:expr, $c:expr, $d:expr) => {
-        $a =
-            (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
+        $a = (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
         $d = ($d ^ $a).rotate_right(32);
-        $c =
-            (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
+        $c = (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
         $b = ($b ^ $c).rotate_right(24);
 
-        $a =
-            (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
+        $a = (Wrapping($a) + Wrapping($b) + (Wrapping(2) * Wrapping(($a & TRUNC) * ($b & TRUNC)))).0;
         $d = ($d ^ $a).rotate_right(16);
-        $c =
-            (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
+        $c = (Wrapping($c) + Wrapping($d) + (Wrapping(2) * Wrapping(($c & TRUNC) * ($d & TRUNC)))).0;
         $b = ($b ^ $c).rotate_right(63);
     };
 }
 
-macro_rules! permutate {
+macro_rules! permute {
     (
         $v0:expr, $v1:expr, $v2:expr, $v3:expr,
         $v4:expr, $v5:expr, $v6:expr, $v7:expr,
         $v8:expr, $v9:expr, $v10:expr, $v11:expr,
         $v12:expr, $v13:expr, $v14:expr, $v15:expr,
     ) => {
-        permutate_step!($v0, $v4, $v8, $v12);
-        permutate_step!($v1, $v5, $v9, $v13);
-        permutate_step!($v2, $v6, $v10, $v14);
-        permutate_step!($v3, $v7, $v11, $v15);
-        permutate_step!($v0, $v5, $v10, $v15);
-        permutate_step!($v1, $v6, $v11, $v12);
-        permutate_step!($v2, $v7, $v8, $v13);
-        permutate_step!($v3, $v4, $v9, $v14);
+        permute_step!($v0, $v4, $v8, $v12);
+        permute_step!($v1, $v5, $v9, $v13);
+        permute_step!($v2, $v6, $v10, $v14);
+        permute_step!($v3, $v7, $v11, $v15);
+        permute_step!($v0, $v5, $v10, $v15);
+        permute_step!($v1, $v6, $v11, $v12);
+        permute_step!($v2, $v7, $v8, $v13);
+        permute_step!($v3, $v4, $v9, $v14);
     };
 }
 
@@ -57,15 +54,11 @@ impl Block {
     pub const SIZE: usize = 1024;
 
     pub(crate) fn as_bytes(&self) -> &[u8; Self::SIZE] {
-        let ptr = self.0.as_ptr() as *const u8;
-        let slice = unsafe { core::slice::from_raw_parts(ptr, Self::SIZE) };
-        slice.try_into().unwrap()
+        unsafe { &*(self.0.as_ptr() as *const [u8; Self::SIZE]) }
     }
 
     pub(crate) fn as_mut_bytes(&mut self) -> &mut [u8; Self::SIZE] {
-        let ptr = self.0.as_mut_ptr() as *mut u8;
-        let slice = unsafe { core::slice::from_raw_parts_mut(ptr, Self::SIZE) };
-        slice.try_into().unwrap()
+        unsafe { &mut *(self.0.as_mut_ptr() as *mut [u8; Self::SIZE]) }
     }
 
     pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
@@ -75,7 +68,7 @@ impl Block {
         let mut q = r;
         for chunk in q.0.chunks_exact_mut(16) {
             #[rustfmt::skip]
-            permutate!(
+            permute!(
                 chunk[0], chunk[1], chunk[2], chunk[3],
                 chunk[4], chunk[5], chunk[6], chunk[7],
                 chunk[8], chunk[9], chunk[10], chunk[11],
@@ -88,7 +81,7 @@ impl Block {
             let b = i * 2;
 
             #[rustfmt::skip]
-            permutate!(
+            permute!(
                 q.0[b], q.0[b + 1],
                 q.0[b + 16], q.0[b + 17],
                 q.0[b + 32], q.0[b + 33],
