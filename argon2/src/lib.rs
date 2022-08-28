@@ -1,6 +1,4 @@
 #![no_std]
-// TODO(tarcieri): safe parallel implementation
-// See: https://github.com/RustCrypto/password-hashes/issues/154
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
