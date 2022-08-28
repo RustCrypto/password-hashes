@@ -1,7 +1,6 @@
 #![no_std]
 // TODO(tarcieri): safe parallel implementation
 // See: https://github.com/RustCrypto/password-hashes/issues/154
-#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
@@ -92,7 +91,6 @@ use blake2::{
     digest::{self, Output},
     Blake2b512, Digest,
 };
-use byte_slice_cast::{AsByteSlice, AsMutByteSlice};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -265,7 +263,7 @@ impl<'key> Argon2<'key> {
                     &l.to_le_bytes()[..],
                 ];
 
-                blake2b_long(inputs, block.as_mut_byte_slice()).unwrap();
+                blake2b_long(inputs, block.as_mut_bytes()).unwrap();
             }
         }
 
@@ -422,7 +420,7 @@ impl<'key> Argon2<'key> {
             blockhash ^= &memory_blocks[last_block_in_lane];
         }
 
-        blake2b_long(&[blockhash.as_byte_slice()], out)?;
+        blake2b_long(&[blockhash.as_bytes()], out)?;
 
         #[cfg(feature = "zeroize")]
         blockhash.zeroize();

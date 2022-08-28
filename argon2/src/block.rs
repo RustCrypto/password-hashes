@@ -56,6 +56,18 @@ impl Block {
     /// Memory block size in bytes
     pub const SIZE: usize = 1024;
 
+    pub(crate) fn as_bytes(&self) -> &[u8; Self::SIZE] {
+        let ptr = self.0.as_ptr() as *const u8;
+        let slice = unsafe { core::slice::from_raw_parts(ptr, Self::SIZE) };
+        slice.try_into().unwrap()
+    }
+
+    pub(crate) fn as_mut_bytes(&mut self) -> &mut [u8; Self::SIZE] {
+        let ptr = self.0.as_mut_ptr() as *mut u8;
+        let slice = unsafe { core::slice::from_raw_parts_mut(ptr, Self::SIZE) };
+        slice.try_into().unwrap()
+    }
+
     pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;
 
