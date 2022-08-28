@@ -34,10 +34,10 @@ impl Params {
     /// - `p` must be greater than `0` and less than `4294967295`
     /// - `len` must be greater than `9` and less than or equal to `64`
     pub fn new(log_n: u8, r: u32, p: u32, len: usize) -> Result<Params, InvalidParams> {
-        let cond1 = (log_n as usize) < size_of::<usize>() * 8;
+        let cond1 = (log_n as usize) < usize::BITS as usize;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
-        let cond4 = len >= 10 && len <= 64;
+        let cond4 = (10..=64).contains(&len);
         if !(r > 0 && p > 0 && cond1 && (cond2 || cond3) && cond4) {
             return Err(InvalidParams);
         }
@@ -147,17 +147,14 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
-        let len = match hash.hash {
-            Some(hash) => hash.len(),
-            None => RECOMMENDED_LEN,
-        };
+        let len = hash.hash.map(|out| out.len()).unwrap_or(RECOMMENDED_LEN);
         Params::new(log_n, r, p, len).map_err(|_| InvalidValue::Malformed.param_error())
     }
 }
 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-impl<'a> TryFrom<Params> for ParamsString {
+impl TryFrom<Params> for ParamsString {
     type Error = password_hash::Error;
 
     fn try_from(input: Params) -> Result<ParamsString, password_hash::Error> {
