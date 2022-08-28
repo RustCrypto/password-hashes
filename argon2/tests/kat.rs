@@ -10,7 +10,7 @@
 // https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
 
 use argon2::{
-    Algorithm, Argon2, Error, Params, ParamsBuilder, PasswordHash, PasswordHasher,
+    Algorithm, Argon2, AssociatedData, Error, Params, ParamsBuilder, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
 use hex_literal::hex;
@@ -18,12 +18,13 @@ use password_hash::SaltString;
 
 /// Params used by the KATs.
 fn example_params() -> Params {
-    let mut builder = ParamsBuilder::new();
-    builder.m_cost(32).unwrap();
-    builder.t_cost(3).unwrap();
-    builder.p_cost(4).unwrap();
-    builder.data(&[0x04; 12]).unwrap();
-    builder.params().unwrap()
+    ParamsBuilder::new()
+        .m_cost(32)
+        .t_cost(3)
+        .p_cost(4)
+        .data(AssociatedData::new(&[0x04; 12]).unwrap())
+        .build()
+        .unwrap()
 }
 
 /// =======================================
@@ -344,11 +345,13 @@ fn hashtest(
     expected_phc_hash: &str,
     alternative_phc_hash: &str,
 ) {
-    let mut builder = ParamsBuilder::new();
-    builder.t_cost(t).unwrap();
-    builder.m_cost(1 << m).unwrap();
-    builder.p_cost(p).unwrap();
-    let params = builder.params().unwrap();
+    let params = ParamsBuilder::new()
+        .t_cost(t)
+        .m_cost(1 << m)
+        .p_cost(p)
+        .build()
+        .unwrap();
+
     let ctx = Argon2::new(algorithm, version, params);
 
     // Test raw hash

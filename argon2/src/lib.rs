@@ -1,7 +1,6 @@
 #![no_std]
 // TODO(tarcieri): safe parallel implementation
 // See: https://github.com/RustCrypto/password-hashes/issues/154
-#![cfg_attr(not(feature = "parallel"), forbid(unsafe_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
@@ -68,16 +67,15 @@ extern crate std;
 mod algorithm;
 mod block;
 mod error;
-mod instance;
-mod memory;
 mod params;
+mod variable_hash;
 mod version;
 
 pub use crate::{
     algorithm::Algorithm,
     block::Block,
     error::{Error, Result},
-    params::{Params, ParamsBuilder},
+    params::{AssociatedData, KeyId, Params, ParamsBuilder},
     version::Version,
 };
 
@@ -88,14 +86,17 @@ pub use {
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
-use crate::{
-    instance::Instance,
-    memory::{Memory, SYNC_POINTS},
+use crate::variable_hash::blake2b_long;
+use blake2::{
+    digest::{self, Output},
+    Blake2b512, Digest,
 };
-use blake2::{digest::Output, Blake2b512, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
+
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 /// Maximum password length in bytes.
 pub const MAX_PWD_LEN: usize = 0xFFFFFFFF;
@@ -111,6 +112,12 @@ pub const RECOMMENDED_SALT_LEN: usize = 16;
 
 /// Maximum secret key length in bytes.
 pub const MAX_SECRET_LEN: usize = 0xFFFFFFFF;
+
+/// Number of synchronization points between lanes per pass
+pub(crate) const SYNC_POINTS: usize = 4;
+
+/// To generate reference block positions
+const ADDRESSES_IN_BLOCK: usize = 128;
 
 /// Argon2 context.
 ///
@@ -204,31 +211,200 @@ impl<'key> Argon2<'key> {
             return Err(Error::OutputTooLong);
         }
 
-        if pwd.len() > MAX_PWD_LEN {
-            return Err(Error::PwdTooLong);
-        }
-
-        // Validate salt (required param)
-        if salt.len() < MIN_SALT_LEN {
-            return Err(Error::SaltTooShort);
-        }
-
-        if salt.len() > MAX_SALT_LEN {
-            return Err(Error::SaltTooLong);
-        }
+        Self::verify_inputs(pwd, salt)?;
 
         // Hashing all inputs
         let initial_hash = self.initial_hash(pwd, salt, out);
 
-        let segment_length = self.params.segment_length();
+        self.fill_blocks(memory_blocks.as_mut(), initial_hash)?;
+        self.finalize(memory_blocks.as_mut(), out)
+    }
+
+    /// Use a password and associated parameters only to fill the given memory blocks.
+    ///
+    /// This method omits the calculation of a hash and can be used when only the
+    /// filled memory is required. It is not necessary to call this method
+    /// before calling any of the hashing functions.
+    pub fn fill_memory(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        mut memory_blocks: impl AsMut<[Block]>,
+    ) -> Result<()> {
+        Self::verify_inputs(pwd, salt)?;
+
+        let initial_hash = self.initial_hash(pwd, salt, &[]);
+
+        self.fill_blocks(memory_blocks.as_mut(), initial_hash)
+    }
+
+    #[allow(unused_mut)]
+    fn fill_blocks(
+        &self,
+        memory_blocks: &mut [Block],
+        mut initial_hash: digest::Output<Blake2b512>,
+    ) -> Result<()> {
         let block_count = self.params.block_count();
         let memory_blocks = memory_blocks
-            .as_mut()
             .get_mut(..block_count)
             .ok_or(Error::MemoryTooLittle)?;
 
-        let memory = Memory::new(memory_blocks, segment_length);
-        Instance::hash(self, self.algorithm, initial_hash, memory, out)
+        let segment_length = self.params.segment_length();
+        let iterations = usize::try_from(self.params.t_cost()).unwrap();
+        let lane_length = self.params.lane_length();
+        let lanes = self.params.lanes();
+
+        // Initialize the first two blocks in each lane
+        for (l, lane) in memory_blocks.chunks_exact_mut(lane_length).enumerate() {
+            for (i, block) in lane[..2].iter_mut().enumerate() {
+                let i = u32::try_from(i).unwrap();
+                let l = u32::try_from(l).unwrap();
+
+                let inputs = &[
+                    initial_hash.as_ref(),
+                    &i.to_le_bytes()[..],
+                    &l.to_le_bytes()[..],
+                ];
+
+                blake2b_long(inputs, block.as_mut_bytes()).unwrap();
+            }
+        }
+
+        #[cfg(feature = "zeroize")]
+        initial_hash.zeroize();
+
+        // Run passes on blocks
+        for pass in 0..iterations {
+            for slice in 0..SYNC_POINTS {
+                let data_independent_addressing = self.algorithm == Algorithm::Argon2i
+                    || (self.algorithm == Algorithm::Argon2id
+                        && pass == 0
+                        && slice < SYNC_POINTS / 2);
+
+                for lane in 0..lanes {
+                    let mut address_block = Block::default();
+                    let mut input_block = Block::default();
+                    let zero_block = Block::default();
+
+                    if data_independent_addressing {
+                        (&mut input_block.as_mut()[..6]).copy_from_slice(&[
+                            pass as u64,
+                            lane as u64,
+                            slice as u64,
+                            memory_blocks.len() as u64,
+                            iterations as u64,
+                            self.algorithm as u64,
+                        ]);
+                    }
+
+                    let first_block = if pass == 0 && slice == 0 {
+                        if data_independent_addressing {
+                            // Generate first set of addresses
+                            Self::update_address_block(
+                                &mut address_block,
+                                &mut input_block,
+                                &zero_block,
+                            );
+                        }
+
+                        // The first two blocks of each lane are already initialized
+                        2
+                    } else {
+                        0
+                    };
+
+                    let mut cur_index = lane * lane_length + slice * segment_length + first_block;
+                    let mut prev_index = if slice == 0 && first_block == 0 {
+                        // Last block in current lane
+                        cur_index + lane_length - 1
+                    } else {
+                        // Previous block
+                        cur_index - 1
+                    };
+
+                    // Fill blocks in the segment
+                    for block in first_block..segment_length {
+                        // Extract entropy
+                        let rand = if data_independent_addressing {
+                            let addres_index = block % ADDRESSES_IN_BLOCK;
+
+                            if addres_index == 0 {
+                                Self::update_address_block(
+                                    &mut address_block,
+                                    &mut input_block,
+                                    &zero_block,
+                                );
+                            }
+
+                            address_block.as_ref()[addres_index]
+                        } else {
+                            memory_blocks[prev_index].as_ref()[0]
+                        };
+
+                        // Calculate source block index for compress function
+                        let ref_lane = if pass == 0 && slice == 0 {
+                            // Cannot reference other lanes yet
+                            lane
+                        } else {
+                            (rand >> 32) as usize % lanes as usize
+                        };
+
+                        let reference_area_size = if pass == 0 {
+                            // First pass
+                            if slice == 0 {
+                                // First slice
+                                block - 1 // all but the previous
+                            } else if ref_lane == lane {
+                                // The same lane => add current segment
+                                slice * segment_length + block - 1
+                            } else {
+                                slice * segment_length - if block == 0 { 1 } else { 0 }
+                            }
+                        } else {
+                            // Second pass
+                            if ref_lane == lane {
+                                lane_length - segment_length + block - 1
+                            } else {
+                                lane_length - segment_length - if block == 0 { 1 } else { 0 }
+                            }
+                        };
+
+                        // 1.2.4. Mapping rand to 0..<reference_area_size-1> and produce
+                        // relative position
+                        let mut map = rand & 0xFFFFFFFF;
+                        map = (map * map) >> 32;
+                        let relative_position = reference_area_size
+                            - 1
+                            - ((reference_area_size as u64 * map) >> 32) as usize;
+
+                        // 1.2.5 Computing starting position
+                        let start_position = if pass != 0 && slice != SYNC_POINTS - 1 {
+                            (slice + 1) * segment_length
+                        } else {
+                            0
+                        };
+
+                        let lane_index = (start_position + relative_position) % lane_length;
+                        let ref_index = ref_lane * lane_length + lane_index;
+
+                        // Calculate new block
+                        let result =
+                            Block::compress(&memory_blocks[prev_index], &memory_blocks[ref_index]);
+
+                        if self.version == Version::V0x10 || pass == 0 {
+                            memory_blocks[cur_index] = result;
+                        } else {
+                            memory_blocks[cur_index] ^= &result;
+                        };
+
+                        prev_index = cur_index;
+                        cur_index += 1;
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Get default configured [`Params`].
@@ -236,10 +412,39 @@ impl<'key> Argon2<'key> {
         &self.params
     }
 
+    fn finalize(&self, memory_blocks: &[Block], out: &mut [u8]) -> Result<()> {
+        let lane_length = self.params.lane_length();
+
+        let mut blockhash = memory_blocks[lane_length - 1];
+
+        // XOR the last blocks
+        for l in 1..self.params.lanes() {
+            let last_block_in_lane = l * lane_length + (lane_length - 1);
+            blockhash ^= &memory_blocks[last_block_in_lane];
+        }
+
+        blake2b_long(&[blockhash.as_bytes()], out)?;
+
+        #[cfg(feature = "zeroize")]
+        blockhash.zeroize();
+
+        Ok(())
+    }
+
+    fn update_address_block(
+        address_block: &mut Block,
+        input_block: &mut Block,
+        zero_block: &Block,
+    ) {
+        input_block.as_mut()[6] += 1;
+        *address_block = Block::compress(zero_block, input_block);
+        *address_block = Block::compress(zero_block, address_block);
+    }
+
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
-    pub(crate) fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
+    fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
         let mut digest = Blake2b512::new();
-        digest.update(&self.params.lanes().to_le_bytes());
+        digest.update(&self.params.p_cost().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());
         digest.update(&self.params.m_cost().to_le_bytes());
         digest.update(&self.params.t_cost().to_le_bytes());
@@ -260,6 +465,23 @@ impl<'key> Argon2<'key> {
         digest.update(&(self.params.data().len() as u32).to_le_bytes());
         digest.update(self.params.data());
         digest.finalize()
+    }
+
+    fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
+        if pwd.len() > MAX_PWD_LEN {
+            return Err(Error::PwdTooLong);
+        }
+
+        // Validate salt (required param)
+        if salt.len() < MIN_SALT_LEN {
+            return Err(Error::SaltTooShort);
+        }
+
+        if salt.len() > MAX_SALT_LEN {
+            return Err(Error::SaltTooLong);
+        }
+
+        Ok(())
     }
 }
 
@@ -389,7 +611,7 @@ mod tests {
                     .get(param)
                     .and_then(|p| p.decimal().ok())
                     .unwrap(),
-                value
+                value,
             );
         }
     }

@@ -5,7 +5,8 @@
 #![cfg(all(feature = "alloc", feature = "password-hash"))]
 
 use argon2::{
-    Algorithm, Argon2, ParamsBuilder, PasswordHash, PasswordHasher, PasswordVerifier, Version,
+    Algorithm, Argon2, AssociatedData, KeyId, ParamsBuilder, PasswordHash, PasswordHasher,
+    PasswordVerifier, Version,
 };
 use password_hash::{
     errors::{Error, InvalidValue},
@@ -195,17 +196,16 @@ ignored_testcase_bad_encoding!(
 
 #[test]
 fn check_hash_encoding_parameters_order() {
-    let mut builder = ParamsBuilder::new();
-    builder.m_cost(32).unwrap();
-    builder.t_cost(2).unwrap();
-    builder.p_cost(3).unwrap();
-    builder.data(&[0x0f; 6]).unwrap();
-    builder.keyid(&[0xf0; 4]).unwrap();
-    let ctx = Argon2::new(
-        Algorithm::Argon2d,
-        Version::V0x10,
-        builder.params().unwrap(),
-    );
+    let params = ParamsBuilder::new()
+        .m_cost(32)
+        .t_cost(2)
+        .p_cost(3)
+        .data(AssociatedData::new(&[0x0f; 6]).unwrap())
+        .keyid(KeyId::new(&[0xf0; 4]).unwrap())
+        .build()
+        .unwrap();
+
+    let ctx = Argon2::new(Algorithm::Argon2d, Version::V0x10, params);
 
     let salt = vec![0; 8];
     let password = b"password";
