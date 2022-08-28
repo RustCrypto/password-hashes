@@ -42,6 +42,7 @@ impl Params {
     pub const DEFAULT_M_COST: u32 = 4096;
 
     /// Minimum number of memory blocks.
+    #[allow(clippy::cast_possible_truncation)]
     pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
     /// Maximum number of memory blocks.
@@ -146,8 +147,9 @@ impl Params {
     }
 
     /// Get the number of lanes.
+    #[allow(clippy::cast_possible_truncation)]
     pub(crate) fn lanes(&self) -> usize {
-        usize::try_from(self.p_cost).unwrap()
+        self.p_cost as usize
     }
 
     /// Get the number of blocks in a lane.
@@ -159,7 +161,7 @@ impl Params {
     ///
     /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
     pub(crate) fn segment_length(&self) -> usize {
-        let m_cost = usize::try_from(self.m_cost).unwrap();
+        let m_cost = self.m_cost as usize;
 
         let memory_blocks = if m_cost < 2 * SYNC_POINTS * self.lanes() {
             2 * SYNC_POINTS * self.lanes()
