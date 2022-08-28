@@ -10,7 +10,6 @@ dependencies = [
  "blake2",
  "hex-literal",
  "password-hash",
- "rayon",
  "zeroize",
 ]
 
