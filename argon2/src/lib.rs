@@ -5,7 +5,22 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
-#![warn(rust_2018_idioms, missing_docs)]
+#![warn(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::checked_conversions,
+    clippy::implicit_saturating_sub,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    clippy::unwrap_used,
+    missing_docs,
+    rust_2018_idioms,
+    unused_lifetimes,
+    unused_qualifications
+)]
 
 //! ## Usage (simple with default params)
 //!
@@ -55,6 +70,11 @@
 //! # }
 //! ```
 
+// Call sites which cast `u32` to `usize` and are annotated with
+// allow(clippy::cast_possible_truncation) need this check to avoid truncation.
+#[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
+compile_error!("this crate builds on 32-bit and 64-bit platforms only");
+
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
@@ -63,10 +83,10 @@ extern crate alloc;
 extern crate std;
 
 mod algorithm;
+mod blake2b_long;
 mod block;
 mod error;
 mod params;
-mod variable_hash;
 mod version;
 
 pub use crate::{
@@ -84,11 +104,8 @@ pub use {
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
-use crate::variable_hash::blake2b_long;
-use blake2::{
-    digest::{self, Output},
-    Blake2b512, Digest,
-};
+use crate::blake2b_long::blake2b_long;
+use blake2::{digest, Blake2b512, Digest};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -236,7 +253,7 @@ impl<'key> Argon2<'key> {
         self.fill_blocks(memory_blocks.as_mut(), initial_hash)
     }
 
-    #[allow(unused_mut)]
+    #[allow(clippy::cast_possible_truncation, unused_mut)]
     fn fill_blocks(
         &self,
         memory_blocks: &mut [Block],
@@ -248,15 +265,15 @@ impl<'key> Argon2<'key> {
             .ok_or(Error::MemoryTooLittle)?;
 
         let segment_length = self.params.segment_length();
-        let iterations = usize::try_from(self.params.t_cost()).unwrap();
+        let iterations = self.params.t_cost() as usize;
         let lane_length = self.params.lane_length();
         let lanes = self.params.lanes();
 
         // Initialize the first two blocks in each lane
         for (l, lane) in memory_blocks.chunks_exact_mut(lane_length).enumerate() {
             for (i, block) in lane[..2].iter_mut().enumerate() {
-                let i = u32::try_from(i).unwrap();
-                let l = u32::try_from(l).unwrap();
+                let i = i as u32;
+                let l = l as u32;
 
                 let inputs = &[
                     initial_hash.as_ref(),
@@ -264,7 +281,7 @@ impl<'key> Argon2<'key> {
                     &l.to_le_bytes()[..],
                 ];
 
-                blake2b_long(inputs, block.as_mut_bytes()).unwrap();
+                blake2b_long(inputs, block.as_mut_bytes())?;
             }
         }
 
@@ -440,7 +457,8 @@ impl<'key> Argon2<'key> {
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
-    fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> Output<Blake2b512> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> digest::Output<Blake2b512> {
         let mut digest = Blake2b512::new();
         digest.update(&self.params.p_cost().to_le_bytes());
         digest.update(&(out.len() as u32).to_le_bytes());

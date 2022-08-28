@@ -14,24 +14,25 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
         return Err(Error::OutputTooShort);
     }
 
-    let len_bytes = match u32::try_from(out.len()) {
-        Ok(v) => v.to_le_bytes(),
-        Err(_) => return Err(Error::OutputTooLong),
-    };
+    let len_bytes = u32::try_from(out.len())
+        .map(|v| v.to_le_bytes())
+        .map_err(|_| Error::OutputTooLong)?;
 
     // Use blake2b directly if the output is small enough.
     if out.len() <= Blake2b512::output_size() {
-        let mut digest = Blake2bVar::new(out.len()).unwrap();
+        let mut digest = Blake2bVar::new(out.len()).map_err(|_| Error::OutputTooLong)?;
 
         // Conflicting method name from `Digest` and `Update` traits
         digest::Update::update(&mut digest, &len_bytes);
+
         for input in inputs {
             digest::Update::update(&mut digest, input);
         }
 
         digest
             .finalize_variable(out)
-            .expect("invalid Blake2bVar out length");
+            .map_err(|_| Error::OutputTooLong)?;
+
         return Ok(());
     }
 
@@ -67,7 +68,7 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
 
     // Calculate the last block with VarBlake2b.
     let last_block_size = out.len() - counter;
-    let mut digest = Blake2bVar::new(last_block_size).unwrap();
+    let mut digest = Blake2bVar::new(last_block_size).map_err(|_| Error::OutputTooLong)?;
 
     digest::Update::update(&mut digest, &last_output);
     digest
