@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.11.0"
+version = "0.12.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
@@ -30,7 +30,6 @@ sha2 = "0.10"
 streebog = "0.10"
 
 [features]
-default = ["simple"]
 parallel = ["rayon", "std"]
 simple = ["hmac", "password-hash", "sha2"]
 std = ["password-hash/std"]
