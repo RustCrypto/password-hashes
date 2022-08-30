@@ -1,8 +1,7 @@
 //! Implementation of the `password-hash` crate API.
 
-use crate::pbkdf2;
+use crate::pbkdf2_hmac;
 use core::{cmp::Ordering, fmt, str::FromStr};
-use hmac::Hmac;
 use password_hash::{
     errors::InvalidValue, Decimal, Error, Ident, Output, ParamsString, PasswordHash,
     PasswordHasher, Result, Salt,
@@ -52,9 +51,9 @@ impl PasswordHasher for Pbkdf2 {
         let output = Output::init_with(params.output_length, |out| {
             let f = match algorithm {
                 #[cfg(feature = "sha1")]
-                Algorithm::Pbkdf2Sha1 => pbkdf2::<Hmac<Sha1>>,
-                Algorithm::Pbkdf2Sha256 => pbkdf2::<Hmac<Sha256>>,
-                Algorithm::Pbkdf2Sha512 => pbkdf2::<Hmac<Sha512>>,
+                Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
+                Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
+                Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
             };
 
             f(password, salt_bytes, params.rounds, out);

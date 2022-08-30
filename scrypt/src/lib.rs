@@ -54,8 +54,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-use hmac::Hmac;
-use pbkdf2::pbkdf2;
+use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
 
 /// Errors for `scrypt` operations.
@@ -107,7 +106,7 @@ pub fn scrypt(
     let nr128 = n * r128;
 
     let mut b = vec![0u8; pr128];
-    pbkdf2::<Hmac<Sha256>>(password, salt, 1, &mut b);
+    pbkdf2_hmac::<Sha256>(password, salt, 1, &mut b);
 
     let mut v = vec![0u8; nr128];
     let mut t = vec![0u8; r128];
@@ -116,6 +115,6 @@ pub fn scrypt(
         romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
     }
 
-    pbkdf2::<Hmac<Sha256>>(password, &b, 1, output);
+    pbkdf2_hmac::<Sha256>(password, &b, 1, output);
     Ok(())
 }

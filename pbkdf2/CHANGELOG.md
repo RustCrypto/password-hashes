@@ -8,8 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Changed
 - `simple` feature is no longer enabled by default ([#336])
+- Add new wrapper functions: `pbkdf2_array`, `pbkdf2_hmac`, and
+`pbkdf2_hmac_array`. `pbkdf2` and `pbkdf2_array` now return
+`Result<(), InvalidLength>` instead of unwrapping it internally. ([#337])
 
 [#336]: https://github.com/RustCrypto/password-hashes/pull/336
+[#337]: https://github.com/RustCrypto/password-hashes/pull/337
 
 ## 0.11.0 (2022-03-28)
 ### Changed

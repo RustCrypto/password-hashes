@@ -24,12 +24,13 @@ sha2 = { version = "0.10", default-features = false, optional = true }
 
 [dev-dependencies]
 hmac = "0.12"
-hex-literal = "0.3"
+hex-literal = "0.3.3"
 sha1 = { version = "0.10", package = "sha-1" }
 sha2 = "0.10"
 streebog = "0.10"
 
 [features]
+default = ["hmac"]
 parallel = ["rayon", "std"]
 simple = ["hmac", "password-hash", "sha2"]
 std = ["password-hash/std"]

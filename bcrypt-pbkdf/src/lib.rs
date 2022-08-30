@@ -152,8 +152,9 @@ pub fn bcrypt_pbkdf(
         &mut stack_buf[..stride * BHASH_OUTPUT_SIZE]
     };
 
-    // Run the regular PBKDF2 algorithm with bhash as the MAC.
-    pbkdf2::pbkdf2::<Bhash>(&Sha512::digest(passphrase), salt, rounds, generated);
+    // Run the regular PBKDF2 algorithm with bhash as the PRF.
+    pbkdf2::pbkdf2::<Bhash>(&Sha512::digest(passphrase), salt, rounds, generated)
+        .expect("Bhash can be initialized with any key length");
 
     // Apply the bcrypt_pbkdf non-linear transformation on the output.
     for (i, out_byte) in output.iter_mut().enumerate() {
