@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- `simple` feature is no longer enabled by default ([#336])
+
+[#336]: https://github.com/RustCrypto/password-hashes/pull/336
+
 ## 0.11.0 (2022-03-28)
 ### Changed
 - Bump `password-hash` dependency to v0.4; MSRV 1.57 ([#283])
