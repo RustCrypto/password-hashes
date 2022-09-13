@@ -1,26 +1,48 @@
 //! This crate implements the PBKDF2 key derivation function as specified
 //! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
 //!
-//! If you are only using the low-level [`pbkdf2`] function instead of the
-//! higher-level [`Pbkdf2`] struct to produce/verify hash strings,
-//! it's recommended to disable default features in your `Cargo.toml`:
+//! # Examples
 //!
-//! ```toml
-//! [dependencies]
-//! pbkdf2 = { version = "0.11", default-features = false }
+//! PBKDF2 is defined in terms of a keyed pseudo-random function (PRF). Most
+//! commonly HMAC is used as this PRF. In such cases you can use [`pbkdf2_hmac`]
+//! and [`pbkdf2_hmac_array`] functions. The former accepts a byte slice which
+//! gets filled with generated key, while the former returns an array with
+//! generated key of requested length.
+//!
+//! ```
+//! # #[cfg(feature = "hmac")] {
+//! use hex_literal::hex;
+//! use pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_array};
+//! use sha2::Sha256;
+//!
+//! let password = b"password";
+//! let salt = b"salt";
+//! // number of iterations
+//! let n = 4096;
+//! // Expected value of generated key
+//! let expected = hex!("c5e478d59288c841aa530db6845c4c8d962893a0");
+//!
+//! let mut key1 = [0u8; 20];
+//! pbkdf2_hmac::<Sha256>(password, salt, n, &mut key1);
+//! assert_eq!(key1, expected);
+//!
+//! let key2 = pbkdf2_hmac_array::<Sha256, 20>(password, salt, n);
+//! assert_eq!(key2, expected);
+//! # }
 //! ```
 //!
-//! # Usage (simple with default params)
+//! If you want to use a different PRF, then you can use [`pbkdf2`][crate::pbkdf2]
+//! and [`pbkdf2_array`] functions.
 //!
-//! Note: this example requires the `rand_core` crate with the `std` feature
-//! enabled for `rand_core::OsRng` (embedded platforms can substitute their
-//! own RNG)
+//! This crates also provides the high-level password-hashing API through
+//! the [`Pbkdf2`] struct and traits defined in the
+//! [`password-hash`][password_hash] crate.
 //!
 //! Add the following to your crate's `Cargo.toml` to import it:
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = "0.10"
+//! pbkdf2 = { version = "0.12", features = ["simple"] }
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
@@ -78,7 +100,15 @@ pub use crate::simple::{Algorithm, Params, Pbkdf2};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use digest::{generic_array::typenum::Unsigned, FixedOutput, KeyInit, Update};
+use digest::{generic_array::typenum::Unsigned, FixedOutput, InvalidLength, KeyInit, Update};
+
+#[cfg(feature = "hmac")]
+use digest::{
+    block_buffer::Eager,
+    core_api::{BlockSizeUser, BufferKindUser, CoreProxy, FixedOutputCore, UpdateCore},
+    generic_array::typenum::{IsLess, Le, NonZero, U256},
+    HashMarker,
+};
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -89,7 +119,7 @@ fn xor(res: &mut [u8], salt: &[u8]) {
 #[inline(always)]
 fn pbkdf2_body<PRF>(i: u32, chunk: &mut [u8], prf: &PRF, salt: &[u8], rounds: u32)
 where
-    PRF: KeyInit + Update + FixedOutput + Clone,
+    PRF: Update + FixedOutput + Clone,
 {
     for v in chunk.iter_mut() {
         *v = 0;
@@ -114,34 +144,136 @@ where
     }
 }
 
-/// Generic implementation of PBKDF2 algorithm.
-#[cfg(not(feature = "parallel"))]
+/// Generic implementation of PBKDF2 algorithm which accepts an arbitrary keyed PRF.
+///
+/// ```
+/// use hex_literal::hex;
+/// use pbkdf2::pbkdf2;
+/// use hmac::Hmac;
+/// use sha2::Sha256;
+///
+/// let mut buf = [0u8; 20];
+/// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", 4096, &mut buf)
+///     .expect("HMAC can be initialized with any key length");
+/// assert_eq!(buf, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// ```
 #[inline]
-pub fn pbkdf2<PRF>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+pub fn pbkdf2<PRF>(
+    password: &[u8],
+    salt: &[u8],
+    rounds: u32,
+    res: &mut [u8],
+) -> Result<(), InvalidLength>
 where
     PRF: KeyInit + Update + FixedOutput + Clone + Sync,
 {
     let n = PRF::OutputSize::to_usize();
     // note: HMAC can be initialized with keys of any size,
     // so this panic never happens with it
-    let prf = PRF::new_from_slice(password).expect("PRF initialization failure");
+    let prf = PRF::new_from_slice(password)?;
 
-    for (i, chunk) in res.chunks_mut(n).enumerate() {
-        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
+    #[cfg(not(feature = "parallel"))]
+    {
+        for (i, chunk) in res.chunks_mut(n).enumerate() {
+            pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
+        }
     }
+    #[cfg(feature = "parallel")]
+    {
+        res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
+            pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
+        });
+    }
+
+    Ok(())
 }
 
-/// Generic implementation of PBKDF2 algorithm.
-#[cfg(feature = "parallel")]
+/// A variant of the [`pbkdf2`][crate::pbkdf2] function which returns an array
+/// instead of filling an input slice.
+///
+/// ```
+/// use hex_literal::hex;
+/// use pbkdf2::pbkdf2_array;
+/// use hmac::Hmac;
+/// use sha2::Sha256;
+///
+/// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", 4096)
+///     .expect("HMAC can be initialized with any key length");
+/// assert_eq!(res, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// ```
 #[inline]
-pub fn pbkdf2<PRF>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+pub fn pbkdf2_array<PRF, const N: usize>(
+    password: &[u8],
+    salt: &[u8],
+    rounds: u32,
+) -> Result<[u8; N], InvalidLength>
 where
     PRF: KeyInit + Update + FixedOutput + Clone + Sync,
 {
-    let n = PRF::OutputSize::to_usize();
-    let prf = PRF::new_from_slice(password).expect("PRF initialization failure");
+    let mut buf = [0u8; N];
+    pbkdf2::<PRF>(password, salt, rounds, &mut buf).map(|()| buf)
+}
 
-    res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
-        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
-    });
+/// A variant of the [`pbkdf2`][crate::pbkdf2] function which uses HMAC for PRF.
+/// It's generic over (eager) hash functions.
+///
+/// ```
+/// use hex_literal::hex;
+/// use pbkdf2::pbkdf2_hmac;
+/// use sha2::Sha256;
+///
+/// let mut buf = [0u8; 20];
+/// pbkdf2_hmac::<Sha256>(b"password", b"salt", 4096, &mut buf);
+/// assert_eq!(buf, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// ```
+#[cfg(feature = "hmac")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
+pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+where
+    D: CoreProxy,
+    D::Core: Sync
+        + HashMarker
+        + UpdateCore
+        + FixedOutputCore
+        + BufferKindUser<BufferKind = Eager>
+        + Default
+        + Clone,
+    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
+    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+{
+    crate::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
+        .expect("HMAC can be initialized with any key length");
+}
+
+/// A variant of the [`pbkdf2_hmac`] function which returns an array
+/// instead of filling an input slice.
+///
+/// ```
+/// use hex_literal::hex;
+/// use pbkdf2::pbkdf2_hmac_array;
+/// use sha2::Sha256;
+///
+/// assert_eq!(
+///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 4096),
+///     hex!("c5e478d59288c841aa530db6845c4c8d962893a0"),
+/// );
+/// ```
+#[cfg(feature = "hmac")]
+#[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
+pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
+where
+    D: CoreProxy,
+    D::Core: Sync
+        + HashMarker
+        + UpdateCore
+        + FixedOutputCore
+        + BufferKindUser<BufferKind = Eager>
+        + Default
+        + Clone,
+    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
+    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+{
+    let mut buf = [0u8; N];
+    pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
+    buf
 }
