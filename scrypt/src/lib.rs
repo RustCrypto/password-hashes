@@ -83,7 +83,7 @@ pub use crate::simple::{Scrypt, ALG_ID};
 ///   **WARNING: Make sure to compare this value in constant time!**
 ///
 /// # Return
-/// `Ok(())` if calculation is succesfull and `Err(InvalidOutputLen)` if
+/// `Ok(())` if calculation is successful and `Err(InvalidOutputLen)` if
 /// `output` does not satisfy the following condition:
 /// `output.len() > 0 && output.len() <= (2^32 - 1) * 32`.
 pub fn scrypt(

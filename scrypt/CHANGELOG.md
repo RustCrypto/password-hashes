@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.3.1 (2020-07-03)
 ### Fixed
 - Enable `alloc` feature for `base64`. ([#38])
-- Remove superflous `main()` in documentation ([#40]) 
+- Remove superfluous `main()` in documentation ([#40]) 
 
 [#38]: https://github.com/RustCrypto/password-hashing/pull/38
 [#40]: https://github.com/RustCrypto/password-hashing/pull/40
