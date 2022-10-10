@@ -6,7 +6,7 @@ version = 3
 name = "argon2"
 version = "0.5.0-pre"
 dependencies = [
- "base64ct",
+ "base64ct 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2",
  "hex-literal",
  "password-hash",
@@ -37,6 +37,11 @@ name = "base64ct"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea2b2456fd614d856680dcd9fcc660a51a820fa09daef2e49772b56a193c8474"
+
+[[package]]
+name = "base64ct"
+version = "1.5.2"
+source = "git+https://github.com/ibotty/rustcrypto-formats.git?branch=shacrypt#64577eb34b3ec68a836e9f3b0abb8bbc4dffce4a"
 
 [[package]]
 name = "bcrypt-pbkdf"
@@ -281,7 +286,7 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7676374caaee8a325c9e7a2ae557f216c5563a171d6997b0ef8a65af35147700"
 dependencies = [
- "base64ct",
+ "base64ct 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
  "subtle",
 ]
@@ -400,6 +405,7 @@ dependencies = [
 name = "sha-crypt"
 version = "0.4.0"
 dependencies = [
+ "base64ct 1.5.2 (git+https://github.com/ibotty/rustcrypto-formats.git?branch=shacrypt)",
  "rand",
  "sha2",
  "subtle",

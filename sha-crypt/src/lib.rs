@@ -193,7 +193,7 @@ pub fn sha512_crypt_b64(
     params: &Sha512Params,
 ) -> Result<String, CryptError> {
     let output = sha512_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode(&output))?;
+    let r = String::from_utf8(b64::encode_sha512(&output))?;
     Ok(r)
 }
 
@@ -228,7 +228,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode(&out))?;
+    let s = String::from_utf8(b64::encode_sha512(&out))?;
     result.push_str(&s);
     Ok(result)
 }
@@ -303,7 +303,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         Err(e) => return Err(CheckError::Crypt(e)),
     };
 
-    let hash = b64::decode(hash.as_bytes())?;
+    let hash = b64::decode_sha512(hash.as_bytes())?;
 
     use subtle::ConstantTimeEq;
     if output.ct_eq(&hash).into() {
