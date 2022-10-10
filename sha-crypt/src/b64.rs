@@ -1,14 +1,22 @@
 //! Base64 encoding support
 
-use crate::defs::{MAP, TAB};
+use crate::defs::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, MAP_SHA256, MAP_SHA512, TAB};
 use alloc::vec::Vec;
 
 #[cfg(feature = "simple")]
 use crate::errors::DecodeError;
 
-pub fn encode(source: &[u8]) -> Vec<u8> {
+pub fn encode_sha512(source: &[u8]) -> Vec<u8> {
+    encode(source, MAP_SHA512)
+}
+
+pub fn encode_sha256(source: &[u8]) -> Vec<u8> {
+    encode(source, MAP_SHA256)
+}
+
+fn encode<const N: usize>(source: &[u8], map: [(u8, u8, u8, u8); N]) -> Vec<u8> {
     let mut out: Vec<u8> = vec![];
-    for entry in &MAP {
+    for entry in map {
         let mut w: usize = 0;
         if entry.3 > 2 {
             w |= source[entry.2 as usize] as usize;
@@ -27,10 +35,20 @@ pub fn encode(source: &[u8]) -> Vec<u8> {
 }
 
 #[cfg(feature = "simple")]
-pub fn decode(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
-    let mut out: [u8; 64] = [0; 64];
+pub fn decode_sha512(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
+    decode::<22, BLOCK_SIZE_SHA512>(source, MAP_SHA512)
+}
 
-    for iter in MAP.iter().enumerate() {
+#[cfg(feature = "simple")]
+pub fn decode_sha256(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
+    decode::<11, BLOCK_SIZE_SHA256>(source, MAP_SHA256)
+}
+
+#[cfg(feature = "simple")]
+pub fn decode<const N: usize, const BLOCK_SIZE: usize>(source: &[u8], map : [(u8, u8, u8, u8); N]) -> Result<Vec<u8>, DecodeError> {
+    let mut out: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
+
+    for iter in map.iter().enumerate() {
         let (i, entry) = iter;
 
         let mut w: usize = 0;
@@ -58,7 +76,7 @@ pub fn decode(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
 mod tests {
     #[cfg(feature = "simple")]
     #[test]
-    fn test_encode_decode() {
+    fn test_encode_decode_sha512() {
         let original: [u8; 64] = [
             0x0b, 0x5b, 0xdf, 0x7d, 0x92, 0xe2, 0xfc, 0xbd, 0xab, 0x57, 0xcb, 0xf3, 0xe0, 0x03,
             0x16, 0x62, 0xd3, 0x6e, 0xa0, 0x57, 0x44, 0x8c, 0xca, 0x35, 0xec, 0x80, 0x75, 0x2a,
@@ -67,8 +85,25 @@ mod tests {
             0x5f, 0xaf, 0x1a, 0xe5, 0x08, 0xe7, 0x7d, 0xd4,
         ];
 
-        let e = super::encode(&original);
-        let d = super::decode(&e).unwrap();
+        let e = super::encode_sha512(&original);
+        let d = super::decode_sha512(&e).unwrap();
+
+        for i in 0..d.len() {
+            assert_eq!(&original[i], &d[i]);
+        }
+    }
+
+    #[cfg(feature = "simple")]
+    #[test]
+    fn test_encode_decode_sha256() {
+        let original: [u8; 32] = [
+            0x0b, 0x5b, 0xdf, 0x7d, 0x92, 0xe2, 0xfc, 0xbd, 0xab, 0x57, 0xcb, 0xf3, 0xe0, 0x03,
+            0x16, 0x62, 0xd3, 0x6e, 0xa0, 0x57, 0x44, 0x8c, 0xca, 0x35, 0xec, 0x80, 0x75, 0x2a,
+            0x5f, 0xaf, 0x1a, 0xe5
+        ];
+
+        let e = super::encode_sha256(&original);
+        let d = super::decode_sha256(&e).unwrap();
 
         for i in 0..d.len() {
             assert_eq!(&original[i], &d[i]);

@@ -1,5 +1,8 @@
-/// Block size
-pub const BLOCK_SIZE: usize = 64;
+/// Block size for SHA512
+pub const BLOCK_SIZE_SHA512: usize = 64;
+
+/// Block size for SHA256
+pub const BLOCK_SIZE_SHA256: usize = 32;
 
 /// Maximum length of a salt
 #[cfg(feature = "simple")]
@@ -8,8 +11,8 @@ pub const SALT_MAX_LEN: usize = 16;
 /// Encoding table.
 pub static TAB: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-/// Inverse encoding map.
-pub const MAP: [(u8, u8, u8, u8); 22] = [
+/// Inverse encoding map for SHA512.
+pub const MAP_SHA512: [(u8, u8, u8, u8); 22] = [
     (42, 21, 0, 4),
     (1, 43, 22, 4),
     (23, 2, 44, 4),
@@ -32,4 +35,19 @@ pub const MAP: [(u8, u8, u8, u8); 22] = [
     (19, 61, 40, 4),
     (41, 20, 62, 4),
     (63, 0, 0, 2),
+];
+
+/// Inverse encoding map for SHA256.
+pub const MAP_SHA256: [(u8, u8, u8, u8); 11] = [
+    (20, 10, 0, 4),
+    (11, 1, 21, 4),
+    (2, 22, 12, 4),
+    (23, 13, 3, 4),
+    (14, 4, 24, 4),
+    (5, 25, 15, 4),
+    (26, 16, 6, 4),
+    (17, 7, 27, 4),
+    (8, 28, 18, 4),
+    (29, 19, 9, 4),
+    (30, 31, 0, 3),
 ];
