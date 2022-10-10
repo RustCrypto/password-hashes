@@ -1,7 +1,13 @@
-/// Block size for SHA512
-pub const BLOCK_SIZE: usize = 64;
+/// Block size for SHA256
+pub const BLOCK_SIZE_SHA256: usize = 32;
 
-/// PWD part length of the password string of sha-512
+/// Block size for SHA512
+pub const BLOCK_SIZE_SHA512: usize = 64;
+
+/// PWD part length of the password string of SHA256
+pub const PW_SIZE_SHA256: usize = 43;
+
+/// PWD part length of the password string of SHA512
 pub const PW_SIZE_SHA512: usize = 86;
 
 /// Maximum length of a salt
@@ -13,6 +19,7 @@ pub const SALT_MAX_LEN: usize = 16;
 pub static TAB: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 /// Inverse encoding map for SHA512.
+#[rustfmt::skip]
 pub const MAP_SHA512: [u8; 64] = [
     42, 21, 0,
     1, 43, 22,
@@ -36,4 +43,20 @@ pub const MAP_SHA512: [u8; 64] = [
     19, 61, 40,
     41, 20, 62,
     63,
+];
+
+/// Inverse encoding map for SHA256.
+#[rustfmt::skip]
+pub const MAP_SHA256: [u8; 32] = [
+    20, 10, 0,
+    11, 1, 21,
+    2, 22, 12,
+    23, 13, 3,
+    14, 4, 24,
+    5, 25, 15,
+    26, 16, 6,
+    17, 7, 27,
+    8, 28, 18,
+    29, 19, 9,
+    30, 31,
 ];
