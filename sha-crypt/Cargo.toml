@@ -21,6 +21,7 @@ sha2 = { version = "0.10", default-features = false }
 # optional dependencies
 rand = { version = "0.8", optional = true }
 subtle = { version = ">=2, <2.5", optional = true, default-features = false }
+base64ct = "1.5.3"
 
 [features]
 default = ["simple"]
