@@ -3,35 +3,34 @@
 use crate::defs::{
     BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, MAP_SHA256, MAP_SHA512, PW_SIZE_SHA256, PW_SIZE_SHA512,
 };
-use alloc::vec::Vec;
 use base64ct::{Base64ShaCrypt, Encoding};
 
 #[cfg(feature = "simple")]
 use crate::errors::DecodeError;
 
-pub fn encode_sha512(source: &[u8]) -> Vec<u8> {
+pub fn encode_sha512(source: &[u8]) -> [u8; PW_SIZE_SHA512] {
     const BUF_SIZE: usize = PW_SIZE_SHA512;
     let mut transposed = [0u8; BLOCK_SIZE_SHA512];
     for (i, &ti) in MAP_SHA512.iter().enumerate() {
         transposed[i] = source[ti as usize];
     }
-    let mut buf = [0u8; BUF_SIZE];
+    let mut buf = [0u8; PW_SIZE_SHA512];
     Base64ShaCrypt::encode(&transposed, &mut buf).unwrap();
-    buf.to_vec()
+    buf
 }
 
-pub fn encode_sha256(source: &[u8]) -> Vec<u8> {
+pub fn encode_sha256(source: &[u8]) -> [u8; PW_SIZE_SHA256] {
     let mut transposed = [0u8; BLOCK_SIZE_SHA256];
     for (i, &ti) in MAP_SHA256.iter().enumerate() {
         transposed[i] = source[ti as usize];
     }
     let mut buf = [0u8; PW_SIZE_SHA256];
     Base64ShaCrypt::encode(&transposed, &mut buf).unwrap();
-    buf.to_vec()
+    buf
 }
 
 #[cfg(feature = "simple")]
-pub fn decode_sha512(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
+pub fn decode_sha512(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA512], DecodeError> {
     const BUF_SIZE: usize = 86;
     let mut buf = [0u8; BUF_SIZE];
     Base64ShaCrypt::decode(&source, &mut buf).map_err(|_| DecodeError)?;
@@ -39,20 +38,19 @@ pub fn decode_sha512(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
     for (i, &ti) in MAP_SHA512.iter().enumerate() {
         transposed[ti as usize] = buf[i];
     }
-    Ok(transposed.to_vec())
+    Ok(transposed)
 }
 
 #[cfg(feature = "simple")]
-pub fn decode_sha256(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
-    const BUF_SIZE: usize = 43;
-    let mut buf = [0u8; BUF_SIZE];
+pub fn decode_sha256(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA256], DecodeError> {
+    let mut buf = [0u8; PW_SIZE_SHA256];
     Base64ShaCrypt::decode(&source, &mut buf).unwrap();
 
     let mut transposed = [0u8; BLOCK_SIZE_SHA256];
     for (i, &ti) in MAP_SHA256.iter().enumerate() {
         transposed[ti as usize] = buf[i];
     }
-    Ok(transposed.to_vec())
+    Ok(transposed)
 }
 
 mod tests {

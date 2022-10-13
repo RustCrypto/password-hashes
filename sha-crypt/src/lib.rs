@@ -301,7 +301,7 @@ pub fn sha512_crypt_b64(
     params: &Sha512Params,
 ) -> Result<String, CryptError> {
     let output = sha512_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode_sha512(&output))?;
+    let r = String::from_utf8(b64::encode_sha512(&output).to_vec())?;
     Ok(r)
 }
 
@@ -322,7 +322,7 @@ pub fn sha256_crypt_b64(
     params: &Sha256Params,
 ) -> Result<String, CryptError> {
     let output = sha256_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode_sha256(&output))?;
+    let r = String::from_utf8(b64::encode_sha256(&output).to_vec())?;
     Ok(r)
 }
 
@@ -357,7 +357,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode_sha512(&out))?;
+    let s = String::from_utf8(b64::encode_sha512(&out).to_vec())?;
     result.push_str(&s);
     Ok(result)
 }
@@ -393,7 +393,7 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode_sha256(&out))?;
+    let s = String::from_utf8(b64::encode_sha256(&out).to_vec())?;
     result.push_str(&s);
     Ok(result)
 }
