@@ -9,7 +9,6 @@ use base64ct::{Base64ShaCrypt, Encoding};
 use crate::errors::DecodeError;
 
 pub fn encode_sha512(source: &[u8]) -> [u8; PW_SIZE_SHA512] {
-    const BUF_SIZE: usize = PW_SIZE_SHA512;
     let mut transposed = [0u8; BLOCK_SIZE_SHA512];
     for (i, &ti) in MAP_SHA512.iter().enumerate() {
         transposed[i] = source[ti as usize];
@@ -33,7 +32,7 @@ pub fn encode_sha256(source: &[u8]) -> [u8; PW_SIZE_SHA256] {
 pub fn decode_sha512(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA512], DecodeError> {
     const BUF_SIZE: usize = 86;
     let mut buf = [0u8; BUF_SIZE];
-    Base64ShaCrypt::decode(&source, &mut buf).map_err(|_| DecodeError)?;
+    Base64ShaCrypt::decode(source, &mut buf).map_err(|_| DecodeError)?;
     let mut transposed = [0u8; BLOCK_SIZE_SHA512];
     for (i, &ti) in MAP_SHA512.iter().enumerate() {
         transposed[ti as usize] = buf[i];
@@ -44,7 +43,7 @@ pub fn decode_sha512(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA512], DecodeErr
 #[cfg(feature = "simple")]
 pub fn decode_sha256(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA256], DecodeError> {
     let mut buf = [0u8; PW_SIZE_SHA256];
-    Base64ShaCrypt::decode(&source, &mut buf).unwrap();
+    Base64ShaCrypt::decode(source, &mut buf).unwrap();
 
     let mut transposed = [0u8; BLOCK_SIZE_SHA256];
     for (i, &ti) in MAP_SHA256.iter().enumerate() {

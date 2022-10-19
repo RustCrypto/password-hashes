@@ -155,7 +155,7 @@ pub fn sha512_crypt(
         if (i & 1) != 0 {
             hasher.update(&p_vec);
         } else {
-            hasher.update(&digest_c);
+            hasher.update(digest_c);
         }
 
         // Add salt for numbers not divisible by 3
@@ -170,7 +170,7 @@ pub fn sha512_crypt(
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.update(&digest_c);
+            hasher.update(digest_c);
         } else {
             hasher.update(&p_vec);
         }
@@ -258,7 +258,7 @@ pub fn sha256_crypt(
         if (i & 1) != 0 {
             hasher.update(&p_vec);
         } else {
-            hasher.update(&digest_c);
+            hasher.update(digest_c);
         }
 
         // Add salt for numbers not divisible by 3
@@ -273,7 +273,7 @@ pub fn sha256_crypt(
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.update(&digest_c);
+            hasher.update(digest_c);
         } else {
             hasher.update(&p_vec);
         }
@@ -455,7 +455,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
 
     // Make sure there is no trailing data after the final "$"
-    if iter.next() != None {
+    if iter.next().is_some() {
         return Err(CheckError::InvalidFormat(
             "Trailing characters present".to_string(),
         ));
@@ -535,7 +535,7 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
 
     // Make sure there is no trailing data after the final "$"
-    if iter.next() != None {
+    if iter.next().is_some() {
         return Err(CheckError::InvalidFormat(
             "Trailing characters present".to_string(),
         ));
@@ -608,7 +608,7 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA
 
     // 9.
     for _ in 0..(pw_len / BLOCK_SIZE_SHA512) {
-        hasher.update(&digest_b);
+        hasher.update(digest_b);
     }
     // 10.
     hasher.update(&digest_b[..(pw_len % BLOCK_SIZE_SHA512)]);
@@ -620,7 +620,7 @@ fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA
             break;
         }
         if (n & 1) != 0 {
-            hasher.update(&digest_b);
+            hasher.update(digest_b);
         } else {
             hasher.update(password);
         }
@@ -651,7 +651,7 @@ fn sha256crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA
 
     // 9.
     for _ in 0..(pw_len / BLOCK_SIZE_SHA256) {
-        hasher.update(&digest_b);
+        hasher.update(digest_b);
     }
     // 10.
     hasher.update(&digest_b[..(pw_len % BLOCK_SIZE_SHA256)]);
@@ -663,7 +663,7 @@ fn sha256crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA
             break;
         }
         if (n & 1) != 0 {
-            hasher.update(&digest_b);
+            hasher.update(digest_b);
         } else {
             hasher.update(password);
         }
