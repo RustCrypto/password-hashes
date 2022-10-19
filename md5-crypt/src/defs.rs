@@ -5,7 +5,6 @@ pub const BLOCK_SIZE: usize = 16;
 pub const PW_SIZE_MD5: usize = 22;
 
 /// Maximum length of a salt
-#[cfg(feature = "simple")]
 pub const SALT_MAX_LEN: usize = 8;
 
 /// Encoding table.

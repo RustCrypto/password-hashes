@@ -3,6 +3,8 @@ use md5_crypt::md5_crypt_b64;
 #[cfg(feature = "simple")]
 use md5_crypt::{md5_check, md5_simple};
 
+use std::str;
+
 struct TestVector {
     input: &'static str,
     salt: &'static str,
@@ -76,7 +78,8 @@ const TEST_VECTORS: &[TestVector] = &[
 #[test]
 fn test_md5_crypt() {
     for t in TEST_VECTORS {
-        let result = md5_crypt_b64(t.input.as_bytes(), t.salt.as_bytes()).unwrap();
+        let result_array = md5_crypt_b64(t.input.as_bytes(), t.salt.as_bytes()).unwrap();
+        let result = str::from_utf8(&result_array).unwrap();
         assert!(result == t.result);
     }
 }

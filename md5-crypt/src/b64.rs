@@ -1,36 +1,32 @@
 //! Base64 encoding support
 
 use crate::defs::{BLOCK_SIZE, MAP_MD5, PW_SIZE_MD5};
-use alloc::vec::Vec;
+#[cfg(any(feature = "subtle", test))]
+use crate::errors::DecodeError;
 use base64ct::{Base64ShaCrypt, Encoding};
 
-#[cfg(feature = "simple")]
-use crate::errors::DecodeError;
-
-pub fn encode_md5(source: &[u8]) -> Vec<u8> {
+pub fn encode_md5(source: &[u8]) -> [u8; PW_SIZE_MD5] {
     let mut transposed = [0u8; BLOCK_SIZE];
     for (i, &ti) in MAP_MD5.iter().enumerate() {
         transposed[i] = source[ti as usize];
     }
     let mut buf = [0u8; PW_SIZE_MD5];
     Base64ShaCrypt::encode(&transposed, &mut buf).unwrap();
-    buf.to_vec()
+    buf
 }
 
-#[cfg(feature = "simple")]
-pub fn decode_md5(source: &[u8]) -> Result<Vec<u8>, DecodeError> {
+#[cfg(any(feature = "subtle", test))]
+pub fn decode_md5(source: &[u8]) -> Result<[u8; BLOCK_SIZE], DecodeError> {
     let mut buf = [0u8; PW_SIZE_MD5];
     Base64ShaCrypt::decode(source, &mut buf).map_err(|_| DecodeError)?;
-
     let mut transposed = [0u8; BLOCK_SIZE];
     for (i, &ti) in MAP_MD5.iter().enumerate() {
         transposed[ti as usize] = buf[i];
     }
-    Ok(transposed.to_vec())
+    Ok(transposed)
 }
 
 mod tests {
-    #[cfg(feature = "simple")]
     #[test]
     fn test_encode_decode_md5() {
         let original: [u8; 16] = [

@@ -33,34 +33,31 @@
 #![warn(missing_docs, rust_2018_idioms)]
 
 // TODO(tarcieri): heapless support
-#[macro_use]
+#[cfg(feature = "alloc")]
 extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std;
 
 mod b64;
 mod defs;
 mod errors;
 
-pub use crate::{defs::BLOCK_SIZE, errors::CryptError};
+pub use crate::{
+    defs::{BLOCK_SIZE, PW_SIZE_MD5, SALT_MAX_LEN},
+    errors::CryptError,
+};
 
-use alloc::string::String;
 use md5::{Digest, Md5};
+
+#[cfg(feature = "subtle")]
+use crate::errors::CheckError;
 
 #[cfg(feature = "simple")]
 use {
-    crate::{
-        defs::{SALT_MAX_LEN, TAB},
-        errors::CheckError,
-    },
-    alloc::string::ToString,
+    crate::defs::TAB,
+    alloc::string::String,
     rand::{distributions::Distribution, thread_rng, Rng},
 };
 
-#[cfg(feature = "simple")]
 static MD5_SALT_PREFIX: &str = "$1$";
-#[cfg(feature = "simple")]
 
 /// The MD5 crypt function returned as byte vector
 ///
@@ -160,10 +157,9 @@ pub fn md5_crypt(password: &[u8], salt: &[u8]) -> Result<[u8; BLOCK_SIZE], Crypt
 /// # Returns
 /// - `Ok(())` if calculation was successful
 /// - `Err(errors::CryptError)` otherwise
-pub fn md5_crypt_b64(password: &[u8], salt: &[u8]) -> Result<String, CryptError> {
+pub fn md5_crypt_b64(password: &[u8], salt: &[u8]) -> Result<[u8; PW_SIZE_MD5], CryptError> {
     let output = md5_crypt(password, salt)?;
-    let r = String::from_utf8(b64::encode_md5(&output))?;
-    Ok(r)
+    Ok(b64::encode_md5(&output))
 }
 
 /// Simple interface for generating a MD5 password hash.
@@ -191,7 +187,7 @@ pub fn md5_simple(password: &str) -> Result<String, CryptError> {
     result.push_str(MD5_SALT_PREFIX);
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode_md5(&out))?;
+    let s = String::from_utf8(b64::encode_md5(&out).to_vec())?;
     result.push_str(&s);
     Ok(result)
 }
@@ -206,40 +202,35 @@ pub fn md5_simple(password: &str) -> Result<String, CryptError> {
 /// # Return
 /// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
 /// format or password mismatch.
-#[cfg(feature = "simple")]
+#[cfg(feature = "subtle")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn md5_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 
     // Check that there are no characters before the first "$"
     if iter.next() != Some("") {
-        return Err(CheckError::InvalidFormat(
-            "Should start with '$".to_string(),
-        ));
+        return Err(CheckError::InvalidFormat("Should start with '$"));
     }
 
     if iter.next() != Some("1") {
-        return Err(CheckError::InvalidFormat(format!(
-            "does not contain MD5 identifier: '{}'",
-            MD5_SALT_PREFIX
-        )));
+        return Err(CheckError::InvalidFormat(
+            "does not contain MD5 identifier: '$1$'",
+        ));
     }
 
-    let next = iter.next().ok_or_else(|| {
-        CheckError::InvalidFormat("Does not contain a salt or hash string".to_string())
-    })?;
+    let next = iter.next().ok_or(CheckError::InvalidFormat(
+        "Does not contain a salt or hash string",
+    ))?;
 
     let salt = next;
 
     let hash = iter
         .next()
-        .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
+        .ok_or(CheckError::InvalidFormat("Does not contain a hash string"))?;
 
     // Make sure there is no trailing data after the final "$"
     if iter.next().is_some() {
-        return Err(CheckError::InvalidFormat(
-            "Trailing characters present".to_string(),
-        ));
+        return Err(CheckError::InvalidFormat("Trailing characters present"));
     }
 
     let output = md5_crypt(password.as_bytes(), salt.as_bytes()).map_err(CheckError::Crypt)?;
