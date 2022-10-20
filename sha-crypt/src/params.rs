@@ -36,3 +36,28 @@ impl Sha512Params {
         }
     }
 }
+
+/// Algorithm parameters.
+#[derive(Debug, Clone)]
+pub struct Sha256Params {
+    pub(crate) rounds: usize,
+}
+
+impl Default for Sha256Params {
+    fn default() -> Self {
+        Sha256Params {
+            rounds: ROUNDS_DEFAULT,
+        }
+    }
+}
+
+impl Sha256Params {
+    /// Create new algorithm parameters.
+    pub fn new(rounds: usize) -> Result<Sha256Params, errors::CryptError> {
+        if (ROUNDS_MIN..=ROUNDS_MAX).contains(&rounds) {
+            Ok(Sha256Params { rounds })
+        } else {
+            Err(errors::CryptError::RoundsError)
+        }
+    }
+}
