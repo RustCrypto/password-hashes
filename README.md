@@ -19,7 +19,7 @@ Collection of password hashing algorithms, otherwise known as password-based key
 
 Please see the [OWASP Password Storage Cheat Sheet] for assistance in selecting an appropriate algorithm for your use case.
 
-### Usage
+## Usage
 
 The following code example shows how to verify a password when stored using one
 of many possible password hashing algorithms implemented in this repository.
@@ -43,7 +43,7 @@ let algs: &[&dyn PasswordVerifier] = &[&Argon2::default(), &Pbkdf2, &Scrypt];
 password_hash.verify_password(algs, input_password).expect("invalid password");
 ```
 
-### Minimum Supported Rust Version (MSRV) Policy
+## Minimum Supported Rust Version (MSRV) Policy
 
 MSRV bumps are considered breaking changes and will be performed only with minor version bump.
 
