@@ -1,0 +1,33 @@
+[package]
+name = "md5-crypt"
+version = "0.1.0"
+description = """
+Pure Rust implementation of the MD5-crypt password hash as implemented by the
+POSIX crypt C library
+"""
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/md5-crypt"
+repository = "https://github.com/RustCrypto/password-hashes/tree/master/md5-crypt"
+categories = ["cryptography", "no-std"]
+keywords = ["crypto", "password", "hashing"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.56"
+
+[dependencies]
+
+# optional dependencies
+rand = { version = "0.8", optional = true }
+subtle = { version = ">=2, <2.5", optional = true, default-features = false }
+base64ct = "1.5.3"
+md-5 = { version = "0.10.5", default-features = false }
+
+[features]
+default = ["simple"]
+alloc = []
+simple = ["alloc", "rand", "subtle"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
