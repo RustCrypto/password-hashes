@@ -2,6 +2,7 @@ workspace.members = ["."]
 
 [package]
 name = "readme"
+description = "rustdoc tests for toplevel README.md"
 version = "0.1.0"
 edition = "2021"
 publish = false
