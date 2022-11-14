@@ -30,8 +30,10 @@ password-hash = { version = "0.4", features = ["rand_core"] }
 [features]
 default = ["alloc", "password-hash", "rand"]
 alloc = []
-rand = ["password-hash/rand_core"]
 std = ["alloc", "password-hash/std"]
+
+rand = ["password-hash/rand_core"]
+simple = ["password-hash"]
 
 [package.metadata.docs.rs]
 all-features = true

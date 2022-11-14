@@ -4,6 +4,7 @@ members = [
     "argon2",
     "balloon-hash",
     "bcrypt-pbkdf",
+    "password-auth",
     "pbkdf2",
     "scrypt",
     "sha-crypt"
