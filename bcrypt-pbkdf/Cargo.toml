@@ -7,8 +7,8 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/bcrypt-pbkdf"
 repository = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbkdf"
-keywords = ["crypto", "password", "hashing"]
-categories = ["cryptography"]
+keywords = ["crypto", "hashing", "password", "phf"]
+categories = ["authentication", "cryptography", "no-std"]
 edition = "2021"
 rust-version = "1.57"
 
