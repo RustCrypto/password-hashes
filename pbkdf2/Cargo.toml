@@ -13,7 +13,7 @@ edition = "2021"
 rust-version = "1.57"
 
 [dependencies]
-digest = { version = "0.10.3", features = ["mac"] }
+digest = { version = "0.10.6", features = ["mac"] }
 
 # optional dependencies
 rayon = { version = "1.5", optional = true }
