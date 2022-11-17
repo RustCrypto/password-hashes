@@ -13,7 +13,7 @@ edition = "2021"
 rust-version = "1.57"
 
 [dependencies]
-digest = { version = "0.10.3", default-features = false }
+digest = { version = "0.10.6", default-features = false }
 crypto-bigint = { version = "0.4", default-features = false, features = ["generic-array"] }
 
 # optional dependencies
