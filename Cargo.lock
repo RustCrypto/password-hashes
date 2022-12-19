@@ -333,7 +333,7 @@ dependencies = [
  "hmac",
  "password-hash",
  "rayon",
- "sha-1",
+ "sha1",
  "sha2",
  "streebog",
 ]
@@ -442,17 +442,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha-1"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "028f48d513f9678cda28f6e4064755b3fbb2af6acd672f2c209b62323f7aea0f"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "digest",
-]
-
-[[package]]
 name = "sha-crypt"
 version = "0.4.0"
 dependencies = [
@@ -460,6 +449,17 @@ dependencies = [
  "rand",
  "sha2",
  "subtle",
+]
+
+[[package]]
+name = "sha1"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f04293dc80c3993519f2d7f6f511707ee7094fe0c6d3406feb330cdb3540eba3"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]

@@ -19,13 +19,13 @@ digest = { version = "0.10.6", features = ["mac"] }
 rayon = { version = "1.5", optional = true }
 password-hash = { version = "0.4", default-features = false, optional = true, features = ["rand_core"]  }
 hmac = { version = "0.12", default-features = false, optional = true }
-sha1 = { version = "0.10", package = "sha-1", default-features = false, optional = true }
+sha1 = { version = "0.10", default-features = false, optional = true }
 sha2 = { version = "0.10", default-features = false, optional = true }
 
 [dev-dependencies]
 hmac = "0.12"
 hex-literal = "0.3.3"
-sha1 = { version = "0.10", package = "sha-1" }
+sha1 = "0.10"
 sha2 = "0.10"
 streebog = "0.10"
 
