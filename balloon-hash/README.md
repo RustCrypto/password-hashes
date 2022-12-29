@@ -53,7 +53,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/balloon-hash.svg
+[crate-image]: https://buildstats.info/crate/balloon-hash
 [crate-link]: https://crates.io/crates/balloon-hash
 [docs-image]: https://docs.rs/balloon-hash/badge.svg
 [docs-link]: https://docs.rs/balloon-hash/
