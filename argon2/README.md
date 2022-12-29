@@ -54,7 +54,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/argon2.svg
+[crate-image]: https://buildstats.info/crate/argon2
 [crate-link]: https://crates.io/crates/argon2
 [docs-image]: https://docs.rs/argon2/badge.svg
 [docs-link]: https://docs.rs/argon2/

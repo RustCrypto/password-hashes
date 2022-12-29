@@ -44,7 +44,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/sha-crypt.svg
+[crate-image]: https://buildstats.info/crate/sha-crypt
 [crate-link]: https://crates.io/crates/sha-crypt
 [docs-image]: https://docs.rs/sha-crypt/badge.svg
 [docs-link]: https://docs.rs/sha-crypt/

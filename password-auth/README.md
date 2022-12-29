@@ -41,7 +41,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/password-auth.svg
+[crate-image]: https://buildstats.info/crate/password-auth
 [crate-link]: https://crates.io/crates/password-auth
 [docs-image]: https://docs.rs/password-auth/badge.svg
 [docs-link]: https://docs.rs/password-auth/
