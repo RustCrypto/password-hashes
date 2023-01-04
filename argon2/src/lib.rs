@@ -22,26 +22,17 @@
     unused_qualifications
 )]
 
-//! ## Usage (simple with default params)
+//! ## Usage
 //!
-//! Note: this example requires the `rand_core` crate with the `std` feature
-//! enabled for `rand_core::OsRng` (embedded platforms can substitute their
-//! own RNG)
+//! ### Password Hashing
 //!
-//! Add the following to your crate's `Cargo.toml` to import it:
+//! This API hashes a password to a "PHC string" suitable for the purposes of
+//! password-based authentication. Do not use this API to derive cryptographic
+//! keys: see the "key derivation" usage example below.
 //!
-//! ```toml
-//! [dependencies]
-//! argon2 = "0.4"
-//! rand_core = { version = "0.6", features = ["std"] }
-//! ```
-//!
-//! The following example demonstrates the high-level password hashing API:
-//!
-//! ```
+#![cfg_attr(feature = "std", doc = "```")]
+#![cfg_attr(not(feature = "std"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "password-hash", feature = "std"))]
-//! # {
 //! use argon2::{
 //!     password_hash::{
 //!         rand_core::OsRng,
@@ -65,7 +56,25 @@
 //! // `Argon2` instance.
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(Argon2::default().verify_password(password, &parsed_hash).is_ok());
+//! # Ok(())
 //! # }
+//! ```
+//!
+//! ### Key Derivation
+//!
+//! This API is useful for transforming a password into cryptographic keys for
+//! e.g. password-based encryption.
+//!
+#![cfg_attr(feature = "std", doc = "```")]
+#![cfg_attr(not(feature = "std"), doc = "```ignore")]
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! use argon2::Argon2;
+//!
+//! let password = b"hunter42"; // Bad password; don't actually use!
+//! let salt = b"example salt"; // Salt should be unique per password
+//!
+//! let mut output_key_material = [0u8; 32]; // Can be any desired size
+//! Argon2::default().hash_password_into(password, salt, &mut output_key_material)?;
 //! # Ok(())
 //! # }
 //! ```
