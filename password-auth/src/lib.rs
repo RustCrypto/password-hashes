@@ -54,7 +54,7 @@ impl std::error::Error for VerifyError {}
 /// Generate a password hash for the given password.
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
     let salt = SaltString::generate(OsRng);
-    generate_phc_hash(password.as_ref(), salt.as_ref())
+    generate_phc_hash(password.as_ref(), &salt)
         .map(|hash| hash.to_string())
         .expect("password hashing error")
 }
@@ -63,7 +63,7 @@ pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
 #[allow(unreachable_code)]
 fn generate_phc_hash<'a>(
     password: &[u8],
-    salt: &'a str,
+    salt: &'a SaltString,
 ) -> password_hash::Result<PasswordHash<'a>> {
     //
     // Algorithms below are in order of preference

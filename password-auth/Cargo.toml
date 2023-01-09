@@ -16,7 +16,7 @@ edition = "2021"
 rust-version = "1.57"
 
 [dependencies]
-password-hash = { version = "0.4", features = ["alloc", "rand_core"] }
+password-hash = { version = "=0.5.0-pre.0", features = ["alloc", "rand_core"] }
 rand_core = { version = "0.6", features = ["getrandom"] }
 
 # optional dependencies

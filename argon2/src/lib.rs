@@ -516,17 +516,15 @@ impl<'key> Argon2<'key> {
 impl PasswordHasher for Argon2<'_> {
     type Params = Params;
 
-    fn hash_password<'a, S>(
+    fn hash_password<'a>(
         &self,
         password: &[u8],
-        salt: &'a S,
-    ) -> password_hash::Result<PasswordHash<'a>>
-    where
-        S: AsRef<str> + ?Sized,
-    {
-        let salt = Salt::try_from(salt.as_ref())?;
+        salt: impl Into<Salt<'a>>,
+    ) -> password_hash::Result<PasswordHash<'a>> {
+        let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+
         let output_len = self
             .params
             .output_len()
@@ -571,7 +569,7 @@ impl PasswordHasher for Argon2<'_> {
             version,
             params,
         }
-        .hash_password(password, salt.as_str())
+        .hash_password(password, salt)
     }
 }
 
@@ -624,9 +622,8 @@ mod tests {
 
         let params = Params::new(m_cost, t_cost, p_cost, None).unwrap();
         let hasher = Argon2::new(Algorithm::default(), version, params);
-        let hash = hasher
-            .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
-            .unwrap();
+        let salt = Salt::new(EXAMPLE_SALT).unwrap();
+        let hash = hasher.hash_password(EXAMPLE_PASSWORD, salt).unwrap();
 
         assert_eq!(hash.version.unwrap(), version.into());
 

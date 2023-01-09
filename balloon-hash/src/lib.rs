@@ -88,7 +88,10 @@ use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use password_hash::{Decimal, Ident, ParamsString, Salt};
+pub use password_hash::Salt;
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+use password_hash::{Decimal, Ident, ParamsString};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -222,18 +225,14 @@ where
 {
     type Params = Params;
 
-    fn hash_password<'a, S>(
+    fn hash_password<'a>(
         &self,
         password: &[u8],
-        salt: &'a S,
-    ) -> password_hash::Result<PasswordHash<'a>>
-    where
-        S: AsRef<str> + ?Sized,
-    {
-        let salt = Salt::try_from(salt.as_ref())?;
+        salt: impl Into<Salt<'a>>,
+    ) -> password_hash::Result<PasswordHash<'a>> {
+        let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
-
         let output = password_hash::Output::new(&self.hash(password, salt_bytes)?)?;
 
         Ok(PasswordHash {
@@ -266,7 +265,7 @@ where
 
         let salt = salt.into();
 
-        Self::new(algorithm, params, self.secret).hash_password(password, salt.as_str())
+        Self::new(algorithm, params, self.secret).hash_password(password, salt)
     }
 }
 
