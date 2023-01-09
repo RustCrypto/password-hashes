@@ -75,7 +75,7 @@ fn test_vectors() {
 #[cfg(all(feature = "password-hash", feature = "alloc"))]
 #[test]
 fn hash_simple_retains_configured_params() {
-    use balloon_hash::PasswordHasher;
+    use balloon_hash::{PasswordHasher, Salt};
     use sha2::Sha256;
 
     /// Example password only: don't use this as a real password!!!
@@ -91,9 +91,8 @@ fn hash_simple_retains_configured_params() {
 
     let params = Params::new(s_cost, t_cost, p_cost).unwrap();
     let hasher = Balloon::<Sha256>::new(Algorithm::default(), params, None);
-    let hash = hasher
-        .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
-        .unwrap();
+    let salt = Salt::new(EXAMPLE_SALT).unwrap();
+    let hash = hasher.hash_password(EXAMPLE_PASSWORD, salt).unwrap();
 
     assert_eq!(hash.version.unwrap(), 1);
 
