@@ -22,5 +22,6 @@ zeroize = { version = "1", default-features = false, optional = true }
 hex-literal = "0.3.3"
 
 [features]
-default = ["std"]
+default = ["alloc", "std"]
+alloc = []
 std = []

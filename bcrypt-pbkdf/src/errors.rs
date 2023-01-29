@@ -9,6 +9,8 @@ pub enum Error {
     InvalidRounds,
     /// The output parameter has an invalid length.
     InvalidOutputLen,
+    /// The manually provided memory was not long enough.
+    InvalidMemoryLen,
 }
 
 impl fmt::Display for Error {
@@ -17,6 +19,7 @@ impl fmt::Display for Error {
             Error::InvalidParamLen => write!(f, "Invalid parameter length"),
             Error::InvalidRounds => write!(f, "Invalid number of rounds"),
             Error::InvalidOutputLen => write!(f, "Invalid output length"),
+            Error::InvalidMemoryLen => write!(f, "Invalid memory length"),
         }
     }
 }

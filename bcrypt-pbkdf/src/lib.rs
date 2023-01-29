@@ -10,6 +10,7 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
@@ -34,8 +35,6 @@ use zeroize::Zeroize;
 const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;
 const BHASH_SEED: &[u8; BHASH_OUTPUT_SIZE] = b"OxychromaticBlowfishSwatDynamite";
-// number of strides which will be processed on stack
-const STACK_STRIDE: usize = 8;
 
 fn bhash(sha2_pass: &Output<Sha512>, sha2_salt: &Output<Sha512>) -> Output<Bhash> {
     let mut blowfish = Blowfish::bc_init_state();
@@ -124,21 +123,15 @@ impl Drop for Bhash {
 /// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
 /// - `Err(Error::InvalidRounds)` if `rounds == 0`.
 /// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
+#[cfg(feature = "alloc")]
 pub fn bcrypt_pbkdf(
     passphrase: impl AsRef<[u8]>,
     salt: &[u8],
     rounds: u32,
     output: &mut [u8],
 ) -> Result<(), Error> {
-    // Validate inputs in same way as OpenSSH implementation
-    let passphrase = passphrase.as_ref();
-    if passphrase.is_empty() || salt.is_empty() {
-        return Err(errors::Error::InvalidParamLen);
-    } else if rounds == 0 {
-        return Err(errors::Error::InvalidRounds);
-    } else if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
-        return Err(errors::Error::InvalidOutputLen);
-    }
+    /// number of strides which will be processed on stack
+    const STACK_STRIDE: usize = 8;
 
     // Allocate a Vec large enough to hold the output we require.
     let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
@@ -152,15 +145,55 @@ pub fn bcrypt_pbkdf(
         &mut stack_buf[..stride * BHASH_OUTPUT_SIZE]
     };
 
+    bcrypt_pbkdf_with_memory(passphrase, salt, rounds, output, generated)
+}
+
+/// Like [`bcrypt_pbkdf`], but usable on "heapless" targets.
+///
+/// # Arguments
+/// - `passphrase` - The passphrase to process.
+/// - `salt` - The salt value to use as a byte vector.
+/// - `rounds` - The number of rounds to apply.
+/// - `output` - The resulting derived key is returned in this byte vector.
+/// - `memory` - Buffer space used for internal computation.
+///
+/// # Returns
+/// - `Ok(())` if everything is fine.
+/// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
+/// - `Err(Error::InvalidRounds)` if `rounds == 0`.
+/// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
+/// - `Err(Error::InvalidMemoryLen)` if `memory.len() < (output.len() + 32 - 1) / 32 * 32`, i.e.
+///   `output.len()` rounded up to the nearest multiple of 32.
+pub fn bcrypt_pbkdf_with_memory(
+    passphrase: impl AsRef<[u8]>,
+    salt: &[u8],
+    rounds: u32,
+    output: &mut [u8],
+    memory: &mut [u8],
+) -> Result<(), Error> {
+    let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
+
+    // Validate inputs in same way as OpenSSH implementation
+    let passphrase = passphrase.as_ref();
+    if passphrase.is_empty() || salt.is_empty() {
+        return Err(errors::Error::InvalidParamLen);
+    } else if rounds == 0 {
+        return Err(errors::Error::InvalidRounds);
+    } else if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
+        return Err(errors::Error::InvalidOutputLen);
+    } else if memory.len() < stride * BHASH_OUTPUT_SIZE {
+        return Err(errors::Error::InvalidMemoryLen);
+    }
+
     // Run the regular PBKDF2 algorithm with bhash as the PRF.
-    pbkdf2::pbkdf2::<Bhash>(&Sha512::digest(passphrase), salt, rounds, generated)
+    pbkdf2::pbkdf2::<Bhash>(&Sha512::digest(passphrase), salt, rounds, memory)
         .expect("Bhash can be initialized with any key length");
 
     // Apply the bcrypt_pbkdf non-linear transformation on the output.
     for (i, out_byte) in output.iter_mut().enumerate() {
         let chunk_num = i % stride;
         let chunk_index = i / stride;
-        *out_byte = generated[chunk_num * BHASH_OUTPUT_SIZE + chunk_index];
+        *out_byte = memory[chunk_num * BHASH_OUTPUT_SIZE + chunk_index];
     }
 
     Ok(())
