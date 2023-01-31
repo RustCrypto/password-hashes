@@ -1,6 +1,6 @@
 extern crate bcrypt_pbkdf;
 
-use bcrypt_pbkdf::bcrypt_pbkdf;
+use bcrypt_pbkdf::bcrypt_pbkdf_with_memory;
 
 #[test]
 fn test_openbsd_vectors() {
@@ -70,7 +70,8 @@ fn test_openbsd_vectors() {
 
     for t in tests.iter() {
         let mut out = vec![0; t.out.len()];
-        bcrypt_pbkdf(t.password, &t.salt[..], t.rounds, &mut out).unwrap();
+        let mut memory = vec![0; (t.out.len() + 32 - 1) / 32 * 32];
+        bcrypt_pbkdf_with_memory(t.password, &t.salt[..], t.rounds, &mut out, &mut memory).unwrap();
         assert_eq!(out, t.out);
     }
 }
