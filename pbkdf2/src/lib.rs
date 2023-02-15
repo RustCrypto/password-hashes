@@ -95,7 +95,10 @@ pub use password_hash;
 mod simple;
 
 #[cfg(feature = "simple")]
-pub use crate::simple::{Algorithm, Params, Pbkdf2};
+pub use crate::simple::{Algorithm, Params, Pbkdf2, PBKDF2_SHA256, PBKDF2_SHA512};
+
+#[cfg(all(feature = "simple", feature = "sha1"))]
+pub use crate::simple::PBKDF2_SHA1;
 
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
