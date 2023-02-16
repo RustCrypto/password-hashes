@@ -13,13 +13,13 @@ use sha1::Sha1;
 
 /// PBKDF2 (SHA-1)
 #[cfg(feature = "sha1")]
-pub const PBKDF2_SHA1: Ident = Ident::new_unwrap("pbkdf2");
+pub const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap("pbkdf2");
 
 /// PBKDF2 (SHA-256)
-pub const PBKDF2_SHA256: Ident = Ident::new_unwrap("pbkdf2-sha256");
+pub const PBKDF2_SHA256_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha256");
 
 /// PBKDF2 (SHA-512)
-pub const PBKDF2_SHA512: Ident = Ident::new_unwrap("pbkdf2-sha512");
+pub const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha512");
 
 /// PBKDF2 type for use with [`PasswordHasher`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -37,7 +37,7 @@ impl PasswordHasher for Pbkdf2 {
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> Result<PasswordHash<'a>> {
-        let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256))?;
+        let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256_IDENT))?;
 
         // Versions unsupported
         if version.is_some() {
@@ -99,9 +99,9 @@ impl Algorithm {
     pub fn ident(&self) -> Ident<'static> {
         match self {
             #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => PBKDF2_SHA1,
-            Algorithm::Pbkdf2Sha256 => PBKDF2_SHA256,
-            Algorithm::Pbkdf2Sha512 => PBKDF2_SHA512,
+            Algorithm::Pbkdf2Sha1 => PBKDF2_SHA1_IDENT,
+            Algorithm::Pbkdf2Sha256 => PBKDF2_SHA256_IDENT,
+            Algorithm::Pbkdf2Sha512 => PBKDF2_SHA512_IDENT,
         }
     }
 
@@ -143,9 +143,9 @@ impl<'a> TryFrom<Ident<'a>> for Algorithm {
     fn try_from(ident: Ident<'a>) -> Result<Algorithm> {
         match ident {
             #[cfg(feature = "sha1")]
-            PBKDF2_SHA1 => Ok(Algorithm::Pbkdf2Sha1),
-            PBKDF2_SHA256 => Ok(Algorithm::Pbkdf2Sha256),
-            PBKDF2_SHA512 => Ok(Algorithm::Pbkdf2Sha512),
+            PBKDF2_SHA1_IDENT => Ok(Algorithm::Pbkdf2Sha1),
+            PBKDF2_SHA256_IDENT => Ok(Algorithm::Pbkdf2Sha256),
+            PBKDF2_SHA512_IDENT => Ok(Algorithm::Pbkdf2Sha512),
             _ => Err(Error::Algorithm),
         }
     }
