@@ -11,16 +11,6 @@ use sha2::{Sha256, Sha512};
 #[cfg(feature = "sha1")]
 use sha1::Sha1;
 
-/// PBKDF2 (SHA-1)
-#[cfg(feature = "sha1")]
-pub const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap("pbkdf2");
-
-/// PBKDF2 (SHA-256)
-pub const PBKDF2_SHA256_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha256");
-
-/// PBKDF2 (SHA-512)
-pub const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha512");
-
 /// PBKDF2 type for use with [`PasswordHasher`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
@@ -37,7 +27,7 @@ impl PasswordHasher for Pbkdf2 {
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> Result<PasswordHash<'a>> {
-        let algorithm = Algorithm::try_from(alg_id.unwrap_or(PBKDF2_SHA256_IDENT))?;
+        let algorithm = Algorithm::try_from(alg_id.unwrap_or(Algorithm::PBKDF2_SHA256_IDENT))?;
 
         // Versions unsupported
         if version.is_some() {
@@ -90,6 +80,16 @@ pub enum Algorithm {
 }
 
 impl Algorithm {
+    /// PBKDF2 (SHA-1) algorithm identifier
+    #[cfg(feature = "sha1")]
+    pub const PBKDF2_SHA1_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2");
+
+    /// PBKDF2 (SHA-256) algorithm identifier
+    pub const PBKDF2_SHA256_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2-sha256");
+
+    /// PBKDF2 (SHA-512) algorithm identifier
+    pub const PBKDF2_SHA512_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2-sha512");
+
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
         id.as_ref().parse()
@@ -99,9 +99,9 @@ impl Algorithm {
     pub fn ident(&self) -> Ident<'static> {
         match self {
             #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => PBKDF2_SHA1_IDENT,
-            Algorithm::Pbkdf2Sha256 => PBKDF2_SHA256_IDENT,
-            Algorithm::Pbkdf2Sha512 => PBKDF2_SHA512_IDENT,
+            Algorithm::Pbkdf2Sha1 => Self::PBKDF2_SHA1_IDENT,
+            Algorithm::Pbkdf2Sha256 => Self::PBKDF2_SHA256_IDENT,
+            Algorithm::Pbkdf2Sha512 => Self::PBKDF2_SHA512_IDENT,
         }
     }
 
@@ -143,9 +143,9 @@ impl<'a> TryFrom<Ident<'a>> for Algorithm {
     fn try_from(ident: Ident<'a>) -> Result<Algorithm> {
         match ident {
             #[cfg(feature = "sha1")]
-            PBKDF2_SHA1_IDENT => Ok(Algorithm::Pbkdf2Sha1),
-            PBKDF2_SHA256_IDENT => Ok(Algorithm::Pbkdf2Sha256),
-            PBKDF2_SHA512_IDENT => Ok(Algorithm::Pbkdf2Sha512),
+            Self::PBKDF2_SHA1_IDENT => Ok(Algorithm::Pbkdf2Sha1),
+            Self::PBKDF2_SHA256_IDENT => Ok(Algorithm::Pbkdf2Sha256),
+            Self::PBKDF2_SHA512_IDENT => Ok(Algorithm::Pbkdf2Sha512),
             _ => Err(Error::Algorithm),
         }
     }
