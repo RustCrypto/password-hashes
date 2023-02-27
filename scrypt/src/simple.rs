@@ -1,6 +1,7 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::{scrypt, Params};
+use core::cmp::Ordering;
 use password_hash::{Decimal, Error, Ident, Output, PasswordHash, PasswordHasher, Result, Salt};
 
 /// Algorithm identifier
@@ -38,9 +39,17 @@ impl PasswordHasher for Scrypt {
         let salt_bytes = salt.b64_decode(&mut salt_arr)?;
 
         let output = Output::init_with(params.len, |out| {
-            scrypt(password, salt_bytes, &params, out).map_err(|_e| {
-                // TODO(tarcieri): handle output variants
-                Error::OutputTooLong
+            scrypt(password, salt_bytes, &params, out).map_err(|_| {
+                let provided = if out.is_empty() {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                };
+
+                password_hash::Error::OutputSize {
+                    provided,
+                    expected: 0, // TODO(tarcieri): calculate for `Ordering::Greater` case
+                }
             })
         })?;
 

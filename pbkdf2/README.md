@@ -13,7 +13,7 @@ Pure Rust implementation of the [Password-Based Key Derivation Function v2 (PBKD
 
 ## Minimum Supported Rust Version
 
-Rust **1.57** or higher.
+Rust **1.60** or higher.
 
 Minimum supported Rust version can be changed in the future, but it will be
 done with a minor version bump.

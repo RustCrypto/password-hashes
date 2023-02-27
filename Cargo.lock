@@ -34,9 +34,9 @@ dependencies = [
 
 [[package]]
 name = "base64ct"
-version = "1.5.3"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b645a089122eccb6111b4f81cbc1a49f5900ac4666bb93ac027feaecf15607bf"
+checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
 name = "bcrypt-pbkdf"
@@ -315,9 +315,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.5.0-pre.0"
+version = "0.5.0-pre.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d9d7f72dbf886af2c2a8d4a2ddfb4eea37e4d77ea3bde49f79af7c577e37908"
+checksum = "21b20161a9b0901b2a6996450de485d5e102ebc1db044a8b0ec4940771e8fa9e"
 dependencies = [
  "base64ct",
  "rand_core",

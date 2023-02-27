@@ -10,7 +10,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-p
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 edition = "2021"
-rust-version = "1.57"
+rust-version = "1.60"
 
 [dependencies]
 blowfish = { version = "0.9.1", features = ["bcrypt"] }
