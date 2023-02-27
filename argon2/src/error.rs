@@ -3,7 +3,7 @@
 use core::fmt;
 
 #[cfg(feature = "password-hash")]
-use password_hash::errors::InvalidValue;
+use {crate::Params, core::cmp::Ordering, password_hash::errors::InvalidValue};
 
 /// Result with argon2's [`Error`] type.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -101,8 +101,14 @@ impl From<Error> for password_hash::Error {
             Error::MemoryTooLittle => InvalidValue::TooShort.param_error(),
             Error::MemoryTooMuch => InvalidValue::TooLong.param_error(),
             Error::PwdTooLong => password_hash::Error::Password,
-            Error::OutputTooShort => password_hash::Error::OutputTooShort,
-            Error::OutputTooLong => password_hash::Error::OutputTooLong,
+            Error::OutputTooShort => password_hash::Error::OutputSize {
+                provided: Ordering::Less,
+                expected: Params::MIN_OUTPUT_LEN,
+            },
+            Error::OutputTooLong => password_hash::Error::OutputSize {
+                provided: Ordering::Greater,
+                expected: Params::MAX_OUTPUT_LEN,
+            },
             Error::SaltTooShort => InvalidValue::TooShort.salt_error(),
             Error::SaltTooLong => InvalidValue::TooLong.salt_error(),
             Error::SecretTooLong => InvalidValue::TooLong.param_error(),
