@@ -62,7 +62,7 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
             out_len - counter > 64
         })
     {
-        last_output = Blake2b512::digest(&last_output);
+        last_output = Blake2b512::digest(last_output);
         chunk.copy_from_slice(&last_output[..half_hash_len]);
     }
 

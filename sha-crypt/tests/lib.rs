@@ -172,11 +172,11 @@ fn test_sha512_simple_check_roundtrip() {
     let pw = "this is my password";
     let params = Sha512Params::new(5_000).expect("Rounds error");
 
-    let r = sha512_simple(&pw, &params);
+    let r = sha512_simple(pw, &params);
     assert!(r.is_ok());
     let hash = r.unwrap();
 
-    let c_r = sha512_check(&pw, &hash);
+    let c_r = sha512_check(pw, &hash);
     assert!(c_r.is_ok());
 }
 
@@ -186,11 +186,11 @@ fn test_sha256_simple_check_roundtrip() {
     let pw = "this is my password";
     let params = Sha256Params::new(5_000).expect("Rounds error");
 
-    let r = sha256_simple(&pw, &params);
+    let r = sha256_simple(pw, &params);
     assert!(r.is_ok());
     let hash = r.unwrap();
 
-    let c_r = sha256_check(&pw, &hash);
+    let c_r = sha256_check(pw, &hash);
     assert!(c_r.is_ok());
 }
 
@@ -199,7 +199,7 @@ fn test_sha256_simple_check_roundtrip() {
 fn test_sha512_unexpected_prefix() {
     let pw = "foobar";
     let s = "SHOULDNOTBEHERE$6$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0";
-    assert!(!sha512_check(pw, s).is_ok());
+    assert!(sha512_check(pw, s).is_err());
 }
 
 #[cfg(feature = "simple")]
@@ -207,7 +207,7 @@ fn test_sha512_unexpected_prefix() {
 fn test_sha256_unexpected_prefix() {
     let pw = "foobar";
     let s = "SHOULDNOTBEHERE$6$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0";
-    assert!(!sha256_check(pw, s).is_ok());
+    assert!(sha256_check(pw, s).is_err());
 }
 
 #[cfg(feature = "simple")]
@@ -216,7 +216,7 @@ fn test_sha512_wrong_id() {
     // wrong id '7'
     let pw = "foobar";
     let s = "$7$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0";
-    assert!(!sha512_check(pw, s).is_ok());
+    assert!(sha512_check(pw, s).is_err());
 }
 
 #[cfg(feature = "simple")]
@@ -225,7 +225,7 @@ fn test_sha256_wrong_id() {
     // wrong id '7'
     let pw = "foobar";
     let s = "$7$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0";
-    assert!(!sha256_check(pw, s).is_ok());
+    assert!(sha256_check(pw, s).is_err());
 }
 
 #[cfg(feature = "simple")]
@@ -234,7 +234,7 @@ fn test_sha512_missing_trailing_slash() {
     // Missing trailing slash
     let pw = "abc";
     let s = "$6$rounds=656000$Ykk6fjI2sU3/uprV$Z6yV/9Z741lfroSSzB9MwxSRnGeI9Z74hBkgNsHuojQJxZ9XjPkHg9jqqGLvWZ586wqnSSx5vrXZdhrMSZZE4";
-    assert!(!sha512_check(pw, s).is_ok());
+    assert!(sha512_check(pw, s).is_err());
 }
 
 #[cfg(feature = "simple")]
@@ -243,5 +243,5 @@ fn test_sha256_missing_trailing_slash() {
     // Missing trailing slash
     let pw = "abc";
     let s = "$6$rounds=656000$Ykk6fjI2sU3/uprV$Z6yV/9Z741lfroSSzB9MwxSRnGeI9Z74hBkgNsHuojQJxZ9XjPkHg9jqqGLvWZ586wqnSSx5vrXZdhrMSZZE4";
-    assert!(!sha256_check(pw, s).is_ok());
+    assert!(sha256_check(pw, s).is_err());
 }

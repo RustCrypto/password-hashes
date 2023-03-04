@@ -311,7 +311,7 @@ impl<'key> Argon2<'key> {
                     let zero_block = Block::default();
 
                     if data_independent_addressing {
-                        (&mut input_block.as_mut()[..6]).copy_from_slice(&[
+                        input_block.as_mut()[..6].copy_from_slice(&[
                             pass as u64,
                             lane as u64,
                             slice as u64,
@@ -370,7 +370,7 @@ impl<'key> Argon2<'key> {
                             // Cannot reference other lanes yet
                             lane
                         } else {
-                            (rand >> 32) as usize % lanes as usize
+                            (rand >> 32) as usize % lanes
                         };
 
                         let reference_area_size = if pass == 0 {
@@ -469,25 +469,25 @@ impl<'key> Argon2<'key> {
     #[allow(clippy::cast_possible_truncation)]
     fn initial_hash(&self, pwd: &[u8], salt: &[u8], out: &[u8]) -> digest::Output<Blake2b512> {
         let mut digest = Blake2b512::new();
-        digest.update(&self.params.p_cost().to_le_bytes());
-        digest.update(&(out.len() as u32).to_le_bytes());
-        digest.update(&self.params.m_cost().to_le_bytes());
-        digest.update(&self.params.t_cost().to_le_bytes());
-        digest.update(&self.version.to_le_bytes());
-        digest.update(&self.algorithm.to_le_bytes());
-        digest.update(&(pwd.len() as u32).to_le_bytes());
+        digest.update(self.params.p_cost().to_le_bytes());
+        digest.update((out.len() as u32).to_le_bytes());
+        digest.update(self.params.m_cost().to_le_bytes());
+        digest.update(self.params.t_cost().to_le_bytes());
+        digest.update(self.version.to_le_bytes());
+        digest.update(self.algorithm.to_le_bytes());
+        digest.update((pwd.len() as u32).to_le_bytes());
         digest.update(pwd);
-        digest.update(&(salt.len() as u32).to_le_bytes());
+        digest.update((salt.len() as u32).to_le_bytes());
         digest.update(salt);
 
         if let Some(secret) = &self.secret {
-            digest.update(&(secret.len() as u32).to_le_bytes());
+            digest.update((secret.len() as u32).to_le_bytes());
             digest.update(secret);
         } else {
             digest.update(0u32.to_le_bytes());
         }
 
-        digest.update(&(self.params.data().len() as u32).to_le_bytes());
+        digest.update((self.params.data().len() as u32).to_le_bytes());
         digest.update(self.params.data());
         digest.finalize()
     }

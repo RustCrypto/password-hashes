@@ -40,7 +40,7 @@ impl fmt::Display for Error {
             Error::ThreadsTooMany => f.write_str("too many threads"),
             Error::TimeTooSmall => f.write_str("time cost is too small"),
             Error::OutputSize { expected, .. } => {
-                write!(f, "unexpected output size, expected {} bytes", expected)
+                write!(f, "unexpected output size, expected {expected} bytes")
             }
         }
     }

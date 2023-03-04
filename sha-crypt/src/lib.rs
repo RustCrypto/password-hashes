@@ -147,7 +147,7 @@ pub fn sha512_crypt(
     let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA512 to burn
     // CPU cycles
-    for i in 0..params.rounds as usize {
+    for i in 0..params.rounds {
         // new hasher
         let mut hasher = Sha512::default();
 
@@ -250,7 +250,7 @@ pub fn sha256_crypt(
     let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA256 to burn
     // CPU cycles
-    for i in 0..params.rounds as usize {
+    for i in 0..params.rounds {
         // new hasher
         let mut hasher = Sha256::default();
 
@@ -424,8 +424,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     if iter.next() != Some("6") {
         return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA512 identifier: '{}'",
-            SHA512_SALT_PREFIX
+            "does not contain SHA512 identifier: '{SHA512_SALT_PREFIX}'",
         )));
     }
 
@@ -440,8 +439,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
         rounds[SHA512_ROUNDS_PREFIX.len()..].parse().map_err(|_| {
             CheckError::InvalidFormat(format!(
-                "{} specifier need to be a number",
-                SHA512_ROUNDS_PREFIX
+                "{SHA512_ROUNDS_PREFIX} specifier need to be a number",
             ))
         })?
     } else {
@@ -504,8 +502,7 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     if iter.next() != Some("5") {
         return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA256 identifier: '{}'",
-            SHA256_SALT_PREFIX
+            "does not contain SHA256 identifier: '{SHA256_SALT_PREFIX}'",
         )));
     }
 
@@ -520,8 +517,7 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
         rounds[SHA256_ROUNDS_PREFIX.len()..].parse().map_err(|_| {
             CheckError::InvalidFormat(format!(
-                "{} specifier need to be a number",
-                SHA256_ROUNDS_PREFIX
+                "{SHA256_ROUNDS_PREFIX} specifier need to be a number",
             ))
         })?
     } else {
