@@ -84,7 +84,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<'a> TryFrom<Params> for ParamsString {
+impl TryFrom<Params> for ParamsString {
     type Error = password_hash::Error;
 
     fn try_from(params: Params) -> password_hash::Result<ParamsString> {
@@ -94,7 +94,7 @@ impl<'a> TryFrom<Params> for ParamsString {
 
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-impl<'a> TryFrom<&Params> for ParamsString {
+impl TryFrom<&Params> for ParamsString {
     type Error = password_hash::Error;
 
     fn try_from(params: &Params) -> password_hash::Result<ParamsString> {

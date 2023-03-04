@@ -174,7 +174,7 @@ impl Params {
 
     /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
     pub fn block_count(&self) -> usize {
-        (self.segment_length() * self.lanes() * SYNC_POINTS) as usize
+        self.segment_length() * self.lanes() * SYNC_POINTS
     }
 }
 

@@ -65,7 +65,7 @@ impl fmt::Display for Error {
         f.write_str(match self {
             Error::AdTooLong => "associated data is too long",
             Error::AlgorithmInvalid => "algorithm identifier invalid",
-            Error::B64Encoding(inner) => return write!(f, "B64 encoding invalid: {}", inner),
+            Error::B64Encoding(inner) => return write!(f, "B64 encoding invalid: {inner}"),
             Error::KeyIdTooLong => "key ID is too long",
             Error::MemoryTooLittle => "memory cost is too small",
             Error::MemoryTooMuch => "memory cost is too large",

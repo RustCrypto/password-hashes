@@ -360,7 +360,7 @@ fn hashtest(
     assert_eq!(out, expected_raw_hash);
 
     // Test hash encoding
-    let salt_string = SaltString::b64_encode(&salt).unwrap();
+    let salt_string = SaltString::b64_encode(salt).unwrap();
     let phc_hash = ctx.hash_password(pwd, &salt_string).unwrap().to_string();
     assert_eq!(phc_hash, expected_phc_hash);
 
