@@ -21,7 +21,7 @@ fn hash_with_default_algorithm() {
     //   S = "salt" (4 octets)
     //   c = 4096
     //   dkLen = 32
-    let salt = Salt::new(SALT_B64).unwrap();
+    let salt = Salt::from_b64(SALT_B64).unwrap();
 
     let params = Params {
         rounds: 4096,

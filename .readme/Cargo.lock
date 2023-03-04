@@ -128,9 +128,9 @@ checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
 
 [[package]]
 name = "password-hash"
-version = "0.5.0-pre.0"
+version = "0.5.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d9d7f72dbf886af2c2a8d4a2ddfb4eea37e4d77ea3bde49f79af7c577e37908"
+checksum = "af13cbccdce8cf72efe1c28ab24d7246b0c9155f52ea90cafb46d15b39db6820"
 dependencies = [
  "base64ct",
  "rand_core",

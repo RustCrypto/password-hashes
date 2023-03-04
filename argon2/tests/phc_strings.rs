@@ -209,7 +209,7 @@ fn check_hash_encoding_parameters_order() {
 
     let salt = vec![0; 8];
     let password = b"password";
-    let salt_string = SaltString::b64_encode(&salt).unwrap();
+    let salt_string = SaltString::encode_b64(&salt).unwrap();
     let password_hash = ctx
         .hash_password(password, &salt_string)
         .unwrap()

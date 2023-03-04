@@ -36,7 +36,7 @@ impl PasswordHasher for Pbkdf2 {
 
         let salt = salt.into();
         let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
 
         let output = Output::init_with(params.output_length, |out| {
             let f = match algorithm {
