@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/readme.yml"
       - ".readme"
+      - "Cargo.lock"
       - "README.md"
   push:
     branches: master
