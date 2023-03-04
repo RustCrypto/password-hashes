@@ -20,12 +20,12 @@ base64ct = "1"
 blake2 = { version = "0.10.6", default-features = false }
 
 # optional dependencies
-password-hash = { version = "=0.5.0-rc.0", optional = true }
+password-hash = { version = "0.5", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.3"
-password-hash = { version = "=0.5.0-rc.0", features = ["rand_core"] }
+password-hash = { version = "0.5", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
