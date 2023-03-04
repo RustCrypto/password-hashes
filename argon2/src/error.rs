@@ -121,4 +121,11 @@ impl From<Error> for password_hash::Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::B64Encoding(err) => Some(err),
+            _ => None,
+        }
+    }
+}
