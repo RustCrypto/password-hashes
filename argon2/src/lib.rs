@@ -523,7 +523,7 @@ impl PasswordHasher for Argon2<'_> {
     ) -> password_hash::Result<PasswordHash<'a>> {
         let salt = salt.into();
         let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
 
         let output_len = self
             .params
@@ -600,7 +600,7 @@ mod tests {
         let argon2 = Argon2::default();
 
         // Too short after decoding
-        let salt = Salt::new("somesalt").unwrap();
+        let salt = Salt::from_b64("somesalt").unwrap();
 
         let res =
             argon2.hash_password_customized(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
@@ -622,7 +622,7 @@ mod tests {
 
         let params = Params::new(m_cost, t_cost, p_cost, None).unwrap();
         let hasher = Argon2::new(Algorithm::default(), version, params);
-        let salt = Salt::new(EXAMPLE_SALT).unwrap();
+        let salt = Salt::from_b64(EXAMPLE_SALT).unwrap();
         let hash = hasher.hash_password(EXAMPLE_PASSWORD, salt).unwrap();
 
         assert_eq!(hash.version.unwrap(), version.into());

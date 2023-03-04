@@ -232,7 +232,7 @@ where
     ) -> password_hash::Result<PasswordHash<'a>> {
         let salt = salt.into();
         let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.b64_decode(&mut salt_arr)?;
+        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
         let output = password_hash::Output::new(&self.hash(password, salt_bytes)?)?;
 
         Ok(PasswordHash {
