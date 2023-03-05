@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2023-03-04)
+### Changed
+- Bump `crypto-bigint` to v0.5; MSRV 1.65 ([#381])
+- Bump `password-hash` to v0.5 ([#383])
+
+[#381]: https://github.com/RustCrypto/password-hashes/pull/381
+[#383]: https://github.com/RustCrypto/password-hashes/pull/383
+
 ## 0.3.0 (2022-06-27)
 ### Added
 - `Balloon::hash_into` ([#313])
