@@ -5,11 +5,6 @@ use crate::errors::InvalidParams;
 #[cfg(feature = "simple")]
 use password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash};
 
-const RECOMMENDED_LOG_N: u8 = 15;
-const RECOMMENDED_R: u32 = 8;
-const RECOMMENDED_P: u32 = 1;
-const RECOMMENDED_LEN: usize = 32;
-
 /// The Scrypt parameter values.
 #[derive(Clone, Copy, Debug)]
 pub struct Params {
@@ -21,13 +16,26 @@ pub struct Params {
 }
 
 impl Params {
-    /// Create a new instance of ScryptParams.
+    /// Recommended log₂ of the Scrypt parameter `N`: CPU/memory cost.
+    pub const RECOMMENDED_LOG_N: u8 = 15;
+
+    /// Recommended Scrypt parameter `r`: block size.
+    pub const RECOMMENDED_R: u32 = 8;
+
+    /// Recommended Scrypt parameter `p`: parallelism.
+    pub const RECOMMENDED_P: u32 = 1;
+
+    /// Recommended Scrypt parameter `Key length`.
+    pub const RECOMMENDED_LEN: usize = 32;
+
+    /// Create a new instance of [`Params`].
     ///
     /// # Arguments
-    /// - `log_n` - The log2 of the Scrypt parameter `N`
+    /// - `log_n` - The log₂ of the Scrypt parameter `N`
     /// - `r` - The Scrypt parameter `r`
     /// - `p` - The Scrypt parameter `p`
     /// - `len` - The Scrypt parameter `Key length`
+    ///
     /// # Conditions
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
@@ -85,14 +93,14 @@ impl Params {
     /// - `p = 1`
     pub fn recommended() -> Params {
         Params {
-            log_n: RECOMMENDED_LOG_N,
-            r: RECOMMENDED_R,
-            p: RECOMMENDED_P,
-            len: RECOMMENDED_LEN,
+            log_n: Self::RECOMMENDED_LOG_N,
+            r: Self::RECOMMENDED_R,
+            p: Self::RECOMMENDED_P,
+            len: Self::RECOMMENDED_LEN,
         }
     }
 
-    /// log2 of the Scrypt parameter `N`, the work factor.
+    /// log₂ of the Scrypt parameter `N`, the work factor.
     ///
     /// Memory and CPU usage scale linearly with `N`.
     pub fn log_n(&self) -> u8 {
@@ -125,9 +133,9 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
     type Error = password_hash::Error;
 
     fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self, password_hash::Error> {
-        let mut log_n = RECOMMENDED_LOG_N;
-        let mut r = RECOMMENDED_R;
-        let mut p = RECOMMENDED_P;
+        let mut log_n = Self::RECOMMENDED_LOG_N;
+        let mut r = Self::RECOMMENDED_R;
+        let mut p = Self::RECOMMENDED_P;
 
         if hash.version.is_some() {
             return Err(Error::Version);
@@ -147,7 +155,10 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
-        let len = hash.hash.map(|out| out.len()).unwrap_or(RECOMMENDED_LEN);
+        let len = hash
+            .hash
+            .map(|out| out.len())
+            .unwrap_or(Self::RECOMMENDED_LEN);
         Params::new(log_n, r, p, len).map_err(|_| InvalidValue::Malformed.param_error())
     }
 }

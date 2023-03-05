@@ -81,8 +81,9 @@ impl Params {
     /// Maximum digest size in bytes.
     pub const MAX_OUTPUT_LEN: usize = 0xFFFFFFFF;
 
-    /// Create new parameters:
+    /// Create new parameters.
     ///
+    /// # Arguments
     /// - `m_cost`: memory size in 1 KiB blocks. Between 1 and (2^32)-1.
     /// - `t_cost`: number of iterations. Between 1 and (2^32)-1.
     /// - `p_cost`: degree of parallelism. Between 1 and 255.
