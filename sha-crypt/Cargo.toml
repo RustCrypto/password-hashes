@@ -1,6 +1,6 @@
 [package]
 name = "sha-crypt"
-version = "0.5.0-pre"
+version = "0.5.0"
 description = """
 Pure Rust implementation of the SHA-crypt password hash based on SHA-512
 as implemented by the POSIX crypt C library
