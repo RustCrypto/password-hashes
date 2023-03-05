@@ -326,7 +326,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.12.0-pre"
+version = "0.12.0"
 dependencies = [
  "digest",
  "hex-literal",
