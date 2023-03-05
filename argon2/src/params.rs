@@ -39,7 +39,7 @@ pub struct Params {
 
 impl Params {
     /// Default memory cost.
-    pub const DEFAULT_M_COST: u32 = 4096;
+    pub const DEFAULT_M_COST: u32 = 19 * 1024;
 
     /// Minimum number of 1 KiB memory blocks.
     #[allow(clippy::cast_possible_truncation)]
@@ -49,7 +49,7 @@ impl Params {
     pub const MAX_M_COST: u32 = 0x0FFFFFFF;
 
     /// Default number of iterations (i.e. "time").
-    pub const DEFAULT_T_COST: u32 = 3;
+    pub const DEFAULT_T_COST: u32 = 2;
 
     /// Minimum number of passes.
     pub const MIN_T_COST: u32 = 1;
