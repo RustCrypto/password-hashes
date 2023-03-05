@@ -94,6 +94,9 @@ pub use password_hash;
 #[cfg(feature = "simple")]
 mod simple;
 
+#[cfg(feature = "hmac")]
+pub use hmac;
+
 #[cfg(feature = "simple")]
 pub use crate::simple::{Algorithm, Params, Pbkdf2};
 
