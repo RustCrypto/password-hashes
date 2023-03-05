@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2023-03-04)
+### Added
+- `sha256_crypt` ([#350])
+
+### Changed
+- Use `base64ct` for Base64 encoding ([#350])
+- MSRV 1.60 ([#377])
+- Relax `subtle` dependency version requirements ([#390])
+
+### Fixed
+- Support passwords longer than 64-bytes in length ([#328])
+
+[#328]: https://github.com/RustCrypto/password-hashes/pull/328
+[#350]: https://github.com/RustCrypto/password-hashes/pull/350
+[#377]: https://github.com/RustCrypto/password-hashes/pull/377
+[#390]: https://github.com/RustCrypto/password-hashes/pull/390
+
 ## 0.4.0 (2022-03-18)
 ### Changed
 - 2021 edition upgrade; MSRV 1.56 ([#284])
