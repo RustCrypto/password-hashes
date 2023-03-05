@@ -17,7 +17,7 @@ pub struct Params {
 
 impl Params {
     /// Recommended log₂ of the Scrypt parameter `N`: CPU/memory cost.
-    pub const RECOMMENDED_LOG_N: u8 = 15;
+    pub const RECOMMENDED_LOG_N: u8 = 17;
 
     /// Recommended Scrypt parameter `r`: block size.
     pub const RECOMMENDED_R: u32 = 8;
