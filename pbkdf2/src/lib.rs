@@ -153,9 +153,9 @@ where
 /// use sha2::Sha256;
 ///
 /// let mut buf = [0u8; 20];
-/// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", 4096, &mut buf)
+/// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", 600_000, &mut buf)
 ///     .expect("HMAC can be initialized with any key length");
-/// assert_eq!(buf, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[inline]
 pub fn pbkdf2<PRF>(
