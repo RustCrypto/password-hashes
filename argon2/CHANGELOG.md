@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2023-03-04)
+### Added
+- Key derivation usage example ([#366])
+- Inherent constants for `Params` recommendations ([#387])
+
+### Changed
+- Merge `Argon2` and `Instance` structs ([#247])
+- Refactor `ParamsBuilder` to make it more ergonomic ([#247])
+- Bump `password-hash` dependency to v0.5 ([#383])
+- Adopt OWASP recommended default `Params` ([#386])
+- MSRV 1.65 ([#391])
+
+### Fixed
+- Erroneous docs for `m_cost` and `Block` ([#247])
+- Allow `zeroize` in heapless environments (i.e. without `alloc`) ([#374])
+
+### Removed
+- `Memory` struct ([#247])
+- Unsound `parallel` feature - see [#380] ([#247])
+
+[#247]: https://github.com/RustCrypto/password-hashes/pull/247
+[#366]: https://github.com/RustCrypto/password-hashes/pull/366
+[#374]: https://github.com/RustCrypto/password-hashes/pull/374
+[#380]: https://github.com/RustCrypto/password-hashes/pull/380
+[#383]: https://github.com/RustCrypto/password-hashes/pull/383
+[#386]: https://github.com/RustCrypto/password-hashes/pull/386
+[#387]: https://github.com/RustCrypto/password-hashes/pull/387
+[#391]: https://github.com/RustCrypto/password-hashes/pull/391
+
 ## 0.4.1 (2022-06-27)
 ### Added
 - `argon2::RECOMMENDED_SALT_LEN` ([#307])
