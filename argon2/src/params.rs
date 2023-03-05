@@ -41,11 +41,11 @@ impl Params {
     /// Default memory cost.
     pub const DEFAULT_M_COST: u32 = 4096;
 
-    /// Minimum number of memory blocks.
+    /// Minimum number of 1 KiB memory blocks.
     #[allow(clippy::cast_possible_truncation)]
     pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
-    /// Maximum number of memory blocks.
+    /// Maximum number of 1 KiB memory blocks.
     pub const MAX_M_COST: u32 = 0x0FFFFFFF;
 
     /// Default number of iterations (i.e. "time").
@@ -81,7 +81,12 @@ impl Params {
     /// Maximum digest size in bytes.
     pub const MAX_OUTPUT_LEN: usize = 0xFFFFFFFF;
 
-    /// Create new parameters.
+    /// Create new parameters:
+    ///
+    /// - `m_cost`: memory size in 1 KiB blocks. Between 1 and (2^32)-1.
+    /// - `t_cost`: number of iterations. Between 1 and (2^32)-1.
+    /// - `p_cost`: degree of parallelism. Between 1 and 255.
+    /// - `output_len`: size of the KDF output in bytes. Default 32.
     pub fn new(m_cost: u32, t_cost: u32, p_cost: u32, output_len: Option<usize>) -> Result<Self> {
         let mut builder = ParamsBuilder::new();
 
@@ -94,21 +99,21 @@ impl Params {
         builder.build()
     }
 
-    /// Memory size, expressed in kibibytes, between 1 and (2^32)-1.
+    /// Memory size, expressed in kibibytes. Between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     pub fn m_cost(&self) -> u32 {
         self.m_cost
     }
 
-    /// Number of iterations, between 1 and (2^32)-1.
+    /// Number of iterations. Between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     pub fn t_cost(&self) -> u32 {
         self.t_cost
     }
 
-    /// Degree of parallelism, between 1 and 255.
+    /// Degree of parallelism. Between 1 and 255.
     ///
     /// Value is an integer in decimal (1 to 3 digits).
     pub fn p_cost(&self) -> u32 {
@@ -123,7 +128,7 @@ impl Params {
     /// the PHC hash string format (i.e. it is totally ignored from a
     /// cryptographical standpoint).
     ///
-    /// On top of that, this field is not longer part of the argon2 standard
+    /// On top of that, this field is not longer part of the Argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
     pub fn keyid(&self) -> &[u8] {
