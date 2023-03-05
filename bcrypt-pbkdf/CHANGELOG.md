@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 (2023-03-04)
+### Added
+- Support for `alloc`-free usage ([#372])
+
+### Changed
+- Bump `pbkdf2` dependency to v0.12; MSRV 1.60 ([#393])
+
+[#372]: https://github.com/RustCrypto/password-hashes/pull/372
+[#393]: https://github.com/RustCrypto/password-hashes/pull/393
+
 ## 0.9.0 (2022-03-18)
 ### Changed
 - 2021 edition upgrade ([#284])
