@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.11.0 (2023-03-04)
+### Added
+- Ability to use custom output key length ([#255])
+- Inherent constants for `Params` recommendations ([#387])
+
+### Changed
+- Bump `password-hash` to v0.5; MSRV 1.60 ([#383])
+- Adopt OWASP recommendations ([#388])
+- Bump `pbkdf2` to v0.12 ([#393])
+
+[#255]: https://github.com/RustCrypto/password-hashes/pull/255
+[#383]: https://github.com/RustCrypto/password-hashes/pull/383
+[#387]: https://github.com/RustCrypto/password-hashes/pull/387
+[#388]: https://github.com/RustCrypto/password-hashes/pull/388
+[#393]: https://github.com/RustCrypto/password-hashes/pull/393
+
 ## 0.10.0 (2022-03-18)
 ### Changed
 - Bump `password-hash` dependency to v0.4; MSRV 1.57 ([#283])
