@@ -7,7 +7,8 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the bcrypt-pbkdf password-based key derivation function.
+Pure Rust implementation of the [`bcrypt_pbkdf`] password-based key derivation
+function, a custom derivative of PBKDF2 [used in OpenSSH].
 
 [Documentation][docs-link]
 
@@ -50,3 +51,8 @@ dual licensed as above, without any additional terms or conditions.
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/bcrypt-pbkdf/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Abcrypt-pbkdf
+
+[//]: # (links)
+
+[`bcrypt_pbkdf`]: https://flak.tedunangst.com/post/bcrypt-pbkdf
+[used in OpenSSH]: https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf
