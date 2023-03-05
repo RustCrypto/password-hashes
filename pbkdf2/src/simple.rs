@@ -27,7 +27,7 @@ impl PasswordHasher for Pbkdf2 {
         params: Params,
         salt: impl Into<Salt<'a>>,
     ) -> Result<PasswordHash<'a>> {
-        let algorithm = Algorithm::try_from(alg_id.unwrap_or(Algorithm::PBKDF2_SHA256_IDENT))?;
+        let algorithm = Algorithm::try_from(alg_id.unwrap_or(Algorithm::default().ident()))?;
 
         // Versions unsupported
         if version.is_some() {
@@ -77,6 +77,18 @@ pub enum Algorithm {
 
     /// PBKDF2 SHA-512
     Pbkdf2Sha512,
+}
+
+impl Default for Algorithm {
+    /// Default suggested by the [OWASP cheat sheet]:
+    ///
+    /// > Use PBKDF2 with a work factor of 600,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-256.
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    fn default() -> Self {
+        Self::Pbkdf2Sha256
+    }
 }
 
 impl Algorithm {
@@ -160,6 +172,17 @@ pub struct Params {
 
     /// Size of the output (in bytes)
     pub output_length: usize,
+}
+
+impl Params {
+    /// Recommended number of PBKDF2 rounds (used by default).
+    ///
+    /// This number is adopted from the [OWASP cheat sheet]:
+    ///
+    /// > Use PBKDF2 with a work factor of 600,000 or more
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    pub const RECOMMENDED_ROUNDS: usize = 600_000;
 }
 
 impl Default for Params {
