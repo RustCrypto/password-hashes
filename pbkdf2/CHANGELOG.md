@@ -5,15 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.12.0 (2023-03-04)
 ### Changed
-- `simple` feature is no longer enabled by default ([#336])
 - Add new wrapper functions: `pbkdf2_array`, `pbkdf2_hmac`, and
-`pbkdf2_hmac_array`. `pbkdf2` and `pbkdf2_array` now return
-`Result<(), InvalidLength>` instead of unwrapping it internally. ([#337])
+  `pbkdf2_hmac_array`. `pbkdf2` and `pbkdf2_array` now return
+  `Result<(), InvalidLength>` instead of unwrapping it internally. ([#337])
+- Use `sha1` dependency directly ([#363])
+- Make `Ident` values inherent constants of `Algorithm` ([#375])
+- Bump `password-hash` to v0.5 ([#383])
+- Adopt OWASP recommended default `Params` ([#389])
+
+### Removed
+- `simple` feature is no longer enabled by default ([#336])
 
 [#336]: https://github.com/RustCrypto/password-hashes/pull/336
 [#337]: https://github.com/RustCrypto/password-hashes/pull/337
+[#363]: https://github.com/RustCrypto/password-hashes/pull/363
+[#375]: https://github.com/RustCrypto/password-hashes/pull/375
+[#383]: https://github.com/RustCrypto/password-hashes/pull/383
+[#389]: https://github.com/RustCrypto/password-hashes/pull/389
 
 ## 0.11.0 (2022-03-28)
 ### Changed
