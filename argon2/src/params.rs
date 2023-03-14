@@ -1,6 +1,6 @@
 //! Argon2 password hash parameters.
 
-use crate::{Error, Result, SYNC_POINTS};
+use crate::{Algorithm, Argon2, Error, Result, Version, SYNC_POINTS};
 use base64ct::{Base64Unpadded as B64, Encoding};
 use core::str::FromStr;
 
@@ -470,6 +470,11 @@ impl ParamsBuilder {
         };
 
         Ok(params)
+    }
+
+    /// Create a new [`Argon2`] context using the provided algorithm/version.
+    pub fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
+        Ok(Argon2::new(algorithm, version, self.build()?))
     }
 }
 
