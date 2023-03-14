@@ -1,6 +1,6 @@
 [package]
 name = "password-auth"
-version = "0.0.0"
+version = "0.1.0"
 description = """
 Password authentication library with a focus on simplicity and ease-of-use,
 with support for Argon2, PBKDF2, and scrypt password hashing algorithms
