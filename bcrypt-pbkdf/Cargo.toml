@@ -19,7 +19,7 @@ sha2 = { version = "0.10.5", default-features = false }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.3.3"
+hex-literal = "0.4.0"
 
 [features]
 default = ["alloc", "std"]
