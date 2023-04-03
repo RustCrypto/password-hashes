@@ -22,7 +22,7 @@ rayon = { version = "1.7", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.3"
+hex-literal = "0.4"
 sha2 = "0.10"
 
 [features]

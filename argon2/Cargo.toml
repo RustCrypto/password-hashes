@@ -24,7 +24,7 @@ password-hash = { version = "0.5", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.3"
+hex-literal = "0.4"
 password-hash = { version = "0.5", features = ["rand_core"] }
 
 [features]
