@@ -63,7 +63,7 @@ impl Algorithm {
     }
 
     /// Get the identifier string for this PBKDF2 [`Algorithm`].
-    pub fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Algorithm::Argon2d => "argon2d",
             Algorithm::Argon2i => "argon2i",
