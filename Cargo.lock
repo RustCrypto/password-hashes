@@ -303,7 +303,7 @@ checksum = "2f7254b99e31cad77da24b08ebf628882739a608578bb1bcdfc1f9c21260d7c0"
 
 [[package]]
 name = "password-auth"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "argon2",
  "getrandom",
