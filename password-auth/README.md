@@ -1,4 +1,4 @@
-# RustCrypto: Password Authentication
+# [RustCrypto]: Password Authentication
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -11,6 +11,26 @@ Password authentication library with a focus on simplicity and ease-of-use,
 with support for [Argon2], [PBKDF2], and [scrypt] password hashing algorithms.
 
 [Documentation][docs-link]
+
+## About
+
+`password-auth` is a high-level password authentication library with a simple
+API which eliminates as much complexity and user choice as possible. It only
+has two functions:
+
+- [`generate_hash`]: generates a password hash from the provided password. The
+- [`verify_password`]: verifies the provided password against a password hash,
+  returning an error if the password is incorrect.
+
+Behind the scenes the crate uses the multi-algorithm support in the
+[`password-hash`] crate to support multiple password hashing algorithms
+simultaneously. By default it supports Argon2 (using the latest OWASP
+recommended parameters 8), but it can also optionally support PBKDF2 and scrypt
+by enabling crate features.
+
+When multiple algorithms are enabled, it will still default to Argon2 for
+generate_hash, but will be able to verify password hashes from PBKDF2 and
+scrypt as well, if you have them in your password database.
 
 ## Minimum Supported Rust Version
 
@@ -54,6 +74,10 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (general links)
 
+[RustCrypto]: https://github.com/RustCrypto/
 [Argon2]: https://en.wikipedia.org/wiki/Argon2
 [PBKDF2]: https://en.wikipedia.org/wiki/PBKDF2
 [scrypt]: https://en.wikipedia.org/wiki/Scrypt
+[`generate_hash`]: https://docs.rs/password-auth/latest/password_auth/fn.generate_hash.html
+[`verify_password`]: https://docs.rs/password-auth/latest/password_auth/fn.verify_password.html
+[`password-hash`]: https://docs.rs/password-hash/latest/password_hash/

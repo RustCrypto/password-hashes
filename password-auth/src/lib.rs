@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -48,10 +49,12 @@ impl fmt::Display for VerifyError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for VerifyError {}
 
 /// Generate a password hash for the given password.
+///
+/// Uses the best available password hashing algorithm given the enabled
+/// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
     let salt = SaltString::generate(OsRng);
     generate_phc_hash(password.as_ref(), &salt)
@@ -79,6 +82,12 @@ fn generate_phc_hash<'a>(
 }
 
 /// Verify the provided password against the provided password hash.
+///
+/// # Returns
+///
+/// - `Ok(())` if the password hash verified successfully
+/// - `Err(VerifyError)` if the hash didn't parse successfully or the password
+///   failed to verify against the hash.
 pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), VerifyError> {
     let hash = PasswordHash::new(hash).map_err(|_| VerifyError)?;
 
