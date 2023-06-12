@@ -27,7 +27,7 @@ sha2 = "0.10"
 
 [features]
 default = ["alloc", "password-hash", "rand"]
-alloc = []
+alloc = ["password-hash/alloc"]
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
 std = ["alloc", "password-hash/std"]
