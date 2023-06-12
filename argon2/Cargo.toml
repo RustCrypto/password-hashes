@@ -29,7 +29,7 @@ password-hash = { version = "0.5", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
-alloc = []
+alloc = ["password-hash/alloc"]
 std = ["alloc", "password-hash/std"]
 
 rand = ["password-hash/rand_core"]
