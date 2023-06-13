@@ -151,7 +151,7 @@ const ADDRESSES_IN_BLOCK: usize = 128;
 /// - Argon2 [`Version`] to be used
 /// - Default set of [`Params`] to be used
 /// - (Optional) Secret key a.k.a. "pepper" to be used
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Argon2<'key> {
     /// Algorithm to use
     algorithm: Algorithm,
