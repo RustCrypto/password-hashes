@@ -115,6 +115,7 @@ pub use {
 
 use crate::blake2b_long::blake2b_long;
 use blake2::{digest, Blake2b512, Digest};
+use core::fmt;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -151,7 +152,7 @@ const ADDRESSES_IN_BLOCK: usize = 128;
 /// - Argon2 [`Version`] to be used
 /// - Default set of [`Params`] to be used
 /// - (Optional) Secret key a.k.a. "pepper" to be used
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Argon2<'key> {
     /// Algorithm to use
     algorithm: Algorithm,
@@ -169,6 +170,16 @@ pub struct Argon2<'key> {
 impl Default for Argon2<'_> {
     fn default() -> Self {
         Self::new(Algorithm::default(), Version::default(), Params::default())
+    }
+}
+
+impl fmt::Debug for Argon2<'_> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("Argon2")
+            .field("algorithm", &self.algorithm)
+            .field("version", &self.version)
+            .field("params", &self.params)
+            .finish_non_exhaustive()
     }
 }
 
