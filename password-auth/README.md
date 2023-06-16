@@ -29,7 +29,7 @@ recommended parameters 8), but it can also optionally support PBKDF2 and scrypt
 by enabling crate features.
 
 When multiple algorithms are enabled, it will still default to Argon2 for
-generate_hash, but will be able to verify password hashes from PBKDF2 and
+`generate_hash`, but will be able to verify password hashes from PBKDF2 and
 scrypt as well, if you have them in your password database.
 
 ## Minimum Supported Rust Version
