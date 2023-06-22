@@ -53,6 +53,11 @@ impl Block {
     /// Memory block size in bytes
     pub const SIZE: usize = 1024;
 
+    /// Returns a Block initialized with zeros.
+    pub const fn new() -> Self {
+        Self([0u64; Self::SIZE / 8])
+    }
+
     pub(crate) fn as_bytes(&self) -> &[u8; Self::SIZE] {
         unsafe { &*(self.0.as_ptr() as *const [u8; Self::SIZE]) }
     }
