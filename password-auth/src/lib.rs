@@ -23,7 +23,7 @@ extern crate std;
 
 mod errors;
 
-pub use crate::errors::{ParseError, VerifyError};
+pub use crate::errors::{Error, ParseError};
 
 use alloc::string::{String, ToString};
 use password_hash::{ParamsString, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
@@ -78,8 +78,8 @@ fn generate_phc_hash<'a>(
 /// - `Ok(())` if the password hash verified successfully
 /// - `Err(VerifyError)` if the hash didn't parse successfully or the password
 ///   failed to verify against the hash.
-pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), VerifyError> {
-    let hash = PasswordHash::new(hash).map_err(|_| VerifyError)?;
+pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Error> {
+    let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
 
     let algs: &[&dyn PasswordVerifier] = &[
         #[cfg(feature = "argon2")]
@@ -91,7 +91,7 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Ver
     ];
 
     hash.verify_password(algs, password)
-        .map_err(|_| VerifyError)
+        .map_err(|_| Error::PasswordInvalid)
 }
 
 /// Determine if the given password hash is using the recommended algorithm and
