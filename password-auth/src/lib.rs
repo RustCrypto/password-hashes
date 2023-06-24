@@ -102,9 +102,9 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Err
 /// to determine if such an update should be applied.
 ///
 /// # Returns
-/// - `true` if the hash can't be parsed or isn't using the latest
-///   recommended parameters
-/// - `false` if the hash is using the latest recommended parameters
+/// - `Ok(true)` if the hash *isn't* using the latest recommended algorithm/parameters.
+/// - `Ok(false)` if the hash *is* using the latest recommended algorithm/parameters.
+/// - `Err(ParseError)` if the hash could not be parsed.
 #[allow(unreachable_code)]
 pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
     let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
