@@ -15,8 +15,8 @@ with support for [Argon2], [PBKDF2], and [scrypt] password hashing algorithms.
 ## About
 
 `password-auth` is a high-level password authentication library with a simple
-API which eliminates as much complexity and user choice as possible. It only
-has two functions:
+interface which eliminates as much complexity and user choice as possible.
+The core API consists of two functions:
 
 - [`generate_hash`]: generates a password hash from the provided password. The
 - [`verify_password`]: verifies the provided password against a password hash,

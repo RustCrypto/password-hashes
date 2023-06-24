@@ -21,9 +21,12 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+mod errors;
+
+pub use crate::errors::{ParseError, VerifyError};
+
 use alloc::string::{String, ToString};
-use core::fmt;
-use password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
+use password_hash::{ParamsString, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use rand_core::OsRng;
 
 #[cfg(not(any(feature = "argon2", feature = "pbkdf2", feature = "scrypt")))]
@@ -37,19 +40,6 @@ use argon2::Argon2;
 use pbkdf2::Pbkdf2;
 #[cfg(feature = "scrypt")]
 use scrypt::Scrypt;
-
-/// Opaque error type.
-#[derive(Clone, Copy, Debug)]
-pub struct VerifyError;
-
-impl fmt::Display for VerifyError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("password verification error")
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for VerifyError {}
 
 /// Generate a password hash for the given password.
 ///
@@ -104,9 +94,46 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Ver
         .map_err(|_| VerifyError)
 }
 
+/// Determine if the given password hash is using the recommended algorithm and
+/// parameters.
+///
+/// This can be used by implementations which wish to lazily update their
+/// password hashes (i.e. by rehashing the password with [`generate_hash`])
+/// to determine if such an update should be applied.
+///
+/// # Returns
+/// - `true` if the hash can't be parsed or isn't using the latest
+///   recommended parameters
+/// - `false` if the hash is using the latest recommended parameters
+#[allow(unreachable_code)]
+pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
+    let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
+
+    #[cfg(feature = "argon2")]
+    return Ok(hash.algorithm != argon2::Algorithm::default().ident()
+        || hash.params != default_params_string::<argon2::Params>());
+
+    #[cfg(feature = "scrypt")]
+    return Ok(hash.algorithm != scrypt::ALG_ID
+        || hash.params != default_params_string::<scrypt::Params>());
+
+    #[cfg(feature = "pbkdf2")]
+    return Ok(hash.algorithm != pbkdf2::Algorithm::default().ident()
+        || hash.params != default_params_string::<pbkdf2::Params>());
+
+    Ok(true)
+}
+
+fn default_params_string<T>() -> ParamsString
+where
+    T: Default + TryInto<ParamsString, Error = password_hash::Error>,
+{
+    T::default().try_into().expect("invalid default params")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{generate_hash, verify_password};
+    use super::{generate_hash, is_hash_obsolete, verify_password};
 
     const EXAMPLE_PASSWORD: &str = "password";
 
@@ -115,6 +142,7 @@ mod tests {
         let hash = generate_hash(EXAMPLE_PASSWORD);
         assert!(verify_password(EXAMPLE_PASSWORD, &hash).is_ok());
         assert!(verify_password("bogus", &hash).is_err());
+        assert!(!is_hash_obsolete(&hash).unwrap());
     }
 
     #[cfg(feature = "argon2")]
