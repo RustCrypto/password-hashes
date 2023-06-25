@@ -3,34 +3,6 @@
 use alloc::string::ToString;
 use core::fmt;
 
-/// Error type.
-#[derive(Clone, Copy, Debug)]
-pub enum Error {
-    /// Password hash parsing errors.
-    Parse(ParseError),
-
-    /// Password is invalid.
-    PasswordInvalid,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Parse(err) => write!(f, "{err}"),
-            Self::PasswordInvalid => write!(f, "password is invalid"),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
-
-impl From<ParseError> for Error {
-    fn from(err: ParseError) -> Error {
-        Error::Parse(err)
-    }
-}
-
 /// Password hash parse errors.
 // This type has no public constructor and deliberately keeps
 // `password_hash::Error` out of the public API so it can evolve
@@ -59,5 +31,33 @@ impl fmt::Display for ParseError {
     }
 }
 
+/// Password verification errors.
+#[derive(Clone, Copy, Debug)]
+pub enum VerifyError {
+    /// Password hash parsing errors.
+    Parse(ParseError),
+
+    /// Password is invalid.
+    PasswordInvalid,
+}
+
+impl fmt::Display for VerifyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Parse(err) => write!(f, "{err}"),
+            Self::PasswordInvalid => write!(f, "password is invalid"),
+        }
+    }
+}
+
+impl From<ParseError> for VerifyError {
+    fn from(err: ParseError) -> VerifyError {
+        VerifyError::Parse(err)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ParseError {}
+
+#[cfg(feature = "std")]
+impl std::error::Error for VerifyError {}
