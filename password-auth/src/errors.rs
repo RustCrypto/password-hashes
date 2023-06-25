@@ -7,7 +7,7 @@ use core::fmt;
 // This type has no public constructor and deliberately keeps
 // `password_hash::Error` out of the public API so it can evolve
 // independently (e.g. get to 1.0 faster)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct ParseError(password_hash::Error);
 
 impl ParseError {
@@ -32,7 +32,7 @@ impl fmt::Display for ParseError {
 }
 
 /// Password verification errors.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VerifyError {
     /// Password hash parsing errors.
     Parse(ParseError),
