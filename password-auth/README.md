@@ -16,6 +16,14 @@ with support for [Argon2], [PBKDF2], and [scrypt] password hashing algorithms.
 
 `password-auth` is a high-level password authentication library with a simple
 interface which eliminates as much complexity and user choice as possible.
+
+It wraps pure Rust implementations of multiple password hashing algorithms
+maintained by the [RustCrypto] organization, with the goal of providing a
+stable interface while allowing the password hashing algorithm implementations
+to evolve at a faster pace.
+
+## Usage
+
 The core API consists of two functions:
 
 - [`generate_hash`]: generates a password hash from the provided password. The
