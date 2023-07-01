@@ -87,8 +87,8 @@ impl Params {
         })
     }
 
-    /// Recommended values sufficient for most use-cases
-    /// - `log_n = 15` (`n = 32768`)
+    /// Recommended values according to the [OWASP cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt)
+    /// - `log_n = 17` (`n = 131072`)
     /// - `r = 8`
     /// - `p = 1`
     pub fn recommended() -> Params {
