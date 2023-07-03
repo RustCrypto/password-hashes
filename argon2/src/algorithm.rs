@@ -52,11 +52,12 @@ pub enum Algorithm {
 
 impl Default for Algorithm {
     fn default() -> Algorithm {
-        Algorithm::Argon2id
+        Algorithm::DEFAULT
     }
 }
 
 impl Algorithm {
+    pub const DEFAULT:Algorithm = Algorithm::Argon2id;
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
         id.as_ref().parse()
