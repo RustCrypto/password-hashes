@@ -184,7 +184,8 @@ impl fmt::Debug for Argon2<'_> {
 }
 
 impl<'key> Argon2<'key> {
-    const DEFAULT:Argon2<'static> = Argon2::new(Algorithm::DEFAULT, Version::DEFAULT, Params::DEFAULT);
+    const DEFAULT: Argon2<'static> =
+        Argon2::new(Algorithm::DEFAULT, Version::DEFAULT, Params::DEFAULT);
     /// Create a new Argon2 context.
     pub const fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {
         Self {
