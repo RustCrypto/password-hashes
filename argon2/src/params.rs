@@ -210,12 +210,6 @@ impl Default for Params {
     }
 }
 
-impl Default for Params {
-    fn default() -> Params {
-        Params::default_const()
-    }
-}
-
 macro_rules! param_buf {
     ($ty:ident, $name:expr, $max_len:expr, $error:expr, $doc:expr) => {
         #[doc = $doc]
