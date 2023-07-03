@@ -182,6 +182,7 @@ impl Params {
     pub fn block_count(&self) -> usize {
         self.segment_length() * self.lanes() * SYNC_POINTS
     }
+    /// Just like [Default::default], but const.
     pub const fn default_const() -> Params {
         Params {
             m_cost: Self::DEFAULT_M_COST,
@@ -226,6 +227,7 @@ macro_rules! param_buf {
                 Ok(Self { bytes, len })
             }
 
+            #[doc = "Just like [Default::default], but const."]
             pub const fn default_const()->Self
             {
                 Self {
@@ -510,6 +512,7 @@ impl ParamsBuilder {
                        }
         ))
     }
+    /// Just like [Default::default], but const.
     pub const fn default_const()->ParamsBuilder
     {
         let params = Params::default_const();
