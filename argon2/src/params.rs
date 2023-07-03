@@ -182,18 +182,21 @@ impl Params {
     pub fn block_count(&self) -> usize {
         self.segment_length() * self.lanes() * SYNC_POINTS
     }
-}
-
-impl Default for Params {
-    fn default() -> Params {
+    pub const fn default_const() -> Params {
         Params {
             m_cost: Self::DEFAULT_M_COST,
             t_cost: Self::DEFAULT_T_COST,
             p_cost: Self::DEFAULT_P_COST,
-            keyid: KeyId::default(),
-            data: AssociatedData::default(),
+            keyid: KeyId::default_const(),
+            data: AssociatedData::default_const(),
             output_len: None,
         }
+    }
+}
+
+impl Default for Params {
+    fn default() -> Params {
+        Params::default_const()
     }
 }
 
@@ -208,7 +211,6 @@ macro_rules! param_buf {
             /// Length of byte array
             len: usize,
         }
-
         impl $ty {
             /// Maximum length in bytes
             pub const MAX_LEN: usize = $max_len;
@@ -222,6 +224,14 @@ macro_rules! param_buf {
                 bytes.get_mut(..len).ok_or($error)?.copy_from_slice(slice);
 
                 Ok(Self { bytes, len })
+            }
+
+            pub const fn default_const()->Self
+            {
+                Self {
+                    bytes: [0u8; Self::MAX_LEN],
+                    len: 0,
+                }
             }
 
             #[doc = "Decode"]
@@ -375,8 +385,20 @@ pub struct ParamsBuilder {
 
 impl ParamsBuilder {
     /// Create a new builder with the default parameters.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self::default_const()
+    }
+    /// Create a new builder with the provided parameters.
+    /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
+    pub const fn new_params(m_const:u32, t_const:u32, p_const:u32, keyid:Option<KeyId>, data:Option<AssociatedData>, output_len:Option<usize>) -> Self {
+        Self {
+            m_cost: m_const,
+            t_cost: t_const,
+            p_cost: p_const,
+            keyid,
+            data,
+            output_len,
+        }
     }
 
     /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
@@ -419,7 +441,7 @@ impl ParamsBuilder {
     ///
     /// This performs validations to ensure that the given parameters are valid
     /// and compatible with each other, and will return an error if they are not.
-    pub fn build(&self) -> Result<Params> {
+    pub const fn build(&self) -> Result<Params> {
         if self.m_cost < Params::MIN_M_COST {
             return Err(Error::MemoryTooLittle);
         }
@@ -456,9 +478,15 @@ impl ParamsBuilder {
             }
         }
 
-        let keyid = self.keyid.unwrap_or_default();
+        let keyid = match self.keyid{
+            Some(keyid) => keyid,
+            None => KeyId::default_const(),
+        };
 
-        let data = self.data.unwrap_or_default();
+        let data = match self.data{
+            Some(data) => data,
+            None => AssociatedData::default_const(),
+        };
 
         let params = Params {
             m_cost: self.m_cost,
@@ -473,14 +501,18 @@ impl ParamsBuilder {
     }
 
     /// Create a new [`Argon2`] context using the provided algorithm/version.
-    pub fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
-        Ok(Argon2::new(algorithm, version, self.build()?))
+    pub const fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
+        Ok(Argon2::new(algorithm,
+                       version,
+                       match self.build() {
+                           Ok(params) => params,
+                           Err(e) => return Err(e)
+                       }
+        ))
     }
-}
-
-impl Default for ParamsBuilder {
-    fn default() -> Self {
-        let params = Params::default();
+    pub const fn default_const()->ParamsBuilder
+    {
+        let params = Params::default_const();
         Self {
             m_cost: params.m_cost,
             t_cost: params.t_cost,
@@ -489,6 +521,12 @@ impl Default for ParamsBuilder {
             data: None,
             output_len: params.output_len,
         }
+    }
+}
+
+impl Default for ParamsBuilder {
+    fn default() -> Self {
+        Self::default_const()
     }
 }
 
