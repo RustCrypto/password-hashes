@@ -228,8 +228,7 @@ macro_rules! param_buf {
             }
 
             #[doc = "Just like [Default::default], but const."]
-            pub const fn default_const()->Self
-            {
+            pub const fn default_const() -> Self {
                 Self {
                     bytes: [0u8; Self::MAX_LEN],
                     len: 0,
@@ -392,7 +391,14 @@ impl ParamsBuilder {
     }
     /// Create a new builder with the provided parameters.
     /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
-    pub const fn new_params(m_const:u32, t_const:u32, p_const:u32, keyid:Option<KeyId>, data:Option<AssociatedData>, output_len:Option<usize>) -> Self {
+    pub const fn new_params(
+        m_const: u32,
+        t_const: u32,
+        p_const: u32,
+        keyid: Option<KeyId>,
+        data: Option<AssociatedData>,
+        output_len: Option<usize>,
+    ) -> Self {
         Self {
             m_cost: m_const,
             t_cost: t_const,
@@ -480,12 +486,12 @@ impl ParamsBuilder {
             }
         }
 
-        let keyid = match self.keyid{
+        let keyid = match self.keyid {
             Some(keyid) => keyid,
             None => KeyId::default_const(),
         };
 
-        let data = match self.data{
+        let data = match self.data {
             Some(data) => data,
             None => AssociatedData::default_const(),
         };
@@ -504,17 +510,17 @@ impl ParamsBuilder {
 
     /// Create a new [`Argon2`] context using the provided algorithm/version.
     pub const fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
-        Ok(Argon2::new(algorithm,
-                       version,
-                       match self.build() {
-                           Ok(params) => params,
-                           Err(e) => return Err(e)
-                       }
+        Ok(Argon2::new(
+            algorithm,
+            version,
+            match self.build() {
+                Ok(params) => params,
+                Err(e) => return Err(e),
+            },
         ))
     }
     /// Just like [Default::default], but const.
-    pub const fn default_const()->ParamsBuilder
-    {
+    pub const fn default_const() -> ParamsBuilder {
         let params = Params::default_const();
         Self {
             m_cost: params.m_cost,
