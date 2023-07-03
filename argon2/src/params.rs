@@ -200,7 +200,7 @@ impl Params {
     }
     /// Just like [Default::default], but const.
     pub const fn default_const() -> Params {
-      Params::DEFAULT
+        Params::DEFAULT
     }
 }
 
