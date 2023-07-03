@@ -198,10 +198,6 @@ impl Params {
     pub fn block_count(&self) -> usize {
         self.segment_length() * self.lanes() * SYNC_POINTS
     }
-    /// Just like [Default::default], but const.
-    pub const fn default_const() -> Params {
-        Params::DEFAULT
-    }
 }
 
 impl Default for Params {
