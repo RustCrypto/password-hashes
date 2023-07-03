@@ -392,17 +392,17 @@ impl ParamsBuilder {
     /// Create a new builder with the provided parameters.
     /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
     pub const fn new_params(
-        m_const: u32,
-        t_const: u32,
-        p_const: u32,
+        m_cost: u32,
+        t_cost: u32,
+        p_cost: u32,
         keyid: Option<KeyId>,
         data: Option<AssociatedData>,
         output_len: Option<usize>,
     ) -> Self {
         Self {
-            m_cost: m_const,
-            t_cost: t_const,
-            p_cost: p_const,
+            m_cost,
+            t_cost,
+            p_cost,
             keyid,
             data,
             output_len,
