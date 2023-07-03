@@ -524,7 +524,7 @@ impl ParamsBuilder {
     }
     /// Just like [Default::default], but const.
     pub const fn default_const() -> ParamsBuilder {
-        let params = Params::default_const();
+        let params = Params::DEFAULT;
         Self {
             m_cost: params.m_cost,
             t_cost: params.t_cost,
