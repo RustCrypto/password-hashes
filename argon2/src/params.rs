@@ -491,12 +491,12 @@ impl ParamsBuilder {
 
         let keyid = match self.keyid {
             Some(keyid) => keyid,
-            None => KeyId::default_const(),
+            None => KeyId::EMPTY,
         };
 
         let data = match self.data {
             Some(data) => data,
-            None => AssociatedData::default_const(),
+            None => AssociatedData::EMPTY,
         };
 
         let params = Params {
