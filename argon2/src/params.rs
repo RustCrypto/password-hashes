@@ -232,13 +232,11 @@ macro_rules! param_buf {
                 Ok(Self { bytes, len })
             }
 
-            /// Just like [Default::default], but const.
-            pub const fn default_const() -> Self {
-                Self {
-                    bytes: [0u8; Self::MAX_LEN],
-                    len: 0,
-                }
-            }
+            /// Empty value.
+            pub const EMPTY: Self = Self {
+                bytes: [0u8; Self::MAX_LEN],
+                len: 0,
+            };
 
             #[doc = "Decode"]
             #[doc = $name]
