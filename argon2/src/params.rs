@@ -519,7 +519,7 @@ impl ParamsBuilder {
             },
         ))
     }
-    const DEFAULT: ParamsBuilder = {
+    pub const DEFAULT: ParamsBuilder = {
         let params = Params::DEFAULT;
         Self {
             m_cost: params.m_cost,
