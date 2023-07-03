@@ -390,7 +390,7 @@ pub struct ParamsBuilder {
 impl ParamsBuilder {
     /// Create a new builder with the default parameters.
     pub const fn new() -> Self {
-        Self::default_const()
+        Self::DEFAULT
     }
     /// Create a new builder with the provided parameters.
     /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
@@ -522,8 +522,7 @@ impl ParamsBuilder {
             },
         ))
     }
-    /// Just like [Default::default], but const.
-    pub const fn default_const() -> ParamsBuilder {
+    const DEFAULT: ParamsBuilder = {
         let params = Params::DEFAULT;
         Self {
             m_cost: params.m_cost,
@@ -533,12 +532,12 @@ impl ParamsBuilder {
             data: None,
             output_len: params.output_len,
         }
-    }
+    };
 }
 
 impl Default for ParamsBuilder {
     fn default() -> Self {
-        Self::default_const()
+        Self::DEFAULT
     }
 }
 
