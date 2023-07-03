@@ -519,6 +519,7 @@ impl ParamsBuilder {
             },
         ))
     }
+    /// Default parameters (recommended).
     pub const DEFAULT: ParamsBuilder = {
         let params = Params::DEFAULT;
         Self {

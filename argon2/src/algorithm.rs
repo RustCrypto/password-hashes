@@ -57,6 +57,7 @@ impl Default for Algorithm {
 }
 
 impl Algorithm {
+    /// Default Algorithm (recommended).
     pub const DEFAULT: Algorithm = Algorithm::Argon2id;
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {

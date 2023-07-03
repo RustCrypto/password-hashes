@@ -169,7 +169,7 @@ pub struct Argon2<'key> {
 
 impl Default for Argon2<'_> {
     fn default() -> Self {
-        Self::new(Algorithm::default(), Version::default(), Params::default())
+        Self::DEFAULT
     }
 }
 
@@ -184,7 +184,8 @@ impl fmt::Debug for Argon2<'_> {
 }
 
 impl<'key> Argon2<'key> {
-    const DEFAULT: Argon2<'static> =
+    /// Default parameters (recommended).
+    pub const DEFAULT: Argon2<'static> =
         Argon2::new(Algorithm::DEFAULT, Version::DEFAULT, Params::DEFAULT);
     /// Create a new Argon2 context.
     pub const fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {

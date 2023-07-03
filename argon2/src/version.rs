@@ -18,6 +18,7 @@ pub enum Version {
 }
 
 impl Version {
+    /// Default Version (recommended).
     pub const DEFAULT: Version = Version::V0x13;
     /// Serialize version as little endian bytes
     pub(crate) const fn to_le_bytes(self) -> [u8; 4] {
