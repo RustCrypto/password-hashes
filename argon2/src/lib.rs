@@ -470,7 +470,7 @@ impl<'key> Argon2<'key> {
     }
 
     /// Get default configured [`Params`].
-    pub fn params(&self) -> &Params {
+    pub const fn params(&self) -> &Params {
         &self.params
     }
 
@@ -531,7 +531,7 @@ impl<'key> Argon2<'key> {
         digest.finalize()
     }
 
-    fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
+    const fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
         if pwd.len() > MAX_PWD_LEN {
             return Err(Error::PwdTooLong);
         }
