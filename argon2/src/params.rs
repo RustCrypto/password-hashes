@@ -81,6 +81,22 @@ impl Params {
     /// Maximum digest size in bytes.
     pub const MAX_OUTPUT_LEN: usize = 0xFFFFFFFF;
 
+    /// Default parameters (recommended).
+    pub const DEFAULT: Self = Params {
+        m_cost: Self::DEFAULT_M_COST,
+        t_cost: Self::DEFAULT_T_COST,
+        p_cost: Self::DEFAULT_P_COST,
+        keyid: KeyId {
+            bytes: [0u8; Self::MAX_KEYID_LEN],
+            len: 0,
+        },
+        data: AssociatedData {
+            bytes: [0u8; Self::MAX_DATA_LEN],
+            len: 0,
+        },
+        output_len: None,
+    };
+
     /// Create new parameters.
     ///
     /// # Arguments
@@ -186,14 +202,7 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Params {
-        Params {
-            m_cost: Self::DEFAULT_M_COST,
-            t_cost: Self::DEFAULT_T_COST,
-            p_cost: Self::DEFAULT_P_COST,
-            keyid: KeyId::default(),
-            data: AssociatedData::default(),
-            output_len: None,
-        }
+        Params::DEFAULT
     }
 }
 
