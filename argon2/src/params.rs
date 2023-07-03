@@ -145,7 +145,7 @@ impl Params {
     /// On top of that, this field is not longer part of the Argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
-    pub fn keyid(&self) -> &[u8] {
+    pub const fn keyid(&self) -> &[u8] {
         self.keyid.as_bytes()
     }
 
@@ -156,7 +156,7 @@ impl Params {
     /// This field is not longer part of the argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
-    pub fn data(&self) -> &[u8] {
+    pub const fn data(&self) -> &[u8] {
         self.data.as_bytes()
     }
 
@@ -246,8 +246,8 @@ macro_rules! param_buf {
             }
 
             /// Borrow the inner value as a byte slice.
-            pub fn as_bytes(&self) -> &[u8] {
-                &self.bytes[..self.len]
+            pub const fn as_bytes(&self) -> &[u8] {
+                self.bytes.split_at(self.len).0
             }
 
             /// Get the length in bytes.
