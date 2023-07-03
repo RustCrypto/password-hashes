@@ -19,7 +19,7 @@ pub enum Version {
 
 impl Version {
     /// Serialize version as little endian bytes
-    pub(crate) fn to_le_bytes(self) -> [u8; 4] {
+    pub(crate) const fn to_le_bytes(self) -> [u8; 4] {
         (self as u32).to_le_bytes()
     }
 }

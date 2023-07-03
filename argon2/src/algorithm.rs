@@ -63,7 +63,7 @@ impl Algorithm {
     }
 
     /// Get the identifier string for this PBKDF2 [`Algorithm`].
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Algorithm::Argon2d => "argon2d",
             Algorithm::Argon2i => "argon2i",
@@ -74,7 +74,7 @@ impl Algorithm {
     /// Get the [`Ident`] that corresponds to this Argon2 [`Algorithm`].
     #[cfg(feature = "password-hash")]
     #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
-    pub fn ident(&self) -> Ident<'static> {
+    pub const fn ident(&self) -> Ident<'static> {
         match self {
             Algorithm::Argon2d => ARGON2D_IDENT,
             Algorithm::Argon2i => ARGON2I_IDENT,
@@ -83,7 +83,7 @@ impl Algorithm {
     }
 
     /// Serialize primitive type as little endian bytes
-    pub(crate) fn to_le_bytes(self) -> [u8; 4] {
+    pub(crate) const fn to_le_bytes(self) -> [u8; 4] {
         (self as u32).to_le_bytes()
     }
 }
