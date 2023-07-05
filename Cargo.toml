@@ -9,6 +9,7 @@ members = [
     "scrypt",
     "sha-crypt"
 ]
+exclude = ["benches"]
 
 [profile.dev]
 opt-level = 2

@@ -26,7 +26,6 @@ zeroize = { version = "1", default-features = false, optional = true }
 [dev-dependencies]
 hex-literal = "0.4"
 password-hash = { version = "0.5", features = ["rand_core"] }
-criterion = { version = "0.4", features = ["html_reports"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
@@ -39,7 +38,3 @@ simple = ["password-hash"]
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-[[bench]]
-name = "argon2_bench"
-harness = false
