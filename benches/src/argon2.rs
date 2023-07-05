@@ -82,7 +82,7 @@ fn bench_vary_p(c: &mut Criterion) {
 
 criterion_group!(
     name = benches;
-    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+    config = Criterion::default().with_profiler(PProfProfiler::new(300, Output::Flamegraph(None)));
     targets =
     bench_default_params,
     bench_vary_m,
