@@ -1,0 +1,16 @@
+[package]
+name = "benches"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+argon2 = { path = "../argon2" }
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "argon2"
+path = "src/argon2.rs"
+harness = false
