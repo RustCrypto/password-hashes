@@ -6,8 +6,6 @@ license = "Apache-2.0 OR MIT"
 edition = "2021"
 publish = false
 
-[dependencies]
-
 [dev-dependencies]
 argon2 = { path = "../argon2" }
 criterion = { version = "0.4", features = ["html_reports"] }
