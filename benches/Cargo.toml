@@ -9,6 +9,7 @@ publish = false
 [dev-dependencies]
 argon2 = { path = "../argon2" }
 criterion = { version = "0.4", features = ["html_reports"] }
+pprof = { version = "0.11", features = ["flamegraph", "criterion"] }
 
 [[bench]]
 name = "argon2"
