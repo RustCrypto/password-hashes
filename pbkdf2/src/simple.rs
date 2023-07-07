@@ -188,7 +188,7 @@ impl Params {
 impl Default for Params {
     fn default() -> Params {
         Params {
-            rounds: Self::RECOMMENDED_ROUNDS as usize,
+            rounds: Self::RECOMMENDED_ROUNDS as u32,
             output_length: 32,
         }
     }
