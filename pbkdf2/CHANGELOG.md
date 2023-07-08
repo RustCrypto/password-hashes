@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.12.2 (2023-07-08)
+### Fixed
+- Use `RECOMMENDED_ROUNDS` in `Default` impl for `Params` ([#442])
+
+[#442]: https://github.com/RustCrypto/password-hashes/pull/442
+
 ## 0.12.1 (2023-03-04)
 ### Changed
 - Re-export `hmac` ([#397])

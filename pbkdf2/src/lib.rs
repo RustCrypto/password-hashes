@@ -18,9 +18,9 @@
 //! let password = b"password";
 //! let salt = b"salt";
 //! // number of iterations
-//! let n = 4096;
+//! let n = 600_000;
 //! // Expected value of generated key
-//! let expected = hex!("c5e478d59288c841aa530db6845c4c8d962893a0");
+//! let expected = hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637");
 //!
 //! let mut key1 = [0u8; 20];
 //! pbkdf2_hmac::<Sha256>(password, salt, n, &mut key1);
@@ -200,9 +200,9 @@ where
 /// use hmac::Hmac;
 /// use sha2::Sha256;
 ///
-/// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", 4096)
+/// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", 600_000)
 ///     .expect("HMAC can be initialized with any key length");
-/// assert_eq!(res, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// assert_eq!(res, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[inline]
 pub fn pbkdf2_array<PRF, const N: usize>(
@@ -226,8 +226,8 @@ where
 /// use sha2::Sha256;
 ///
 /// let mut buf = [0u8; 20];
-/// pbkdf2_hmac::<Sha256>(b"password", b"salt", 4096, &mut buf);
-/// assert_eq!(buf, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
+/// pbkdf2_hmac::<Sha256>(b"password", b"salt", 600_000, &mut buf);
+/// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[cfg(feature = "hmac")]
 #[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
@@ -257,8 +257,8 @@ where
 /// use sha2::Sha256;
 ///
 /// assert_eq!(
-///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 4096),
-///     hex!("c5e478d59288c841aa530db6845c4c8d962893a0"),
+///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 600_000),
+///     hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"),
 /// );
 /// ```
 #[cfg(feature = "hmac")]
