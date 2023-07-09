@@ -291,6 +291,7 @@ impl Block {
         // 256 bits * 32 = 8192 bits = 1024 bytes
 
         // extract the data into 32 256-bit registers
+
         let mut state = [
             _mm256_loadu_si256(rhs.0.as_ptr().offset(0 * 4) as *const __m256i),
             _mm256_loadu_si256(rhs.0.as_ptr().offset(1 * 4) as *const __m256i),
@@ -326,69 +327,41 @@ impl Block {
             _mm256_loadu_si256(rhs.0.as_ptr().offset(31 * 4) as *const __m256i),
         ];
 
-        let block_xy = [
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(0 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(1 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(2 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(3 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(4 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(5 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(6 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(7 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(8 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(9 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(10 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(11 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(12 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(13 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(14 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(15 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(16 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(17 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(18 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(19 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(20 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(21 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(22 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(23 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(24 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(25 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(26 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(27 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(28 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(29 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(30 * 4) as *const __m256i),
-            _mm256_loadu_si256(lhs.0.as_ptr().offset(31 * 4) as *const __m256i),
-        ];
+        // because there are only 32 YMM registers, we need to do the xor immedately after loading to get the compiler to emit ymmword ptr
 
-        // xor registers
         for i in 0..state.len() {
-            state[i] = _mm256_xor_si256(state[i], block_xy[i]);
+            state[i] = _mm256_xor_si256(
+                state[i],
+                _mm256_loadu_si256(lhs.0.as_ptr().offset(i as isize * 4) as *const __m256i),
+            );
         }
 
         for i in 0..4 {
             #[rustfmt::skip]
             BLAKE2_ROUND_1!(
-                state[i + 0], state[i + 4],
-                state[i + 1], state[i + 5],
-                state[i + 2], state[i + 6],
-                state[i + 3], state[i + 7]
+                state[8 * i + 0], state[8 * i + 4],
+                state[8 * i + 1], state[8 * i + 5],
+                state[8 * i + 2], state[8 * i + 6],
+                state[8 * i + 3], state[8 * i + 7]
             );
         }
 
         for i in 0..4 {
             #[rustfmt::skip]
             BLAKE2_ROUND_2!(
-                state[0 + i], state[1 + i],
-                state[2 + i], state[3 + i],
-                state[4 + i], state[5 + i],
-                state[6 + i], state[7 + i]
+                state[0 + i], state[4 + i],
+                state[8 + i], state[12 + i],
+                state[16 + i], state[20 + i],
+                state[24 + i], state[28 + i]
             );
         }
 
         // xor registers
         for i in 0..state.len() {
-            state[i] = _mm256_xor_si256(state[i], block_xy[i]);
+            state[i] = _mm256_xor_si256(
+                state[i],
+                _mm256_loadu_si256(lhs.0.as_ptr().offset(i as isize * 4) as *const __m256i),
+            );
         }
 
         // reapply registers
