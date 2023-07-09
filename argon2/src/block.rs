@@ -393,38 +393,12 @@ impl Block {
 
         // reapply registers
         let mut r = Self::new();
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(0 * 4) as *mut __m256i, state[0]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(1 * 4) as *mut __m256i, state[1]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(2 * 4) as *mut __m256i, state[2]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(3 * 4) as *mut __m256i, state[3]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(4 * 4) as *mut __m256i, state[4]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(5 * 4) as *mut __m256i, state[5]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(6 * 4) as *mut __m256i, state[6]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(7 * 4) as *mut __m256i, state[7]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(8 * 4) as *mut __m256i, state[8]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(9 * 4) as *mut __m256i, state[9]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(10 * 4) as *mut __m256i, state[10]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(11 * 4) as *mut __m256i, state[11]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(12 * 4) as *mut __m256i, state[12]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(13 * 4) as *mut __m256i, state[13]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(14 * 4) as *mut __m256i, state[14]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(15 * 4) as *mut __m256i, state[15]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(16 * 4) as *mut __m256i, state[16]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(17 * 4) as *mut __m256i, state[17]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(18 * 4) as *mut __m256i, state[18]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(19 * 4) as *mut __m256i, state[19]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(20 * 4) as *mut __m256i, state[20]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(21 * 4) as *mut __m256i, state[21]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(22 * 4) as *mut __m256i, state[22]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(23 * 4) as *mut __m256i, state[23]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(24 * 4) as *mut __m256i, state[24]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(25 * 4) as *mut __m256i, state[25]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(26 * 4) as *mut __m256i, state[26]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(27 * 4) as *mut __m256i, state[27]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(28 * 4) as *mut __m256i, state[28]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(29 * 4) as *mut __m256i, state[29]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(30 * 4) as *mut __m256i, state[30]);
-        _mm256_storeu_si256(r.0.as_mut_ptr().offset(31 * 4) as *mut __m256i, state[31]);
+        for i in 0..state.len() {
+            _mm256_storeu_si256(
+                r.0.as_mut_ptr().offset(i as isize * 4) as *mut __m256i,
+                state[i],
+            );
+        }
 
         r
     }
