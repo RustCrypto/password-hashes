@@ -44,13 +44,13 @@ macro_rules! permute {
     };
 }
 
-const fn _MM_SHUFFLE2(z: i32, y: i32, x: i32, w: i32) -> i32 {
+const fn _mm_shuffle2(z: i32, y: i32, x: i32, w: i32) -> i32 {
     (z << 6) | (y << 4) | (x << 2) | w
 }
 
 macro_rules! rotr32 {
     ($x:expr) => {
-        _mm256_shuffle_epi32($x, _MM_SHUFFLE2(2, 3, 0, 1))
+        _mm256_shuffle_epi32($x, _mm_shuffle2(2, 3, 0, 1))
     };
 }
 
@@ -136,12 +136,12 @@ macro_rules! G2_AVX2 {
 
 macro_rules! DIAGONALIZE_1 {
     ($A0:expr, $B0:expr, $C0:expr, $D0:expr, $A1:expr, $B1:expr, $C1:expr, $D1:expr) => {{
-        $B0 = _mm256_permute4x64_epi64($B0, _MM_SHUFFLE2(0, 3, 2, 1));
-        $C0 = _mm256_permute4x64_epi64($C0, _MM_SHUFFLE2(1, 0, 3, 2));
-        $D0 = _mm256_permute4x64_epi64($D0, _MM_SHUFFLE2(2, 1, 0, 3));
-        $B1 = _mm256_permute4x64_epi64($B1, _MM_SHUFFLE2(0, 3, 2, 1));
-        $C1 = _mm256_permute4x64_epi64($C1, _MM_SHUFFLE2(1, 0, 3, 2));
-        $D1 = _mm256_permute4x64_epi64($D1, _MM_SHUFFLE2(2, 1, 0, 3));
+        $B0 = _mm256_permute4x64_epi64($B0, _mm_shuffle2(0, 3, 2, 1));
+        $C0 = _mm256_permute4x64_epi64($C0, _mm_shuffle2(1, 0, 3, 2));
+        $D0 = _mm256_permute4x64_epi64($D0, _mm_shuffle2(2, 1, 0, 3));
+        $B1 = _mm256_permute4x64_epi64($B1, _mm_shuffle2(0, 3, 2, 1));
+        $C1 = _mm256_permute4x64_epi64($C1, _mm_shuffle2(1, 0, 3, 2));
+        $D1 = _mm256_permute4x64_epi64($D1, _mm_shuffle2(2, 1, 0, 3));
     }};
 }
 
@@ -149,26 +149,26 @@ macro_rules! DIAGONALIZE_2 {
     ($A0:expr, $A1:expr, $B0:expr, $B1:expr, $C0:expr, $C1:expr, $D0:expr, $D1:expr) => {{
         let tmp1 = _mm256_blend_epi32($B0, $B1, 0xCC);
         let tmp2 = _mm256_blend_epi32($B0, $B1, 0x33);
-        $B1 = _mm256_permute4x64_epi64(tmp1, _MM_SHUFFLE2(2, 3, 0, 1));
-        $B0 = _mm256_permute4x64_epi64(tmp2, _MM_SHUFFLE2(2, 3, 0, 1));
+        $B1 = _mm256_permute4x64_epi64(tmp1, _mm_shuffle2(2, 3, 0, 1));
+        $B0 = _mm256_permute4x64_epi64(tmp2, _mm_shuffle2(2, 3, 0, 1));
         let tmp1 = $C0;
         $C0 = $C1;
         $C1 = tmp1;
         let tmp1 = _mm256_blend_epi32($D0, $D1, 0xCC);
         let tmp2 = _mm256_blend_epi32($D0, $D1, 0x33);
-        $D0 = _mm256_permute4x64_epi64(tmp1, _MM_SHUFFLE2(2, 3, 0, 1));
-        $D1 = _mm256_permute4x64_epi64(tmp2, _MM_SHUFFLE2(2, 3, 0, 1));
+        $D0 = _mm256_permute4x64_epi64(tmp1, _mm_shuffle2(2, 3, 0, 1));
+        $D1 = _mm256_permute4x64_epi64(tmp2, _mm_shuffle2(2, 3, 0, 1));
     }};
 }
 
 macro_rules! UNDIAGONALIZE_1 {
     ($A0:expr, $B0:expr, $C0:expr, $D0:expr, $A1:expr, $B1:expr, $C1:expr, $D1:expr) => {{
-        $B0 = _mm256_permute4x64_epi64($B0, _MM_SHUFFLE2(2, 1, 0, 3));
-        $C0 = _mm256_permute4x64_epi64($C0, _MM_SHUFFLE2(1, 0, 3, 2));
-        $D0 = _mm256_permute4x64_epi64($D0, _MM_SHUFFLE2(0, 3, 2, 1));
-        $B1 = _mm256_permute4x64_epi64($B1, _MM_SHUFFLE2(2, 1, 0, 3));
-        $C1 = _mm256_permute4x64_epi64($C1, _MM_SHUFFLE2(1, 0, 3, 2));
-        $D1 = _mm256_permute4x64_epi64($D1, _MM_SHUFFLE2(0, 3, 2, 1));
+        $B0 = _mm256_permute4x64_epi64($B0, _mm_shuffle2(2, 1, 0, 3));
+        $C0 = _mm256_permute4x64_epi64($C0, _mm_shuffle2(1, 0, 3, 2));
+        $D0 = _mm256_permute4x64_epi64($D0, _mm_shuffle2(0, 3, 2, 1));
+        $B1 = _mm256_permute4x64_epi64($B1, _mm_shuffle2(2, 1, 0, 3));
+        $C1 = _mm256_permute4x64_epi64($C1, _mm_shuffle2(1, 0, 3, 2));
+        $D1 = _mm256_permute4x64_epi64($D1, _mm_shuffle2(0, 3, 2, 1));
     }};
 }
 
@@ -176,15 +176,15 @@ macro_rules! UNDIAGONALIZE_2 {
     ($A0:expr, $A1:expr, $B0:expr, $B1:expr, $C0:expr, $C1:expr, $D0:expr, $D1:expr) => {{
         let tmp1 = _mm256_blend_epi32($B0, $B1, 0xCC);
         let tmp2 = _mm256_blend_epi32($B0, $B1, 0x33);
-        $B0 = _mm256_permute4x64_epi64(tmp1, _MM_SHUFFLE2(2, 3, 0, 1));
-        $B1 = _mm256_permute4x64_epi64(tmp2, _MM_SHUFFLE2(2, 3, 0, 1));
+        $B0 = _mm256_permute4x64_epi64(tmp1, _mm_shuffle2(2, 3, 0, 1));
+        $B1 = _mm256_permute4x64_epi64(tmp2, _mm_shuffle2(2, 3, 0, 1));
         let tmp1 = $C0;
         $C0 = $C1;
         $C1 = tmp1;
         let tmp1 = _mm256_blend_epi32($D0, $D1, 0x33);
         let tmp2 = _mm256_blend_epi32($D0, $D1, 0xCC);
-        $D0 = _mm256_permute4x64_epi64(tmp1, _MM_SHUFFLE2(2, 3, 0, 1));
-        $D1 = _mm256_permute4x64_epi64(tmp2, _MM_SHUFFLE2(2, 3, 0, 1));
+        $D0 = _mm256_permute4x64_epi64(tmp1, _mm_shuffle2(2, 3, 0, 1));
+        $D1 = _mm256_permute4x64_epi64(tmp2, _mm_shuffle2(2, 3, 0, 1));
     }};
 }
 
@@ -299,7 +299,7 @@ impl Block {
             _mm256_loadu_si256(rhs.0.as_ptr().offset(7 * 4) as *const __m256i),
         ];
 
-        let mut block_xy = [
+        let block_xy = [
             _mm256_loadu_si256(lhs.0.as_ptr().offset(0 * 4) as *const __m256i),
             _mm256_loadu_si256(lhs.0.as_ptr().offset(1 * 4) as *const __m256i),
             _mm256_loadu_si256(lhs.0.as_ptr().offset(2 * 4) as *const __m256i),
@@ -315,28 +315,33 @@ impl Block {
             state[i] = _mm256_xor_si256(state[i], block_xy[i]);
         }
 
-        // for i in 0..4 {
-        //     #[rustfmt::skip]
-        //     BLAKE2_ROUND_1!(
-        //         state[(i + 0) % 8], state[(i + 4) % 8],
-        //         state[(i + 1) % 8], state[(i + 5) % 8],
-        //         state[(i + 2) % 8], state[(i + 6) % 8],
-        //         state[(i + 3) % 8], state[(i + 7) % 8]
-        //     );
-        // }
+        for i in 0..4 {
+            #[rustfmt::skip]
+            BLAKE2_ROUND_1!(
+                state[(i + 0) % 8], state[(i + 4) % 8],
+                state[(i + 1) % 8], state[(i + 5) % 8],
+                state[(i + 2) % 8], state[(i + 6) % 8],
+                state[(i + 3) % 8], state[(i + 7) % 8]
+            );
+        }
 
-        // for i in 0..4 {
-        //     BLAKE2_ROUND_2!(
-        //         state[0 + i],
-        //         state[1 + i],
-        //         state[2 + i],
-        //         state[3 + i],
-        //         state[(4 + i) % 8],
-        //         state[(5 + i) % 8],
-        //         state[(6 + i) % 8],
-        //         state[(7 + i) % 8]
-        //     );
-        // }
+        for i in 0..4 {
+            BLAKE2_ROUND_2!(
+                state[0 + i],
+                state[1 + i],
+                state[2 + i],
+                state[3 + i],
+                state[(4 + i) % 8],
+                state[(5 + i) % 8],
+                state[(6 + i) % 8],
+                state[(7 + i) % 8]
+            );
+        }
+
+        // xor registers
+        for i in 0..8 {
+            state[i] = _mm256_xor_si256(state[i], block_xy[i]);
+        }
 
         // reapply registers
         let mut r = Self::new();
@@ -349,39 +354,39 @@ impl Block {
         _mm256_storeu_si256(r.0.as_mut_ptr().offset(6 * 4) as *mut __m256i, state[6]);
         _mm256_storeu_si256(r.0.as_mut_ptr().offset(7 * 4) as *mut __m256i, state[7]);
 
-        // let r = *rhs ^ lhs;
+        // // Apply permutations rowwise
+        // let mut q = r;
+        // for chunk in q.0.chunks_exact_mut(16) {
+        //     #[rustfmt::skip]
+        //     permute!(
+        //         chunk[0], chunk[1], chunk[2], chunk[3],
+        //         chunk[4], chunk[5], chunk[6], chunk[7],
+        //         chunk[8], chunk[9], chunk[10], chunk[11],
+        //         chunk[12], chunk[13], chunk[14], chunk[15],
+        //     );
+        // }
 
-        // Apply permutations rowwise
-        let mut q = r;
-        for chunk in q.0.chunks_exact_mut(16) {
-            #[rustfmt::skip]
-            permute!(
-                chunk[0], chunk[1], chunk[2], chunk[3],
-                chunk[4], chunk[5], chunk[6], chunk[7],
-                chunk[8], chunk[9], chunk[10], chunk[11],
-                chunk[12], chunk[13], chunk[14], chunk[15],
-            );
-        }
+        // // Apply permutations columnwise
+        // for i in 0..8 {
+        //     let b = i * 2;
 
-        // Apply permutations columnwise
-        for i in 0..8 {
-            let b = i * 2;
+        //     #[rustfmt::skip]
+        //     permute!(
+        //         q.0[b], q.0[b + 1],
+        //         q.0[b + 16], q.0[b + 17],
+        //         q.0[b + 32], q.0[b + 33],
+        //         q.0[b + 48], q.0[b + 49],
+        //         q.0[b + 64], q.0[b + 65],
+        //         q.0[b + 80], q.0[b + 81],
+        //         q.0[b + 96], q.0[b + 97],
+        //         q.0[b + 112], q.0[b + 113],
+        //     );
+        // }
 
-            #[rustfmt::skip]
-            permute!(
-                q.0[b], q.0[b + 1],
-                q.0[b + 16], q.0[b + 17],
-                q.0[b + 32], q.0[b + 33],
-                q.0[b + 48], q.0[b + 49],
-                q.0[b + 64], q.0[b + 65],
-                q.0[b + 80], q.0[b + 81],
-                q.0[b + 96], q.0[b + 97],
-                q.0[b + 112], q.0[b + 113],
-            );
-        }
+        // q ^= &r;
+        // q
 
-        q ^= &r;
-        q
+        r
     }
 }
 
