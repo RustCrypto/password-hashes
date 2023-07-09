@@ -214,6 +214,7 @@ cpufeatures::new!(avx2_cpuid, "avx2");
 
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(test, derive(PartialEq))]
 #[repr(align(64))]
 pub struct Block([u64; Self::SIZE / 8]);
 
@@ -423,5 +424,34 @@ impl BitXorAssign<&Block> for Block {
 impl Zeroize for Block {
     fn zeroize(&mut self) {
         self.0.zeroize();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn compress_avx2() {
+        let lhs = Block([
+            0, 0, 0, 2048, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]);
+        let rhs = Block([
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]);
+
+        let result = Block::compress_safe(&rhs, &lhs);
+        let result_av2 = unsafe { Block::compress_avx2(&rhs, &lhs) };
+
+        assert_eq!(result, result_av2);
     }
 }
