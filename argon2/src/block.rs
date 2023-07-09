@@ -287,7 +287,10 @@ impl Block {
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::*;
 
-        // extract the data into registers
+        // one u64 is 64 bits, so 4 u64s is 256 bits
+        // 256 bits * 32 = 8192 bits = 1024 bytes
+
+        // extract the data into 32 256-bit registers
         let mut state = [
             _mm256_loadu_si256(rhs.0.as_ptr().offset(0 * 4) as *const __m256i),
             _mm256_loadu_si256(rhs.0.as_ptr().offset(1 * 4) as *const __m256i),
@@ -297,6 +300,30 @@ impl Block {
             _mm256_loadu_si256(rhs.0.as_ptr().offset(5 * 4) as *const __m256i),
             _mm256_loadu_si256(rhs.0.as_ptr().offset(6 * 4) as *const __m256i),
             _mm256_loadu_si256(rhs.0.as_ptr().offset(7 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(8 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(9 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(10 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(11 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(12 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(13 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(14 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(15 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(16 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(17 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(18 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(19 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(20 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(21 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(22 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(23 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(24 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(25 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(26 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(27 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(28 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(29 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(30 * 4) as *const __m256i),
+            _mm256_loadu_si256(rhs.0.as_ptr().offset(31 * 4) as *const __m256i),
         ];
 
         let block_xy = [
@@ -308,38 +335,59 @@ impl Block {
             _mm256_loadu_si256(lhs.0.as_ptr().offset(5 * 4) as *const __m256i),
             _mm256_loadu_si256(lhs.0.as_ptr().offset(6 * 4) as *const __m256i),
             _mm256_loadu_si256(lhs.0.as_ptr().offset(7 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(8 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(9 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(10 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(11 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(12 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(13 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(14 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(15 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(16 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(17 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(18 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(19 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(20 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(21 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(22 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(23 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(24 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(25 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(26 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(27 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(28 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(29 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(30 * 4) as *const __m256i),
+            _mm256_loadu_si256(lhs.0.as_ptr().offset(31 * 4) as *const __m256i),
         ];
 
         // xor registers
-        for i in 0..8 {
+        for i in 0..state.len() {
             state[i] = _mm256_xor_si256(state[i], block_xy[i]);
         }
 
         for i in 0..4 {
             #[rustfmt::skip]
             BLAKE2_ROUND_1!(
-                state[(i + 0) % 8], state[(i + 4) % 8],
-                state[(i + 1) % 8], state[(i + 5) % 8],
-                state[(i + 2) % 8], state[(i + 6) % 8],
-                state[(i + 3) % 8], state[(i + 7) % 8]
+                state[i + 0], state[i + 4],
+                state[i + 1], state[i + 5],
+                state[i + 2], state[i + 6],
+                state[i + 3], state[i + 7]
             );
         }
 
         for i in 0..4 {
+            #[rustfmt::skip]
             BLAKE2_ROUND_2!(
-                state[0 + i],
-                state[1 + i],
-                state[2 + i],
-                state[3 + i],
-                state[(4 + i) % 8],
-                state[(5 + i) % 8],
-                state[(6 + i) % 8],
-                state[(7 + i) % 8]
+                state[0 + i], state[1 + i],
+                state[2 + i], state[3 + i],
+                state[4 + i], state[5 + i],
+                state[6 + i], state[7 + i]
             );
         }
 
         // xor registers
-        for i in 0..8 {
+        for i in 0..state.len() {
             state[i] = _mm256_xor_si256(state[i], block_xy[i]);
         }
 
@@ -353,38 +401,30 @@ impl Block {
         _mm256_storeu_si256(r.0.as_mut_ptr().offset(5 * 4) as *mut __m256i, state[5]);
         _mm256_storeu_si256(r.0.as_mut_ptr().offset(6 * 4) as *mut __m256i, state[6]);
         _mm256_storeu_si256(r.0.as_mut_ptr().offset(7 * 4) as *mut __m256i, state[7]);
-
-        // // Apply permutations rowwise
-        // let mut q = r;
-        // for chunk in q.0.chunks_exact_mut(16) {
-        //     #[rustfmt::skip]
-        //     permute!(
-        //         chunk[0], chunk[1], chunk[2], chunk[3],
-        //         chunk[4], chunk[5], chunk[6], chunk[7],
-        //         chunk[8], chunk[9], chunk[10], chunk[11],
-        //         chunk[12], chunk[13], chunk[14], chunk[15],
-        //     );
-        // }
-
-        // // Apply permutations columnwise
-        // for i in 0..8 {
-        //     let b = i * 2;
-
-        //     #[rustfmt::skip]
-        //     permute!(
-        //         q.0[b], q.0[b + 1],
-        //         q.0[b + 16], q.0[b + 17],
-        //         q.0[b + 32], q.0[b + 33],
-        //         q.0[b + 48], q.0[b + 49],
-        //         q.0[b + 64], q.0[b + 65],
-        //         q.0[b + 80], q.0[b + 81],
-        //         q.0[b + 96], q.0[b + 97],
-        //         q.0[b + 112], q.0[b + 113],
-        //     );
-        // }
-
-        // q ^= &r;
-        // q
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(8 * 4) as *mut __m256i, state[8]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(9 * 4) as *mut __m256i, state[9]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(10 * 4) as *mut __m256i, state[10]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(11 * 4) as *mut __m256i, state[11]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(12 * 4) as *mut __m256i, state[12]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(13 * 4) as *mut __m256i, state[13]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(14 * 4) as *mut __m256i, state[14]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(15 * 4) as *mut __m256i, state[15]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(16 * 4) as *mut __m256i, state[16]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(17 * 4) as *mut __m256i, state[17]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(18 * 4) as *mut __m256i, state[18]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(19 * 4) as *mut __m256i, state[19]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(20 * 4) as *mut __m256i, state[20]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(21 * 4) as *mut __m256i, state[21]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(22 * 4) as *mut __m256i, state[22]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(23 * 4) as *mut __m256i, state[23]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(24 * 4) as *mut __m256i, state[24]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(25 * 4) as *mut __m256i, state[25]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(26 * 4) as *mut __m256i, state[26]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(27 * 4) as *mut __m256i, state[27]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(28 * 4) as *mut __m256i, state[28]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(29 * 4) as *mut __m256i, state[29]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(30 * 4) as *mut __m256i, state[30]);
+        _mm256_storeu_si256(r.0.as_mut_ptr().offset(31 * 4) as *mut __m256i, state[31]);
 
         r
     }
