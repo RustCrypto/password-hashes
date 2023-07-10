@@ -44,6 +44,7 @@ macro_rules! permute {
     };
 }
 
+#[cfg(any(target_arch = "x86_64"))]
 cpufeatures::new!(avx2_cpuid, "avx2");
 
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
