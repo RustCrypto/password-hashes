@@ -44,9 +44,6 @@ macro_rules! permute {
     };
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-cpufeatures::new!(avx2_cpuid, "avx2");
-
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
 #[repr(align(64))]
@@ -69,18 +66,8 @@ impl Block {
         unsafe { &mut *(self.0.as_mut_ptr() as *mut [u8; Self::SIZE]) }
     }
 
-    pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            if avx2_cpuid::get() {
-                return unsafe { Self::compress_avx2(rhs, lhs) };
-            }
-        }
-        Self::compress_soft(rhs, lhs)
-    }
-
     #[inline(always)]
-    fn compress_soft(rhs: &Self, lhs: &Self) -> Self {
+    pub(crate) fn compress_soft(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;
 
         // Apply permutations rowwise
@@ -118,7 +105,7 @@ impl Block {
 
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "avx2")]
-    unsafe fn compress_avx2(rhs: &Self, lhs: &Self) -> Self {
+    pub(crate) unsafe fn compress_avx2(rhs: &Self, lhs: &Self) -> Self {
         Self::compress_soft(rhs, lhs)
     }
 }
