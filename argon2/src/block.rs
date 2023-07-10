@@ -44,12 +44,11 @@ macro_rules! permute {
     };
 }
 
-#[cfg(any(target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 cpufeatures::new!(avx2_cpuid, "avx2");
 
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
 #[derive(Copy, Clone, Debug)]
-#[cfg_attr(test, derive(PartialEq))]
 #[repr(align(64))]
 pub struct Block([u64; Self::SIZE / 8]);
 
@@ -71,16 +70,16 @@ impl Block {
     }
 
     pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
-        #[cfg(any(target_arch = "x86_64"))]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
-            let (_, avx2) = avx2_cpuid::init_get();
-            if avx2 {
+            if avx2_cpuid::get() {
                 return unsafe { Self::compress_avx2(rhs, lhs) };
             }
         }
         Self::compress_soft(rhs, lhs)
     }
 
+    #[inline(always)]
     fn compress_soft(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;
 
@@ -117,42 +116,10 @@ impl Block {
         q
     }
 
-    #[cfg(any(target_arch = "x86_64"))]
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature(enable = "avx2")]
     unsafe fn compress_avx2(rhs: &Self, lhs: &Self) -> Self {
-        let r = *rhs ^ lhs;
-
-        // Apply permutations rowwise
-        let mut q = r;
-        for chunk in q.0.chunks_exact_mut(16) {
-            #[rustfmt::skip]
-            permute!(
-                chunk[0], chunk[1], chunk[2], chunk[3],
-                chunk[4], chunk[5], chunk[6], chunk[7],
-                chunk[8], chunk[9], chunk[10], chunk[11],
-                chunk[12], chunk[13], chunk[14], chunk[15],
-            );
-        }
-
-        // Apply permutations columnwise
-        for i in 0..8 {
-            let b = i * 2;
-
-            #[rustfmt::skip]
-            permute!(
-                q.0[b], q.0[b + 1],
-                q.0[b + 16], q.0[b + 17],
-                q.0[b + 32], q.0[b + 33],
-                q.0[b + 48], q.0[b + 49],
-                q.0[b + 64], q.0[b + 65],
-                q.0[b + 80], q.0[b + 81],
-                q.0[b + 96], q.0[b + 97],
-                q.0[b + 112], q.0[b + 113],
-            );
-        }
-
-        q ^= &r;
-        q
+        Self::compress_soft(rhs, lhs)
     }
 }
 
@@ -205,24 +172,13 @@ mod test {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn compress_avx2() {
-        let lhs = Block([
-            0, 0, 0, 2048, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]);
-        let rhs = Block([
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]);
+        let mut lhs = Block([0; 128]);
+        lhs.0[0..7].copy_from_slice(&[0, 0, 0, 2048, 4, 2, 1]);
+        let rhs = Block([0; 128]);
 
         let result = Block::compress_soft(&rhs, &lhs);
-        let result_av2 = unsafe { Block::compress_avx2(&rhs, &lhs) };
+        let result_avx2 = unsafe { Block::compress_avx2(&rhs, &lhs) };
 
-        assert_eq!(result, result_av2);
+        assert_eq!(result.0, result_avx2.0);
     }
 }
