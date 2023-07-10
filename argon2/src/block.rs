@@ -78,10 +78,10 @@ impl Block {
                 return unsafe { Self::compress_avx2(rhs, lhs) };
             }
         }
-        Self::compress_safe(rhs, lhs)
+        Self::compress_soft(rhs, lhs)
     }
 
-    fn compress_safe(rhs: &Self, lhs: &Self) -> Self {
+    fn compress_soft(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;
 
         // Apply permutations rowwise
@@ -220,7 +220,7 @@ mod test {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]);
 
-        let result = Block::compress_safe(&rhs, &lhs);
+        let result = Block::compress_soft(&rhs, &lhs);
         let result_av2 = unsafe { Block::compress_avx2(&rhs, &lhs) };
 
         assert_eq!(result, result_av2);
