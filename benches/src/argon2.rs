@@ -1,5 +1,6 @@
 use argon2::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use pprof::criterion::{Output, PProfProfiler};
 
 const BENCH_PASSWORD: &[u8] = b"hunter2";
 const BENCH_SALT: &[u8] = b"pepper42";
@@ -80,7 +81,9 @@ fn bench_vary_p(c: &mut Criterion) {
 }
 
 criterion_group!(
-    benches,
+    name = benches;
+    config = Criterion::default().with_profiler(PProfProfiler::new(300, Output::Flamegraph(None)));
+    targets =
     bench_default_params,
     bench_vary_m,
     bench_vary_t,

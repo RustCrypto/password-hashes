@@ -66,7 +66,8 @@ impl Block {
         unsafe { &mut *(self.0.as_mut_ptr() as *mut [u8; Self::SIZE]) }
     }
 
-    pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
+    #[inline(always)]
+    pub(crate) fn compress_soft(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;
 
         // Apply permutations rowwise
@@ -101,6 +102,12 @@ impl Block {
         q ^= &r;
         q
     }
+
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[target_feature(enable = "avx2")]
+    pub(crate) unsafe fn compress_avx2(rhs: &Self, lhs: &Self) -> Self {
+        Self::compress_soft(rhs, lhs)
+    }
 }
 
 impl Default for Block {
@@ -132,7 +139,7 @@ impl BitXor<&Block> for Block {
 
 impl BitXorAssign<&Block> for Block {
     fn bitxor_assign(&mut self, rhs: &Block) {
-        for (dst, src) in self.0.iter_mut().zip(rhs.0.iter().copied()) {
+        for (dst, src) in self.0.iter_mut().zip(rhs.0.iter()) {
             *dst ^= src;
         }
     }
@@ -142,5 +149,23 @@ impl BitXorAssign<&Block> for Block {
 impl Zeroize for Block {
     fn zeroize(&mut self) {
         self.0.zeroize();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn compress_avx2() {
+        let mut lhs = Block([0; 128]);
+        lhs.0[0..7].copy_from_slice(&[0, 0, 0, 2048, 4, 2, 1]);
+        let rhs = Block([0; 128]);
+
+        let result = Block::compress_soft(&rhs, &lhs);
+        let result_avx2 = unsafe { Block::compress_avx2(&rhs, &lhs) };
+
+        assert_eq!(result.0, result_avx2.0);
     }
 }

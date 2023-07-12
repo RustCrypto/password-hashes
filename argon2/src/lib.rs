@@ -144,6 +144,9 @@ pub(crate) const SYNC_POINTS: usize = 4;
 /// To generate reference block positions
 const ADDRESSES_IN_BLOCK: usize = 128;
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+cpufeatures::new!(avx2_cpuid, "avx2");
+
 /// Argon2 context.
 ///
 /// This is the primary type of this crate's API, and contains the following:
@@ -165,6 +168,9 @@ pub struct Argon2<'key> {
 
     /// Key array
     secret: Option<&'key [u8]>,
+
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    cpu_feat_avx2: avx2_cpuid::InitToken,
 }
 
 impl Default for Argon2<'_> {
@@ -191,6 +197,8 @@ impl<'key> Argon2<'key> {
             version,
             params,
             secret: None,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            cpu_feat_avx2: avx2_cpuid::init(),
         }
     }
 
@@ -210,6 +218,8 @@ impl<'key> Argon2<'key> {
             version,
             params,
             secret: Some(secret),
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            cpu_feat_avx2: avx2_cpuid::init(),
         })
     }
 
@@ -335,7 +345,7 @@ impl<'key> Argon2<'key> {
                     let first_block = if pass == 0 && slice == 0 {
                         if data_independent_addressing {
                             // Generate first set of addresses
-                            Self::update_address_block(
+                            self.update_address_block(
                                 &mut address_block,
                                 &mut input_block,
                                 &zero_block,
@@ -364,7 +374,7 @@ impl<'key> Argon2<'key> {
                             let addres_index = block % ADDRESSES_IN_BLOCK;
 
                             if addres_index == 0 {
-                                Self::update_address_block(
+                                self.update_address_block(
                                     &mut address_block,
                                     &mut input_block,
                                     &zero_block,
@@ -424,7 +434,7 @@ impl<'key> Argon2<'key> {
 
                         // Calculate new block
                         let result =
-                            Block::compress(&memory_blocks[prev_index], &memory_blocks[ref_index]);
+                            self.compress(&memory_blocks[prev_index], &memory_blocks[ref_index]);
 
                         if self.version == Version::V0x10 || pass == 0 {
                             memory_blocks[cur_index] = result;
@@ -440,6 +450,16 @@ impl<'key> Argon2<'key> {
         }
 
         Ok(())
+    }
+
+    fn compress(&self, rhs: &Block, lhs: &Block) -> Block {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            if self.cpu_feat_avx2.get() {
+                return unsafe { Block::compress_avx2(rhs, lhs) };
+            }
+        }
+        Block::compress_soft(rhs, lhs)
     }
 
     /// Get default configured [`Params`].
@@ -467,13 +487,14 @@ impl<'key> Argon2<'key> {
     }
 
     fn update_address_block(
+        &self,
         address_block: &mut Block,
         input_block: &mut Block,
         zero_block: &Block,
     ) {
         input_block.as_mut()[6] += 1;
-        *address_block = Block::compress(zero_block, input_block);
-        *address_block = Block::compress(zero_block, address_block);
+        *address_block = self.compress(zero_block, input_block);
+        *address_block = self.compress(zero_block, address_block);
     }
 
     /// Hashes all the inputs into `blockhash[PREHASH_DIGEST_LEN]`.
@@ -579,6 +600,8 @@ impl PasswordHasher for Argon2<'_> {
             algorithm,
             version,
             params,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            cpu_feat_avx2: self.cpu_feat_avx2,
         }
         .hash_password(password, salt)
     }
