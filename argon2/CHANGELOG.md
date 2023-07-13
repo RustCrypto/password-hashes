@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 (2023-07-13)
+### Added
+- Provide `std::error::Error::source` for `argon2::Error` ([#379])
+- `ParamsBuilder::context` ([#400])
+- Enable `password-hash/alloc` when `alloc` feature is enabled ([#422])
+- Impl `Debug` for `Argon2` ([#423])
+- `Block::new()` const initializer ([#427])
+- `Params::DEFAULT` constant ([#439])
+- Initial AVX2 SIMD optimizations ([#440])
+
+[#379]: https://github.com/RustCrypto/password-hashes/pull/379
+[#400]: https://github.com/RustCrypto/password-hashes/pull/400
+[#422]: https://github.com/RustCrypto/password-hashes/pull/422
+[#423]: https://github.com/RustCrypto/password-hashes/pull/423
+[#427]: https://github.com/RustCrypto/password-hashes/pull/427
+[#439]: https://github.com/RustCrypto/password-hashes/pull/439
+[#440]: https://github.com/RustCrypto/password-hashes/pull/440
+
 ## 0.5.0 (2023-03-04)
 ### Added
 - Key derivation usage example ([#366])
