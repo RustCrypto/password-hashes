@@ -455,11 +455,18 @@ impl<'key> Argon2<'key> {
     fn compress(&self, rhs: &Block, lhs: &Block) -> Block {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
+            /// Enable AVX2 optimizations.
+            #[target_feature(enable = "avx2")]
+            unsafe fn compress_avx2(rhs: &Block, lhs: &Block) -> Block {
+                Block::compress(rhs, lhs)
+            }
+
             if self.cpu_feat_avx2.get() {
-                return unsafe { Block::compress_avx2(rhs, lhs) };
+                return unsafe { compress_avx2(rhs, lhs) };
             }
         }
-        Block::compress_soft(rhs, lhs)
+
+        Block::compress(rhs, lhs)
     }
 
     /// Get default configured [`Params`].
