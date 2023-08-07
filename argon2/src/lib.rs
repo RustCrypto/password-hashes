@@ -627,6 +627,7 @@ impl<'key> From<&Params> for Argon2<'key> {
 }
 
 #[cfg(all(test, feature = "alloc", feature = "password-hash"))]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use crate::{Algorithm, Argon2, Params, PasswordHasher, Salt, Version};
 

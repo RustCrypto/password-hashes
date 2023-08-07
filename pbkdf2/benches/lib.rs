@@ -13,7 +13,7 @@ pub fn pbkdf2_hmac_sha1_16384_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha1::Sha1>>(password, salt, 16_384, &mut buf);
+        pbkdf2::<Hmac<sha1::Sha1>>(password, salt, 16_384, &mut buf).unwrap();
         test::black_box(&buf);
     });
 }
@@ -24,7 +24,7 @@ pub fn pbkdf2_hmac_sha256_16384_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, 16_384, &mut buf);
+        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, 16_384, &mut buf).unwrap();
         test::black_box(&buf);
     });
 }
@@ -35,7 +35,7 @@ pub fn pbkdf2_hmac_sha512_16384_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 16_384, &mut buf);
+        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 16_384, &mut buf).unwrap();
         test::black_box(&buf);
     });
 }

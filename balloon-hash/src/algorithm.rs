@@ -10,7 +10,7 @@ use core::{
 use password_hash::Ident;
 
 /// Balloon primitive type: variants of the algorithm.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord, Default)]
 pub enum Algorithm {
     /// Standard Balloon hashing algorithm.
     Balloon,
@@ -19,13 +19,8 @@ pub enum Algorithm {
     ///
     /// Supports parallelism by computing M instances of the
     /// single-core Balloon function and XORing all the outputs.
+    #[default]
     BalloonM,
-}
-
-impl Default for Algorithm {
-    fn default() -> Algorithm {
-        Algorithm::BalloonM
-    }
 }
 
 impl Algorithm {

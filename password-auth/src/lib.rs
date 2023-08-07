@@ -7,7 +7,7 @@
 )]
 #![warn(
     clippy::checked_conversions,
-    clippy::integer_arithmetic,
+    clippy::arithmetic_side_effects,
     clippy::panic,
     clippy::panic_in_result_fn,
     clippy::unwrap_used,
@@ -142,7 +142,7 @@ mod tests {
         let hash = generate_hash(EXAMPLE_PASSWORD);
         assert!(verify_password(EXAMPLE_PASSWORD, &hash).is_ok());
         assert!(verify_password("bogus", &hash).is_err());
-        assert!(!is_hash_obsolete(&hash).unwrap());
+        assert!(!is_hash_obsolete(&hash).expect("hash can be parsed"));
     }
 
     #[cfg(feature = "argon2")]
