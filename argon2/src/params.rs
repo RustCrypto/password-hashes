@@ -104,36 +104,33 @@ impl Params {
     /// - `t_cost`: number of iterations. Between 1 and (2^32)-1.
     /// - `p_cost`: degree of parallelism. Between 1 and 255.
     /// - `output_len`: size of the KDF output in bytes. Default 32.
-    pub fn new(m_cost: u32, t_cost: u32, p_cost: u32, output_len: Option<usize>) -> Result<Self> {
-        let mut builder = ParamsBuilder::new();
-
-        builder.m_cost(m_cost).t_cost(t_cost).p_cost(p_cost);
-
-        if let Some(len) = output_len {
-            builder.output_len(len);
-        }
-
-        builder.build()
+    pub const fn new(
+        m_cost: u32,
+        t_cost: u32,
+        p_cost: u32,
+        output_len: Option<usize>,
+    ) -> Result<Self> {
+        ParamsBuilder::new_params(m_cost, t_cost, p_cost, None, None, output_len).build()
     }
 
     /// Memory size, expressed in kibibytes. Between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
-    pub fn m_cost(&self) -> u32 {
+    pub const fn m_cost(&self) -> u32 {
         self.m_cost
     }
 
     /// Number of iterations. Between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
-    pub fn t_cost(&self) -> u32 {
+    pub const fn t_cost(&self) -> u32 {
         self.t_cost
     }
 
     /// Degree of parallelism. Between 1 and 255.
     ///
     /// Value is an integer in decimal (1 to 3 digits).
-    pub fn p_cost(&self) -> u32 {
+    pub const fn p_cost(&self) -> u32 {
         self.p_cost
     }
 
@@ -164,25 +161,25 @@ impl Params {
     }
 
     /// Length of the output (in bytes).
-    pub fn output_len(&self) -> Option<usize> {
+    pub const fn output_len(&self) -> Option<usize> {
         self.output_len
     }
 
     /// Get the number of lanes.
     #[allow(clippy::cast_possible_truncation)]
-    pub(crate) fn lanes(&self) -> usize {
+    pub(crate) const fn lanes(&self) -> usize {
         self.p_cost as usize
     }
 
     /// Get the number of blocks in a lane.
-    pub(crate) fn lane_length(&self) -> usize {
+    pub(crate) const fn lane_length(&self) -> usize {
         self.segment_length() * SYNC_POINTS
     }
 
     /// Get the segment length given the configured `m_cost` and `p_cost`.
     ///
     /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
-    pub(crate) fn segment_length(&self) -> usize {
+    pub(crate) const fn segment_length(&self) -> usize {
         let m_cost = self.m_cost as usize;
 
         let memory_blocks = if m_cost < 2 * SYNC_POINTS * self.lanes() {
@@ -195,7 +192,7 @@ impl Params {
     }
 
     /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
-    pub fn block_count(&self) -> usize {
+    pub const fn block_count(&self) -> usize {
         self.segment_length() * self.lanes() * SYNC_POINTS
     }
 }
@@ -217,7 +214,6 @@ macro_rules! param_buf {
             /// Length of byte array
             len: usize,
         }
-
         impl $ty {
             /// Maximum length in bytes
             pub const MAX_LEN: usize = $max_len;
@@ -232,6 +228,12 @@ macro_rules! param_buf {
 
                 Ok(Self { bytes, len })
             }
+
+            /// Empty value.
+            pub const EMPTY: Self = Self {
+                bytes: [0u8; Self::MAX_LEN],
+                len: 0,
+            };
 
             #[doc = "Decode"]
             #[doc = $name]
@@ -249,12 +251,12 @@ macro_rules! param_buf {
             }
 
             /// Get the length in bytes.
-            pub fn len(&self) -> usize {
+            pub const fn len(&self) -> usize {
                 self.len
             }
 
             /// Is this value empty?
-            pub fn is_empty(&self) -> bool {
+            pub const fn is_empty(&self) -> bool {
                 self.len() == 0
             }
         }
@@ -384,8 +386,27 @@ pub struct ParamsBuilder {
 
 impl ParamsBuilder {
     /// Create a new builder with the default parameters.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self::DEFAULT
+    }
+    /// Create a new builder with the provided parameters.
+    /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
+    pub const fn new_params(
+        m_cost: u32,
+        t_cost: u32,
+        p_cost: u32,
+        keyid: Option<KeyId>,
+        data: Option<AssociatedData>,
+        output_len: Option<usize>,
+    ) -> Self {
+        Self {
+            m_cost,
+            t_cost,
+            p_cost,
+            keyid,
+            data,
+            output_len,
+        }
     }
 
     /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
@@ -428,7 +449,7 @@ impl ParamsBuilder {
     ///
     /// This performs validations to ensure that the given parameters are valid
     /// and compatible with each other, and will return an error if they are not.
-    pub fn build(&self) -> Result<Params> {
+    pub const fn build(&self) -> Result<Params> {
         if self.m_cost < Params::MIN_M_COST {
             return Err(Error::MemoryTooLittle);
         }
@@ -465,9 +486,15 @@ impl ParamsBuilder {
             }
         }
 
-        let keyid = self.keyid.unwrap_or_default();
+        let keyid = match self.keyid {
+            Some(keyid) => keyid,
+            None => KeyId::EMPTY,
+        };
 
-        let data = self.data.unwrap_or_default();
+        let data = match self.data {
+            Some(data) => data,
+            None => AssociatedData::EMPTY,
+        };
 
         let params = Params {
             m_cost: self.m_cost,
@@ -482,14 +509,19 @@ impl ParamsBuilder {
     }
 
     /// Create a new [`Argon2`] context using the provided algorithm/version.
-    pub fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
-        Ok(Argon2::new(algorithm, version, self.build()?))
+    pub const fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
+        Ok(Argon2::new(
+            algorithm,
+            version,
+            match self.build() {
+                Ok(params) => params,
+                Err(e) => return Err(e),
+            },
+        ))
     }
-}
-
-impl Default for ParamsBuilder {
-    fn default() -> Self {
-        let params = Params::default();
+    /// Default parameters (recommended).
+    pub const DEFAULT: ParamsBuilder = {
+        let params = Params::DEFAULT;
         Self {
             m_cost: params.m_cost,
             t_cost: params.t_cost,
@@ -498,6 +530,12 @@ impl Default for ParamsBuilder {
             data: None,
             output_len: params.output_len,
         }
+    };
+}
+
+impl Default for ParamsBuilder {
+    fn default() -> Self {
+        Self::DEFAULT
     }
 }
 

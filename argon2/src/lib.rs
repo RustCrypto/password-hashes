@@ -175,7 +175,7 @@ pub struct Argon2<'key> {
 
 impl Default for Argon2<'_> {
     fn default() -> Self {
-        Self::new(Algorithm::default(), Version::default(), Params::default())
+        Self::DEFAULT
     }
 }
 
@@ -190,8 +190,11 @@ impl fmt::Debug for Argon2<'_> {
 }
 
 impl<'key> Argon2<'key> {
+    /// Default parameters (recommended).
+    pub const DEFAULT: Argon2<'static> =
+        Argon2::new(Algorithm::DEFAULT, Version::DEFAULT, Params::DEFAULT);
     /// Create a new Argon2 context.
-    pub fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {
+    pub const fn new(algorithm: Algorithm, version: Version, params: Params) -> Self {
         Self {
             algorithm,
             version,
@@ -470,7 +473,7 @@ impl<'key> Argon2<'key> {
     }
 
     /// Get default configured [`Params`].
-    pub fn params(&self) -> &Params {
+    pub const fn params(&self) -> &Params {
         &self.params
     }
 
@@ -531,7 +534,7 @@ impl<'key> Argon2<'key> {
         digest.finalize()
     }
 
-    fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
+    const fn verify_inputs(pwd: &[u8], salt: &[u8]) -> Result<()> {
         if pwd.len() > MAX_PWD_LEN {
             return Err(Error::PwdTooLong);
         }
