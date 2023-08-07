@@ -236,7 +236,7 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
     }
 }
 
-impl<'a> TryFrom<Params> for ParamsString {
+impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
     fn try_from(input: Params) -> Result<ParamsString> {

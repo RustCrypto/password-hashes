@@ -333,6 +333,7 @@ fn output_bad_length() {
 // =======================================
 // Taken from https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c
 
+#[allow(clippy::too_many_arguments)]
 fn hashtest(
     algorithm: Algorithm,
     version: Version,

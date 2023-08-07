@@ -25,7 +25,7 @@ pub const ARGON2I_IDENT: Ident<'_> = Ident::new_unwrap("argon2i");
 pub const ARGON2ID_IDENT: Ident<'_> = Ident::new_unwrap("argon2id");
 
 /// Argon2 primitive type: variants of the algorithm.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Default, Ord)]
 pub enum Algorithm {
     /// Optimizes against GPU cracking attacks but vulnerable to side-channels.
     ///
@@ -47,13 +47,8 @@ pub enum Algorithm {
     /// TMTO/GPU cracking resistance as Argon2d, nor as good of side-channel
     /// resistance as Argon2i, but overall provides the most well-rounded
     /// approach to both classes of attacks.
+    #[default]
     Argon2id = 2,
-}
-
-impl Default for Algorithm {
-    fn default() -> Algorithm {
-        Algorithm::Argon2id
-    }
 }
 
 impl Algorithm {
