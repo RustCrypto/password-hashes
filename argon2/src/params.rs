@@ -46,7 +46,7 @@ impl Params {
     pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
     /// Maximum number of 1 KiB memory blocks.
-    pub const MAX_M_COST: u32 = 0xFFFFFFFF;
+    pub const MAX_M_COST: u32 = u32::MAX;
 
     /// Default number of iterations (i.e. "time").
     pub const DEFAULT_T_COST: u32 = 2;
@@ -433,9 +433,7 @@ impl ParamsBuilder {
             return Err(Error::MemoryTooLittle);
         }
 
-        if self.m_cost > Params::MAX_M_COST {
-            return Err(Error::MemoryTooMuch);
-        }
+        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
 
         if self.m_cost < self.p_cost * 8 {
             return Err(Error::MemoryTooLittle);
