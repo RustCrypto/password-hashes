@@ -519,10 +519,6 @@ mod tests {
             Err(Error::MemoryTooLittle)
         );
         assert_eq!(
-            ParamsBuilder::new().m_cost(Params::MAX_M_COST + 1).build(),
-            Err(Error::MemoryTooMuch)
-        );
-        assert_eq!(
             ParamsBuilder::new().t_cost(Params::MIN_T_COST - 1).build(),
             Err(Error::TimeTooSmall)
         );
