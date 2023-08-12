@@ -22,9 +22,9 @@ pub struct Params {
     /// Value is an integer in decimal (1 to 10 digits).
     t_cost: u32,
 
-    /// Degree of parallelism, between 1 and 255.
+    /// Degree of parallelism, between 1 and (2^24)-1.
     ///
-    /// Value is an integer in decimal (1 to 3 digits).
+    /// Value is an integer in decimal (1 to 8 digits).
     p_cost: u32,
 
     /// Key identifier.
@@ -46,7 +46,7 @@ impl Params {
     pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
     /// Maximum number of 1 KiB memory blocks.
-    pub const MAX_M_COST: u32 = 0x0FFFFFFF;
+    pub const MAX_M_COST: u32 = 0xFFFFFFFF;
 
     /// Default number of iterations (i.e. "time").
     pub const DEFAULT_T_COST: u32 = 2;
