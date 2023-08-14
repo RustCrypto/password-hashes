@@ -22,9 +22,9 @@ pub struct Params {
     /// Value is an integer in decimal (1 to 10 digits).
     t_cost: u32,
 
-    /// Degree of parallelism, between 1 and 255.
+    /// Degree of parallelism, between 1 and (2^24)-1.
     ///
-    /// Value is an integer in decimal (1 to 3 digits).
+    /// Value is an integer in decimal (1 to 8 digits).
     p_cost: u32,
 
     /// Key identifier.
@@ -46,7 +46,7 @@ impl Params {
     pub const MIN_M_COST: u32 = 2 * SYNC_POINTS as u32; // 2 blocks per slice
 
     /// Maximum number of 1 KiB memory blocks.
-    pub const MAX_M_COST: u32 = 0x0FFFFFFF;
+    pub const MAX_M_COST: u32 = u32::MAX;
 
     /// Default number of iterations (i.e. "time").
     pub const DEFAULT_T_COST: u32 = 2;
@@ -433,9 +433,7 @@ impl ParamsBuilder {
             return Err(Error::MemoryTooLittle);
         }
 
-        if self.m_cost > Params::MAX_M_COST {
-            return Err(Error::MemoryTooMuch);
-        }
+        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
 
         if self.m_cost < self.p_cost * 8 {
             return Err(Error::MemoryTooLittle);
@@ -519,10 +517,6 @@ mod tests {
         assert_eq!(
             ParamsBuilder::new().m_cost(Params::MIN_M_COST - 1).build(),
             Err(Error::MemoryTooLittle)
-        );
-        assert_eq!(
-            ParamsBuilder::new().m_cost(Params::MAX_M_COST + 1).build(),
-            Err(Error::MemoryTooMuch)
         );
         assert_eq!(
             ParamsBuilder::new().t_cost(Params::MIN_T_COST - 1).build(),
