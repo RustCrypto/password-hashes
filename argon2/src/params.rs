@@ -110,7 +110,14 @@ impl Params {
         p_cost: u32,
         output_len: Option<usize>,
     ) -> Result<Self> {
-        ParamsBuilder::new_params(m_cost, t_cost, p_cost, None, None, output_len).build()
+        let mut builder = ParamsBuilder::new()
+            .m_cost_const(m_cost)
+            .t_cost_const(t_cost)
+            .p_cost_const(p_cost);
+        if let Some(output_len) = output_len {
+            builder = builder.output_len_const(output_len);
+        }
+        builder.build()
     }
 
     /// Memory size, expressed in kibibytes. Between 1 and (2^32)-1.
@@ -390,24 +397,41 @@ impl ParamsBuilder {
     pub const fn new() -> Self {
         Self::DEFAULT
     }
-    /// Create a new builder with the provided parameters.
-    /// This function exists to allow for const construction of ParamsBuilder with custom parameters.
-    pub const fn new_params(
-        m_cost: u32,
-        t_cost: u32,
-        p_cost: u32,
-        keyid: Option<KeyId>,
-        data: Option<AssociatedData>,
-        output_len: Option<usize>,
-    ) -> Self {
-        Self {
-            m_cost,
-            t_cost,
-            p_cost,
-            keyid,
-            data,
-            output_len,
-        }
+
+    /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
+    pub const fn m_cost_const(mut self, m_cost: u32) -> Self {
+        self.m_cost = m_cost;
+        self
+    }
+
+    /// Set number of iterations, between 1 and (2^32)-1.
+    pub const fn t_cost_const(mut self, t_cost: u32) -> Self {
+        self.t_cost = t_cost;
+        self
+    }
+
+    /// Set degree of parallelism, between 1 and 255.
+    pub const fn p_cost_const(mut self, p_cost: u32) -> Self {
+        self.p_cost = p_cost;
+        self
+    }
+
+    /// Set key identifier.
+    pub const fn keyid_const(mut self, keyid: KeyId) -> Self {
+        self.keyid = Some(keyid);
+        self
+    }
+
+    /// Set associated data.
+    pub const fn data_const(mut self, data: AssociatedData) -> Self {
+        self.data = Some(data);
+        self
+    }
+
+    /// Set length of the output (in bytes).
+    pub const fn output_len_const(mut self, len: usize) -> Self {
+        self.output_len = Some(len);
+        self
     }
 
     /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
