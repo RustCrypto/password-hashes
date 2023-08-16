@@ -148,8 +148,8 @@ impl Params {
             m_cost: m_cost,
             t_cost: t_cost,
             p_cost: p_cost,
-            keyid:KeyId::EMPTY,
-            data:AssociatedData::EMPTY,
+            keyid: KeyId::EMPTY,
+            data: AssociatedData::EMPTY,
             output_len: output_len,
         })
     }
@@ -473,17 +473,12 @@ impl ParamsBuilder {
     /// This performs validations to ensure that the given parameters are valid
     /// and compatible with each other, and will return an error if they are not.
     pub const fn build(&self) -> Result<Params> {
-        let mut params = match Params::new(
-            self.m_cost,
-            self.t_cost,
-            self.p_cost,
-            self.output_len
-        ){
+        let mut params = match Params::new(self.m_cost, self.t_cost, self.p_cost, self.output_len) {
             Ok(params) => params,
-            Err(err) => return Err(err)
+            Err(err) => return Err(err),
         };
 
-        if let Some(keyid) = self.keyid{
+        if let Some(keyid) = self.keyid {
             params.keyid = keyid;
         }
 
