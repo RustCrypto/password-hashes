@@ -110,14 +110,48 @@ impl Params {
         p_cost: u32,
         output_len: Option<usize>,
     ) -> Result<Self> {
-        let mut builder = ParamsBuilder::new()
-            .m_cost(m_cost)
-            .t_cost(t_cost)
-            .p_cost(p_cost);
-        if let Some(output_len) = output_len {
-            builder = builder.output_len(output_len);
+        if m_cost < Params::MIN_M_COST {
+            return Err(Error::MemoryTooLittle);
         }
-        builder.build()
+
+        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
+
+        if m_cost < p_cost * 8 {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if t_cost < Params::MIN_T_COST {
+            return Err(Error::TimeTooSmall);
+        }
+
+        // Note: we don't need to check `MAX_T_COST`, since it's `u32::MAX`
+
+        if p_cost < Params::MIN_P_COST {
+            return Err(Error::ThreadsTooFew);
+        }
+
+        if p_cost > Params::MAX_P_COST {
+            return Err(Error::ThreadsTooMany);
+        }
+
+        if let Some(len) = output_len {
+            if len < Params::MIN_OUTPUT_LEN {
+                return Err(Error::OutputTooShort);
+            }
+
+            if len > Params::MAX_OUTPUT_LEN {
+                return Err(Error::OutputTooLong);
+            }
+        }
+
+        Ok(Params {
+            m_cost: m_cost,
+            t_cost: t_cost,
+            p_cost: p_cost,
+            keyid:KeyId::EMPTY,
+            data:AssociatedData::EMPTY,
+            output_len: output_len,
+        })
     }
 
     /// Memory size, expressed in kibibytes. Between 1 and (2^32)-1.
@@ -322,26 +356,26 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         for (ident, value) in hash.params.iter() {
             match ident.as_str() {
                 "m" => {
-                    builder = builder.m_cost(value.decimal()?);
+                    builder.m_cost(value.decimal()?);
                 }
                 "t" => {
-                    builder = builder.t_cost(value.decimal()?);
+                    builder.t_cost(value.decimal()?);
                 }
                 "p" => {
-                    builder = builder.p_cost(value.decimal()?);
+                    builder.p_cost(value.decimal()?);
                 }
                 "keyid" => {
-                    builder = builder.keyid(value.as_str().parse()?);
+                    builder.keyid(value.as_str().parse()?);
                 }
                 "data" => {
-                    builder = builder.data(value.as_str().parse()?);
+                    builder.data(value.as_str().parse()?);
                 }
                 _ => return Err(password_hash::Error::ParamNameInvalid),
             }
         }
 
         if let Some(output) = &hash.hash {
-            builder = builder.output_len(output.len());
+            builder.output_len(output.len());
         }
 
         Ok(builder.build()?)
@@ -399,37 +433,37 @@ impl ParamsBuilder {
     }
 
     /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
-    pub const fn m_cost(mut self, m_cost: u32) -> Self {
+    pub fn m_cost(&mut self, m_cost: u32) -> &mut Self {
         self.m_cost = m_cost;
         self
     }
 
     /// Set number of iterations, between 1 and (2^32)-1.
-    pub const fn t_cost(mut self, t_cost: u32) -> Self {
+    pub fn t_cost(&mut self, t_cost: u32) -> &mut Self {
         self.t_cost = t_cost;
         self
     }
 
     /// Set degree of parallelism, between 1 and 255.
-    pub const fn p_cost(mut self, p_cost: u32) -> Self {
+    pub fn p_cost(&mut self, p_cost: u32) -> &mut Self {
         self.p_cost = p_cost;
         self
     }
 
     /// Set key identifier.
-    pub const fn keyid(mut self, keyid: KeyId) -> Self {
+    pub fn keyid(&mut self, keyid: KeyId) -> &mut Self {
         self.keyid = Some(keyid);
         self
     }
 
     /// Set associated data.
-    pub const fn data(mut self, data: AssociatedData) -> Self {
+    pub fn data(&mut self, data: AssociatedData) -> &mut Self {
         self.data = Some(data);
         self
     }
 
     /// Set length of the output (in bytes).
-    pub const fn output_len(mut self, len: usize) -> Self {
+    pub fn output_len(&mut self, len: usize) -> &mut Self {
         self.output_len = Some(len);
         self
     }
@@ -439,57 +473,22 @@ impl ParamsBuilder {
     /// This performs validations to ensure that the given parameters are valid
     /// and compatible with each other, and will return an error if they are not.
     pub const fn build(&self) -> Result<Params> {
-        if self.m_cost < Params::MIN_M_COST {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
-
-        if self.m_cost < self.p_cost * 8 {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        if self.t_cost < Params::MIN_T_COST {
-            return Err(Error::TimeTooSmall);
-        }
-
-        // Note: we don't need to check `MAX_T_COST`, since it's `u32::MAX`
-
-        if self.p_cost < Params::MIN_P_COST {
-            return Err(Error::ThreadsTooFew);
-        }
-
-        if self.p_cost > Params::MAX_P_COST {
-            return Err(Error::ThreadsTooMany);
-        }
-
-        if let Some(len) = self.output_len {
-            if len < Params::MIN_OUTPUT_LEN {
-                return Err(Error::OutputTooShort);
-            }
-
-            if len > Params::MAX_OUTPUT_LEN {
-                return Err(Error::OutputTooLong);
-            }
-        }
-
-        let keyid = match self.keyid {
-            Some(keyid) => keyid,
-            None => KeyId::EMPTY,
+        let mut params = match Params::new(
+            self.m_cost,
+            self.t_cost,
+            self.p_cost,
+            self.output_len
+        ){
+            Ok(params) => params,
+            Err(err) => return Err(err)
         };
 
-        let data = match self.data {
-            Some(data) => data,
-            None => AssociatedData::EMPTY,
-        };
+        if let Some(keyid) = self.keyid{
+            params.keyid = keyid;
+        }
 
-        let params = Params {
-            m_cost: self.m_cost,
-            t_cost: self.t_cost,
-            p_cost: self.p_cost,
-            keyid,
-            data,
-            output_len: self.output_len,
+        if let Some(data) = self.data {
+            params.data = data;
         };
 
         Ok(params)
