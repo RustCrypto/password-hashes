@@ -111,11 +111,11 @@ impl Params {
         output_len: Option<usize>,
     ) -> Result<Self> {
         let mut builder = ParamsBuilder::new()
-            .m_cost_const(m_cost)
-            .t_cost_const(t_cost)
-            .p_cost_const(p_cost);
+            .m_cost(m_cost)
+            .t_cost(t_cost)
+            .p_cost(p_cost);
         if let Some(output_len) = output_len {
-            builder = builder.output_len_const(output_len);
+            builder = builder.output_len(output_len);
         }
         builder.build()
     }
@@ -322,26 +322,26 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         for (ident, value) in hash.params.iter() {
             match ident.as_str() {
                 "m" => {
-                    builder.m_cost(value.decimal()?);
+                    builder = builder.m_cost(value.decimal()?);
                 }
                 "t" => {
-                    builder.t_cost(value.decimal()?);
+                    builder = builder.t_cost(value.decimal()?);
                 }
                 "p" => {
-                    builder.p_cost(value.decimal()?);
+                    builder = builder.p_cost(value.decimal()?);
                 }
                 "keyid" => {
-                    builder.keyid(value.as_str().parse()?);
+                    builder = builder.keyid(value.as_str().parse()?);
                 }
                 "data" => {
-                    builder.data(value.as_str().parse()?);
+                    builder = builder.data(value.as_str().parse()?);
                 }
                 _ => return Err(password_hash::Error::ParamNameInvalid),
             }
         }
 
         if let Some(output) = &hash.hash {
-            builder.output_len(output.len());
+            builder = builder.output_len(output.len());
         }
 
         Ok(builder.build()?)
@@ -399,73 +399,37 @@ impl ParamsBuilder {
     }
 
     /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
-    pub const fn m_cost_const(mut self, m_cost: u32) -> Self {
+    pub const fn m_cost(mut self, m_cost: u32) -> Self {
         self.m_cost = m_cost;
         self
     }
 
     /// Set number of iterations, between 1 and (2^32)-1.
-    pub const fn t_cost_const(mut self, t_cost: u32) -> Self {
+    pub const fn t_cost(mut self, t_cost: u32) -> Self {
         self.t_cost = t_cost;
         self
     }
 
     /// Set degree of parallelism, between 1 and 255.
-    pub const fn p_cost_const(mut self, p_cost: u32) -> Self {
+    pub const fn p_cost(mut self, p_cost: u32) -> Self {
         self.p_cost = p_cost;
         self
     }
 
     /// Set key identifier.
-    pub const fn keyid_const(mut self, keyid: KeyId) -> Self {
+    pub const fn keyid(mut self, keyid: KeyId) -> Self {
         self.keyid = Some(keyid);
         self
     }
 
     /// Set associated data.
-    pub const fn data_const(mut self, data: AssociatedData) -> Self {
+    pub const fn data(mut self, data: AssociatedData) -> Self {
         self.data = Some(data);
         self
     }
 
     /// Set length of the output (in bytes).
-    pub const fn output_len_const(mut self, len: usize) -> Self {
-        self.output_len = Some(len);
-        self
-    }
-
-    /// Set memory size, expressed in kibibytes, between 1 and (2^32)-1.
-    pub fn m_cost(&mut self, m_cost: u32) -> &mut Self {
-        self.m_cost = m_cost;
-        self
-    }
-
-    /// Set number of iterations, between 1 and (2^32)-1.
-    pub fn t_cost(&mut self, t_cost: u32) -> &mut Self {
-        self.t_cost = t_cost;
-        self
-    }
-
-    /// Set degree of parallelism, between 1 and 255.
-    pub fn p_cost(&mut self, p_cost: u32) -> &mut Self {
-        self.p_cost = p_cost;
-        self
-    }
-
-    /// Set key identifier.
-    pub fn keyid(&mut self, keyid: KeyId) -> &mut Self {
-        self.keyid = Some(keyid);
-        self
-    }
-
-    /// Set associated data.
-    pub fn data(&mut self, data: AssociatedData) -> &mut Self {
-        self.data = Some(data);
-        self
-    }
-
-    /// Set length of the output (in bytes).
-    pub fn output_len(&mut self, len: usize) -> &mut Self {
+    pub const fn output_len(mut self, len: usize) -> Self {
         self.output_len = Some(len);
         self
     }
