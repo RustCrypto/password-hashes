@@ -145,12 +145,12 @@ impl Params {
         }
 
         Ok(Params {
-            m_cost: m_cost,
-            t_cost: t_cost,
-            p_cost: p_cost,
+            m_cost,
+            t_cost,
+            p_cost,
             keyid: KeyId::EMPTY,
             data: AssociatedData::EMPTY,
-            output_len: output_len,
+            output_len,
         })
     }
 
