@@ -3,7 +3,7 @@
 use crate::{Error, Result};
 
 /// Version of the algorithm.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Version {
     /// Version 16 (0x10 in hex)
@@ -14,19 +14,14 @@ pub enum Version {
     /// Version 19 (0x13 in hex, default)
     ///
     /// Performs XOR internally
+    #[default]
     V0x13 = 0x13,
 }
 
 impl Version {
     /// Serialize version as little endian bytes
-    pub(crate) fn to_le_bytes(self) -> [u8; 4] {
+    pub(crate) const fn to_le_bytes(self) -> [u8; 4] {
         (self as u32).to_le_bytes()
-    }
-}
-
-impl Default for Version {
-    fn default() -> Self {
-        Self::V0x13
     }
 }
 
