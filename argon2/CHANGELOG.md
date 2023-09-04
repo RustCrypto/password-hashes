@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.2 (2023-09-03)
+### Changed
+- Improved `const fn` support ([#450])
+
+### Fixed
+- Max params ([#452])
+
+[#450]: https://github.com/RustCrypto/password-hashes/pull/450
+[#452]: https://github.com/RustCrypto/password-hashes/pull/452
+
 ## 0.5.1 (2023-07-13)
 ### Added
 - Provide `std::error::Error::source` for `argon2::Error` ([#379])
