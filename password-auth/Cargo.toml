@@ -1,9 +1,9 @@
 [package]
 name = "password-auth"
-version = "0.3.0"
+version = "1.0.0"
 description = """
 Password authentication library with a focus on simplicity and ease-of-use,
-with support for Argon2, PBKDF2, and scrypt password hashing algorithms
+including support for Argon2, PBKDF2, and scrypt password hashing algorithms
 """
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
