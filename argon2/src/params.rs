@@ -12,7 +12,7 @@ use password_hash::{ParamsString, PasswordHash};
 /// These are parameters which can be encoded into a PHC hash string.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Params {
-    /// Memory size, expressed in kibibytes, between 8 and (2^32)-1.
+    /// Memory size, expressed in kibibytes, between 8\*`p_cost` and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     m_cost: u32,
@@ -100,7 +100,7 @@ impl Params {
     /// Create new parameters.
     ///
     /// # Arguments
-    /// - `m_cost`: memory size in 1 KiB blocks. Between 8 and (2^32)-1.
+    /// - `m_cost`: memory size in 1 KiB blocks. Between 8\*`p_cost` and (2^32)-1.
     /// - `t_cost`: number of iterations. Between 1 and (2^32)-1.
     /// - `p_cost`: degree of parallelism. Between 1 and (2^24)-1.
     /// - `output_len`: size of the KDF output in bytes. Default 32.
@@ -154,7 +154,7 @@ impl Params {
         })
     }
 
-    /// Memory size, expressed in kibibytes. Between 8 and (2^32)-1.
+    /// Memory size, expressed in kibibytes. Between 8\*`p_cost` and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
     pub const fn m_cost(&self) -> u32 {
@@ -432,7 +432,7 @@ impl ParamsBuilder {
         Self::DEFAULT
     }
 
-    /// Set memory size, expressed in kibibytes, between 8 and (2^32)-1.
+    /// Set memory size, expressed in kibibytes, between 8\*`p_cost` and (2^32)-1.
     pub fn m_cost(&mut self, m_cost: u32) -> &mut Self {
         self.m_cost = m_cost;
         self
