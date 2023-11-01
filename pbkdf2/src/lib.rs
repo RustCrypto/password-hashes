@@ -6,7 +6,7 @@
 //! PBKDF2 is defined in terms of a keyed pseudo-random function (PRF). Most
 //! commonly HMAC is used as this PRF. In such cases you can use [`pbkdf2_hmac`]
 //! and [`pbkdf2_hmac_array`] functions. The former accepts a byte slice which
-//! gets filled with generated key, while the former returns an array with
+//! gets filled with generated key, while the latter returns an array with
 //! generated key of requested length.
 //!
 //! ```
