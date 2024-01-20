@@ -305,13 +305,17 @@ impl<'key> Argon2<'key> {
                 let i = i as u32;
                 let l = l as u32;
 
+                // Make the first and second block in each lane as G(H0||0||i) or
+                // G(H0||1||i)
                 let inputs = &[
                     initial_hash.as_ref(),
                     &i.to_le_bytes()[..],
                     &l.to_le_bytes()[..],
                 ];
 
-                blake2b_long(inputs, block.as_mut_bytes())?;
+                let mut hash = [0u8; Block::SIZE];
+                blake2b_long(inputs, &mut hash)?;
+                block.load(&hash);
             }
         }
 
@@ -485,10 +489,20 @@ impl<'key> Argon2<'key> {
             blockhash ^= &memory_blocks[last_block_in_lane];
         }
 
-        blake2b_long(&[blockhash.as_bytes()], out)?;
+        // Hash the result
+        let mut blockhash_bytes = [0u8; Block::SIZE];
+
+        for (chunk, v) in blockhash_bytes.chunks_mut(8).zip(blockhash.iter()) {
+            chunk.copy_from_slice(&v.to_le_bytes())
+        }
+
+        blake2b_long(&[&blockhash_bytes], out)?;
 
         #[cfg(feature = "zeroize")]
-        blockhash.zeroize();
+        {
+            blockhash.zeroize();
+            blockhash_bytes.zeroize();
+        }
 
         Ok(())
     }
