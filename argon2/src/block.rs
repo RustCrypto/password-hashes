@@ -4,6 +4,7 @@ use core::{
     convert::{AsMut, AsRef},
     num::Wrapping,
     ops::{BitXor, BitXorAssign},
+    slice,
 };
 
 #[cfg(feature = "zeroize")]
@@ -58,12 +59,18 @@ impl Block {
         Self([0u64; Self::SIZE / 8])
     }
 
-    pub(crate) fn as_bytes(&self) -> &[u8; Self::SIZE] {
-        unsafe { &*(self.0.as_ptr() as *const [u8; Self::SIZE]) }
+    /// Load a block from a block-sized byte slice
+    #[inline(always)]
+    pub(crate) fn load(&mut self, input: &[u8; Block::SIZE]) {
+        for (i, chunk) in input.chunks(8).enumerate() {
+            self.0[i] = u64::from_le_bytes(chunk.try_into().expect("should be 8 bytes"));
+        }
     }
 
-    pub(crate) fn as_mut_bytes(&mut self) -> &mut [u8; Self::SIZE] {
-        unsafe { &mut *(self.0.as_mut_ptr() as *mut [u8; Self::SIZE]) }
+    /// Iterate over the `u64` values contained in this block
+    #[inline(always)]
+    pub(crate) fn iter(&self) -> slice::Iter<'_, u64> {
+        self.0.iter()
     }
 
     /// NOTE: do not call this directly. It should only be called via
