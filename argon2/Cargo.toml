@@ -13,7 +13,7 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.65"
+rust-version = "1.63"
 
 [dependencies]
 base64ct = "1"
