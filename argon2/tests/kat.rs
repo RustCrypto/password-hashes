@@ -307,11 +307,14 @@ fn salt_bad_length() {
     let ret = ctx.hash_password_into(b"password", &too_short_salt, &mut out);
     assert_eq!(ret, Err(Error::SaltTooShort));
 
-    // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
-    // optimizations kicks in an nothing is really allocated
-    let too_long_salt = vec![0u8; argon2::MAX_SALT_LEN + 1];
-    let ret = ctx.hash_password_into(b"password", &too_long_salt, &mut out);
-    assert_eq!(ret, Err(Error::SaltTooLong));
+    #[cfg(target_pointer_width = "64")] // MAX_SALT_LEN + 1 is too big for 32-bit targets
+    {
+        // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
+        // optimizations kicks in an nothing is really allocated
+        let too_long_salt = vec![0u8; argon2::MAX_SALT_LEN + 1];
+        let ret = ctx.hash_password_into(b"password", &too_long_salt, &mut out);
+        assert_eq!(ret, Err(Error::SaltTooLong));
+    }
 }
 
 #[test]
@@ -321,11 +324,14 @@ fn output_bad_length() {
     let ret = ctx.hash_password_into(b"password", b"diffsalt", &mut out);
     assert_eq!(ret, Err(Error::OutputTooShort));
 
-    // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
-    // optimizations kicks in an nothing is really allocated
-    let mut out = vec![0u8; Params::MAX_OUTPUT_LEN + 1];
-    let ret = ctx.hash_password_into(b"password", b"diffsalt", &mut out);
-    assert_eq!(ret, Err(Error::OutputTooLong));
+    #[cfg(target_pointer_width = "64")] // MAX_SALT_LEN + 1 is too big for 32-bit targets
+    {
+        // 4 GiB of RAM seems big, but as long as we ask for a zero-initialized vector
+        // optimizations kicks in an nothing is really allocated
+        let mut out = vec![0u8; Params::MAX_OUTPUT_LEN + 1];
+        let ret = ctx.hash_password_into(b"password", b"diffsalt", &mut out);
+        assert_eq!(ret, Err(Error::OutputTooLong));
+    }
 }
 
 // =======================================

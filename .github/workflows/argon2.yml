@@ -28,7 +28,7 @@ jobs:
           - thumbv7em-none-eabi
           - wasm32-unknown-unknown
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -48,16 +48,48 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust:
-          - 1.63.0 # MSRV
-          - stable
+        include:
+          # 32-bit Linux
+          - target: i686-unknown-linux-gnu
+            rust: 1.63.0 # MSRV
+            deps: sudo apt update && sudo apt install gcc-multilib
+          - target: i686-unknown-linux-gnu
+            rust: stable
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit Linux
+          - target: x86_64-unknown-linux-gnu
+            rust: 1.63.0 # MSRV
+          - target: x86_64-unknown-linux-gnu
+            rust: stable
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
       - run: cargo test --no-default-features
       - run: cargo test --no-default-features --features password-hash
       - run: cargo test
       - run: cargo test --all-features
+
+  cross:
+    strategy:
+      matrix:
+        include:
+          - target: powerpc-unknown-linux-gnu
+            rust: 1.65.0 # MSRV
+          - target: powerpc-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ${{ matrix.deps }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - uses: RustCrypto/actions/cross-install@master
+      - run: cross test --release --target ${{ matrix.target }} --all-features
