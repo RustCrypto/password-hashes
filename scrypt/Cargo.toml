@@ -10,7 +10,7 @@ repository = "https://github.com/RustCrypto/password-hashes/tree/master/scrypt"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.72"
 
 [dependencies]
 pbkdf2 = { version = "=0.13.0-pre.0", path = "../pbkdf2" }
