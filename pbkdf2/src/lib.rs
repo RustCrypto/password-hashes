@@ -103,13 +103,13 @@ pub use crate::simple::{Algorithm, Params, Pbkdf2};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use digest::{generic_array::typenum::Unsigned, FixedOutput, InvalidLength, KeyInit, Update};
+use digest::{typenum::Unsigned, FixedOutput, InvalidLength, KeyInit, Update};
 
 #[cfg(feature = "hmac")]
 use digest::{
     block_buffer::Eager,
-    core_api::{BlockSizeUser, BufferKindUser, CoreProxy, FixedOutputCore, UpdateCore},
-    generic_array::typenum::{IsLess, Le, NonZero, U256},
+    core_api::{BlockSizeUser, BufferKindUser, FixedOutputCore, UpdateCore},
+    typenum::{IsLess, Le, NonZero, U256},
     HashMarker,
 };
 
@@ -233,7 +233,7 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
-    D: CoreProxy,
+    D: hmac::EagerHash,
     D::Core: Sync
         + HashMarker
         + UpdateCore
@@ -265,7 +265,7 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
 where
-    D: CoreProxy,
+    D: hmac::EagerHash,
     D::Core: Sync
         + HashMarker
         + UpdateCore

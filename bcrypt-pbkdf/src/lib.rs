@@ -24,7 +24,7 @@ use blowfish::Blowfish;
 use sha2::{
     digest::{
         crypto_common::{Key, KeyInit, KeySizeUser},
-        generic_array::typenum::U32,
+        typenum::U32,
         FixedOutput, MacMarker, Output, OutputSizeUser, Update,
     },
     Digest, Sha512,
@@ -204,7 +204,7 @@ pub fn bcrypt_pbkdf_with_memory(
 mod test {
     use super::bhash;
     use hex_literal::hex;
-    use sha2::digest::generic_array::GenericArray;
+    use sha2::digest::array::Array;
 
     #[test]
     fn test_bhash() {
@@ -257,8 +257,8 @@ mod test {
         ];
 
         for t in tests.iter() {
-            let hpass = GenericArray::from_slice(&t.hpass);
-            let hsalt = GenericArray::from_slice(&t.hsalt);
+            let hpass = Array::from_slice(&t.hpass);
+            let hsalt = Array::from_slice(&t.hsalt);
             let out = bhash(hpass, hsalt);
             assert_eq!(out[..], t.out[..]);
         }

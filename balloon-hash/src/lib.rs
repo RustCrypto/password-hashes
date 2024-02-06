@@ -83,7 +83,7 @@ pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 
 use core::marker::PhantomData;
 use crypto_bigint::ArrayDecoding;
-use digest::generic_array::GenericArray;
+use digest::array::Array;
 use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
@@ -105,7 +105,7 @@ use zeroize::Zeroize;
 #[derive(Clone, Default)]
 pub struct Balloon<'key, D: Digest + FixedOutputReset>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     /// Storing which hash function is used
     pub digest: PhantomData<D>,
@@ -119,7 +119,7 @@ where
 
 impl<'key, D: Digest + FixedOutputReset> Balloon<'key, D>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     /// Create a new Balloon context.
     pub fn new(algorithm: Algorithm, params: Params, secret: Option<&'key [u8]>) -> Self {
@@ -134,8 +134,8 @@ where
     /// Hash a password and associated parameters.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<GenericArray<u8, D::OutputSize>> {
-        let mut output = GenericArray::default();
+    pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<Array<u8, D::OutputSize>> {
+        let mut output = Array::default();
         self.hash_into(pwd, salt, &mut output)?;
 
         Ok(output)
@@ -148,9 +148,9 @@ where
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
         #[cfg(not(feature = "parallel"))]
-        let mut memory = alloc::vec![GenericArray::default(); self.params.s_cost.get() as usize];
+        let mut memory = alloc::vec![Array::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
-        let mut memory = alloc::vec![GenericArray::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
+        let mut memory = alloc::vec![Array::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
 
         self.hash_into_with_memory(pwd, salt, &mut memory, output)?;
         #[cfg(feature = "zeroize")]
@@ -165,16 +165,16 @@ where
     ///
     /// - Users with the `alloc` feature enabled can use [`Balloon::hash`]
     ///   to have it allocated for them.
-    /// - `no_std` users on "heapless" targets can use an array of the [`GenericArray`] type
+    /// - `no_std` users on "heapless" targets can use an array of the [`Array`] type
     ///   to stack allocate this buffer. It needs a minimum size of `s_cost` or `s_cost * p_cost`
     ///   with the `parallel` crate feature enabled.
     pub fn hash_with_memory(
         &self,
         pwd: &[u8],
         salt: &[u8],
-        memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
-    ) -> Result<GenericArray<u8, D::OutputSize>> {
-        let mut output = GenericArray::default();
+        memory_blocks: &mut [Array<u8, D::OutputSize>],
+    ) -> Result<Array<u8, D::OutputSize>> {
+        let mut output = Array::default();
         self.hash_into_with_memory(pwd, salt, memory_blocks, &mut output)?;
 
         Ok(output)
@@ -189,11 +189,11 @@ where
         &self,
         pwd: &[u8],
         salt: &[u8],
-        memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
+        memory_blocks: &mut [Array<u8, D::OutputSize>],
         output: &mut [u8],
     ) -> Result<()> {
         let output = if output.len() == D::OutputSize::USIZE {
-            GenericArray::from_mut_slice(output)
+            Array::from_mut_slice(output)
         } else {
             return Err(Error::OutputSize {
                 actual: output.len(),
@@ -221,7 +221,7 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl<D: Digest + FixedOutputReset> PasswordHasher for Balloon<'_, D>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     type Params = Params;
 
@@ -271,7 +271,7 @@ where
 
 impl<'key, D: Digest + FixedOutputReset> From<Params> for Balloon<'key, D>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     fn from(params: Params) -> Self {
         Self::new(Algorithm::default(), params, None)

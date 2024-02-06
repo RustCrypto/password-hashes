@@ -1,6 +1,6 @@
 [package]
 name = "balloon-hash"
-version = "0.4.0"
+version = "0.5.0-pre.0"
 description = "Pure Rust implementation of the Balloon password hashing function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -13,8 +13,8 @@ edition = "2021"
 rust-version = "1.65"
 
 [dependencies]
-digest = { version = "0.10.7", default-features = false }
-crypto-bigint = { version = "0.5", default-features = false, features = ["generic-array"] }
+digest = { version = "=0.11.0-pre.8", default-features = false }
+crypto-bigint = { version = "=0.6.0-pre.12", default-features = false, features = ["hybrid-array"] }
 
 # optional dependencies
 password-hash = { version = "0.5", default-features = false, optional = true }
@@ -23,7 +23,7 @@ zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "0.4"
-sha2 = "0.10"
+sha2 = "=0.11.0-pre.3"
 
 [features]
 default = ["alloc", "password-hash", "rand"]

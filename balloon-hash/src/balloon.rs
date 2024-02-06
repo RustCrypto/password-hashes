@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::Params;
 use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
-use digest::generic_array::GenericArray;
+use digest::array::Array;
 use digest::{Digest, FixedOutputReset};
 
 pub fn balloon<D: Digest + FixedOutputReset>(
@@ -10,10 +10,10 @@ pub fn balloon<D: Digest + FixedOutputReset>(
     salt: &[u8],
     secret: Option<&[u8]>,
     params: Params,
-    memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
-) -> Result<GenericArray<u8, D::OutputSize>>
+    memory_blocks: &mut [Array<u8, D::OutputSize>],
+) -> Result<Array<u8, D::OutputSize>>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     if params.p_cost.get() == 1 {
         hash_internal::<D>(pwd, salt, secret, params, memory_blocks, None)
@@ -27,15 +27,15 @@ pub fn balloon_m<D: Digest + FixedOutputReset>(
     salt: &[u8],
     secret: Option<&[u8]>,
     params: Params,
-    memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
-    output: &mut GenericArray<u8, D::OutputSize>,
+    memory_blocks: &mut [Array<u8, D::OutputSize>],
+    output: &mut Array<u8, D::OutputSize>,
 ) -> Result<()>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     #[cfg(not(feature = "parallel"))]
     let output_xor = {
-        let mut output = GenericArray::<_, D::OutputSize>::default();
+        let mut output = Array::<_, D::OutputSize>::default();
 
         for thread in 1..=u64::from(params.p_cost.get()) {
             let hash = hash_internal::<D>(pwd, salt, secret, params, memory_blocks, Some(thread))?;
@@ -63,7 +63,7 @@ where
                 .map_with((params, secret), |(params, secret), (thread, memory)| {
                     hash_internal::<D>(pwd, salt, *secret, *params, memory, Some(thread))
                 })
-                .try_reduce(GenericArray::default, |a, b| {
+                .try_reduce(Array::default, |a, b| {
                     Ok(a.into_iter().zip(b).map(|(a, b)| a ^ b).collect())
                 })
         }?
@@ -88,16 +88,16 @@ fn hash_internal<D: Digest + FixedOutputReset>(
     salt: &[u8],
     secret: Option<&[u8]>,
     params: Params,
-    memory_blocks: &mut [GenericArray<u8, D::OutputSize>],
+    memory_blocks: &mut [Array<u8, D::OutputSize>],
     thread_id: Option<u64>,
-) -> Result<GenericArray<u8, D::OutputSize>>
+) -> Result<Array<u8, D::OutputSize>>
 where
-    GenericArray<u8, D::OutputSize>: ArrayDecoding,
+    Array<u8, D::OutputSize>: ArrayDecoding,
 {
     // we will use `s_cost` to index arrays regularly
     let s_cost = params.s_cost.get() as usize;
     let s_cost_bigint = {
-        let mut s_cost = GenericArray::<u8, D::OutputSize>::default();
+        let mut s_cost = Array::<u8, D::OutputSize>::default();
         s_cost[..mem::size_of::<u32>()].copy_from_slice(&params.s_cost.get().to_le_bytes());
         NonZero::new(s_cost.into_uint_le()).unwrap()
     };
@@ -183,7 +183,7 @@ where
                 }
 
                 Digest::update(&mut digest, idx_block);
-                let other = digest.finalize_reset().into_uint_le() % s_cost_bigint;
+                let other = digest.finalize_reset().into_uint_le() % s_cost_bigint.clone();
                 let other = usize::from_le_bytes(
                     other.to_le_byte_array()[..mem::size_of::<usize>()]
                         .try_into()
