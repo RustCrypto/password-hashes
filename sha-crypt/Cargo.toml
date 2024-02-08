@@ -1,6 +1,6 @@
 [package]
 name = "sha-crypt"
-version = "0.5.0"
+version = "0.6.0-pre.0"
 description = """
 Pure Rust implementation of the SHA-crypt password hash based on SHA-512
 as implemented by the POSIX crypt C library
@@ -13,10 +13,10 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.72"
 
 [dependencies]
-sha2 = { version = "0.10", default-features = false }
+sha2 = { version = "=0.11.0-pre.3", default-features = false }
 
 # optional dependencies
 rand = { version = "0.8", optional = true }

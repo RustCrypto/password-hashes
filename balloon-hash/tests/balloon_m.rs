@@ -1,5 +1,5 @@
 use balloon_hash::{Algorithm, Balloon, Params};
-use digest::generic_array::GenericArray;
+use digest::array::Array;
 use hex_literal::hex;
 
 struct TestVector {
@@ -91,10 +91,10 @@ fn test_vectors() {
         );
 
         #[cfg(not(feature = "parallel"))]
-        let mut memory = vec![GenericArray::default(); balloon.params.s_cost.get() as usize];
+        let mut memory = vec![Array::default(); balloon.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
         let mut memory = vec![
-            GenericArray::default();
+            Array::default();
             (balloon.params.s_cost.get() * balloon.params.p_cost.get()) as usize
         ];
 
