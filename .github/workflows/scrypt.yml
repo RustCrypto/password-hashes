@@ -38,6 +38,8 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --no-default-features --features simple
 
   minimal-versions:
+    # disabled until belt-block gets published
+    if: false
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
         working-directory: ${{ github.workflow }}

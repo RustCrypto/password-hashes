@@ -13,3 +13,11 @@ exclude = ["benches"]
 
 [profile.dev]
 opt-level = 2
+
+[patch.crates-io]
+# https://github.com/RustCrypto/block-ciphers/pull/413
+blowfish = { git = "https://github.com/RustCrypto/block-ciphers.git" }
+
+# https://github.com/RustCrypto/stream-ciphers/pull/345
+# https://github.com/RustCrypto/stream-ciphers/pull/346
+salsa20  = { git = "https://github.com/RustCrypto/stream-ciphers.git" }
