@@ -6,7 +6,7 @@ use crate::errors::InvalidParams;
 use password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash};
 
 /// The Scrypt parameter values.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
