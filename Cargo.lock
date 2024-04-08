@@ -52,8 +52,9 @@ dependencies = [
 
 [[package]]
 name = "blake2"
-version = "0.11.0-pre"
-source = "git+https://github.com/RustCrypto/hashes.git#e4dcf120629bd6461eff9ca1b281736336de423c"
+version = "0.11.0-pre.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eb6b33ba68af672bcef0f6d1cceeeaf36e4143cd1456cafafda5d7f12d91f14"
 dependencies = [
  "digest",
 ]
@@ -225,9 +226,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "190092ea657667030ac6a35e305e62fc4dd69fd98ac98631e5d3a2b1575a12b5"
+checksum = "a06fddc2749e0528d2813f95e050e87e52c8cbbae56223b9babf73b3e53b0cc6"
 dependencies = [
  "cfg-if",
  "js-sys",
