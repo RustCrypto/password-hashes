@@ -52,8 +52,9 @@ dependencies = [
 
 [[package]]
 name = "blake2"
-version = "0.11.0-pre"
-source = "git+https://github.com/RustCrypto/hashes.git#e4dcf120629bd6461eff9ca1b281736336de423c"
+version = "0.11.0-pre.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eb6b33ba68af672bcef0f6d1cceeeaf36e4143cd1456cafafda5d7f12d91f14"
 dependencies = [
  "digest",
 ]
@@ -606,6 +607,6 @@ checksum = "ca6ad05a4870b2bf5fe995117d3728437bd27d7cd5f06f13c17443ef369775a1"
 
 [[package]]
 name = "zeroize"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
+checksum = "63381fa6624bf92130a6b87c0d07380116f80b565c42cf0d754136f0238359ef"
