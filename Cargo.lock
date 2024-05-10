@@ -52,8 +52,9 @@ dependencies = [
 
 [[package]]
 name = "blake2"
-version = "0.11.0-pre"
-source = "git+https://github.com/RustCrypto/hashes.git#e4dcf120629bd6461eff9ca1b281736336de423c"
+version = "0.11.0-pre.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eb6b33ba68af672bcef0f6d1cceeeaf36e4143cd1456cafafda5d7f12d91f14"
 dependencies = [
  "digest",
 ]
@@ -344,9 +345,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.5.0"
+version = "0.6.0-pre.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
+checksum = "1729c85c9293ba93ed2b92983c462cd6d5acc5d747a47188e5c71a216753a7d4"
 dependencies = [
  "base64ct",
  "rand_core",
