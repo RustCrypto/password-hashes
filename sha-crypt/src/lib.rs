@@ -16,8 +16,7 @@
 //! let params = Sha512Params::new(10_000).expect("RandomError!");
 //!
 //! // Hash the password for storage
-//! let hashed_password = sha512_simple("Not so secure password", &params)
-//!     .expect("Should not fail");
+//! let hashed_password = sha512_simple("Not so secure password", &params);
 //!
 //! // Verifying a stored password
 //! assert!(sha512_check("Not so secure password", &hashed_password).is_ok());
@@ -96,7 +95,7 @@ pub fn sha512_crypt(
     password: &[u8],
     salt: &[u8],
     params: &Sha512Params,
-) -> Result<[u8; BLOCK_SIZE_SHA512], CryptError> {
+) -> [u8; BLOCK_SIZE_SHA512] {
     let pw_len = password.len();
 
     let salt_len = salt.len();
@@ -105,10 +104,6 @@ pub fn sha512_crypt(
         _ => &salt[0..16],
     };
     let salt_len = salt.len();
-
-    if params.rounds < ROUNDS_MIN || params.rounds > ROUNDS_MAX {
-        return Err(CryptError::RoundsError);
-    }
 
     let digest_a = sha512crypt_intermediate(password, salt);
 
@@ -178,7 +173,7 @@ pub fn sha512_crypt(
         digest_c.clone_from_slice(&hasher.finalize());
     }
 
-    Ok(digest_c)
+    digest_c
 }
 
 /// The SHA256 crypt function returned as byte vector
@@ -199,7 +194,7 @@ pub fn sha256_crypt(
     password: &[u8],
     salt: &[u8],
     params: &Sha256Params,
-) -> Result<[u8; BLOCK_SIZE_SHA256], CryptError> {
+) -> [u8; BLOCK_SIZE_SHA256] {
     let pw_len = password.len();
 
     let salt_len = salt.len();
@@ -208,10 +203,6 @@ pub fn sha256_crypt(
         _ => &salt[0..16],
     };
     let salt_len = salt.len();
-
-    if params.rounds < ROUNDS_MIN || params.rounds > ROUNDS_MAX {
-        return Err(CryptError::RoundsError);
-    }
 
     let digest_a = sha256crypt_intermediate(password, salt);
 
@@ -281,7 +272,7 @@ pub fn sha256_crypt(
         digest_c.clone_from_slice(&hasher.finalize());
     }
 
-    Ok(digest_c)
+    digest_c
 }
 
 /// Same as sha512_crypt except base64 representation will be returned.
@@ -295,14 +286,9 @@ pub fn sha256_crypt(
 /// # Returns
 /// - `Ok(())` if calculation was successful
 /// - `Err(errors::CryptError)` otherwise
-pub fn sha512_crypt_b64(
-    password: &[u8],
-    salt: &[u8],
-    params: &Sha512Params,
-) -> Result<String, CryptError> {
-    let output = sha512_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode_sha512(&output).to_vec())?;
-    Ok(r)
+pub fn sha512_crypt_b64(password: &[u8], salt: &[u8], params: &Sha512Params) -> String {
+    let output = sha512_crypt(password, salt, params);
+    String::from_utf8(b64::encode_sha512(&output).to_vec()).unwrap()
 }
 
 /// Same as sha256_crypt except base64 representation will be returned.
@@ -316,14 +302,9 @@ pub fn sha512_crypt_b64(
 /// # Returns
 /// - `Ok(())` if calculation was successful
 /// - `Err(errors::CryptError)` otherwise
-pub fn sha256_crypt_b64(
-    password: &[u8],
-    salt: &[u8],
-    params: &Sha256Params,
-) -> Result<String, CryptError> {
-    let output = sha256_crypt(password, salt, params)?;
-    let r = String::from_utf8(b64::encode_sha256(&output).to_vec())?;
-    Ok(r)
+pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> String {
+    let output = sha256_crypt(password, salt, params);
+    String::from_utf8(b64::encode_sha256(&output).to_vec()).unwrap()
 }
 
 /// Simple interface for generating a SHA512 password hash.
@@ -339,7 +320,7 @@ pub fn sha256_crypt_b64(
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, CryptError> {
+pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
     let rng = thread_rng();
 
     let salt: String = rng
@@ -347,7 +328,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
         .take(SALT_MAX_LEN)
         .collect();
 
-    let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params)?;
+    let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params);
 
     let mut result = String::new();
     result.push_str(SHA512_SALT_PREFIX);
@@ -357,9 +338,9 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode_sha512(&out).to_vec())?;
+    let s = String::from_utf8(b64::encode_sha512(&out).to_vec()).unwrap();
     result.push_str(&s);
-    Ok(result)
+    result
 }
 
 /// Simple interface for generating a SHA256 password hash.
@@ -375,7 +356,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> Result<String, Cr
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
-pub fn sha256_simple(password: &str, params: &Sha256Params) -> Result<String, CryptError> {
+pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
     let rng = thread_rng();
 
     let salt: String = rng
@@ -383,7 +364,7 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> Result<String, Cr
         .take(SALT_MAX_LEN)
         .collect();
 
-    let out = sha256_crypt(password.as_bytes(), salt.as_bytes(), params)?;
+    let out = sha256_crypt(password.as_bytes(), salt.as_bytes(), params);
 
     let mut result = String::new();
     result.push_str(SHA256_SALT_PREFIX);
@@ -393,9 +374,9 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> Result<String, Cr
     }
     result.push_str(&salt);
     result.push('$');
-    let s = String::from_utf8(b64::encode_sha256(&out).to_vec())?;
+    let s = String::from_utf8(b64::encode_sha256(&out).to_vec()).unwrap();
     result.push_str(&s);
-    Ok(result)
+    result
 }
 
 /// Checks that given password matches provided hash.
@@ -459,12 +440,12 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         ));
     }
 
-    let params = Sha512Params { rounds };
-
-    let output = match sha512_crypt(password.as_bytes(), salt.as_bytes(), &params) {
-        Ok(v) => v,
+    let params = match Sha512Params::new(rounds) {
+        Ok(p) => p,
         Err(e) => return Err(CheckError::Crypt(e)),
     };
+
+    let output = sha512_crypt(password.as_bytes(), salt.as_bytes(), &params);
 
     let hash = b64::decode_sha512(hash.as_bytes())?;
 
@@ -537,12 +518,12 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
         ));
     }
 
-    let params = Sha256Params { rounds };
-
-    let output = match sha256_crypt(password.as_bytes(), salt.as_bytes(), &params) {
-        Ok(v) => v,
+    let params = match Sha256Params::new(rounds) {
+        Ok(p) => p,
         Err(e) => return Err(CheckError::Crypt(e)),
     };
+
+    let output = sha256_crypt(password.as_bytes(), salt.as_bytes(), &params);
 
     let hash = b64::decode_sha256(hash.as_bytes())?;
 
