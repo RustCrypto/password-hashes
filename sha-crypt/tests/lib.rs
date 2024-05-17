@@ -100,7 +100,7 @@ const TEST_VECTORS: &[TestVector] = &[
 fn test_sha512_crypt() {
     for t in TEST_VECTORS {
         let params = Sha512Params::new(t.rounds).expect("Rounds error");
-        let result = sha512_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params).unwrap();
+        let result = sha512_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params);
         assert!(result == t.result_sha512);
     }
 }
@@ -109,7 +109,7 @@ fn test_sha512_crypt() {
 fn test_sha256_crypt() {
     for t in TEST_VECTORS {
         let params = Sha256Params::new(t.rounds).expect("Rounds error");
-        let result = sha256_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params).unwrap();
+        let result = sha256_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params);
         println!("result  {:?}", result);
         println!("correct {:?}", t.result_sha256);
         assert!(result == t.result_sha256);
@@ -172,9 +172,7 @@ fn test_sha512_simple_check_roundtrip() {
     let pw = "this is my password";
     let params = Sha512Params::new(5_000).expect("Rounds error");
 
-    let r = sha512_simple(pw, &params);
-    assert!(r.is_ok());
-    let hash = r.unwrap();
+    let hash = sha512_simple(pw, &params);
 
     let c_r = sha512_check(pw, &hash);
     assert!(c_r.is_ok());
@@ -186,9 +184,7 @@ fn test_sha256_simple_check_roundtrip() {
     let pw = "this is my password";
     let params = Sha256Params::new(5_000).expect("Rounds error");
 
-    let r = sha256_simple(pw, &params);
-    assert!(r.is_ok());
-    let hash = r.unwrap();
+    let hash = sha256_simple(pw, &params);
 
     let c_r = sha256_check(pw, &hash);
     assert!(c_r.is_ok());
