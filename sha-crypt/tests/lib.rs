@@ -10,7 +10,7 @@ struct TestVector {
     salt: &'static str,
     result_sha256: &'static str,
     result_sha512: &'static str,
-    rounds: usize,
+    rounds: u32,
 }
 
 const TEST_VECTORS: &[TestVector] = &[
