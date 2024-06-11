@@ -8,7 +8,8 @@ including support for Argon2, PBKDF2, and scrypt password hashing algorithms
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/password-auth"
-repository = "https://github.com/RustCrypto/password-hashes/tree/master/password-auth"
+homepage = "https://github.com/RustCrypto/password-hashes/tree/master/password-auth"
+repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "password", "hashing"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"

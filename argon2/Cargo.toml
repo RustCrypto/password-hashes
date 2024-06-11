@@ -8,7 +8,8 @@ for the Argon2d, Argon2i, and Argon2id algorithmic variants
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/argon2"
-repository = "https://github.com/RustCrypto/password-hashes/tree/master/argon2"
+homepage = "https://github.com/RustCrypto/password-hashes/tree/master/argon2"
+repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"

@@ -8,7 +8,8 @@ as implemented by the POSIX crypt C library
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/sha-crypt"
-repository = "https://github.com/RustCrypto/password-hashes/tree/master/sha-crypt"
+homepage = "https://github.com/RustCrypto/password-hashes/tree/master/sha-crypt"
+repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
