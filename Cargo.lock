@@ -165,9 +165,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-bigint"
-version = "0.6.0-pre.12"
+version = "0.6.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1943d7beadd9ce2b25f3bae73b9e9336fccc1edf38bdec1ed58d3aa183989e11"
+checksum = "cf4d6fbc60a5516ff886af2c5994fb2bdfa6fbe2168468100bd87e6c09caf08c"
 dependencies = [
  "hybrid-array",
  "num-traits",
@@ -239,9 +239,9 @@ dependencies = [
 
 [[package]]
 name = "hybrid-array"
-version = "0.2.0-rc.5"
+version = "0.2.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcda354500b318c287a6b91c1cfbc42edd53d52d259a80783ceb5e3986fca2b2"
+checksum = "4d306b679262030ad8813a82d4915fc04efff97776e4db7f8eb5137039d56400"
 dependencies = [
  "typenum",
 ]
@@ -287,9 +287,9 @@ dependencies = [
 
 [[package]]
 name = "num-traits"
-version = "0.2.17"
+version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39e3200413f237f41ab11ad6d161bc7239c84dcb631773ccd7de3dfe4b5c267c"
+checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
 ]
