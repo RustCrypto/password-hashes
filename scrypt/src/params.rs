@@ -91,7 +91,7 @@ impl Params {
     /// - `log_n = 17` (`n = 131072`)
     /// - `r = 8`
     /// - `p = 1`
-    pub fn recommended() -> Params {
+    pub const fn recommended() -> Params {
         Params {
             log_n: Self::RECOMMENDED_LOG_N,
             r: Self::RECOMMENDED_R,
@@ -103,7 +103,7 @@ impl Params {
     /// log₂ of the Scrypt parameter `N`, the work factor.
     ///
     /// Memory and CPU usage scale linearly with `N`.
-    pub fn log_n(&self) -> u8 {
+    pub const fn log_n(&self) -> u8 {
         self.log_n
     }
 
@@ -111,12 +111,12 @@ impl Params {
     ///
     /// scrypt iterates 2*r times. Memory and CPU time scale linearly
     /// with this parameter.
-    pub fn r(&self) -> u32 {
+    pub const fn r(&self) -> u32 {
         self.r
     }
 
     /// `p` parameter: parallelization.
-    pub fn p(&self) -> u32 {
+    pub const fn p(&self) -> u32 {
         self.p
     }
 }
