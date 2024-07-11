@@ -9,32 +9,14 @@
 )]
 
 use crate::{
-    sha256::libcperciva_SHA256_CTX, size_t, uint32_t, uint64_t, uint8_t, yescrypt_binary_t,
-    yescrypt_flags_t, yescrypt_local_t, yescrypt_params_t, yescrypt_shared_t,
+    sha256::{
+        libcperciva_SHA256_CTX, libcperciva_SHA256_Final, libcperciva_SHA256_Init,
+        libcperciva_SHA256_Update,
+    },
+    size_t, uint32_t, uint64_t, uint8_t, yescrypt_binary_t, yescrypt_flags_t, yescrypt_free_local,
+    yescrypt_init_local, yescrypt_kdf, yescrypt_local_t, yescrypt_params_t, yescrypt_shared_t,
 };
-
-extern "C" {
-    fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
-    fn strncmp(_: *const libc::c_char, _: *const libc::c_char, _: libc::c_ulong) -> libc::c_int;
-    fn strrchr(_: *const libc::c_char, _: libc::c_int) -> *mut libc::c_char;
-    fn strlen(_: *const libc::c_char) -> libc::c_ulong;
-    fn libcperciva_SHA256_Init(_: *mut libcperciva_SHA256_CTX);
-    fn libcperciva_SHA256_Update(_: *mut libcperciva_SHA256_CTX, _: *const libc::c_void, _: size_t);
-    fn libcperciva_SHA256_Final(_: *mut uint8_t, _: *mut libcperciva_SHA256_CTX);
-    fn yescrypt_free_local(local: *mut yescrypt_local_t) -> libc::c_int;
-    fn yescrypt_kdf(
-        shared: *const yescrypt_shared_t,
-        local: *mut yescrypt_local_t,
-        passwd: *const uint8_t,
-        passwdlen: size_t,
-        salt: *const uint8_t,
-        saltlen: size_t,
-        params: *const yescrypt_params_t,
-        buf: *mut uint8_t,
-        buflen: size_t,
-    ) -> libc::c_int;
-    fn yescrypt_init_local(local: *mut yescrypt_local_t) -> libc::c_int;
-}
+use libc::{memcpy, strlen, strncmp, strrchr};
 
 pub type encrypt_dir_t = libc::c_int;
 
@@ -123,7 +105,7 @@ static mut atoi64_partial: [uint8_t; 77] = [
     63 as libc::c_int as uint8_t,
 ];
 
-unsafe extern "C" fn encode64_uint32(
+unsafe fn encode64_uint32(
     mut dst: *mut uint8_t,
     mut dstlen: size_t,
     mut src: uint32_t,
@@ -183,14 +165,14 @@ unsafe extern "C" fn encode64_uint32(
 }
 
 #[inline]
-unsafe extern "C" fn atoi64(mut src: uint8_t) -> uint32_t {
+unsafe fn atoi64(mut src: uint8_t) -> uint32_t {
     if src as libc::c_int >= '.' as i32 && src as libc::c_int <= 'z' as i32 {
         return atoi64_partial[(src as libc::c_int - '.' as i32) as usize] as uint32_t;
     }
     return 64 as libc::c_int as uint32_t;
 }
 
-unsafe extern "C" fn decode64_uint32(
+unsafe fn decode64_uint32(
     mut dst: *mut uint32_t,
     mut src: *const uint8_t,
     mut min: uint32_t,
@@ -251,7 +233,7 @@ unsafe extern "C" fn decode64_uint32(
     return 0 as *const uint8_t;
 }
 
-unsafe extern "C" fn encode64_uint32_fixed(
+unsafe fn encode64_uint32_fixed(
     mut dst: *mut uint8_t,
     mut dstlen: size_t,
     mut src: uint32_t,
@@ -279,7 +261,7 @@ unsafe extern "C" fn encode64_uint32_fixed(
     return dst;
 }
 
-unsafe extern "C" fn encode64(
+unsafe fn encode64(
     mut dst: *mut uint8_t,
     mut dstlen: size_t,
     mut src: *const uint8_t,
@@ -295,8 +277,7 @@ unsafe extern "C" fn encode64(
             let fresh5 = i;
             i = i.wrapping_add(1);
             value |= (*src.offset(fresh5 as isize) as uint32_t) << bits;
-            bits = (bits as libc::c_uint).wrapping_add(8 as libc::c_int as libc::c_uint) as uint32_t
-                as uint32_t;
+            bits = (bits as libc::c_uint).wrapping_add(8);
             if !(bits < 24 as libc::c_int as libc::c_uint && i < srclen) {
                 break;
             }
@@ -305,9 +286,7 @@ unsafe extern "C" fn encode64(
         if dnext.is_null() {
             return 0 as *mut uint8_t;
         }
-        dstlen = (dstlen as libc::c_ulong)
-            .wrapping_sub(dnext.offset_from(dst) as libc::c_long as libc::c_ulong)
-            as size_t as size_t;
+        dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as u64);
         dst = dnext;
     }
     if dstlen < 1 as libc::c_int as libc::c_ulong {
@@ -317,7 +296,7 @@ unsafe extern "C" fn encode64(
     return dst;
 }
 
-unsafe extern "C" fn decode64_uint32_fixed(
+unsafe fn decode64_uint32_fixed(
     mut dst: *mut uint32_t,
     mut dstbits: uint32_t,
     mut src: *const uint8_t,
@@ -340,7 +319,7 @@ unsafe extern "C" fn decode64_uint32_fixed(
     return src;
 }
 
-unsafe extern "C" fn decode64(
+unsafe fn decode64(
     mut dst: *mut uint8_t,
     mut dstlen: *mut size_t,
     mut src: *const uint8_t,
@@ -425,11 +404,7 @@ unsafe extern "C" fn decode64(
     return 0 as *const uint8_t;
 }
 
-unsafe extern "C" fn memxor(
-    mut dst: *mut libc::c_uchar,
-    mut src: *mut libc::c_uchar,
-    mut size: size_t,
-) {
+unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut size: size_t) {
     loop {
         let fresh10 = size;
         size = size.wrapping_sub(1);
@@ -444,7 +419,7 @@ unsafe extern "C" fn memxor(
     }
 }
 
-unsafe extern "C" fn encrypt(
+unsafe fn encrypt(
     mut data: *mut libc::c_uchar,
     mut datalen: size_t,
     mut key: *const yescrypt_binary_t,
@@ -531,7 +506,7 @@ unsafe extern "C" fn encrypt(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_r(
+pub unsafe fn yescrypt_r(
     mut shared: *const yescrypt_shared_t,
     mut local: *mut yescrypt_local_t,
     mut passwd: *const uint8_t,
@@ -548,9 +523,9 @@ pub unsafe extern "C" fn yescrypt_r(
     let mut saltstr: *const uint8_t = 0 as *const uint8_t;
     let mut salt: *const uint8_t = 0 as *const uint8_t;
     let mut dst: *mut uint8_t = 0 as *mut uint8_t;
-    let mut need: size_t = 0;
-    let mut prefixlen: size_t = 0;
-    let mut saltstrlen: size_t = 0;
+    let mut need: usize = 0;
+    let mut prefixlen: usize = 0;
+    let mut saltstrlen: usize = 0;
     let mut saltlen: size_t = 0;
     let mut params: yescrypt_params_t = {
         let mut init = yescrypt_params_t {
@@ -657,24 +632,28 @@ pub unsafe extern "C" fn yescrypt_r(
             return 0 as *mut uint8_t;
         }
     }
-    prefixlen = src.offset_from(setting) as libc::c_long as size_t;
+    prefixlen = src.offset_from(setting) as usize;
     saltstr = src;
     src = strrchr(saltstr as *mut libc::c_char, '$' as i32) as *mut uint8_t;
     if !src.is_null() {
-        saltstrlen = src.offset_from(saltstr) as libc::c_long as size_t;
+        saltstrlen = src.offset_from(saltstr) as usize;
     } else {
         saltstrlen = strlen(saltstr as *mut libc::c_char);
     }
     if *setting.offset(1 as libc::c_int as isize) as libc::c_int == '7' as i32 {
         salt = saltstr;
-        saltlen = saltstrlen;
+        saltlen = saltstrlen as size_t;
         current_block = 1623252117315916725;
     } else {
         let mut saltend: *const uint8_t = 0 as *const uint8_t;
-        saltlen = ::core::mem::size_of::<[libc::c_uchar; 64]>() as libc::c_ulong;
-        saltend = decode64(saltbin.as_mut_ptr(), &mut saltlen, saltstr, saltstrlen);
-        if saltend.is_null() || saltend.offset_from(saltstr) as libc::c_long as size_t != saltstrlen
-        {
+        saltlen = core::mem::size_of::<[libc::c_uchar; 64]>() as size_t;
+        saltend = decode64(
+            saltbin.as_mut_ptr(),
+            &mut saltlen,
+            saltstr,
+            saltstrlen as size_t,
+        );
+        if saltend.is_null() || saltend.offset_from(saltstr) as usize != saltstrlen {
             current_block = 3736434875406665187;
         } else {
             salt = saltbin.as_mut_ptr();
@@ -688,15 +667,15 @@ pub unsafe extern "C" fn yescrypt_r(
         1623252117315916725 => {
             need = prefixlen
                 .wrapping_add(saltstrlen)
-                .wrapping_add(1 as libc::c_int as libc::c_ulong)
+                .wrapping_add(1)
                 .wrapping_add(
-                    (::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong)
-                        .wrapping_mul(8 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(5 as libc::c_int as libc::c_ulong)
-                        .wrapping_div(6 as libc::c_int as libc::c_ulong),
+                    (core::mem::size_of::<yescrypt_binary_t>())
+                        .wrapping_mul(8)
+                        .wrapping_add(5)
+                        .wrapping_div(6),
                 )
-                .wrapping_add(1 as libc::c_int as libc::c_ulong);
-            if !(need > buflen || need < saltstrlen) {
+                .wrapping_add(1);
+            if !(need > buflen as usize || need < saltstrlen) {
                 if !(yescrypt_kdf(
                     shared,
                     local,
@@ -729,7 +708,7 @@ pub unsafe extern "C" fn yescrypt_r(
                     *fresh16 = '$' as i32 as uint8_t;
                     dst = encode64(
                         dst,
-                        buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+                        buflen.wrapping_sub(dst.offset_from(buf) as u64),
                         hashbin.as_mut_ptr(),
                         ::core::mem::size_of::<[libc::c_uchar; 32]>() as libc::c_ulong,
                     );
@@ -747,10 +726,7 @@ pub unsafe extern "C" fn yescrypt_r(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt(
-    mut passwd: *const uint8_t,
-    mut setting: *const uint8_t,
-) -> *mut uint8_t {
+pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) -> *mut uint8_t {
     static mut buf: [uint8_t; 140] = [0; 140];
     let mut local: yescrypt_local_t = yescrypt_local_t {
         base: 0 as *mut libc::c_void,
@@ -766,7 +742,7 @@ pub unsafe extern "C" fn yescrypt(
         0 as *const yescrypt_shared_t,
         &mut local,
         passwd,
-        strlen(passwd as *mut libc::c_char),
+        strlen(passwd as *mut libc::c_char) as u64,
         setting,
         0 as *const yescrypt_binary_t,
         buf.as_mut_ptr(),
@@ -779,7 +755,7 @@ pub unsafe extern "C" fn yescrypt(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_reencrypt(
+pub unsafe fn yescrypt_reencrypt(
     mut hash: *mut uint8_t,
     mut from_key: *const yescrypt_binary_t,
     mut to_key: *const yescrypt_binary_t,
@@ -797,7 +773,7 @@ pub unsafe extern "C" fn yescrypt_reencrypt(
     if strncmp(
         hash as *mut libc::c_char,
         b"$y$\0" as *const u8 as *const libc::c_char,
-        3 as libc::c_int as libc::c_ulong,
+        3,
     ) != 0
     {
         return 0 as *mut uint8_t;
@@ -832,10 +808,10 @@ pub unsafe extern "C" fn yescrypt_reencrypt(
         > ((64 as libc::c_int * 8 as libc::c_int + 5 as libc::c_int) / 6 as libc::c_int)
             as libc::c_ulong
         || strlen(hashstart as *mut libc::c_char)
-            != (::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong)
-                .wrapping_mul(8 as libc::c_int as libc::c_ulong)
-                .wrapping_add(5 as libc::c_int as libc::c_ulong)
-                .wrapping_div(6 as libc::c_int as libc::c_ulong)
+            != (::core::mem::size_of::<yescrypt_binary_t>())
+                .wrapping_mul(8)
+                .wrapping_add(5)
+                .wrapping_div(6)
     {
         return 0 as *mut uint8_t;
     }
@@ -926,7 +902,7 @@ pub unsafe extern "C" fn yescrypt_reencrypt(
     return retval;
 }
 
-unsafe extern "C" fn N2log2(mut N: uint64_t) -> uint32_t {
+unsafe fn N2log2(mut N: uint64_t) -> uint32_t {
     let mut N_log2: uint32_t = 0;
     if N < 2 as libc::c_int as libc::c_ulong {
         return 0 as libc::c_int as uint32_t;
@@ -945,7 +921,7 @@ unsafe extern "C" fn N2log2(mut N: uint64_t) -> uint32_t {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_encode_params_r(
+pub unsafe fn yescrypt_encode_params_r(
     mut params: *const yescrypt_params_t,
     mut src: *const uint8_t,
     mut srclen: size_t,
@@ -998,7 +974,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     *fresh19 = '$' as i32 as uint8_t;
     dst = encode64_uint32(
         dst,
-        buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+        buflen.wrapping_sub(dst.offset_from(buf) as u64),
         flavor,
         0 as libc::c_int as uint32_t,
     );
@@ -1007,7 +983,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     }
     dst = encode64_uint32(
         dst,
-        buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+        buflen.wrapping_sub(dst.offset_from(buf) as u64),
         N_log2,
         1 as libc::c_int as uint32_t,
     );
@@ -1016,7 +992,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     }
     dst = encode64_uint32(
         dst,
-        buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+        buflen.wrapping_sub(dst.offset_from(buf) as u64),
         (*params).r,
         1 as libc::c_int as uint32_t,
     );
@@ -1039,7 +1015,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     if have != 0 {
         dst = encode64_uint32(
             dst,
-            buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+            buflen.wrapping_sub(dst.offset_from(buf) as u64),
             have,
             1 as libc::c_int as uint32_t,
         );
@@ -1050,7 +1026,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     if (*params).p != 1 as libc::c_int as libc::c_uint {
         dst = encode64_uint32(
             dst,
-            buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+            buflen.wrapping_sub(dst.offset_from(buf) as u64),
             (*params).p,
             2 as libc::c_int as uint32_t,
         );
@@ -1061,7 +1037,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     if (*params).t != 0 {
         dst = encode64_uint32(
             dst,
-            buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+            buflen.wrapping_sub(dst.offset_from(buf) as u64),
             (*params).t,
             1 as libc::c_int as uint32_t,
         );
@@ -1072,7 +1048,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     if (*params).g != 0 {
         dst = encode64_uint32(
             dst,
-            buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+            buflen.wrapping_sub(dst.offset_from(buf) as u64),
             (*params).g,
             1 as libc::c_int as uint32_t,
         );
@@ -1083,7 +1059,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     if NROM_log2 != 0 {
         dst = encode64_uint32(
             dst,
-            buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+            buflen.wrapping_sub(dst.offset_from(buf) as u64),
             NROM_log2,
             1 as libc::c_int as uint32_t,
         );
@@ -1099,7 +1075,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
     *fresh20 = '$' as i32 as uint8_t;
     dst = encode64(
         dst,
-        buflen.wrapping_sub(dst.offset_from(buf) as libc::c_long as libc::c_ulong),
+        buflen.wrapping_sub(dst.offset_from(buf) as u64),
         src,
         srclen,
     );
@@ -1111,7 +1087,7 @@ pub unsafe extern "C" fn yescrypt_encode_params_r(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_encode_params(
+pub unsafe fn yescrypt_encode_params(
     mut params: *const yescrypt_params_t,
     mut src: *const uint8_t,
     mut srclen: size_t,
@@ -1127,7 +1103,7 @@ pub unsafe extern "C" fn yescrypt_encode_params(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn crypto_scrypt(
+pub unsafe fn crypto_scrypt(
     mut passwd: *const uint8_t,
     mut passwdlen: size_t,
     mut salt: *const uint8_t,

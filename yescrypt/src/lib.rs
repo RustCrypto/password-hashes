@@ -34,30 +34,8 @@
 mod common;
 mod sha256;
 
-extern "C" {
-    fn __errno_location() -> *mut libc::c_int;
-    fn malloc(_: libc::c_ulong) -> *mut libc::c_void;
-    fn free(__ptr: *mut libc::c_void);
-    fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
-    fn memset(_: *mut libc::c_void, _: libc::c_int, _: libc::c_ulong) -> *mut libc::c_void;
-    fn libcperciva_SHA256_Buf(_: *const libc::c_void, _: size_t, _: *mut uint8_t);
-    fn libcperciva_HMAC_SHA256_Buf(
-        _: *const libc::c_void,
-        _: size_t,
-        _: *const libc::c_void,
-        _: size_t,
-        _: *mut uint8_t,
-    );
-    fn PBKDF2_SHA256(
-        _: *const uint8_t,
-        _: size_t,
-        _: *const uint8_t,
-        _: size_t,
-        _: uint64_t,
-        _: *mut uint8_t,
-        _: size_t,
-    );
-}
+use crate::sha256::{libcperciva_HMAC_SHA256_Buf, libcperciva_SHA256_Buf, PBKDF2_SHA256};
+use libc::{free, malloc, memcpy, memset};
 
 type uint8_t = libc::c_uchar;
 type uint32_t = libc::c_uint;
@@ -107,7 +85,7 @@ pub struct pwxform_ctx_t {
 }
 
 #[inline]
-unsafe extern "C" fn libcperciva_le32dec(mut pp: *const libc::c_void) -> uint32_t {
+unsafe fn libcperciva_le32dec(mut pp: *const libc::c_void) -> uint32_t {
     let mut p: *const uint8_t = pp as *const uint8_t;
     return (*p.offset(0 as libc::c_int as isize) as uint32_t)
         .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
@@ -116,7 +94,7 @@ unsafe extern "C" fn libcperciva_le32dec(mut pp: *const libc::c_void) -> uint32_
 }
 
 #[inline]
-unsafe extern "C" fn libcperciva_le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
+unsafe fn libcperciva_le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
     let mut p: *mut uint8_t = pp as *mut uint8_t;
     *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
     *p.offset(1 as libc::c_int as isize) =
@@ -127,7 +105,7 @@ unsafe extern "C" fn libcperciva_le32enc(mut pp: *mut libc::c_void, mut x: uint3
         (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
 }
 
-unsafe extern "C" fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
     loop {
         let fresh0 = src;
         src = src.offset(1);
@@ -141,7 +119,7 @@ unsafe extern "C" fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
     }
 }
 
-unsafe extern "C" fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
     loop {
         let fresh2 = src;
         src = src.offset(1);
@@ -155,7 +133,7 @@ unsafe extern "C" fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
     }
 }
 
-unsafe extern "C" fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
+unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
     let mut x: [uint32_t; 16] = [0; 16];
     let mut i: size_t = 0;
     i = 0 as libc::c_int as size_t;
@@ -342,7 +320,7 @@ unsafe extern "C" fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
     }
 }
 
-unsafe extern "C" fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t, mut r: size_t) {
+unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t, mut r: size_t) {
     let mut X: [uint32_t; 16] = [0; 16];
     let mut i: size_t = 0;
     blkcpy(
@@ -403,7 +381,7 @@ unsafe extern "C" fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t,
     }
 }
 
-unsafe extern "C" fn pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t) {
+unsafe fn pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t) {
     let mut X: *mut [[uint32_t; 2]; 2] = B as *mut [[uint32_t; 2]; 2];
     let mut S0: *mut [uint32_t; 2] = (*ctx).S0;
     let mut S1: *mut [uint32_t; 2] = (*ctx).S1;
@@ -485,11 +463,7 @@ unsafe extern "C" fn pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t) 
             as libc::c_ulong;
 }
 
-unsafe extern "C" fn blockmix_pwxform(
-    mut B: *mut uint32_t,
-    mut ctx: *mut pwxform_ctx_t,
-    mut r: size_t,
-) {
+unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t, mut r: size_t) {
     let mut X: [uint32_t; 16] = [0; 16];
     let mut r1: size_t = 0;
     let mut i: size_t = 0;
@@ -566,7 +540,7 @@ unsafe extern "C" fn blockmix_pwxform(
     }
 }
 
-unsafe extern "C" fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
+unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
     let mut X: *const uint32_t = &*B.offset(
         (2 as libc::c_int as libc::c_ulong)
             .wrapping_mul(r)
@@ -577,7 +551,7 @@ unsafe extern "C" fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
 }
 
-unsafe extern "C" fn p2floor(mut x: uint64_t) -> uint64_t {
+unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
     let mut y: uint64_t = 0;
     loop {
         y = x & x.wrapping_sub(1 as libc::c_int as libc::c_ulong);
@@ -589,12 +563,12 @@ unsafe extern "C" fn p2floor(mut x: uint64_t) -> uint64_t {
     return x;
 }
 
-unsafe extern "C" fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
+unsafe fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
     let mut n: uint64_t = p2floor(i);
     return (x & n.wrapping_sub(1 as libc::c_int as libc::c_ulong)).wrapping_add(i.wrapping_sub(n));
 }
 
-unsafe extern "C" fn smix1(
+unsafe fn smix1(
     mut B: *mut uint32_t,
     mut r: size_t,
     mut N: uint64_t,
@@ -687,7 +661,7 @@ unsafe extern "C" fn smix1(
     }
 }
 
-unsafe extern "C" fn smix2(
+unsafe fn smix2(
     mut B: *mut uint32_t,
     mut r: size_t,
     mut N: uint64_t,
@@ -772,7 +746,7 @@ unsafe extern "C" fn smix2(
     }
 }
 
-unsafe extern "C" fn smix(
+unsafe fn smix(
     mut B: *mut uint32_t,
     mut r: size_t,
     mut N: uint64_t,
@@ -922,7 +896,7 @@ unsafe extern "C" fn smix(
     }
 }
 
-unsafe extern "C" fn yescrypt_kdf_body(
+unsafe fn yescrypt_kdf_body(
     mut shared: *const yescrypt_shared_t,
     mut local: *mut yescrypt_local_t,
     mut passwd: *const uint8_t,
@@ -941,8 +915,8 @@ unsafe extern "C" fn yescrypt_kdf_body(
     let mut current_block: u64;
     let mut retval: libc::c_int = -(1 as libc::c_int);
     let mut VROM: *const uint32_t = 0 as *const uint32_t;
-    let mut B_size: size_t = 0;
-    let mut V_size: size_t = 0;
+    let mut B_size: usize = 0;
+    let mut V_size: usize = 0;
     let mut B: *mut uint32_t = 0 as *mut uint32_t;
     let mut V: *mut uint32_t = 0 as *mut uint32_t;
     let mut XY: *mut uint32_t = 0 as *mut uint32_t;
@@ -1123,14 +1097,14 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                         match current_block {
                                             15162489974460950378 => {}
                                             _ => {
-                                                V_size = (128 as libc::c_int as size_t)
-                                                    .wrapping_mul(r as libc::c_ulong)
-                                                    .wrapping_mul(N);
+                                                V_size = 128usize
+                                                    .wrapping_mul(r as usize)
+                                                    .wrapping_mul(N as usize);
                                                 if flags & 0x1000000 as libc::c_int as libc::c_uint
                                                     != 0
                                                 {
                                                     V = (*local).aligned as *mut uint32_t;
-                                                    if (*local).aligned_size < V_size {
+                                                    if (*local).aligned_size < V_size as u64 {
                                                         if !((*local).base).is_null()
                                                             || !((*local).aligned).is_null()
                                                             || (*local).base_size != 0
@@ -1145,7 +1119,7 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                             (*local).aligned =
                                                                 V as *mut libc::c_void;
                                                             (*local).base = (*local).aligned;
-                                                            (*local).aligned_size = V_size;
+                                                            (*local).aligned_size = V_size as u64;
                                                             (*local).base_size =
                                                                 (*local).aligned_size;
                                                             current_block = 9853141518545631134;
@@ -1176,16 +1150,13 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                 match current_block {
                                                     15162489974460950378 => {}
                                                     _ => {
-                                                        B_size = (128 as libc::c_int as size_t)
-                                                            .wrapping_mul(r as libc::c_ulong)
-                                                            .wrapping_mul(p as libc::c_ulong);
+                                                        B_size = 128usize
+                                                            .wrapping_mul(r as usize)
+                                                            .wrapping_mul(p as usize);
                                                         B = malloc(B_size) as *mut uint32_t;
                                                         if !B.is_null() {
                                                             XY = malloc(
-                                                                (256 as libc::c_int as size_t)
-                                                                    .wrapping_mul(
-                                                                        r as libc::c_ulong,
-                                                                    ),
+                                                                256usize.wrapping_mul(r as usize),
                                                             )
                                                                 as *mut uint32_t;
                                                             if !XY.is_null() {
@@ -1198,15 +1169,12 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                     != 0
                                                                 {
                                                                     S = malloc(
-                                                                        ((3 as libc::c_int
-                                                                            * ((1 as libc::c_int)
-                                                                                << 8
-                                                                                    as libc::c_int)
-                                                                            * 2 as libc::c_int
-                                                                            * 8 as libc::c_int)
-                                                                            as size_t)
+                                                                        (3usize
+                                                                            * ((1usize) << 8usize)
+                                                                            * 2usize
+                                                                            * 8usize)
                                                                             .wrapping_mul(
-                                                                                p as libc::c_ulong,
+                                                                                p as usize,
                                                                             ),
                                                                     )
                                                                         as *mut uint32_t;
@@ -1215,9 +1183,15 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                             4048828170348623652;
                                                                     } else {
                                                                         pwxform_ctx = malloc(
-                                                                            (::core::mem::size_of::<pwxform_ctx_t>() as libc::c_ulong)
-                                                                                .wrapping_mul(p as libc::c_ulong),
-                                                                        ) as *mut pwxform_ctx_t;
+                                                                            core::mem::size_of::<
+                                                                                pwxform_ctx_t,
+                                                                            >(
+                                                                            )
+                                                                            .wrapping_mul(
+                                                                                p as usize,
+                                                                            ),
+                                                                        )
+                                                                            as *mut pwxform_ctx_t;
                                                                         if pwxform_ctx.is_null() {
                                                                             current_block =
                                                                                 15241037615328978;
@@ -1258,7 +1232,7 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                             1 as libc::c_int
                                                                                 as uint64_t,
                                                                             B as *mut uint8_t,
-                                                                            B_size,
+                                                                            B_size as u64,
                                                                         );
                                                                         if flags != 0 {
                                                                             blkcpy(
@@ -1354,7 +1328,7 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                                 passwd,
                                                                                 passwdlen,
                                                                                 B as *mut uint8_t,
-                                                                                B_size,
+                                                                                B_size as u64,
                                                                                 1 as libc::c_int as uint64_t,
                                                                                 dk.as_mut_ptr(),
                                                                                 ::core::mem::size_of::<[uint8_t; 32]>() as libc::c_ulong,
@@ -1365,7 +1339,7 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                             passwd,
                                                                             passwdlen,
                                                                             B as *mut uint8_t,
-                                                                            B_size,
+                                                                            B_size as u64,
                                                                             1 as libc::c_int
                                                                                 as uint64_t,
                                                                             buf,
@@ -1402,7 +1376,7 @@ unsafe extern "C" fn yescrypt_kdf_body(
                                                                             memcpy(
                                                                                 buf as *mut libc::c_void,
                                                                                 dk.as_mut_ptr() as *const libc::c_void,
-                                                                                clen,
+                                                                                clen as usize,
                                                                             );
                                                                         }
                                                                         retval = 0 as libc::c_int;
@@ -1446,12 +1420,11 @@ unsafe extern "C" fn yescrypt_kdf_body(
         }
         _ => {}
     }
-    *__errno_location() = 22 as libc::c_int;
     return -(1 as libc::c_int);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_kdf(
+pub unsafe fn yescrypt_kdf(
     mut shared: *const yescrypt_shared_t,
     mut local: *mut yescrypt_local_t,
     mut passwd: *const uint8_t,
@@ -1471,7 +1444,6 @@ pub unsafe extern "C" fn yescrypt_kdf(
     let mut NROM: uint64_t = (*params).NROM;
     let mut dk: [uint8_t; 32] = [0; 32];
     if g != 0 {
-        *__errno_location() = 22 as libc::c_int;
         return -(1 as libc::c_int);
     }
     if flags & 0x2 as libc::c_int as libc::c_uint != 0
@@ -1509,7 +1481,7 @@ pub unsafe extern "C" fn yescrypt_kdf(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_init_shared(
+pub unsafe fn yescrypt_init_shared(
     mut shared: *mut yescrypt_shared_t,
     mut seed: *const uint8_t,
     mut seedlen: size_t,
@@ -1548,11 +1520,7 @@ pub unsafe extern "C" fn yescrypt_init_shared(
         tag = ((*shared).aligned as *mut uint8_t)
             .offset((*shared).aligned_size as isize)
             .offset(-(48 as libc::c_int as isize)) as *mut uint32_t;
-        memset(
-            tag as *mut libc::c_void,
-            0 as libc::c_int,
-            48 as libc::c_int as libc::c_ulong,
-        );
+        memset(tag as *mut libc::c_void, 0, 48);
         current_block = 2968425633554183086;
     } else {
         (*shared).aligned = 0 as *mut libc::c_void;
@@ -1709,9 +1677,7 @@ pub unsafe extern "C" fn yescrypt_init_shared(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_digest_shared(
-    mut shared: *mut yescrypt_shared_t,
-) -> *mut yescrypt_binary_t {
+pub unsafe fn yescrypt_digest_shared(mut shared: *mut yescrypt_shared_t) -> *mut yescrypt_binary_t {
     static mut digest: yescrypt_binary_t = yescrypt_binary_t { uc: [0; 32] };
     let mut tag: *mut uint32_t = 0 as *mut uint32_t;
     let mut tag1: uint64_t = 0;
@@ -1769,7 +1735,7 @@ pub unsafe extern "C" fn yescrypt_digest_shared(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_free_shared(mut shared: *mut yescrypt_shared_t) -> libc::c_int {
+pub unsafe fn yescrypt_free_shared(mut shared: *mut yescrypt_shared_t) -> libc::c_int {
     free((*shared).base);
     (*shared).aligned = 0 as *mut libc::c_void;
     (*shared).base = (*shared).aligned;
@@ -1779,7 +1745,7 @@ pub unsafe extern "C" fn yescrypt_free_shared(mut shared: *mut yescrypt_shared_t
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -> libc::c_int {
+pub unsafe fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -> libc::c_int {
     (*local).aligned = 0 as *mut libc::c_void;
     (*local).base = (*local).aligned;
     (*local).aligned_size = 0 as libc::c_int as size_t;
@@ -1788,6 +1754,6 @@ pub unsafe extern "C" fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn yescrypt_free_local(_local: *mut yescrypt_local_t) -> libc::c_int {
+pub unsafe fn yescrypt_free_local(_local: *mut yescrypt_local_t) -> libc::c_int {
     return 0 as libc::c_int;
 }
