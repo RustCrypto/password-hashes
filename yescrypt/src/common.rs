@@ -8,6 +8,11 @@
     unused_mut
 )]
 
+use crate::{
+    sha256::libcperciva_SHA256_CTX, size_t, uint32_t, uint64_t, uint8_t, yescrypt_binary_t,
+    yescrypt_flags_t, yescrypt_local_t, yescrypt_params_t, yescrypt_shared_t,
+};
+
 extern "C" {
     fn memcpy(_: *mut libc::c_void, _: *const libc::c_void, _: libc::c_ulong) -> *mut libc::c_void;
     fn strncmp(_: *const libc::c_char, _: *const libc::c_char, _: libc::c_ulong) -> libc::c_int;
@@ -29,55 +34,6 @@ extern "C" {
         buflen: size_t,
     ) -> libc::c_int;
     fn yescrypt_init_local(local: *mut yescrypt_local_t) -> libc::c_int;
-}
-
-pub type __uint8_t = libc::c_uchar;
-pub type __uint32_t = libc::c_uint;
-pub type __uint64_t = libc::c_ulong;
-pub type uint8_t = __uint8_t;
-pub type uint32_t = __uint32_t;
-pub type uint64_t = __uint64_t;
-pub type size_t = libc::c_ulong;
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct libcperciva_SHA256_CTX {
-    pub state: [uint32_t; 8],
-    pub count: uint64_t,
-    pub buf: [uint8_t; 64],
-}
-
-pub type yescrypt_region_t = yescrypt_local_t;
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct yescrypt_local_t {
-    pub base: *mut libc::c_void,
-    pub aligned: *mut libc::c_void,
-    pub base_size: size_t,
-    pub aligned_size: size_t,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct yescrypt_params_t {
-    pub flags: yescrypt_flags_t,
-    pub N: uint64_t,
-    pub r: uint32_t,
-    pub p: uint32_t,
-    pub t: uint32_t,
-    pub g: uint32_t,
-    pub NROM: uint64_t,
-}
-
-pub type yescrypt_flags_t = uint32_t;
-pub type yescrypt_shared_t = yescrypt_region_t;
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union yescrypt_binary_t {
-    pub uc: [libc::c_uchar; 32],
-    pub u64_0: [uint64_t; 4],
 }
 
 pub type encrypt_dir_t = libc::c_int;
