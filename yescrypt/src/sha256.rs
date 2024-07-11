@@ -7,7 +7,6 @@
     unused_assignments,
     unused_mut
 )]
-#![feature(label_break_value)]
 
 extern "C" {
     fn __assert_fail(
@@ -2177,27 +2176,24 @@ pub unsafe extern "C" fn PBKDF2_SHA256(
                 .as_ptr(),
         );
     }
-    'c_11816: {
-        if dkLen
-            <= (32 as libc::c_int as libc::c_ulong)
-                .wrapping_mul(4294967295 as libc::c_uint as size_t)
-        {
-        } else {
-            __assert_fail(
-                b"dkLen <= 32 * (size_t)(UINT32_MAX)\0" as *const u8
-                    as *const libc::c_char,
-                b"sha256.c\0" as *const u8 as *const libc::c_char,
-                558 as libc::c_int as libc::c_uint,
-                (*::core::mem::transmute::<
-                    &[u8; 98],
-                    &[libc::c_char; 98],
-                >(
-                    b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
-                ))
-                    .as_ptr(),
-            );
-        }
-    };
+    if dkLen
+        <= (32 as libc::c_int as libc::c_ulong).wrapping_mul(4294967295 as libc::c_uint as size_t)
+    {
+    } else {
+        __assert_fail(
+            b"dkLen <= 32 * (size_t)(UINT32_MAX)\0" as *const u8
+                as *const libc::c_char,
+            b"sha256.c\0" as *const u8 as *const libc::c_char,
+            558 as libc::c_int as libc::c_uint,
+            (*::core::mem::transmute::<
+                &[u8; 98],
+                &[libc::c_char; 98],
+            >(
+                b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
+            ))
+                .as_ptr(),
+        );
+    }
     if c == 1 as libc::c_int as libc::c_ulong
         && dkLen & 31 as libc::c_int as libc::c_ulong == 0 as libc::c_int as libc::c_ulong
         && saltlen & 63 as libc::c_int as libc::c_ulong <= 51 as libc::c_int as libc::c_ulong
