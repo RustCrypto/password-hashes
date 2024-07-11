@@ -9,10 +9,7 @@
 )]
 
 use crate::{
-    sha256::{
-        libcperciva_SHA256_CTX, libcperciva_SHA256_Final, libcperciva_SHA256_Init,
-        libcperciva_SHA256_Update,
-    },
+    sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
     size_t, uint32_t, uint64_t, uint8_t, yescrypt_binary_t, yescrypt_flags_t, yescrypt_free_local,
     yescrypt_init_local, yescrypt_kdf, yescrypt_local_t, yescrypt_params_t, yescrypt_shared_t,
 };
@@ -425,7 +422,7 @@ unsafe fn encrypt(
     mut key: *const yescrypt_binary_t,
     mut dir: encrypt_dir_t,
 ) {
-    let mut ctx: libcperciva_SHA256_CTX = libcperciva_SHA256_CTX {
+    let mut ctx: SHA256_CTX = SHA256_CTX {
         state: [0; 8],
         count: 0,
         buf: [0; 64],
@@ -458,20 +455,20 @@ unsafe fn encrypt(
         ::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong as libc::c_uchar;
     f[34 as libc::c_int as usize] = datalen as libc::c_uchar;
     loop {
-        libcperciva_SHA256_Init(&mut ctx);
+        SHA256_Init(&mut ctx);
         f[35 as libc::c_int as usize] = round;
-        libcperciva_SHA256_Update(
+        SHA256_Update(
             &mut ctx,
             &mut *f.as_mut_ptr().offset(32 as libc::c_int as isize) as *mut libc::c_uchar
                 as *const libc::c_void,
             4 as libc::c_int as size_t,
         );
-        libcperciva_SHA256_Update(
+        SHA256_Update(
             &mut ctx,
             key as *const libc::c_void,
             ::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong,
         );
-        libcperciva_SHA256_Update(
+        SHA256_Update(
             &mut ctx,
             &mut *data.offset(which as isize) as *mut libc::c_uchar as *const libc::c_void,
             halflen,
@@ -481,13 +478,13 @@ unsafe fn encrypt(
                 .offset(datalen.wrapping_sub(1 as libc::c_int as libc::c_ulong) as isize)
                 as libc::c_int
                 & mask as libc::c_int) as libc::c_uchar;
-            libcperciva_SHA256_Update(
+            SHA256_Update(
                 &mut ctx,
                 f.as_mut_ptr() as *const libc::c_void,
                 1 as libc::c_int as size_t,
             );
         }
-        libcperciva_SHA256_Final(f.as_mut_ptr(), &mut ctx);
+        SHA256_Final(f.as_mut_ptr(), &mut ctx);
         which ^= halflen;
         memxor(&mut *data.offset(which as isize), f.as_mut_ptr(), halflen);
         if datalen & 1 as libc::c_int as libc::c_ulong != 0 {

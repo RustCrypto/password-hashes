@@ -13,7 +13,7 @@ use libc::{memcpy, memset};
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct libcperciva_SHA256_CTX {
+pub struct SHA256_CTX {
     pub state: [uint32_t; 8],
     pub count: uint64_t,
     pub buf: [uint8_t; 64],
@@ -21,9 +21,9 @@ pub struct libcperciva_SHA256_CTX {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct libcperciva_HMAC_SHA256_CTX {
-    pub ictx: libcperciva_SHA256_CTX,
-    pub octx: libcperciva_SHA256_CTX,
+pub struct HMAC_SHA256_CTX {
+    pub ictx: SHA256_CTX,
+    pub octx: SHA256_CTX,
 }
 
 #[derive(Copy, Clone)]
@@ -34,7 +34,7 @@ pub union C2RustUnnamed {
 }
 
 #[inline]
-unsafe fn libcperciva_be32dec(mut pp: *const libc::c_void) -> uint32_t {
+unsafe fn be32dec(mut pp: *const libc::c_void) -> uint32_t {
     let mut p: *const uint8_t = pp as *const uint8_t;
     return (*p.offset(3 as libc::c_int as isize) as uint32_t)
         .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
@@ -43,7 +43,7 @@ unsafe fn libcperciva_be32dec(mut pp: *const libc::c_void) -> uint32_t {
 }
 
 #[inline]
-unsafe fn libcperciva_be32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
+unsafe fn be32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
     let mut p: *mut uint8_t = pp as *mut uint8_t;
     *p.offset(3 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
     *p.offset(2 as libc::c_int as isize) =
@@ -55,7 +55,7 @@ unsafe fn libcperciva_be32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
 }
 
 #[inline]
-unsafe fn libcperciva_be64enc(mut pp: *mut libc::c_void, mut x: uint64_t) {
+unsafe fn be64enc(mut pp: *mut libc::c_void, mut x: uint64_t) {
     let mut p: *mut uint8_t = pp as *mut uint8_t;
     *p.offset(7 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
     *p.offset(6 as libc::c_int as isize) =
@@ -76,11 +76,11 @@ unsafe fn libcperciva_be64enc(mut pp: *mut libc::c_void, mut x: uint64_t) {
 
 unsafe fn be32enc_vect(mut dst: *mut uint8_t, mut src: *const uint32_t, mut len: size_t) {
     loop {
-        libcperciva_be32enc(
+        be32enc(
             &mut *dst.offset(0 as libc::c_int as isize) as *mut uint8_t as *mut libc::c_void,
             *src.offset(0 as libc::c_int as isize),
         );
-        libcperciva_be32enc(
+        be32enc(
             &mut *dst.offset(4 as libc::c_int as isize) as *mut uint8_t as *mut libc::c_void,
             *src.offset(1 as libc::c_int as isize),
         );
@@ -95,12 +95,12 @@ unsafe fn be32enc_vect(mut dst: *mut uint8_t, mut src: *const uint32_t, mut len:
 
 unsafe fn be32dec_vect(mut dst: *mut uint32_t, mut src: *const uint8_t, mut len: size_t) {
     loop {
-        *dst.offset(0 as libc::c_int as isize) = libcperciva_be32dec(
-            &*src.offset(0 as libc::c_int as isize) as *const uint8_t as *const libc::c_void,
-        );
-        *dst.offset(1 as libc::c_int as isize) = libcperciva_be32dec(
-            &*src.offset(4 as libc::c_int as isize) as *const uint8_t as *const libc::c_void,
-        );
+        *dst.offset(0 as libc::c_int as isize) = be32dec(&*src.offset(0 as libc::c_int as isize)
+            as *const uint8_t
+            as *const libc::c_void);
+        *dst.offset(1 as libc::c_int as isize) = be32dec(&*src.offset(4 as libc::c_int as isize)
+            as *const uint8_t
+            as *const libc::c_void);
         src = src.offset(8 as libc::c_int as isize);
         dst = dst.offset(2 as libc::c_int as isize);
         len = len.wrapping_sub(1);
@@ -1722,7 +1722,7 @@ static mut PAD: [uint8_t; 64] = [
     0 as libc::c_int as uint8_t,
 ];
 
-unsafe fn SHA256_Pad(mut ctx: *mut libcperciva_SHA256_CTX, mut tmp32: *mut uint32_t) {
+unsafe fn SHA256_Pad(mut ctx: *mut SHA256_CTX, mut tmp32: *mut uint32_t) {
     let mut r: usize = 0;
     r = (*ctx).count as usize >> 3 & 0x3f;
     if r < 56 {
@@ -1750,7 +1750,7 @@ unsafe fn SHA256_Pad(mut ctx: *mut libcperciva_SHA256_CTX, mut tmp32: *mut uint3
             56usize,
         );
     }
-    libcperciva_be64enc(
+    be64enc(
         &mut *((*ctx).buf).as_mut_ptr().offset(56 as libc::c_int as isize) as *mut uint8_t
             as *mut libc::c_void,
         (*ctx).count,
@@ -1775,7 +1775,7 @@ static mut initial_state: [uint32_t; 8] = [
 ];
 
 #[no_mangle]
-pub unsafe fn libcperciva_SHA256_Init(mut ctx: *mut libcperciva_SHA256_CTX) {
+pub unsafe fn SHA256_Init(mut ctx: *mut SHA256_CTX) {
     (*ctx).count = 0 as libc::c_int as uint64_t;
     memcpy(
         ((*ctx).state).as_mut_ptr() as *mut libc::c_void,
@@ -1785,7 +1785,7 @@ pub unsafe fn libcperciva_SHA256_Init(mut ctx: *mut libcperciva_SHA256_CTX) {
 }
 
 unsafe fn _SHA256_Update(
-    mut ctx: *mut libcperciva_SHA256_CTX,
+    mut ctx: *mut SHA256_CTX,
     mut in_0: *const libc::c_void,
     mut len: size_t,
     mut tmp32: *mut uint32_t,
@@ -1837,8 +1837,8 @@ unsafe fn _SHA256_Update(
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_SHA256_Update(
-    mut ctx: *mut libcperciva_SHA256_CTX,
+pub unsafe fn SHA256_Update(
+    mut ctx: *mut SHA256_CTX,
     mut in_0: *const libc::c_void,
     mut len: size_t,
 ) {
@@ -1848,7 +1848,7 @@ pub unsafe fn libcperciva_SHA256_Update(
 
 unsafe fn _SHA256_Final(
     mut digest: *mut uint8_t,
-    mut ctx: *mut libcperciva_SHA256_CTX,
+    mut ctx: *mut SHA256_CTX,
     mut tmp32: *mut uint32_t,
 ) {
     SHA256_Pad(ctx, tmp32);
@@ -1860,33 +1860,26 @@ unsafe fn _SHA256_Final(
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_SHA256_Final(
-    mut digest: *mut uint8_t,
-    mut ctx: *mut libcperciva_SHA256_CTX,
-) {
+pub unsafe fn SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
     _SHA256_Final(digest, ctx, tmp32.as_mut_ptr());
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_SHA256_Buf(
-    mut in_0: *const libc::c_void,
-    mut len: size_t,
-    mut digest: *mut uint8_t,
-) {
-    let mut ctx: libcperciva_SHA256_CTX = libcperciva_SHA256_CTX {
+pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
+    let mut ctx: SHA256_CTX = SHA256_CTX {
         state: [0; 8],
         count: 0,
         buf: [0; 64],
     };
     let mut tmp32: [uint32_t; 72] = [0; 72];
-    libcperciva_SHA256_Init(&mut ctx);
+    SHA256_Init(&mut ctx);
     _SHA256_Update(&mut ctx, in_0, len, tmp32.as_mut_ptr());
     _SHA256_Final(digest, &mut ctx, tmp32.as_mut_ptr());
 }
 
 unsafe fn _HMAC_SHA256_Init(
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
+    mut ctx: *mut HMAC_SHA256_CTX,
     mut _K: *const libc::c_void,
     mut Klen: size_t,
     mut tmp32: *mut uint32_t,
@@ -1896,13 +1889,13 @@ unsafe fn _HMAC_SHA256_Init(
     let mut K: *const uint8_t = _K as *const uint8_t;
     let mut i: size_t = 0;
     if Klen > 64 as libc::c_int as libc::c_ulong {
-        libcperciva_SHA256_Init(&mut (*ctx).ictx);
+        SHA256_Init(&mut (*ctx).ictx);
         _SHA256_Update(&mut (*ctx).ictx, K as *const libc::c_void, Klen, tmp32);
         _SHA256_Final(khash, &mut (*ctx).ictx, tmp32);
         K = khash;
         Klen = 32;
     }
-    libcperciva_SHA256_Init(&mut (*ctx).ictx);
+    SHA256_Init(&mut (*ctx).ictx);
     memset(pad as *mut libc::c_void, 0x36 as libc::c_int, 64);
     i = 0 as libc::c_int as size_t;
     while i < Klen {
@@ -1917,7 +1910,7 @@ unsafe fn _HMAC_SHA256_Init(
         64 as libc::c_int as size_t,
         tmp32,
     );
-    libcperciva_SHA256_Init(&mut (*ctx).octx);
+    SHA256_Init(&mut (*ctx).octx);
     memset(pad as *mut libc::c_void, 0x5c as libc::c_int, 64);
     i = 0 as libc::c_int as size_t;
     while i < Klen {
@@ -1935,8 +1928,8 @@ unsafe fn _HMAC_SHA256_Init(
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_HMAC_SHA256_Init(
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
+pub unsafe fn HMAC_SHA256_Init(
+    mut ctx: *mut HMAC_SHA256_CTX,
     mut _K: *const libc::c_void,
     mut Klen: size_t,
 ) {
@@ -1954,7 +1947,7 @@ pub unsafe fn libcperciva_HMAC_SHA256_Init(
 }
 
 unsafe fn _HMAC_SHA256_Update(
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
+    mut ctx: *mut HMAC_SHA256_CTX,
     mut in_0: *const libc::c_void,
     mut len: size_t,
     mut tmp32: *mut uint32_t,
@@ -1963,8 +1956,8 @@ unsafe fn _HMAC_SHA256_Update(
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_HMAC_SHA256_Update(
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
+pub unsafe fn HMAC_SHA256_Update(
+    mut ctx: *mut HMAC_SHA256_CTX,
     mut in_0: *const libc::c_void,
     mut len: size_t,
 ) {
@@ -1974,7 +1967,7 @@ pub unsafe fn libcperciva_HMAC_SHA256_Update(
 
 unsafe fn _HMAC_SHA256_Final(
     mut digest: *mut uint8_t,
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
+    mut ctx: *mut HMAC_SHA256_CTX,
     mut tmp32: *mut uint32_t,
     mut ihash: *mut uint8_t,
 ) {
@@ -1989,30 +1982,27 @@ unsafe fn _HMAC_SHA256_Final(
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_HMAC_SHA256_Final(
-    mut digest: *mut uint8_t,
-    mut ctx: *mut libcperciva_HMAC_SHA256_CTX,
-) {
+pub unsafe fn HMAC_SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut HMAC_SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
     let mut ihash: [uint8_t; 32] = [0; 32];
     _HMAC_SHA256_Final(digest, ctx, tmp32.as_mut_ptr(), ihash.as_mut_ptr());
 }
 
 #[no_mangle]
-pub unsafe fn libcperciva_HMAC_SHA256_Buf(
+pub unsafe fn HMAC_SHA256_Buf(
     mut K: *const libc::c_void,
     mut Klen: size_t,
     mut in_0: *const libc::c_void,
     mut len: size_t,
     mut digest: *mut uint8_t,
 ) {
-    let mut ctx: libcperciva_HMAC_SHA256_CTX = libcperciva_HMAC_SHA256_CTX {
-        ictx: libcperciva_SHA256_CTX {
+    let mut ctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
+        ictx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
         },
-        octx: libcperciva_SHA256_CTX {
+        octx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
@@ -2038,7 +2028,7 @@ pub unsafe fn libcperciva_HMAC_SHA256_Buf(
 }
 
 unsafe fn SHA256_Pad_Almost(
-    mut ctx: *mut libcperciva_SHA256_CTX,
+    mut ctx: *mut SHA256_CTX,
     mut len: *mut uint8_t,
     mut tmp32: *mut uint32_t,
 ) -> libc::c_int {
@@ -2047,7 +2037,7 @@ unsafe fn SHA256_Pad_Almost(
     if r >= 56 as libc::c_int as libc::c_uint {
         return -(1 as libc::c_int);
     }
-    libcperciva_be64enc(len as *mut libc::c_void, (*ctx).count);
+    be64enc(len as *mut libc::c_void, (*ctx).count);
     _SHA256_Update(
         ctx,
         PAD.as_ptr() as *const libc::c_void,
@@ -2075,37 +2065,37 @@ pub unsafe fn PBKDF2_SHA256(
     mut dkLen: size_t,
 ) {
     let mut current_block: u64;
-    let mut Phctx: libcperciva_HMAC_SHA256_CTX = libcperciva_HMAC_SHA256_CTX {
-        ictx: libcperciva_SHA256_CTX {
+    let mut Phctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
+        ictx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
         },
-        octx: libcperciva_SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-    };
-    let mut PShctx: libcperciva_HMAC_SHA256_CTX = libcperciva_HMAC_SHA256_CTX {
-        ictx: libcperciva_SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-        octx: libcperciva_SHA256_CTX {
+        octx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
         },
     };
-    let mut hctx: libcperciva_HMAC_SHA256_CTX = libcperciva_HMAC_SHA256_CTX {
-        ictx: libcperciva_SHA256_CTX {
+    let mut PShctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
+        ictx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
         },
-        octx: libcperciva_SHA256_CTX {
+        octx: SHA256_CTX {
+            state: [0; 8],
+            count: 0,
+            buf: [0; 64],
+        },
+    };
+    let mut hctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
+        ictx: SHA256_CTX {
+            state: [0; 8],
+            count: 0,
+            buf: [0; 64],
+        },
+        octx: SHA256_CTX {
             state: [0; 8],
             count: 0,
             buf: [0; 64],
@@ -2200,7 +2190,7 @@ pub unsafe fn PBKDF2_SHA256(
             SHA256_Pad_Almost(&mut hctx.octx, (u.tmp8).as_mut_ptr(), tmp32.as_mut_ptr());
             i = 0 as libc::c_int as size_t;
             while i.wrapping_mul(32 as libc::c_int as libc::c_ulong) < dkLen {
-                libcperciva_be32enc(
+                be32enc(
                     ivecp as *mut libc::c_void,
                     i.wrapping_add(1 as libc::c_int as libc::c_ulong) as uint32_t,
                 );
@@ -2255,9 +2245,9 @@ pub unsafe fn PBKDF2_SHA256(
                 &mut *(u.tmp8).as_mut_ptr().offset(64 as libc::c_int as isize),
             );
             memcpy(
-                &mut PShctx as *mut libcperciva_HMAC_SHA256_CTX as *mut libc::c_void,
-                &mut Phctx as *mut libcperciva_HMAC_SHA256_CTX as *const libc::c_void,
-                core::mem::size_of::<libcperciva_HMAC_SHA256_CTX>(),
+                &mut PShctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
+                &mut Phctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
+                core::mem::size_of::<HMAC_SHA256_CTX>(),
             );
             _HMAC_SHA256_Update(
                 &mut PShctx,
@@ -2267,14 +2257,14 @@ pub unsafe fn PBKDF2_SHA256(
             );
             i = 0 as libc::c_int as size_t;
             while i.wrapping_mul(32 as libc::c_int as libc::c_ulong) < dkLen {
-                libcperciva_be32enc(
+                be32enc(
                     ivec.as_mut_ptr() as *mut libc::c_void,
                     i.wrapping_add(1 as libc::c_int as libc::c_ulong) as uint32_t,
                 );
                 memcpy(
-                    &mut hctx as *mut libcperciva_HMAC_SHA256_CTX as *mut libc::c_void,
-                    &mut PShctx as *mut libcperciva_HMAC_SHA256_CTX as *const libc::c_void,
-                    core::mem::size_of::<libcperciva_HMAC_SHA256_CTX>(),
+                    &mut hctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
+                    &mut PShctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
+                    core::mem::size_of::<HMAC_SHA256_CTX>(),
                 );
                 _HMAC_SHA256_Update(
                     &mut hctx,
@@ -2297,9 +2287,9 @@ pub unsafe fn PBKDF2_SHA256(
                     j = 2 as libc::c_int as uint64_t;
                     while j <= c {
                         memcpy(
-                            &mut hctx as *mut libcperciva_HMAC_SHA256_CTX as *mut libc::c_void,
-                            &mut Phctx as *mut libcperciva_HMAC_SHA256_CTX as *const libc::c_void,
-                            core::mem::size_of::<libcperciva_HMAC_SHA256_CTX>(),
+                            &mut hctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
+                            &mut Phctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
+                            core::mem::size_of::<HMAC_SHA256_CTX>(),
                         );
                         _HMAC_SHA256_Update(
                             &mut hctx,

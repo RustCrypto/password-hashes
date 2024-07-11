@@ -34,7 +34,7 @@
 mod common;
 mod sha256;
 
-use crate::sha256::{libcperciva_HMAC_SHA256_Buf, libcperciva_SHA256_Buf, PBKDF2_SHA256};
+use crate::sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256};
 use libc::{free, malloc, memcpy, memset};
 
 type uint8_t = libc::c_uchar;
@@ -85,7 +85,7 @@ pub struct pwxform_ctx_t {
 }
 
 #[inline]
-unsafe fn libcperciva_le32dec(mut pp: *const libc::c_void) -> uint32_t {
+unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
     let mut p: *const uint8_t = pp as *const uint8_t;
     return (*p.offset(0 as libc::c_int as isize) as uint32_t)
         .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
@@ -94,7 +94,7 @@ unsafe fn libcperciva_le32dec(mut pp: *const libc::c_void) -> uint32_t {
 }
 
 #[inline]
-unsafe fn libcperciva_le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
+unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
     let mut p: *mut uint8_t = pp as *mut uint8_t;
     *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
     *p.offset(1 as libc::c_int as isize) =
@@ -592,7 +592,7 @@ unsafe fn smix1(
             *X.offset(
                 k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                     .wrapping_add(i) as isize,
-            ) = libcperciva_le32dec(
+            ) = le32dec(
                 &mut *B.offset(
                     k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                         .wrapping_add(
@@ -640,7 +640,7 @@ unsafe fn smix1(
     while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
         i = 0 as libc::c_int as uint64_t;
         while i < 16 as libc::c_int as libc::c_ulong {
-            libcperciva_le32enc(
+            le32enc(
                 &mut *B.offset(
                     k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                         .wrapping_add(
@@ -686,7 +686,7 @@ unsafe fn smix2(
             *X.offset(
                 k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                     .wrapping_add(i) as isize,
-            ) = libcperciva_le32dec(
+            ) = le32dec(
                 &mut *B.offset(
                     k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                         .wrapping_add(
@@ -725,7 +725,7 @@ unsafe fn smix2(
     while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
         i = 0 as libc::c_int as uint64_t;
         while i < 16 as libc::c_int as libc::c_ulong {
-            libcperciva_le32enc(
+            le32enc(
                 &mut *B.offset(
                     k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
                         .wrapping_add(
@@ -844,7 +844,7 @@ unsafe fn smix(
                 .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
             (*ctx_i).w = 0 as libc::c_int as size_t;
             if i == 0 as libc::c_int as libc::c_uint {
-                libcperciva_HMAC_SHA256_Buf(
+                HMAC_SHA256_Buf(
                     Bp.offset(s.wrapping_sub(16 as libc::c_int as libc::c_ulong) as isize)
                         as *const libc::c_void,
                     64 as libc::c_int as size_t,
@@ -1206,7 +1206,7 @@ unsafe fn yescrypt_kdf_body(
                                                                 match current_block {
                                                                     12381812505308290051 => {
                                                                         if flags != 0 {
-                                                                            libcperciva_HMAC_SHA256_Buf(
+                                                                            HMAC_SHA256_Buf(
                                                                                 b"yescrypt-prehash\0" as *const u8 as *const libc::c_char
                                                                                     as *const libc::c_void,
                                                                                 (if flags & 0x10000000 as libc::c_int as libc::c_uint != 0 {
@@ -1352,7 +1352,7 @@ unsafe fn yescrypt_kdf_body(
                                                                                     as libc::c_uint
                                                                                 == 0
                                                                         {
-                                                                            libcperciva_HMAC_SHA256_Buf(
+                                                                            HMAC_SHA256_Buf(
                                                                                 dkp as *const libc::c_void,
                                                                                 ::core::mem::size_of::<[uint8_t; 32]>() as libc::c_ulong,
                                                                                 b"Client Key\0" as *const u8 as *const libc::c_char
@@ -1368,7 +1368,7 @@ unsafe fn yescrypt_kdf_body(
                                                                                 clen = ::core::mem::size_of::<[uint8_t; 32]>()
                                                                                     as libc::c_ulong;
                                                                             }
-                                                                            libcperciva_SHA256_Buf(
+                                                                            SHA256_Buf(
                                                                                 sha256.as_mut_ptr() as *mut uint8_t as *const libc::c_void,
                                                                                 ::core::mem::size_of::<[uint32_t; 8]>() as libc::c_ulong,
                                                                                 dk.as_mut_ptr(),
@@ -1634,35 +1634,28 @@ pub unsafe fn yescrypt_init_shared(
                             (0x687361684d4f522d as libc::c_ulonglong >> 32 as libc::c_int)
                                 as uint32_t;
                         *tag.offset(4 as libc::c_int as isize) =
-                            libcperciva_le32dec(salt.as_mut_ptr() as *const libc::c_void);
-                        *tag.offset(5 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(4 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(6 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(8 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(7 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(12 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(8 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(16 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(9 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(20 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(10 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(24 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
-                        *tag.offset(11 as libc::c_int as isize) = libcperciva_le32dec(
-                            salt.as_mut_ptr().offset(28 as libc::c_int as isize)
-                                as *const libc::c_void,
-                        );
+                            le32dec(salt.as_mut_ptr() as *const libc::c_void);
+                        *tag.offset(5 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(4 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(6 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(8 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(7 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(12 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(8 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(16 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(9 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(20 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(10 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(24 as libc::c_int as isize)
+                                as *const libc::c_void);
+                        *tag.offset(11 as libc::c_int as isize) =
+                            le32dec(salt.as_mut_ptr().offset(28 as libc::c_int as isize)
+                                as *const libc::c_void);
                         return 0 as libc::c_int;
                     }
                 }
@@ -1697,35 +1690,35 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut yescrypt_shared_t) -> *mut
     {
         return 0 as *mut yescrypt_binary_t;
     }
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr() as *mut libc::c_void,
         *tag.offset(4 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(4 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(5 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(8 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(6 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(12 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(7 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(16 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(8 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(20 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(9 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(24 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(10 as libc::c_int as isize),
     );
-    libcperciva_le32enc(
+    le32enc(
         (digest.uc).as_mut_ptr().offset(28 as libc::c_int as isize) as *mut libc::c_void,
         *tag.offset(11 as libc::c_int as isize),
     );
