@@ -31,8 +31,8 @@
     unused_mut
 )]
 
-pub mod common;
-pub mod sha256;
+mod common;
+mod sha256;
 
 extern "C" {
     fn __errno_location() -> *mut libc::c_int;
@@ -59,25 +59,22 @@ extern "C" {
     );
 }
 
-pub type __uint8_t = libc::c_uchar;
-pub type __uint32_t = libc::c_uint;
-pub type __uint64_t = libc::c_ulong;
-pub type uint8_t = __uint8_t;
-pub type uint32_t = __uint32_t;
-pub type uint64_t = __uint64_t;
-pub type size_t = libc::c_ulong;
+type uint8_t = libc::c_uchar;
+type uint32_t = libc::c_uint;
+type uint64_t = libc::c_ulong;
+type size_t = libc::c_ulong;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct yescrypt_region_t {
+pub struct yescrypt_local_t {
     pub base: *mut libc::c_void,
     pub aligned: *mut libc::c_void,
     pub base_size: size_t,
     pub aligned_size: size_t,
 }
 
+pub type yescrypt_region_t = yescrypt_local_t;
 pub type yescrypt_shared_t = yescrypt_region_t;
-pub type yescrypt_local_t = yescrypt_region_t;
 pub type yescrypt_flags_t = uint32_t;
 
 #[derive(Copy, Clone)]
