@@ -1706,8 +1706,8 @@ unsafe fn smix(
     if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
         if t <= 1 as libc::c_int as libc::c_uint {
             if t != 0 {
-                Nloop_all = (Nloop_all as libc::c_ulong)
-                    .wrapping_mul(2 as libc::c_int as libc::c_ulong);
+                Nloop_all =
+                    (Nloop_all as libc::c_ulong).wrapping_mul(2 as libc::c_int as libc::c_ulong);
             }
             Nloop_all = Nloop_all
                 .wrapping_add(2 as libc::c_int as libc::c_ulong)
