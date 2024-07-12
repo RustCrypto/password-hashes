@@ -50,21 +50,22 @@ jobs:
       - run: ${{ matrix.deps }}
       - run: cargo test
 
-  cross:
-    strategy:
-      matrix:
-        include:
-          - target: powerpc-unknown-linux-gnu
-            rust: 1.60.0 # MSRV
-          - target: powerpc-unknown-linux-gnu
-            rust: stable
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: ${{ matrix.deps }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          targets: ${{ matrix.target }}
-      - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --release --target ${{ matrix.target }}
+# TODO(tarcieri): 32-bit support
+#  cross:
+#    strategy:
+#      matrix:
+#        include:
+#          - target: powerpc-unknown-linux-gnu
+#            rust: 1.60.0 # MSRV
+#          - target: powerpc-unknown-linux-gnu
+#            rust: stable
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - run: ${{ matrix.deps }}
+#      - uses: dtolnay/rust-toolchain@master
+#        with:
+#          toolchain: ${{ matrix.rust }}
+#          targets: ${{ matrix.target }}
+#      - uses: RustCrypto/actions/cross-install@master
+#      - run: cross test --release --target ${{ matrix.target }}
