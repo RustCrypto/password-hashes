@@ -32,9 +32,14 @@
 )]
 
 mod common;
+mod salsa20;
 mod sha256;
+mod util;
 
-use crate::sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256};
+use crate::{
+    sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256},
+    util::{blkcpy, blkxor, integerify, le32dec, le32enc, p2floor, wrap},
+};
 use libc::{free, malloc, memcpy, memset};
 
 type uint8_t = libc::c_uchar;
@@ -82,818 +87,6 @@ pub struct pwxform_ctx_t {
     pub S1: *mut [uint32_t; 2],
     pub S2: *mut [uint32_t; 2],
     pub w: size_t,
-}
-
-#[inline]
-unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
-    let mut p: *const uint8_t = pp as *const uint8_t;
-    return (*p.offset(0 as libc::c_int as isize) as uint32_t)
-        .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
-        .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 16 as libc::c_int)
-        .wrapping_add((*p.offset(3 as libc::c_int as isize) as uint32_t) << 24 as libc::c_int);
-}
-
-#[inline]
-unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
-    let mut p: *mut uint8_t = pp as *mut uint8_t;
-    *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(1 as libc::c_int as isize) =
-        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(2 as libc::c_int as isize) =
-        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(3 as libc::c_int as isize) =
-        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-}
-
-unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
-    loop {
-        let fresh0 = src;
-        src = src.offset(1);
-        let fresh1 = dst;
-        dst = dst.offset(1);
-        *fresh1 = *fresh0;
-        count = count.wrapping_sub(1);
-        if !(count != 0) {
-            break;
-        }
-    }
-}
-
-unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
-    loop {
-        let fresh2 = src;
-        src = src.offset(1);
-        let fresh3 = dst;
-        dst = dst.offset(1);
-        *fresh3 ^= *fresh2;
-        count = count.wrapping_sub(1);
-        if !(count != 0) {
-            break;
-        }
-    }
-}
-
-unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
-    let mut x: [uint32_t; 16] = [0; 16];
-    let mut i: size_t = 0;
-    i = 0 as libc::c_int as size_t;
-    while i < 16 as libc::c_int as libc::c_ulong {
-        x[i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-            .wrapping_rem(16 as libc::c_int as libc::c_ulong) as usize] = *B.offset(i as isize);
-        i = i.wrapping_add(1);
-        i;
-    }
-    i = 0 as libc::c_int as size_t;
-    while i < rounds as libc::c_ulong {
-        x[4 as libc::c_int as usize] ^= (x[0 as libc::c_int as usize])
-            .wrapping_add(x[12 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[0 as libc::c_int as usize]).wrapping_add(x[12 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[8 as libc::c_int as usize] ^= (x[4 as libc::c_int as usize])
-            .wrapping_add(x[0 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[4 as libc::c_int as usize]).wrapping_add(x[0 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[12 as libc::c_int as usize] ^= (x[8 as libc::c_int as usize])
-            .wrapping_add(x[4 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[8 as libc::c_int as usize]).wrapping_add(x[4 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[0 as libc::c_int as usize] ^= (x[12 as libc::c_int as usize])
-            .wrapping_add(x[8 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[12 as libc::c_int as usize]).wrapping_add(x[8 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[9 as libc::c_int as usize] ^= (x[5 as libc::c_int as usize])
-            .wrapping_add(x[1 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[5 as libc::c_int as usize]).wrapping_add(x[1 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[13 as libc::c_int as usize] ^= (x[9 as libc::c_int as usize])
-            .wrapping_add(x[5 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[9 as libc::c_int as usize]).wrapping_add(x[5 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[1 as libc::c_int as usize] ^= (x[13 as libc::c_int as usize])
-            .wrapping_add(x[9 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[13 as libc::c_int as usize]).wrapping_add(x[9 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[5 as libc::c_int as usize] ^= (x[1 as libc::c_int as usize])
-            .wrapping_add(x[13 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[1 as libc::c_int as usize]).wrapping_add(x[13 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[14 as libc::c_int as usize] ^= (x[10 as libc::c_int as usize])
-            .wrapping_add(x[6 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[10 as libc::c_int as usize]).wrapping_add(x[6 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[2 as libc::c_int as usize] ^= (x[14 as libc::c_int as usize])
-            .wrapping_add(x[10 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[14 as libc::c_int as usize]).wrapping_add(x[10 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[6 as libc::c_int as usize] ^= (x[2 as libc::c_int as usize])
-            .wrapping_add(x[14 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[2 as libc::c_int as usize]).wrapping_add(x[14 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[10 as libc::c_int as usize] ^= (x[6 as libc::c_int as usize])
-            .wrapping_add(x[2 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[6 as libc::c_int as usize]).wrapping_add(x[2 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[3 as libc::c_int as usize] ^= (x[15 as libc::c_int as usize])
-            .wrapping_add(x[11 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[15 as libc::c_int as usize]).wrapping_add(x[11 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[7 as libc::c_int as usize] ^= (x[3 as libc::c_int as usize])
-            .wrapping_add(x[15 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[3 as libc::c_int as usize]).wrapping_add(x[15 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[11 as libc::c_int as usize] ^= (x[7 as libc::c_int as usize])
-            .wrapping_add(x[3 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[7 as libc::c_int as usize]).wrapping_add(x[3 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[15 as libc::c_int as usize] ^= (x[11 as libc::c_int as usize])
-            .wrapping_add(x[7 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[11 as libc::c_int as usize]).wrapping_add(x[7 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[1 as libc::c_int as usize] ^= (x[0 as libc::c_int as usize])
-            .wrapping_add(x[3 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[0 as libc::c_int as usize]).wrapping_add(x[3 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[2 as libc::c_int as usize] ^= (x[1 as libc::c_int as usize])
-            .wrapping_add(x[0 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[1 as libc::c_int as usize]).wrapping_add(x[0 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[3 as libc::c_int as usize] ^= (x[2 as libc::c_int as usize])
-            .wrapping_add(x[1 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[2 as libc::c_int as usize]).wrapping_add(x[1 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[0 as libc::c_int as usize] ^= (x[3 as libc::c_int as usize])
-            .wrapping_add(x[2 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[3 as libc::c_int as usize]).wrapping_add(x[2 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[6 as libc::c_int as usize] ^= (x[5 as libc::c_int as usize])
-            .wrapping_add(x[4 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[5 as libc::c_int as usize]).wrapping_add(x[4 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[7 as libc::c_int as usize] ^= (x[6 as libc::c_int as usize])
-            .wrapping_add(x[5 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[6 as libc::c_int as usize]).wrapping_add(x[5 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[4 as libc::c_int as usize] ^= (x[7 as libc::c_int as usize])
-            .wrapping_add(x[6 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[7 as libc::c_int as usize]).wrapping_add(x[6 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[5 as libc::c_int as usize] ^= (x[4 as libc::c_int as usize])
-            .wrapping_add(x[7 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[4 as libc::c_int as usize]).wrapping_add(x[7 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[11 as libc::c_int as usize] ^= (x[10 as libc::c_int as usize])
-            .wrapping_add(x[9 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[10 as libc::c_int as usize]).wrapping_add(x[9 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[8 as libc::c_int as usize] ^= (x[11 as libc::c_int as usize])
-            .wrapping_add(x[10 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[11 as libc::c_int as usize]).wrapping_add(x[10 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[9 as libc::c_int as usize] ^= (x[8 as libc::c_int as usize])
-            .wrapping_add(x[11 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[8 as libc::c_int as usize]).wrapping_add(x[11 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[10 as libc::c_int as usize] ^= (x[9 as libc::c_int as usize])
-            .wrapping_add(x[8 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[9 as libc::c_int as usize]).wrapping_add(x[8 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[12 as libc::c_int as usize] ^= (x[15 as libc::c_int as usize])
-            .wrapping_add(x[14 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[15 as libc::c_int as usize]).wrapping_add(x[14 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[13 as libc::c_int as usize] ^= (x[12 as libc::c_int as usize])
-            .wrapping_add(x[15 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[12 as libc::c_int as usize]).wrapping_add(x[15 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[14 as libc::c_int as usize] ^= (x[13 as libc::c_int as usize])
-            .wrapping_add(x[12 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[13 as libc::c_int as usize]).wrapping_add(x[12 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[15 as libc::c_int as usize] ^= (x[14 as libc::c_int as usize])
-            .wrapping_add(x[13 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[14 as libc::c_int as usize]).wrapping_add(x[13 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        i = (i as libc::c_ulong).wrapping_add(2 as libc::c_int as libc::c_ulong) as size_t
-            as size_t;
-    }
-    i = 0 as libc::c_int as size_t;
-    while i < 16 as libc::c_int as libc::c_ulong {
-        let ref mut fresh4 = *B.offset(i as isize);
-        *fresh4 = (*fresh4 as libc::c_uint).wrapping_add(
-            x[i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                .wrapping_rem(16 as libc::c_int as libc::c_ulong) as usize],
-        ) as uint32_t as uint32_t;
-        i = i.wrapping_add(1);
-        i;
-    }
-}
-
-unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t, mut r: size_t) {
-    let mut X: [uint32_t; 16] = [0; 16];
-    let mut i: size_t = 0;
-    blkcpy(
-        X.as_mut_ptr(),
-        &mut *B.offset(
-            (2 as libc::c_int as libc::c_ulong)
-                .wrapping_mul(r)
-                .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-        ),
-        16 as libc::c_int as size_t,
-    );
-    i = 0 as libc::c_int as size_t;
-    while i < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        blkxor(
-            X.as_mut_ptr(),
-            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            16 as libc::c_int as size_t,
-        );
-        salsa20(X.as_mut_ptr(), 8 as libc::c_int as uint32_t);
-        blkcpy(
-            &mut *Y.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            X.as_mut_ptr(),
-            16 as libc::c_int as size_t,
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
-    i = 0 as libc::c_int as size_t;
-    while i < r {
-        blkcpy(
-            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            &mut *Y.offset(
-                i.wrapping_mul(2 as libc::c_int as libc::c_ulong)
-                    .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-            ),
-            16 as libc::c_int as size_t,
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
-    i = 0 as libc::c_int as size_t;
-    while i < r {
-        blkcpy(
-            &mut *B.offset(
-                i.wrapping_add(r)
-                    .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-            ),
-            &mut *Y.offset(
-                i.wrapping_mul(2 as libc::c_int as libc::c_ulong)
-                    .wrapping_add(1 as libc::c_int as libc::c_ulong)
-                    .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-            ),
-            16 as libc::c_int as size_t,
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
-}
-
-unsafe fn pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t) {
-    let mut X: *mut [[uint32_t; 2]; 2] = B as *mut [[uint32_t; 2]; 2];
-    let mut S0: *mut [uint32_t; 2] = (*ctx).S0;
-    let mut S1: *mut [uint32_t; 2] = (*ctx).S1;
-    let mut S2: *mut [uint32_t; 2] = (*ctx).S2;
-    let mut w: size_t = (*ctx).w;
-    let mut i: size_t = 0;
-    let mut j: size_t = 0;
-    let mut k: size_t = 0;
-    i = 0 as libc::c_int as size_t;
-    while i < 6 as libc::c_int as libc::c_ulong {
-        j = 0 as libc::c_int as size_t;
-        while j < 4 as libc::c_int as libc::c_ulong {
-            let mut xl: uint32_t =
-                (*X.offset(j as isize))[0 as libc::c_int as usize][0 as libc::c_int as usize];
-            let mut xh: uint32_t =
-                (*X.offset(j as isize))[0 as libc::c_int as usize][1 as libc::c_int as usize];
-            let mut p0: *mut [uint32_t; 2] = 0 as *mut [uint32_t; 2];
-            let mut p1: *mut [uint32_t; 2] = 0 as *mut [uint32_t; 2];
-            p0 = S0.offset(
-                ((xl & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
-                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
-                    as isize,
-            );
-            p1 = S1.offset(
-                ((xh & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
-                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
-                    as isize,
-            );
-            k = 0 as libc::c_int as size_t;
-            while k < 2 as libc::c_int as libc::c_ulong {
-                let mut x: uint64_t = 0;
-                let mut s0: uint64_t = 0;
-                let mut s1: uint64_t = 0;
-                s0 = (((*p0.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
-                    << 32 as libc::c_int)
-                    .wrapping_add(
-                        (*p0.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
-                    );
-                s1 = (((*p1.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
-                    << 32 as libc::c_int)
-                    .wrapping_add(
-                        (*p1.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
-                    );
-                xl = (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize];
-                xh = (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize];
-                x = (xh as uint64_t).wrapping_mul(xl as libc::c_ulong);
-                x = (x as libc::c_ulong).wrapping_add(s0) as uint64_t as uint64_t;
-                x ^= s1;
-                (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize] = x as uint32_t;
-                (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize] =
-                    (x >> 32 as libc::c_int) as uint32_t;
-                if i != 0 as libc::c_int as libc::c_ulong
-                    && i != (6 as libc::c_int - 1 as libc::c_int) as libc::c_ulong
-                {
-                    (*S2.offset(w as isize))[0 as libc::c_int as usize] = x as uint32_t;
-                    (*S2.offset(w as isize))[1 as libc::c_int as usize] =
-                        (x >> 32 as libc::c_int) as uint32_t;
-                    w = w.wrapping_add(1);
-                    w;
-                }
-                k = k.wrapping_add(1);
-                k;
-            }
-            j = j.wrapping_add(1);
-            j;
-        }
-        i = i.wrapping_add(1);
-        i;
-    }
-    (*ctx).S0 = S2;
-    (*ctx).S1 = S0;
-    (*ctx).S2 = S1;
-    (*ctx).w = w
-        & (((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int - 1 as libc::c_int)
-            as libc::c_ulong;
-}
-
-unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t, mut r: size_t) {
-    let mut X: [uint32_t; 16] = [0; 16];
-    let mut r1: size_t = 0;
-    let mut i: size_t = 0;
-    r1 = (128 as libc::c_int as libc::c_ulong)
-        .wrapping_mul(r)
-        .wrapping_div((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong);
-    blkcpy(
-        X.as_mut_ptr(),
-        &mut *B.offset(
-            r1.wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                .wrapping_mul(
-                    ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-                        .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-                ) as isize,
-        ),
-        ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-            .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-    );
-    i = 0 as libc::c_int as size_t;
-    while i < r1 {
-        if r1 > 1 as libc::c_int as libc::c_ulong {
-            blkxor(
-                X.as_mut_ptr(),
-                &mut *B.offset(
-                    i.wrapping_mul(
-                        ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-                            .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-                    ) as isize,
-                ),
-                ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-                    .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-            );
-        }
-        pwxform(X.as_mut_ptr(), ctx);
-        blkcpy(
-            &mut *B.offset(
-                i.wrapping_mul(
-                    ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-                        .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-                ) as isize,
-            ),
-            X.as_mut_ptr(),
-            ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-                .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
-    i = r1
-        .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-        .wrapping_mul((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
-        .wrapping_div(64 as libc::c_int as libc::c_ulong);
-    salsa20(
-        &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-        2 as libc::c_int as uint32_t,
-    );
-    i = i.wrapping_add(1);
-    i;
-    while i < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        blkxor(
-            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            &mut *B.offset(
-                i.wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                    .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-            ),
-            16 as libc::c_int as size_t,
-        );
-        salsa20(
-            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            2 as libc::c_int as uint32_t,
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
-}
-
-unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
-    let mut X: *const uint32_t = &*B.offset(
-        (2 as libc::c_int as libc::c_ulong)
-            .wrapping_mul(r)
-            .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-    ) as *const uint32_t;
-    return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
-        .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
-}
-
-unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
-    let mut y: uint64_t = 0;
-    loop {
-        y = x & x.wrapping_sub(1 as libc::c_int as libc::c_ulong);
-        if !(y != 0) {
-            break;
-        }
-        x = y;
-    }
-    return x;
-}
-
-unsafe fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
-    let mut n: uint64_t = p2floor(i);
-    return (x & n.wrapping_sub(1 as libc::c_int as libc::c_ulong)).wrapping_add(i.wrapping_sub(n));
-}
-
-unsafe fn smix1(
-    mut B: *mut uint32_t,
-    mut r: size_t,
-    mut N: uint64_t,
-    mut flags: yescrypt_flags_t,
-    mut V: *mut uint32_t,
-    mut NROM: uint64_t,
-    mut VROM: *const uint32_t,
-    mut XY: *mut uint32_t,
-    mut ctx: *mut pwxform_ctx_t,
-) {
-    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
-    let mut X: *mut uint32_t = XY;
-    let mut Y: *mut uint32_t = &mut *XY.offset(s as isize) as *mut uint32_t;
-    let mut i: uint64_t = 0;
-    let mut j: uint64_t = 0;
-    let mut k: size_t = 0;
-    k = 0 as libc::c_int as size_t;
-    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        i = 0 as libc::c_int as uint64_t;
-        while i < 16 as libc::c_int as libc::c_ulong {
-            *X.offset(
-                k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                    .wrapping_add(i) as isize,
-            ) = le32dec(
-                &mut *B.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(
-                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
-                        ) as isize,
-                ) as *mut uint32_t as *const libc::c_void,
-            );
-            i = i.wrapping_add(1);
-            i;
-        }
-        k = k.wrapping_add(1);
-        k;
-    }
-    i = 0 as libc::c_int as uint64_t;
-    while i < N {
-        blkcpy(&mut *V.offset(i.wrapping_mul(s) as isize), X, s);
-        if !VROM.is_null() && i == 0 as libc::c_int as libc::c_ulong {
-            blkxor(
-                X,
-                &*VROM.offset(
-                    NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                        .wrapping_mul(s) as isize,
-                ),
-                s,
-            );
-        } else if !VROM.is_null() && i & 1 as libc::c_int as libc::c_ulong != 0 {
-            j = integerify(X, r) & NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong);
-            blkxor(X, &*VROM.offset(j.wrapping_mul(s) as isize), s);
-        } else if flags & 0x2 as libc::c_int as libc::c_uint != 0
-            && i > 1 as libc::c_int as libc::c_ulong
-        {
-            j = wrap(integerify(X, r), i);
-            blkxor(X, &mut *V.offset(j.wrapping_mul(s) as isize), s);
-        }
-        if !ctx.is_null() {
-            blockmix_pwxform(X, ctx, r);
-        } else {
-            blockmix_salsa8(X, Y, r);
-        }
-        i = i.wrapping_add(1);
-        i;
-    }
-    k = 0 as libc::c_int as size_t;
-    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        i = 0 as libc::c_int as uint64_t;
-        while i < 16 as libc::c_int as libc::c_ulong {
-            le32enc(
-                &mut *B.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(
-                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
-                        ) as isize,
-                ) as *mut uint32_t as *mut libc::c_void,
-                *X.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(i) as isize,
-                ),
-            );
-            i = i.wrapping_add(1);
-            i;
-        }
-        k = k.wrapping_add(1);
-        k;
-    }
-}
-
-unsafe fn smix2(
-    mut B: *mut uint32_t,
-    mut r: size_t,
-    mut N: uint64_t,
-    mut Nloop: uint64_t,
-    mut flags: yescrypt_flags_t,
-    mut V: *mut uint32_t,
-    mut NROM: uint64_t,
-    mut VROM: *const uint32_t,
-    mut XY: *mut uint32_t,
-    mut ctx: *mut pwxform_ctx_t,
-) {
-    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
-    let mut X: *mut uint32_t = XY;
-    let mut Y: *mut uint32_t = &mut *XY.offset(s as isize) as *mut uint32_t;
-    let mut i: uint64_t = 0;
-    let mut j: uint64_t = 0;
-    let mut k: size_t = 0;
-    k = 0 as libc::c_int as size_t;
-    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        i = 0 as libc::c_int as uint64_t;
-        while i < 16 as libc::c_int as libc::c_ulong {
-            *X.offset(
-                k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                    .wrapping_add(i) as isize,
-            ) = le32dec(
-                &mut *B.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(
-                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
-                        ) as isize,
-                ) as *mut uint32_t as *const libc::c_void,
-            );
-            i = i.wrapping_add(1);
-            i;
-        }
-        k = k.wrapping_add(1);
-        k;
-    }
-    i = 0 as libc::c_int as uint64_t;
-    while i < Nloop {
-        if !VROM.is_null() && i & 1 as libc::c_int as libc::c_ulong != 0 {
-            j = integerify(X, r) & NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong);
-            blkxor(X, &*VROM.offset(j.wrapping_mul(s) as isize), s);
-        } else {
-            j = integerify(X, r) & N.wrapping_sub(1 as libc::c_int as libc::c_ulong);
-            blkxor(X, &mut *V.offset(j.wrapping_mul(s) as isize), s);
-            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-                blkcpy(&mut *V.offset(j.wrapping_mul(s) as isize), X, s);
-            }
-        }
-        if !ctx.is_null() {
-            blockmix_pwxform(X, ctx, r);
-        } else {
-            blockmix_salsa8(X, Y, r);
-        }
-        i = i.wrapping_add(1);
-        i;
-    }
-    k = 0 as libc::c_int as size_t;
-    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
-        i = 0 as libc::c_int as uint64_t;
-        while i < 16 as libc::c_int as libc::c_ulong {
-            le32enc(
-                &mut *B.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(
-                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
-                        ) as isize,
-                ) as *mut uint32_t as *mut libc::c_void,
-                *X.offset(
-                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
-                        .wrapping_add(i) as isize,
-                ),
-            );
-            i = i.wrapping_add(1);
-            i;
-        }
-        k = k.wrapping_add(1);
-        k;
-    }
-}
-
-unsafe fn smix(
-    mut B: *mut uint32_t,
-    mut r: size_t,
-    mut N: uint64_t,
-    mut p: uint32_t,
-    mut t: uint32_t,
-    mut flags: yescrypt_flags_t,
-    mut V: *mut uint32_t,
-    mut NROM: uint64_t,
-    mut VROM: *const uint32_t,
-    mut XY: *mut uint32_t,
-    mut ctx: *mut pwxform_ctx_t,
-    mut passwd: *mut uint8_t,
-) {
-    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
-    let mut Nchunk: uint64_t = 0;
-    let mut Nloop_all: uint64_t = 0;
-    let mut Nloop_rw: uint64_t = 0;
-    let mut Vchunk: uint64_t = 0;
-    let mut i: uint32_t = 0;
-    Nchunk = N.wrapping_div(p as libc::c_ulong);
-    Nloop_all = Nchunk;
-    if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-        if t <= 1 as libc::c_int as libc::c_uint {
-            if t != 0 {
-                Nloop_all = (Nloop_all as libc::c_ulong)
-                    .wrapping_mul(2 as libc::c_int as libc::c_ulong)
-                    as uint64_t as uint64_t;
-            }
-            Nloop_all = Nloop_all
-                .wrapping_add(2 as libc::c_int as libc::c_ulong)
-                .wrapping_div(3 as libc::c_int as libc::c_ulong);
-        } else {
-            Nloop_all = (Nloop_all as libc::c_ulong)
-                .wrapping_mul(t.wrapping_sub(1 as libc::c_int as libc::c_uint) as libc::c_ulong)
-                as uint64_t as uint64_t;
-        }
-    } else if t != 0 {
-        if t == 1 as libc::c_int as libc::c_uint {
-            Nloop_all = (Nloop_all as libc::c_ulong).wrapping_add(
-                Nloop_all
-                    .wrapping_add(1 as libc::c_int as libc::c_ulong)
-                    .wrapping_div(2 as libc::c_int as libc::c_ulong),
-            ) as uint64_t as uint64_t;
-        }
-        Nloop_all =
-            (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as uint64_t as uint64_t;
-    }
-    Nloop_rw = 0 as libc::c_int as uint64_t;
-    if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
-        Nloop_rw = Nloop_all;
-    } else if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-        Nloop_rw = Nloop_all.wrapping_div(p as libc::c_ulong);
-    }
-    Nchunk &= !(1 as libc::c_int as uint64_t);
-    Nloop_all = Nloop_all.wrapping_add(1);
-    Nloop_all;
-    Nloop_all &= !(1 as libc::c_int as uint64_t);
-    Nloop_rw = Nloop_rw.wrapping_add(1);
-    Nloop_rw;
-    Nloop_rw &= !(1 as libc::c_int as uint64_t);
-    i = 0 as libc::c_int as uint32_t;
-    Vchunk = 0 as libc::c_int as uint64_t;
-    while i < p {
-        let mut Np: uint64_t = if i < p.wrapping_sub(1 as libc::c_int as libc::c_uint) {
-            Nchunk
-        } else {
-            N.wrapping_sub(Vchunk)
-        };
-        let mut Bp: *mut uint32_t =
-            &mut *B.offset((i as libc::c_ulong).wrapping_mul(s) as isize) as *mut uint32_t;
-        let mut Vp: *mut uint32_t =
-            &mut *V.offset(Vchunk.wrapping_mul(s) as isize) as *mut uint32_t;
-        let mut ctx_i: *mut pwxform_ctx_t = 0 as *mut pwxform_ctx_t;
-        if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-            ctx_i = &mut *ctx.offset(i as isize) as *mut pwxform_ctx_t;
-            smix1(
-                Bp,
-                1 as libc::c_int as size_t,
-                (3 as libc::c_int
-                    * ((1 as libc::c_int) << 8 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int
-                    / 128 as libc::c_int) as uint64_t,
-                0 as libc::c_int as yescrypt_flags_t,
-                (*ctx_i).S,
-                0 as libc::c_int as uint64_t,
-                0 as *const uint32_t,
-                XY,
-                0 as *mut pwxform_ctx_t,
-            );
-            (*ctx_i).S2 = (*ctx_i).S as *mut [uint32_t; 2];
-            (*ctx_i).S1 = ((*ctx_i).S2)
-                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
-            (*ctx_i).S0 = ((*ctx_i).S1)
-                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
-            (*ctx_i).w = 0 as libc::c_int as size_t;
-            if i == 0 as libc::c_int as libc::c_uint {
-                HMAC_SHA256_Buf(
-                    Bp.offset(s.wrapping_sub(16 as libc::c_int as libc::c_ulong) as isize)
-                        as *const libc::c_void,
-                    64 as libc::c_int as size_t,
-                    passwd as *const libc::c_void,
-                    32 as libc::c_int as size_t,
-                    passwd,
-                );
-            }
-        }
-        smix1(Bp, r, Np, flags, Vp, NROM, VROM, XY, ctx_i);
-        smix2(
-            Bp,
-            r,
-            p2floor(Np),
-            Nloop_rw,
-            flags,
-            Vp,
-            NROM,
-            VROM,
-            XY,
-            ctx_i,
-        );
-        i = i.wrapping_add(1);
-        i;
-        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t as uint64_t;
-    }
-    i = 0 as libc::c_int as uint32_t;
-    while i < p {
-        let mut Bp_0: *mut uint32_t =
-            &mut *B.offset((i as libc::c_ulong).wrapping_mul(s) as isize) as *mut uint32_t;
-        smix2(
-            Bp_0,
-            r,
-            N,
-            Nloop_all.wrapping_sub(Nloop_rw),
-            flags & !(0x2 as libc::c_int) as libc::c_uint,
-            V,
-            NROM,
-            VROM,
-            XY,
-            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-                &mut *ctx.offset(i as isize)
-            } else {
-                0 as *mut pwxform_ctx_t
-            },
-        );
-        i = i.wrapping_add(1);
-        i;
-    }
 }
 
 unsafe fn yescrypt_kdf_body(
@@ -1743,4 +936,491 @@ pub unsafe fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -> libc::c_i
 
 pub unsafe fn yescrypt_free_local(_local: *mut yescrypt_local_t) -> libc::c_int {
     return 0 as libc::c_int;
+}
+
+unsafe fn pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t) {
+    let mut X: *mut [[uint32_t; 2]; 2] = B as *mut [[uint32_t; 2]; 2];
+    let mut S0: *mut [uint32_t; 2] = (*ctx).S0;
+    let mut S1: *mut [uint32_t; 2] = (*ctx).S1;
+    let mut S2: *mut [uint32_t; 2] = (*ctx).S2;
+    let mut w: size_t = (*ctx).w;
+    let mut i: size_t = 0;
+    let mut j: size_t = 0;
+    let mut k: size_t = 0;
+    i = 0 as libc::c_int as size_t;
+    while i < 6 as libc::c_int as libc::c_ulong {
+        j = 0 as libc::c_int as size_t;
+        while j < 4 as libc::c_int as libc::c_ulong {
+            let mut xl: uint32_t =
+                (*X.offset(j as isize))[0 as libc::c_int as usize][0 as libc::c_int as usize];
+            let mut xh: uint32_t =
+                (*X.offset(j as isize))[0 as libc::c_int as usize][1 as libc::c_int as usize];
+            let mut p0: *mut [uint32_t; 2] = 0 as *mut [uint32_t; 2];
+            let mut p1: *mut [uint32_t; 2] = 0 as *mut [uint32_t; 2];
+            p0 = S0.offset(
+                ((xl & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
+                    * 2 as libc::c_int
+                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
+                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
+                    as isize,
+            );
+            p1 = S1.offset(
+                ((xh & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
+                    * 2 as libc::c_int
+                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
+                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
+                    as isize,
+            );
+            k = 0 as libc::c_int as size_t;
+            while k < 2 as libc::c_int as libc::c_ulong {
+                let mut x: uint64_t = 0;
+                let mut s0: uint64_t = 0;
+                let mut s1: uint64_t = 0;
+                s0 = (((*p0.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
+                    << 32 as libc::c_int)
+                    .wrapping_add(
+                        (*p0.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
+                    );
+                s1 = (((*p1.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
+                    << 32 as libc::c_int)
+                    .wrapping_add(
+                        (*p1.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
+                    );
+                xl = (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize];
+                xh = (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize];
+                x = (xh as uint64_t).wrapping_mul(xl as libc::c_ulong);
+                x = (x as libc::c_ulong).wrapping_add(s0) as uint64_t as uint64_t;
+                x ^= s1;
+                (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize] = x as uint32_t;
+                (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize] =
+                    (x >> 32 as libc::c_int) as uint32_t;
+                if i != 0 as libc::c_int as libc::c_ulong
+                    && i != (6 as libc::c_int - 1 as libc::c_int) as libc::c_ulong
+                {
+                    (*S2.offset(w as isize))[0 as libc::c_int as usize] = x as uint32_t;
+                    (*S2.offset(w as isize))[1 as libc::c_int as usize] =
+                        (x >> 32 as libc::c_int) as uint32_t;
+                    w = w.wrapping_add(1);
+                    w;
+                }
+                k = k.wrapping_add(1);
+                k;
+            }
+            j = j.wrapping_add(1);
+            j;
+        }
+        i = i.wrapping_add(1);
+        i;
+    }
+    (*ctx).S0 = S2;
+    (*ctx).S1 = S0;
+    (*ctx).S2 = S1;
+    (*ctx).w = w
+        & (((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int - 1 as libc::c_int)
+            as libc::c_ulong;
+}
+
+unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut pwxform_ctx_t, mut r: size_t) {
+    let mut X: [uint32_t; 16] = [0; 16];
+    let mut r1: size_t = 0;
+    let mut i: size_t = 0;
+    r1 = (128 as libc::c_int as libc::c_ulong)
+        .wrapping_mul(r)
+        .wrapping_div((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong);
+    blkcpy(
+        X.as_mut_ptr(),
+        &mut *B.offset(
+            r1.wrapping_sub(1 as libc::c_int as libc::c_ulong)
+                .wrapping_mul(
+                    ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+                        .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+                ) as isize,
+        ),
+        ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+            .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+    );
+    i = 0 as libc::c_int as size_t;
+    while i < r1 {
+        if r1 > 1 as libc::c_int as libc::c_ulong {
+            blkxor(
+                X.as_mut_ptr(),
+                &mut *B.offset(
+                    i.wrapping_mul(
+                        ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+                            .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+                    ) as isize,
+                ),
+                ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+                    .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+            );
+        }
+        pwxform(X.as_mut_ptr(), ctx);
+        blkcpy(
+            &mut *B.offset(
+                i.wrapping_mul(
+                    ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+                        .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+                ) as isize,
+            ),
+            X.as_mut_ptr(),
+            ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+                .wrapping_div(::core::mem::size_of::<uint32_t>() as libc::c_ulong),
+        );
+        i = i.wrapping_add(1);
+        i;
+    }
+    i = r1
+        .wrapping_sub(1 as libc::c_int as libc::c_ulong)
+        .wrapping_mul((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
+        .wrapping_div(64 as libc::c_int as libc::c_ulong);
+    salsa20::salsa20(
+        &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
+        2 as libc::c_int as uint32_t,
+    );
+    i = i.wrapping_add(1);
+    i;
+    while i < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
+        blkxor(
+            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
+            &mut *B.offset(
+                i.wrapping_sub(1 as libc::c_int as libc::c_ulong)
+                    .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
+            ),
+            16 as libc::c_int as size_t,
+        );
+        salsa20::salsa20(
+            &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
+            2 as libc::c_int as uint32_t,
+        );
+        i = i.wrapping_add(1);
+        i;
+    }
+}
+
+unsafe fn smix(
+    mut B: *mut uint32_t,
+    mut r: size_t,
+    mut N: uint64_t,
+    mut p: uint32_t,
+    mut t: uint32_t,
+    mut flags: yescrypt_flags_t,
+    mut V: *mut uint32_t,
+    mut NROM: uint64_t,
+    mut VROM: *const uint32_t,
+    mut XY: *mut uint32_t,
+    mut ctx: *mut pwxform_ctx_t,
+    mut passwd: *mut uint8_t,
+) {
+    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
+    let mut Nchunk: uint64_t = 0;
+    let mut Nloop_all: uint64_t = 0;
+    let mut Nloop_rw: uint64_t = 0;
+    let mut Vchunk: uint64_t = 0;
+    let mut i: uint32_t = 0;
+    Nchunk = N.wrapping_div(p as libc::c_ulong);
+    Nloop_all = Nchunk;
+    if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+        if t <= 1 as libc::c_int as libc::c_uint {
+            if t != 0 {
+                Nloop_all = (Nloop_all as libc::c_ulong)
+                    .wrapping_mul(2 as libc::c_int as libc::c_ulong)
+                    as uint64_t as uint64_t;
+            }
+            Nloop_all = Nloop_all
+                .wrapping_add(2 as libc::c_int as libc::c_ulong)
+                .wrapping_div(3 as libc::c_int as libc::c_ulong);
+        } else {
+            Nloop_all = (Nloop_all as libc::c_ulong)
+                .wrapping_mul(t.wrapping_sub(1 as libc::c_int as libc::c_uint) as libc::c_ulong)
+                as uint64_t as uint64_t;
+        }
+    } else if t != 0 {
+        if t == 1 as libc::c_int as libc::c_uint {
+            Nloop_all = (Nloop_all as libc::c_ulong).wrapping_add(
+                Nloop_all
+                    .wrapping_add(1 as libc::c_int as libc::c_ulong)
+                    .wrapping_div(2 as libc::c_int as libc::c_ulong),
+            ) as uint64_t as uint64_t;
+        }
+        Nloop_all =
+            (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as uint64_t as uint64_t;
+    }
+    Nloop_rw = 0 as libc::c_int as uint64_t;
+    if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
+        Nloop_rw = Nloop_all;
+    } else if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+        Nloop_rw = Nloop_all.wrapping_div(p as libc::c_ulong);
+    }
+    Nchunk &= !(1 as libc::c_int as uint64_t);
+    Nloop_all = Nloop_all.wrapping_add(1);
+    Nloop_all;
+    Nloop_all &= !(1 as libc::c_int as uint64_t);
+    Nloop_rw = Nloop_rw.wrapping_add(1);
+    Nloop_rw;
+    Nloop_rw &= !(1 as libc::c_int as uint64_t);
+    i = 0 as libc::c_int as uint32_t;
+    Vchunk = 0 as libc::c_int as uint64_t;
+    while i < p {
+        let mut Np: uint64_t = if i < p.wrapping_sub(1 as libc::c_int as libc::c_uint) {
+            Nchunk
+        } else {
+            N.wrapping_sub(Vchunk)
+        };
+        let mut Bp: *mut uint32_t =
+            &mut *B.offset((i as libc::c_ulong).wrapping_mul(s) as isize) as *mut uint32_t;
+        let mut Vp: *mut uint32_t =
+            &mut *V.offset(Vchunk.wrapping_mul(s) as isize) as *mut uint32_t;
+        let mut ctx_i: *mut pwxform_ctx_t = 0 as *mut pwxform_ctx_t;
+        if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+            ctx_i = &mut *ctx.offset(i as isize) as *mut pwxform_ctx_t;
+            smix1(
+                Bp,
+                1 as libc::c_int as size_t,
+                (3 as libc::c_int
+                    * ((1 as libc::c_int) << 8 as libc::c_int)
+                    * 2 as libc::c_int
+                    * 8 as libc::c_int
+                    / 128 as libc::c_int) as uint64_t,
+                0 as libc::c_int as yescrypt_flags_t,
+                (*ctx_i).S,
+                0 as libc::c_int as uint64_t,
+                0 as *const uint32_t,
+                XY,
+                0 as *mut pwxform_ctx_t,
+            );
+            (*ctx_i).S2 = (*ctx_i).S as *mut [uint32_t; 2];
+            (*ctx_i).S1 = ((*ctx_i).S2)
+                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
+            (*ctx_i).S0 = ((*ctx_i).S1)
+                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
+            (*ctx_i).w = 0 as libc::c_int as size_t;
+            if i == 0 as libc::c_int as libc::c_uint {
+                HMAC_SHA256_Buf(
+                    Bp.offset(s.wrapping_sub(16 as libc::c_int as libc::c_ulong) as isize)
+                        as *const libc::c_void,
+                    64 as libc::c_int as size_t,
+                    passwd as *const libc::c_void,
+                    32 as libc::c_int as size_t,
+                    passwd,
+                );
+            }
+        }
+        smix1(Bp, r, Np, flags, Vp, NROM, VROM, XY, ctx_i);
+        smix2(
+            Bp,
+            r,
+            p2floor(Np),
+            Nloop_rw,
+            flags,
+            Vp,
+            NROM,
+            VROM,
+            XY,
+            ctx_i,
+        );
+        i = i.wrapping_add(1);
+        i;
+        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t as uint64_t;
+    }
+    i = 0 as libc::c_int as uint32_t;
+    while i < p {
+        let mut Bp_0: *mut uint32_t =
+            &mut *B.offset((i as libc::c_ulong).wrapping_mul(s) as isize) as *mut uint32_t;
+        smix2(
+            Bp_0,
+            r,
+            N,
+            Nloop_all.wrapping_sub(Nloop_rw),
+            flags & !(0x2 as libc::c_int) as libc::c_uint,
+            V,
+            NROM,
+            VROM,
+            XY,
+            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+                &mut *ctx.offset(i as isize)
+            } else {
+                0 as *mut pwxform_ctx_t
+            },
+        );
+        i = i.wrapping_add(1);
+        i;
+    }
+}
+
+unsafe fn smix1(
+    mut B: *mut uint32_t,
+    mut r: size_t,
+    mut N: uint64_t,
+    mut flags: yescrypt_flags_t,
+    mut V: *mut uint32_t,
+    mut NROM: uint64_t,
+    mut VROM: *const uint32_t,
+    mut XY: *mut uint32_t,
+    mut ctx: *mut pwxform_ctx_t,
+) {
+    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
+    let mut X: *mut uint32_t = XY;
+    let mut Y: *mut uint32_t = &mut *XY.offset(s as isize) as *mut uint32_t;
+    let mut i: uint64_t = 0;
+    let mut j: uint64_t = 0;
+    let mut k: size_t = 0;
+    k = 0 as libc::c_int as size_t;
+    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
+        i = 0 as libc::c_int as uint64_t;
+        while i < 16 as libc::c_int as libc::c_ulong {
+            *X.offset(
+                k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                    .wrapping_add(i) as isize,
+            ) = le32dec(
+                &mut *B.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(
+                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
+                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
+                        ) as isize,
+                ) as *mut uint32_t as *const libc::c_void,
+            );
+            i = i.wrapping_add(1);
+            i;
+        }
+        k = k.wrapping_add(1);
+        k;
+    }
+    i = 0 as libc::c_int as uint64_t;
+    while i < N {
+        blkcpy(&mut *V.offset(i.wrapping_mul(s) as isize), X, s);
+        if !VROM.is_null() && i == 0 as libc::c_int as libc::c_ulong {
+            blkxor(
+                X,
+                &*VROM.offset(
+                    NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong)
+                        .wrapping_mul(s) as isize,
+                ),
+                s,
+            );
+        } else if !VROM.is_null() && i & 1 as libc::c_int as libc::c_ulong != 0 {
+            j = integerify(X, r) & NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong);
+            blkxor(X, &*VROM.offset(j.wrapping_mul(s) as isize), s);
+        } else if flags & 0x2 as libc::c_int as libc::c_uint != 0
+            && i > 1 as libc::c_int as libc::c_ulong
+        {
+            j = wrap(integerify(X, r), i);
+            blkxor(X, &mut *V.offset(j.wrapping_mul(s) as isize), s);
+        }
+        if !ctx.is_null() {
+            blockmix_pwxform(X, ctx, r);
+        } else {
+            salsa20::blockmix_salsa8(X, Y, r);
+        }
+        i = i.wrapping_add(1);
+        i;
+    }
+    k = 0 as libc::c_int as size_t;
+    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
+        i = 0 as libc::c_int as uint64_t;
+        while i < 16 as libc::c_int as libc::c_ulong {
+            le32enc(
+                &mut *B.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(
+                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
+                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
+                        ) as isize,
+                ) as *mut uint32_t as *mut libc::c_void,
+                *X.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(i) as isize,
+                ),
+            );
+            i = i.wrapping_add(1);
+            i;
+        }
+        k = k.wrapping_add(1);
+        k;
+    }
+}
+
+unsafe fn smix2(
+    mut B: *mut uint32_t,
+    mut r: size_t,
+    mut N: uint64_t,
+    mut Nloop: uint64_t,
+    mut flags: yescrypt_flags_t,
+    mut V: *mut uint32_t,
+    mut NROM: uint64_t,
+    mut VROM: *const uint32_t,
+    mut XY: *mut uint32_t,
+    mut ctx: *mut pwxform_ctx_t,
+) {
+    let mut s: size_t = (32 as libc::c_int as libc::c_ulong).wrapping_mul(r);
+    let mut X: *mut uint32_t = XY;
+    let mut Y: *mut uint32_t = &mut *XY.offset(s as isize) as *mut uint32_t;
+    let mut i: uint64_t = 0;
+    let mut j: uint64_t = 0;
+    let mut k: size_t = 0;
+    k = 0 as libc::c_int as size_t;
+    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
+        i = 0 as libc::c_int as uint64_t;
+        while i < 16 as libc::c_int as libc::c_ulong {
+            *X.offset(
+                k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                    .wrapping_add(i) as isize,
+            ) = le32dec(
+                &mut *B.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(
+                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
+                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
+                        ) as isize,
+                ) as *mut uint32_t as *const libc::c_void,
+            );
+            i = i.wrapping_add(1);
+            i;
+        }
+        k = k.wrapping_add(1);
+        k;
+    }
+    i = 0 as libc::c_int as uint64_t;
+    while i < Nloop {
+        if !VROM.is_null() && i & 1 as libc::c_int as libc::c_ulong != 0 {
+            j = integerify(X, r) & NROM.wrapping_sub(1 as libc::c_int as libc::c_ulong);
+            blkxor(X, &*VROM.offset(j.wrapping_mul(s) as isize), s);
+        } else {
+            j = integerify(X, r) & N.wrapping_sub(1 as libc::c_int as libc::c_ulong);
+            blkxor(X, &mut *V.offset(j.wrapping_mul(s) as isize), s);
+            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+                blkcpy(&mut *V.offset(j.wrapping_mul(s) as isize), X, s);
+            }
+        }
+        if !ctx.is_null() {
+            blockmix_pwxform(X, ctx, r);
+        } else {
+            salsa20::blockmix_salsa8(X, Y, r);
+        }
+        i = i.wrapping_add(1);
+        i;
+    }
+    k = 0 as libc::c_int as size_t;
+    while k < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
+        i = 0 as libc::c_int as uint64_t;
+        while i < 16 as libc::c_int as libc::c_ulong {
+            le32enc(
+                &mut *B.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(
+                            i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
+                                .wrapping_rem(16 as libc::c_int as libc::c_ulong),
+                        ) as isize,
+                ) as *mut uint32_t as *mut libc::c_void,
+                *X.offset(
+                    k.wrapping_mul(16 as libc::c_int as libc::c_ulong)
+                        .wrapping_add(i) as isize,
+                ),
+            );
+            i = i.wrapping_add(1);
+            i;
+        }
+        k = k.wrapping_add(1);
+        k;
+    }
 }
