@@ -11,12 +11,12 @@
 use crate::{
     encrypt_dir_t,
     sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
-    size_t, uint32_t, uint64_t, uint8_t, Binary, DEC,
+    size_t, uint32_t, uint64_t, Binary, DEC,
 };
 
 static mut itoa64: &'static [u8] =
     b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0";
-static mut atoi64_partial: [uint8_t; 77] = [
+static mut atoi64_partial: [u8; 77] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 64, 64, 64, 64, 64, 64, 64, 12, 13, 14, 15, 16, 17, 18,
     19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 64, 64, 64, 64, 64,
     64, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
@@ -52,7 +52,7 @@ pub(crate) unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
 }
 
 #[inline]
-pub(crate) unsafe fn atoi64(mut src: uint8_t) -> uint32_t {
+pub(crate) unsafe fn atoi64(mut src: u8) -> uint32_t {
     if src as libc::c_int >= '.' as i32 && src as libc::c_int <= 'z' as i32 {
         return atoi64_partial[(src as libc::c_int - '.' as i32) as usize] as uint32_t;
     }
@@ -60,11 +60,11 @@ pub(crate) unsafe fn atoi64(mut src: uint8_t) -> uint32_t {
 }
 
 pub(crate) unsafe fn decode64(
-    mut dst: *mut uint8_t,
+    mut dst: *mut u8,
     mut dstlen: *mut size_t,
-    mut src: *const uint8_t,
+    mut src: *const u8,
     mut srclen: size_t,
-) -> *const uint8_t {
+) -> *const u8 {
     let mut current_block: u64;
     let mut dstpos: size_t = 0 as libc::c_int as size_t;
     's_3: loop {
@@ -111,7 +111,7 @@ pub(crate) unsafe fn decode64(
                 }
                 let fresh9 = dst;
                 dst = dst.offset(1);
-                *fresh9 = value as uint8_t;
+                *fresh9 = value as u8;
                 value >>= 8 as libc::c_int;
                 bits = (bits as libc::c_uint).wrapping_sub(8 as libc::c_int as libc::c_uint)
                     as uint32_t as uint32_t;
@@ -141,14 +141,14 @@ pub(crate) unsafe fn decode64(
         _ => {}
     }
     *dstlen = 0 as libc::c_int as size_t;
-    return 0 as *const uint8_t;
+    return 0 as *const u8;
 }
 
 pub(crate) unsafe fn decode64_uint32(
     mut dst: *mut uint32_t,
-    mut src: *const uint8_t,
+    mut src: *const u8,
     mut min: uint32_t,
-) -> *const uint8_t {
+) -> *const u8 {
     let mut current_block: u64;
     let mut start: uint32_t = 0 as libc::c_int as uint32_t;
     let mut end: uint32_t = 47 as libc::c_int as uint32_t;
@@ -202,14 +202,14 @@ pub(crate) unsafe fn decode64_uint32(
         }
     }
     *dst = 0 as libc::c_int as uint32_t;
-    return 0 as *const uint8_t;
+    return 0 as *const u8;
 }
 
 pub(crate) unsafe fn decode64_uint32_fixed(
     mut dst: *mut uint32_t,
     mut dstbits: uint32_t,
-    mut src: *const uint8_t,
-) -> *const uint8_t {
+    mut src: *const u8,
+) -> *const u8 {
     let mut bits: uint32_t = 0;
     *dst = 0 as libc::c_int as uint32_t;
     bits = 0 as libc::c_int as uint32_t;
@@ -219,7 +219,7 @@ pub(crate) unsafe fn decode64_uint32_fixed(
         let mut c: uint32_t = atoi64(*fresh6);
         if c > 63 as libc::c_int as libc::c_uint {
             *dst = 0 as libc::c_int as uint32_t;
-            return 0 as *const uint8_t;
+            return 0 as *const u8;
         }
         *dst |= c << bits;
         bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
@@ -229,15 +229,15 @@ pub(crate) unsafe fn decode64_uint32_fixed(
 }
 
 pub(crate) unsafe fn encode64(
-    mut dst: *mut uint8_t,
+    mut dst: *mut u8,
     mut dstlen: size_t,
-    mut src: *const uint8_t,
+    mut src: *const u8,
     mut srclen: size_t,
-) -> *mut uint8_t {
+) -> *mut u8 {
     let mut i: size_t = 0;
     i = 0 as libc::c_int as size_t;
     while i < srclen {
-        let mut dnext: *mut uint8_t = 0 as *mut uint8_t;
+        let mut dnext: *mut u8 = 0 as *mut u8;
         let mut value: uint32_t = 0 as libc::c_int as uint32_t;
         let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
         loop {
@@ -251,30 +251,30 @@ pub(crate) unsafe fn encode64(
         }
         dnext = encode64_uint32_fixed(dst, dstlen, value, bits);
         if dnext.is_null() {
-            return 0 as *mut uint8_t;
+            return 0 as *mut u8;
         }
         dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as u64);
         dst = dnext;
     }
     if dstlen < 1 as libc::c_int as libc::c_ulong {
-        return 0 as *mut uint8_t;
+        return 0 as *mut u8;
     }
-    *dst = 0 as libc::c_int as uint8_t;
+    *dst = 0 as libc::c_int as u8;
     return dst;
 }
 
 pub(crate) unsafe fn encode64_uint32(
-    mut dst: *mut uint8_t,
+    mut dst: *mut u8,
     mut dstlen: size_t,
     mut src: uint32_t,
     mut min: uint32_t,
-) -> *mut uint8_t {
+) -> *mut u8 {
     let mut start: uint32_t = 0 as libc::c_int as uint32_t;
     let mut end: uint32_t = 47 as libc::c_int as uint32_t;
     let mut chars: uint32_t = 1 as libc::c_int as uint32_t;
     let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
     if src < min {
-        return 0 as *mut uint8_t;
+        return 0 as *mut u8;
     }
     src = (src as libc::c_uint).wrapping_sub(min) as uint32_t as uint32_t;
     loop {
@@ -286,7 +286,7 @@ pub(crate) unsafe fn encode64_uint32(
             break;
         }
         if start >= 63 as libc::c_int as libc::c_uint {
-            return 0 as *mut uint8_t;
+            return 0 as *mut u8;
         }
         start = end.wrapping_add(1 as libc::c_int as libc::c_uint);
         end = start.wrapping_add(
@@ -301,7 +301,7 @@ pub(crate) unsafe fn encode64_uint32(
             as uint32_t;
     }
     if dstlen <= chars as libc::c_ulong {
-        return 0 as *mut uint8_t;
+        return 0 as *mut u8;
     }
     let fresh0 = dst;
     dst = dst.offset(1);
@@ -317,21 +317,21 @@ pub(crate) unsafe fn encode64_uint32(
         dst = dst.offset(1);
         *fresh1 = itoa64[(src >> bits & 0x3f) as usize];
     }
-    *dst = 0 as libc::c_int as uint8_t;
+    *dst = 0 as libc::c_int as u8;
     return dst;
 }
 
 unsafe fn encode64_uint32_fixed(
-    mut dst: *mut uint8_t,
+    mut dst: *mut u8,
     mut dstlen: size_t,
     mut src: uint32_t,
     mut srcbits: uint32_t,
-) -> *mut uint8_t {
+) -> *mut u8 {
     let mut bits: uint32_t = 0;
     bits = 0 as libc::c_int as uint32_t;
     while bits < srcbits {
         if dstlen < 2 as libc::c_int as libc::c_ulong {
-            return 0 as *mut uint8_t;
+            return 0 as *mut u8;
         }
         let fresh4 = dst;
         dst = dst.offset(1);
@@ -343,9 +343,9 @@ unsafe fn encode64_uint32_fixed(
             as uint32_t;
     }
     if src != 0 || dstlen < 1 as libc::c_int as libc::c_ulong {
-        return 0 as *mut uint8_t;
+        return 0 as *mut u8;
     }
-    *dst = 0 as libc::c_int as uint8_t;
+    *dst = 0 as libc::c_int as u8;
     return dst;
 }
 
@@ -448,7 +448,7 @@ pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64
 
 #[inline]
 pub(crate) unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
-    let mut p: *const uint8_t = pp as *const uint8_t;
+    let mut p: *const u8 = pp as *const u8;
     return (*p.offset(0 as libc::c_int as isize) as uint32_t)
         .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
         .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 16 as libc::c_int)
@@ -457,14 +457,14 @@ pub(crate) unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
 
 #[inline]
 pub(crate) unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
-    let mut p: *mut uint8_t = pp as *mut uint8_t;
-    *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+    let mut p: *mut u8 = pp as *mut u8;
+    *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(1 as libc::c_int as isize) =
-        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(2 as libc::c_int as isize) =
-        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(3 as libc::c_int as isize) =
-        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
 }
 
 unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut size: size_t) {

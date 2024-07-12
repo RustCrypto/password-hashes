@@ -8,7 +8,7 @@
     unused_mut
 )]
 
-use crate::{size_t, uint32_t, uint64_t, uint8_t};
+use crate::{size_t, uint32_t, uint64_t};
 use libc::{memcpy, memset};
 
 #[derive(Copy, Clone)]
@@ -16,7 +16,7 @@ use libc::{memcpy, memset};
 pub struct SHA256_CTX {
     pub state: [uint32_t; 8],
     pub count: uint64_t,
-    pub buf: [uint8_t; 64],
+    pub buf: [u8; 64],
 }
 
 #[derive(Copy, Clone)]
@@ -29,13 +29,13 @@ pub struct HMAC_SHA256_CTX {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2RustUnnamed {
-    pub tmp8: [uint8_t; 96],
+    pub tmp8: [u8; 96],
     pub state: [uint32_t; 8],
 }
 
 #[inline]
 unsafe fn be32dec(mut pp: *const libc::c_void) -> uint32_t {
-    let mut p: *const uint8_t = pp as *const uint8_t;
+    let mut p: *const u8 = pp as *const u8;
     return (*p.offset(3 as libc::c_int as isize) as uint32_t)
         .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
         .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 16 as libc::c_int)
@@ -44,44 +44,44 @@ unsafe fn be32dec(mut pp: *const libc::c_void) -> uint32_t {
 
 #[inline]
 unsafe fn be32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
-    let mut p: *mut uint8_t = pp as *mut uint8_t;
-    *p.offset(3 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+    let mut p: *mut u8 = pp as *mut u8;
+    *p.offset(3 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(2 as libc::c_int as isize) =
-        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(1 as libc::c_int as isize) =
-        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(0 as libc::c_int as isize) =
-        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as u8;
 }
 
 #[inline]
 unsafe fn be64enc(mut pp: *mut libc::c_void, mut x: uint64_t) {
-    let mut p: *mut uint8_t = pp as *mut uint8_t;
-    *p.offset(7 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+    let mut p: *mut u8 = pp as *mut u8;
+    *p.offset(7 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(6 as libc::c_int as isize) =
-        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(5 as libc::c_int as isize) =
-        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(4 as libc::c_int as isize) =
-        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(3 as libc::c_int as isize) =
-        (x >> 32 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 32 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(2 as libc::c_int as isize) =
-        (x >> 40 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 40 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(1 as libc::c_int as isize) =
-        (x >> 48 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 48 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(0 as libc::c_int as isize) =
-        (x >> 56 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as uint8_t;
+        (x >> 56 as libc::c_int & 0xff as libc::c_int as libc::c_ulong) as u8;
 }
 
-unsafe fn be32enc_vect(mut dst: *mut uint8_t, mut src: *const uint32_t, mut len: size_t) {
+unsafe fn be32enc_vect(mut dst: *mut u8, mut src: *const uint32_t, mut len: size_t) {
     loop {
         be32enc(
-            &mut *dst.offset(0 as libc::c_int as isize) as *mut uint8_t as *mut libc::c_void,
+            &mut *dst.offset(0 as libc::c_int as isize) as *mut u8 as *mut libc::c_void,
             *src.offset(0 as libc::c_int as isize),
         );
         be32enc(
-            &mut *dst.offset(4 as libc::c_int as isize) as *mut uint8_t as *mut libc::c_void,
+            &mut *dst.offset(4 as libc::c_int as isize) as *mut u8 as *mut libc::c_void,
             *src.offset(1 as libc::c_int as isize),
         );
         src = src.offset(2 as libc::c_int as isize);
@@ -93,14 +93,12 @@ unsafe fn be32enc_vect(mut dst: *mut uint8_t, mut src: *const uint32_t, mut len:
     }
 }
 
-unsafe fn be32dec_vect(mut dst: *mut uint32_t, mut src: *const uint8_t, mut len: size_t) {
+unsafe fn be32dec_vect(mut dst: *mut uint32_t, mut src: *const u8, mut len: size_t) {
     loop {
-        *dst.offset(0 as libc::c_int as isize) = be32dec(&*src.offset(0 as libc::c_int as isize)
-            as *const uint8_t
-            as *const libc::c_void);
-        *dst.offset(1 as libc::c_int as isize) = be32dec(&*src.offset(4 as libc::c_int as isize)
-            as *const uint8_t
-            as *const libc::c_void);
+        *dst.offset(0 as libc::c_int as isize) =
+            be32dec(&*src.offset(0 as libc::c_int as isize) as *const u8 as *const libc::c_void);
+        *dst.offset(1 as libc::c_int as isize) =
+            be32dec(&*src.offset(4 as libc::c_int as isize) as *const u8 as *const libc::c_void);
         src = src.offset(8 as libc::c_int as isize);
         dst = dst.offset(2 as libc::c_int as isize);
         len = len.wrapping_sub(1);
@@ -179,7 +177,7 @@ static mut Krnd: [uint32_t; 64] = [
 
 unsafe fn SHA256_Transform(
     mut state: *mut uint32_t,
-    mut block: *const uint8_t,
+    mut block: *const u8,
     mut W: *mut uint32_t,
     mut S: *mut uint32_t,
 ) {
@@ -1655,71 +1653,71 @@ unsafe fn SHA256_Transform(
         as uint32_t as uint32_t;
 }
 
-static mut PAD: [uint8_t; 64] = [
-    0x80 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
-    0 as libc::c_int as uint8_t,
+static mut PAD: [u8; 64] = [
+    0x80 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
+    0 as libc::c_int as u8,
 ];
 
 unsafe fn SHA256_Pad(mut ctx: *mut SHA256_CTX, mut tmp32: *mut uint32_t) {
@@ -1727,13 +1725,13 @@ unsafe fn SHA256_Pad(mut ctx: *mut SHA256_CTX, mut tmp32: *mut uint32_t) {
     r = (*ctx).count as usize >> 3 & 0x3f;
     if r < 56 {
         memcpy(
-            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut uint8_t as *mut libc::c_void,
+            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut u8 as *mut libc::c_void,
             PAD.as_ptr() as *const libc::c_void,
             56usize.wrapping_sub(r),
         );
     } else {
         memcpy(
-            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut uint8_t as *mut libc::c_void,
+            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut u8 as *mut libc::c_void,
             PAD.as_ptr() as *const libc::c_void,
             64usize.wrapping_sub(r),
         );
@@ -1744,14 +1742,14 @@ unsafe fn SHA256_Pad(mut ctx: *mut SHA256_CTX, mut tmp32: *mut uint32_t) {
             &mut *tmp32.offset(64 as libc::c_int as isize),
         );
         memset(
-            &mut *((*ctx).buf).as_mut_ptr().offset(0 as libc::c_int as isize) as *mut uint8_t
+            &mut *((*ctx).buf).as_mut_ptr().offset(0 as libc::c_int as isize) as *mut u8
                 as *mut libc::c_void,
             0 as libc::c_int,
             56usize,
         );
     }
     be64enc(
-        &mut *((*ctx).buf).as_mut_ptr().offset(56 as libc::c_int as isize) as *mut uint8_t
+        &mut *((*ctx).buf).as_mut_ptr().offset(56 as libc::c_int as isize) as *mut u8
             as *mut libc::c_void,
         (*ctx).count,
     );
@@ -1790,7 +1788,7 @@ unsafe fn _SHA256_Update(
     mut tmp32: *mut uint32_t,
 ) {
     let mut r: usize = 0;
-    let mut src: *const uint8_t = in_0 as *const uint8_t;
+    let mut src: *const u8 = in_0 as *const u8;
     if len == 0 as libc::c_int as libc::c_ulong {
         return;
     }
@@ -1799,14 +1797,14 @@ unsafe fn _SHA256_Update(
         as uint64_t;
     if len < 64usize.wrapping_sub(r) as size_t {
         memcpy(
-            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut uint8_t as *mut libc::c_void,
+            &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut u8 as *mut libc::c_void,
             src as *const libc::c_void,
             len as usize,
         );
         return;
     }
     memcpy(
-        &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut uint8_t as *mut libc::c_void,
+        &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut u8 as *mut libc::c_void,
         src as *const libc::c_void,
         64usize.wrapping_sub(r),
     );
@@ -1844,11 +1842,7 @@ pub unsafe fn SHA256_Update(
     _SHA256_Update(ctx, in_0, len, tmp32.as_mut_ptr());
 }
 
-unsafe fn _SHA256_Final(
-    mut digest: *mut uint8_t,
-    mut ctx: *mut SHA256_CTX,
-    mut tmp32: *mut uint32_t,
-) {
+unsafe fn _SHA256_Final(mut digest: *mut u8, mut ctx: *mut SHA256_CTX, mut tmp32: *mut uint32_t) {
     SHA256_Pad(ctx, tmp32);
     be32enc_vect(
         digest,
@@ -1857,12 +1851,12 @@ unsafe fn _SHA256_Final(
     );
 }
 
-pub unsafe fn SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut SHA256_CTX) {
+pub unsafe fn SHA256_Final(mut digest: *mut u8, mut ctx: *mut SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
     _SHA256_Final(digest, ctx, tmp32.as_mut_ptr());
 }
 
-pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
+pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut u8) {
     let mut ctx: SHA256_CTX = SHA256_CTX {
         state: [0; 8],
         count: 0,
@@ -1879,10 +1873,10 @@ unsafe fn _HMAC_SHA256_Init(
     mut _K: *const libc::c_void,
     mut Klen: size_t,
     mut tmp32: *mut uint32_t,
-    mut pad: *mut uint8_t,
-    mut khash: *mut uint8_t,
+    mut pad: *mut u8,
+    mut khash: *mut u8,
 ) {
-    let mut K: *const uint8_t = _K as *const uint8_t;
+    let mut K: *const u8 = _K as *const u8;
     let mut i: size_t = 0;
     if Klen > 64 as libc::c_int as libc::c_ulong {
         SHA256_Init(&mut (*ctx).ictx);
@@ -1896,7 +1890,7 @@ unsafe fn _HMAC_SHA256_Init(
     i = 0 as libc::c_int as size_t;
     while i < Klen {
         let ref mut fresh56 = *pad.offset(i as isize);
-        *fresh56 = (*fresh56 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as uint8_t;
+        *fresh56 = (*fresh56 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as u8;
         i = i.wrapping_add(1);
         i;
     }
@@ -1911,7 +1905,7 @@ unsafe fn _HMAC_SHA256_Init(
     i = 0 as libc::c_int as size_t;
     while i < Klen {
         let ref mut fresh57 = *pad.offset(i as isize);
-        *fresh57 = (*fresh57 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as uint8_t;
+        *fresh57 = (*fresh57 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as u8;
         i = i.wrapping_add(1);
         i;
     }
@@ -1929,8 +1923,8 @@ pub unsafe fn HMAC_SHA256_Init(
     mut Klen: size_t,
 ) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut pad: [uint8_t; 64] = [0; 64];
-    let mut khash: [uint8_t; 32] = [0; 32];
+    let mut pad: [u8; 64] = [0; 64];
+    let mut khash: [u8; 32] = [0; 32];
     _HMAC_SHA256_Init(
         ctx,
         _K,
@@ -1960,10 +1954,10 @@ pub unsafe fn HMAC_SHA256_Update(
 }
 
 unsafe fn _HMAC_SHA256_Final(
-    mut digest: *mut uint8_t,
+    mut digest: *mut u8,
     mut ctx: *mut HMAC_SHA256_CTX,
     mut tmp32: *mut uint32_t,
-    mut ihash: *mut uint8_t,
+    mut ihash: *mut u8,
 ) {
     _SHA256_Final(ihash, &mut (*ctx).ictx, tmp32);
     _SHA256_Update(
@@ -1975,9 +1969,9 @@ unsafe fn _HMAC_SHA256_Final(
     _SHA256_Final(digest, &mut (*ctx).octx, tmp32);
 }
 
-pub unsafe fn HMAC_SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut HMAC_SHA256_CTX) {
+pub unsafe fn HMAC_SHA256_Final(mut digest: *mut u8, mut ctx: *mut HMAC_SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut ihash: [uint8_t; 32] = [0; 32];
+    let mut ihash: [u8; 32] = [0; 32];
     _HMAC_SHA256_Final(digest, ctx, tmp32.as_mut_ptr(), ihash.as_mut_ptr());
 }
 
@@ -1986,7 +1980,7 @@ pub unsafe fn HMAC_SHA256_Buf(
     mut Klen: size_t,
     mut in_0: *const libc::c_void,
     mut len: size_t,
-    mut digest: *mut uint8_t,
+    mut digest: *mut u8,
 ) {
     let mut ctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
         ictx: SHA256_CTX {
@@ -2001,7 +1995,7 @@ pub unsafe fn HMAC_SHA256_Buf(
         },
     };
     let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut tmp8: [uint8_t; 96] = [0; 96];
+    let mut tmp8: [u8; 96] = [0; 96];
     _HMAC_SHA256_Init(
         &mut ctx,
         K,
@@ -2021,7 +2015,7 @@ pub unsafe fn HMAC_SHA256_Buf(
 
 unsafe fn SHA256_Pad_Almost(
     mut ctx: *mut SHA256_CTX,
-    mut len: *mut uint8_t,
+    mut len: *mut u8,
     mut tmp32: *mut uint32_t,
 ) -> libc::c_int {
     let mut r: uint32_t = 0;
@@ -2047,12 +2041,12 @@ unsafe fn SHA256_Pad_Almost(
 }
 
 pub unsafe fn PBKDF2_SHA256(
-    mut passwd: *const uint8_t,
+    mut passwd: *const u8,
     mut passwdlen: size_t,
-    mut salt: *const uint8_t,
+    mut salt: *const u8,
     mut saltlen: size_t,
     mut c: uint64_t,
-    mut buf: *mut uint8_t,
+    mut buf: *mut u8,
     mut dkLen: size_t,
 ) {
     let mut current_block: u64;
@@ -2095,9 +2089,9 @@ pub unsafe fn PBKDF2_SHA256(
     let mut tmp32: [uint32_t; 72] = [0; 72];
     let mut u: C2RustUnnamed = C2RustUnnamed { tmp8: [0; 96] };
     let mut i: size_t = 0;
-    let mut ivec: [uint8_t; 4] = [0; 4];
-    let mut U: [uint8_t; 32] = [0; 32];
-    let mut T: [uint8_t; 32] = [0; 32];
+    let mut ivec: [u8; 4] = [0; 4];
+    let mut U: [u8; 32] = [0; 32];
+    let mut T: [u8; 32] = [0; 32];
     let mut j: uint64_t = 0;
     let mut k: libc::c_int = 0;
     let mut clen: usize = 0;
@@ -2114,7 +2108,7 @@ pub unsafe fn PBKDF2_SHA256(
         //         &[u8; 98],
         //         &[libc::c_char; 98],
         //     >(
-        //         b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
+        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, uint64_t, u8 *, size_t)\0",
         //     ))
         //         .as_ptr(),
         // );
@@ -2133,7 +2127,7 @@ pub unsafe fn PBKDF2_SHA256(
         //         &[u8; 98],
         //         &[libc::c_char; 98],
         //     >(
-        //         b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
+        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, uint64_t, u8 *, size_t)\0",
         //     ))
         //         .as_ptr(),
         // );
@@ -2143,7 +2137,7 @@ pub unsafe fn PBKDF2_SHA256(
         && saltlen & 63 as libc::c_int as libc::c_ulong <= 51 as libc::c_int as libc::c_ulong
     {
         let mut oldcount: uint32_t = 0;
-        let mut ivecp: *mut uint8_t = 0 as *mut uint8_t;
+        let mut ivecp: *mut u8 = 0 as *mut u8;
         _HMAC_SHA256_Init(
             &mut hctx,
             passwd as *const libc::c_void,
@@ -2296,9 +2290,8 @@ pub unsafe fn PBKDF2_SHA256(
                         );
                         k = 0 as libc::c_int;
                         while k < 32 as libc::c_int {
-                            T[k as usize] = (T[k as usize] as libc::c_int
-                                ^ U[k as usize] as libc::c_int)
-                                as uint8_t;
+                            T[k as usize] =
+                                (T[k as usize] as libc::c_int ^ U[k as usize] as libc::c_int) as u8;
                             k += 1;
                             k;
                         }
@@ -2312,7 +2305,7 @@ pub unsafe fn PBKDF2_SHA256(
                 }
                 memcpy(
                     &mut *buf.offset(i.wrapping_mul(32 as libc::c_int as libc::c_ulong) as isize)
-                        as *mut uint8_t as *mut libc::c_void,
+                        as *mut u8 as *mut libc::c_void,
                     T.as_mut_ptr() as *const libc::c_void,
                     clen,
                 );
