@@ -1,6 +1,6 @@
 use crate::{
+    common::{blkcpy, blkxor},
     size_t, uint32_t,
-    util::{blkcpy, blkxor},
 };
 
 pub(crate) unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
