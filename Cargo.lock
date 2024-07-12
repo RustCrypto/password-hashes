@@ -583,6 +583,7 @@ version = "0.0.0"
 dependencies = [
  "hex-literal",
  "libc",
+ "sha2",
 ]
 
 [[package]]
