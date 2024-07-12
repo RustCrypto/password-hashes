@@ -491,8 +491,7 @@ pub unsafe fn yescrypt_init_shared(
             half2.aligned =
                 (half2.aligned as *mut u8).offset(half1.aligned_size as isize) as *mut libc::c_void;
             half2.aligned_size = half1.aligned_size;
-            N = (N as libc::c_ulong).wrapping_div(2 as libc::c_int as libc::c_ulong) as u64
-                as u64;
+            N = (N as libc::c_ulong).wrapping_div(2 as libc::c_int as libc::c_ulong) as u64 as u64;
             if !(yescrypt_kdf_body(
                 0 as *const Shared,
                 &mut half1,
@@ -1331,8 +1330,7 @@ unsafe fn yescrypt_kdf_body(
                                                                             passwdlen,
                                                                             salt,
                                                                             saltlen,
-                                                                            1 as libc::c_int
-                                                                                as u64,
+                                                                            1 as libc::c_int as u64,
                                                                             B as *mut u8,
                                                                             B_size as u64,
                                                                         );
@@ -1442,8 +1440,7 @@ unsafe fn yescrypt_kdf_body(
                                                                             passwdlen,
                                                                             B as *mut u8,
                                                                             B_size as u64,
-                                                                            1 as libc::c_int
-                                                                                as u64,
+                                                                            1 as libc::c_int as u64,
                                                                             buf,
                                                                             buflen,
                                                                         );
@@ -1729,8 +1726,7 @@ unsafe fn smix(
                     .wrapping_div(2 as libc::c_int as libc::c_ulong),
             ) as u64 as u64;
         }
-        Nloop_all =
-            (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as u64 as u64;
+        Nloop_all = (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as u64 as u64;
     }
     Nloop_rw = 0 as libc::c_int as u64;
     if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
