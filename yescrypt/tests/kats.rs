@@ -39,12 +39,12 @@ fn yescrypt(
             ptr::null(),
             &mut local,
             passwd.as_ptr(),
-            passwd.len() as u64,
+            passwd.len(),
             salt.as_ptr(),
-            salt.len() as u64,
+            salt.len(),
             &params,
             dst.as_mut_ptr(),
-            dstlen as u64,
+            dstlen,
         )
     };
     dst
