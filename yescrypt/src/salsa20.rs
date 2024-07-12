@@ -5,188 +5,29 @@ use crate::{
 
 pub(crate) unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
     let mut x: [uint32_t; 16] = [0; 16];
-    let mut i: size_t = 0;
-    i = 0 as libc::c_int as size_t;
-    while i < 16 as libc::c_int as libc::c_ulong {
-        x[i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-            .wrapping_rem(16 as libc::c_int as libc::c_ulong) as usize] = *B.offset(i as isize);
-        i = i.wrapping_add(1);
-        i;
+    for i in 0..16 {
+        x[i * 5 % 16] = *B.offset(i as isize);
     }
-    i = 0 as libc::c_int as size_t;
-    while i < rounds as libc::c_ulong {
-        x[4 as libc::c_int as usize] ^= (x[0 as libc::c_int as usize])
-            .wrapping_add(x[12 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[0 as libc::c_int as usize]).wrapping_add(x[12 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[8 as libc::c_int as usize] ^= (x[4 as libc::c_int as usize])
-            .wrapping_add(x[0 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[4 as libc::c_int as usize]).wrapping_add(x[0 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[12 as libc::c_int as usize] ^= (x[8 as libc::c_int as usize])
-            .wrapping_add(x[4 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[8 as libc::c_int as usize]).wrapping_add(x[4 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[0 as libc::c_int as usize] ^= (x[12 as libc::c_int as usize])
-            .wrapping_add(x[8 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[12 as libc::c_int as usize]).wrapping_add(x[8 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[9 as libc::c_int as usize] ^= (x[5 as libc::c_int as usize])
-            .wrapping_add(x[1 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[5 as libc::c_int as usize]).wrapping_add(x[1 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[13 as libc::c_int as usize] ^= (x[9 as libc::c_int as usize])
-            .wrapping_add(x[5 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[9 as libc::c_int as usize]).wrapping_add(x[5 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[1 as libc::c_int as usize] ^= (x[13 as libc::c_int as usize])
-            .wrapping_add(x[9 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[13 as libc::c_int as usize]).wrapping_add(x[9 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[5 as libc::c_int as usize] ^= (x[1 as libc::c_int as usize])
-            .wrapping_add(x[13 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[1 as libc::c_int as usize]).wrapping_add(x[13 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[14 as libc::c_int as usize] ^= (x[10 as libc::c_int as usize])
-            .wrapping_add(x[6 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[10 as libc::c_int as usize]).wrapping_add(x[6 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[2 as libc::c_int as usize] ^= (x[14 as libc::c_int as usize])
-            .wrapping_add(x[10 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[14 as libc::c_int as usize]).wrapping_add(x[10 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[6 as libc::c_int as usize] ^= (x[2 as libc::c_int as usize])
-            .wrapping_add(x[14 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[2 as libc::c_int as usize]).wrapping_add(x[14 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[10 as libc::c_int as usize] ^= (x[6 as libc::c_int as usize])
-            .wrapping_add(x[2 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[6 as libc::c_int as usize]).wrapping_add(x[2 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[3 as libc::c_int as usize] ^= (x[15 as libc::c_int as usize])
-            .wrapping_add(x[11 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[15 as libc::c_int as usize]).wrapping_add(x[11 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[7 as libc::c_int as usize] ^= (x[3 as libc::c_int as usize])
-            .wrapping_add(x[15 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[3 as libc::c_int as usize]).wrapping_add(x[15 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[11 as libc::c_int as usize] ^= (x[7 as libc::c_int as usize])
-            .wrapping_add(x[3 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[7 as libc::c_int as usize]).wrapping_add(x[3 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[15 as libc::c_int as usize] ^= (x[11 as libc::c_int as usize])
-            .wrapping_add(x[7 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[11 as libc::c_int as usize]).wrapping_add(x[7 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[1 as libc::c_int as usize] ^= (x[0 as libc::c_int as usize])
-            .wrapping_add(x[3 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[0 as libc::c_int as usize]).wrapping_add(x[3 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[2 as libc::c_int as usize] ^= (x[1 as libc::c_int as usize])
-            .wrapping_add(x[0 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[1 as libc::c_int as usize]).wrapping_add(x[0 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[3 as libc::c_int as usize] ^= (x[2 as libc::c_int as usize])
-            .wrapping_add(x[1 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[2 as libc::c_int as usize]).wrapping_add(x[1 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[0 as libc::c_int as usize] ^= (x[3 as libc::c_int as usize])
-            .wrapping_add(x[2 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[3 as libc::c_int as usize]).wrapping_add(x[2 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[6 as libc::c_int as usize] ^= (x[5 as libc::c_int as usize])
-            .wrapping_add(x[4 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[5 as libc::c_int as usize]).wrapping_add(x[4 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[7 as libc::c_int as usize] ^= (x[6 as libc::c_int as usize])
-            .wrapping_add(x[5 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[6 as libc::c_int as usize]).wrapping_add(x[5 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[4 as libc::c_int as usize] ^= (x[7 as libc::c_int as usize])
-            .wrapping_add(x[6 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[7 as libc::c_int as usize]).wrapping_add(x[6 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[5 as libc::c_int as usize] ^= (x[4 as libc::c_int as usize])
-            .wrapping_add(x[7 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[4 as libc::c_int as usize]).wrapping_add(x[7 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[11 as libc::c_int as usize] ^= (x[10 as libc::c_int as usize])
-            .wrapping_add(x[9 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[10 as libc::c_int as usize]).wrapping_add(x[9 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[8 as libc::c_int as usize] ^= (x[11 as libc::c_int as usize])
-            .wrapping_add(x[10 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[11 as libc::c_int as usize]).wrapping_add(x[10 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[9 as libc::c_int as usize] ^= (x[8 as libc::c_int as usize])
-            .wrapping_add(x[11 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[8 as libc::c_int as usize]).wrapping_add(x[11 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[10 as libc::c_int as usize] ^= (x[9 as libc::c_int as usize])
-            .wrapping_add(x[8 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[9 as libc::c_int as usize]).wrapping_add(x[8 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        x[12 as libc::c_int as usize] ^= (x[15 as libc::c_int as usize])
-            .wrapping_add(x[14 as libc::c_int as usize])
-            << 7 as libc::c_int
-            | (x[15 as libc::c_int as usize]).wrapping_add(x[14 as libc::c_int as usize])
-                >> 32 as libc::c_int - 7 as libc::c_int;
-        x[13 as libc::c_int as usize] ^= (x[12 as libc::c_int as usize])
-            .wrapping_add(x[15 as libc::c_int as usize])
-            << 9 as libc::c_int
-            | (x[12 as libc::c_int as usize]).wrapping_add(x[15 as libc::c_int as usize])
-                >> 32 as libc::c_int - 9 as libc::c_int;
-        x[14 as libc::c_int as usize] ^= (x[13 as libc::c_int as usize])
-            .wrapping_add(x[12 as libc::c_int as usize])
-            << 13 as libc::c_int
-            | (x[13 as libc::c_int as usize]).wrapping_add(x[12 as libc::c_int as usize])
-                >> 32 as libc::c_int - 13 as libc::c_int;
-        x[15 as libc::c_int as usize] ^= (x[14 as libc::c_int as usize])
-            .wrapping_add(x[13 as libc::c_int as usize])
-            << 18 as libc::c_int
-            | (x[14 as libc::c_int as usize]).wrapping_add(x[13 as libc::c_int as usize])
-                >> 32 as libc::c_int - 18 as libc::c_int;
-        i = (i as libc::c_ulong).wrapping_add(2 as libc::c_int as libc::c_ulong) as size_t
-            as size_t;
+
+    use salsa20::cipher::StreamCipherCore;
+
+    let mut block = [0u8; 64];
+
+    if rounds == 2 {
+        salsa20::SalsaCore::<salsa20::cipher::consts::U1>::from_raw_state(x)
+            .write_keystream_block((&mut block).into());
+    } else if rounds == 8 {
+        salsa20::SalsaCore::<salsa20::cipher::consts::U4>::from_raw_state(x)
+            .write_keystream_block((&mut block).into());
     }
-    i = 0 as libc::c_int as size_t;
-    while i < 16 as libc::c_int as libc::c_ulong {
-        let ref mut fresh4 = *B.offset(i as isize);
-        *fresh4 = (*fresh4 as libc::c_uint).wrapping_add(
-            x[i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
-                .wrapping_rem(16 as libc::c_int as libc::c_ulong) as usize],
-        ) as uint32_t as uint32_t;
-        i = i.wrapping_add(1);
-        i;
+
+    for (c, b) in block.chunks_exact(4).zip(x.iter_mut()) {
+        *b = u32::from_le_bytes(c.try_into().expect("4 bytes is 1 u32")).wrapping_sub(*b);
+    }
+
+    for i in 0..16 {
+        let x = (*B.offset(i as isize)).wrapping_add(x[i * 5 % 16]);
+        B.offset(i as isize).write(x)
     }
 }
 
@@ -210,7 +51,7 @@ pub(crate) unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t,
             &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
             16 as libc::c_int as size_t,
         );
-        salsa20(X.as_mut_ptr(), 8 as libc::c_int as uint32_t);
+        salsa20(X.as_mut_ptr(), 8);
         blkcpy(
             &mut *Y.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
             X.as_mut_ptr(),

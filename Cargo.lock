@@ -585,6 +585,7 @@ dependencies = [
  "hmac",
  "libc",
  "pbkdf2",
+ "salsa20",
  "sha2",
 ]
 
