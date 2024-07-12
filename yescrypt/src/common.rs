@@ -323,10 +323,10 @@ pub(crate) unsafe fn encode64(
         if dnext.is_null() {
             return 0 as *mut uint8_t;
         }
-        dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as u64);
+        dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as usize);
         dst = dnext;
     }
-    if dstlen < 1 as libc::c_int as libc::c_ulong {
+    if dstlen < 1 {
         return 0 as *mut uint8_t;
     }
     *dst = 0 as libc::c_int as uint8_t;
@@ -370,7 +370,7 @@ pub(crate) unsafe fn encode64_uint32(
         bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
             as uint32_t;
     }
-    if dstlen <= chars as libc::c_ulong {
+    if dstlen <= chars as usize {
         return 0 as *mut uint8_t;
     }
     let fresh0 = dst;
@@ -401,7 +401,7 @@ unsafe fn encode64_uint32_fixed(
     let mut bits: uint32_t = 0;
     bits = 0 as libc::c_int as uint32_t;
     while bits < srcbits {
-        if dstlen < 2 as libc::c_int as libc::c_ulong {
+        if dstlen < 2 {
             return 0 as *mut uint8_t;
         }
         let fresh4 = dst;
@@ -413,7 +413,7 @@ unsafe fn encode64_uint32_fixed(
         bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
             as uint32_t;
     }
-    if src != 0 || dstlen < 1 as libc::c_int as libc::c_ulong {
+    if src != 0 || dstlen < 1 {
         return 0 as *mut uint8_t;
     }
     *dst = 0 as libc::c_int as uint8_t;
@@ -438,8 +438,8 @@ pub(crate) unsafe fn encrypt(
     if datalen == 0 {
         return;
     }
-    if datalen > 64 as libc::c_int as libc::c_ulong {
-        datalen = 64 as libc::c_int as size_t;
+    if datalen > 64 {
+        datalen = 64;
     }
     halflen = datalen >> 1 as libc::c_int;
     which = 0 as libc::c_int as size_t;
@@ -491,12 +491,12 @@ pub(crate) unsafe fn encrypt(
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
+pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: usize) -> uint64_t {
     let mut X: *const uint32_t = &*B.offset(
-        (2 as libc::c_int as libc::c_ulong)
+        (2usize)
             .wrapping_mul(r)
-            .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
+            .wrapping_sub(1usize)
+            .wrapping_mul(16usize) as isize,
     ) as *const uint32_t;
     return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
