@@ -18,7 +18,7 @@ rust-version = "1.60"
 [dependencies]
 libc = "0.2"
 
-#[dev-dependencies]
+[dev-dependencies]
 hex-literal = "0.4"
 
 [package.metadata.docs.rs]
