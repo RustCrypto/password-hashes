@@ -1,10 +1,10 @@
 use crate::{
     common::{blkcpy, blkxor},
-    size_t, uint32_t,
+    size_t,
 };
 
-pub(crate) unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
-    let mut x: [uint32_t; 16] = [0; 16];
+pub(crate) unsafe fn salsa20(mut B: *mut u32, mut rounds: u32) {
+    let mut x: [u32; 16] = [0; 16];
     let mut i: size_t = 0;
     i = 0 as libc::c_int as size_t;
     while i < 16 as libc::c_int as libc::c_ulong {
@@ -184,14 +184,14 @@ pub(crate) unsafe fn salsa20(mut B: *mut uint32_t, mut rounds: uint32_t) {
         *fresh4 = (*fresh4 as libc::c_uint).wrapping_add(
             x[i.wrapping_mul(5 as libc::c_int as libc::c_ulong)
                 .wrapping_rem(16 as libc::c_int as libc::c_ulong) as usize],
-        ) as uint32_t as uint32_t;
+        ) as u32 as u32;
         i = i.wrapping_add(1);
         i;
     }
 }
 
-pub(crate) unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t, mut r: size_t) {
-    let mut X: [uint32_t; 16] = [0; 16];
+pub(crate) unsafe fn blockmix_salsa8(mut B: *mut u32, mut Y: *mut u32, mut r: size_t) {
+    let mut X: [u32; 16] = [0; 16];
     let mut i: size_t = 0;
     blkcpy(
         X.as_mut_ptr(),
@@ -210,7 +210,7 @@ pub(crate) unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t,
             &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
             16 as libc::c_int as size_t,
         );
-        salsa20(X.as_mut_ptr(), 8 as libc::c_int as uint32_t);
+        salsa20(X.as_mut_ptr(), 8 as libc::c_int as u32);
         blkcpy(
             &mut *Y.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
             X.as_mut_ptr(),

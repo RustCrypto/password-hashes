@@ -11,7 +11,7 @@
 use crate::{
     encrypt_dir_t,
     sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
-    size_t, uint32_t, uint64_t, Binary, DEC,
+    size_t, uint64_t, Binary, DEC,
 };
 
 static mut itoa64: &'static [u8] =
@@ -23,7 +23,7 @@ static mut atoi64_partial: [u8; 77] = [
     61, 62, 63,
 ];
 
-pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+pub(crate) unsafe fn blkcpy(mut dst: *mut u32, mut src: *const u32, mut count: size_t) {
     loop {
         let fresh0 = src;
         src = src.offset(1);
@@ -37,7 +37,7 @@ pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
     }
 }
 
-pub(crate) unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+pub(crate) unsafe fn blkxor(mut dst: *mut u32, mut src: *const u32, mut count: size_t) {
     loop {
         let fresh2 = src;
         src = src.offset(1);
@@ -52,11 +52,11 @@ pub(crate) unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
 }
 
 #[inline]
-pub(crate) unsafe fn atoi64(mut src: u8) -> uint32_t {
+pub(crate) unsafe fn atoi64(mut src: u8) -> u32 {
     if src as libc::c_int >= '.' as i32 && src as libc::c_int <= 'z' as i32 {
-        return atoi64_partial[(src as libc::c_int - '.' as i32) as usize] as uint32_t;
+        return atoi64_partial[(src as libc::c_int - '.' as i32) as usize] as u32;
     }
-    return 64 as libc::c_int as uint32_t;
+    return 64 as libc::c_int as u32;
 }
 
 pub(crate) unsafe fn decode64(
@@ -72,15 +72,15 @@ pub(crate) unsafe fn decode64(
             current_block = 15904375183555213903;
             break;
         }
-        let mut value: uint32_t = 0 as libc::c_int as uint32_t;
-        let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
+        let mut value: u32 = 0 as libc::c_int as u32;
+        let mut bits: u32 = 0 as libc::c_int as u32;
         loop {
             let fresh7 = srclen;
             srclen = srclen.wrapping_sub(1);
             if !(fresh7 != 0) {
                 break;
             }
-            let mut c: uint32_t = atoi64(*src);
+            let mut c: u32 = atoi64(*src);
             if c > 63 as libc::c_int as libc::c_uint {
                 srclen = 0 as libc::c_int as size_t;
                 break;
@@ -88,8 +88,8 @@ pub(crate) unsafe fn decode64(
                 src = src.offset(1);
                 src;
                 value |= c << bits;
-                bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint)
-                    as uint32_t as uint32_t;
+                bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as u32
+                    as u32;
                 if bits >= 24 as libc::c_int as libc::c_uint {
                     break;
                 }
@@ -113,8 +113,8 @@ pub(crate) unsafe fn decode64(
                 dst = dst.offset(1);
                 *fresh9 = value as u8;
                 value >>= 8 as libc::c_int;
-                bits = (bits as libc::c_uint).wrapping_sub(8 as libc::c_int as libc::c_uint)
-                    as uint32_t as uint32_t;
+                bits = (bits as libc::c_uint).wrapping_sub(8 as libc::c_int as libc::c_uint) as u32
+                    as u32;
                 if !(bits < 8 as libc::c_int as libc::c_uint) {
                     continue;
                 }
@@ -122,7 +122,7 @@ pub(crate) unsafe fn decode64(
                     current_block = 17909480686762627388;
                     break 's_3;
                 }
-                bits = 0 as libc::c_int as uint32_t;
+                bits = 0 as libc::c_int as u32;
                 break;
             }
             if bits != 0 {
@@ -145,16 +145,16 @@ pub(crate) unsafe fn decode64(
 }
 
 pub(crate) unsafe fn decode64_uint32(
-    mut dst: *mut uint32_t,
+    mut dst: *mut u32,
     mut src: *const u8,
-    mut min: uint32_t,
+    mut min: u32,
 ) -> *const u8 {
     let mut current_block: u64;
-    let mut start: uint32_t = 0 as libc::c_int as uint32_t;
-    let mut end: uint32_t = 47 as libc::c_int as uint32_t;
-    let mut chars: uint32_t = 1 as libc::c_int as uint32_t;
-    let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
-    let mut c: uint32_t = 0;
+    let mut start: u32 = 0 as libc::c_int as u32;
+    let mut end: u32 = 47 as libc::c_int as u32;
+    let mut chars: u32 = 1 as libc::c_int as u32;
+    let mut bits: u32 = 0 as libc::c_int as u32;
+    let mut c: u32 = 0;
     let fresh2 = src;
     src = src.offset(1);
     c = atoi64(*fresh2);
@@ -165,7 +165,7 @@ pub(crate) unsafe fn decode64_uint32(
                 end.wrapping_add(1 as libc::c_int as libc::c_uint)
                     .wrapping_sub(start)
                     << bits,
-            ) as uint32_t as uint32_t;
+            ) as u32 as u32;
             start = end.wrapping_add(1 as libc::c_int as libc::c_uint);
             end = start.wrapping_add(
                 (62 as libc::c_int as libc::c_uint)
@@ -174,11 +174,10 @@ pub(crate) unsafe fn decode64_uint32(
             );
             chars = chars.wrapping_add(1);
             chars;
-            bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
-                as uint32_t;
+            bits =
+                (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as u32 as u32;
         }
-        *dst = (*dst as libc::c_uint).wrapping_add(c.wrapping_sub(start) << bits) as uint32_t
-            as uint32_t;
+        *dst = (*dst as libc::c_uint).wrapping_add(c.wrapping_sub(start) << bits) as u32 as u32;
         loop {
             chars = chars.wrapping_sub(1);
             if !(chars != 0) {
@@ -192,38 +191,37 @@ pub(crate) unsafe fn decode64_uint32(
                 current_block = 18054886181315620467;
                 break;
             }
-            bits = (bits as libc::c_uint).wrapping_sub(6 as libc::c_int as libc::c_uint) as uint32_t
-                as uint32_t;
-            *dst = (*dst as libc::c_uint).wrapping_add(c << bits) as uint32_t as uint32_t;
+            bits =
+                (bits as libc::c_uint).wrapping_sub(6 as libc::c_int as libc::c_uint) as u32 as u32;
+            *dst = (*dst as libc::c_uint).wrapping_add(c << bits) as u32 as u32;
         }
         match current_block {
             18054886181315620467 => {}
             _ => return src,
         }
     }
-    *dst = 0 as libc::c_int as uint32_t;
+    *dst = 0 as libc::c_int as u32;
     return 0 as *const u8;
 }
 
 pub(crate) unsafe fn decode64_uint32_fixed(
-    mut dst: *mut uint32_t,
-    mut dstbits: uint32_t,
+    mut dst: *mut u32,
+    mut dstbits: u32,
     mut src: *const u8,
 ) -> *const u8 {
-    let mut bits: uint32_t = 0;
-    *dst = 0 as libc::c_int as uint32_t;
-    bits = 0 as libc::c_int as uint32_t;
+    let mut bits: u32 = 0;
+    *dst = 0 as libc::c_int as u32;
+    bits = 0 as libc::c_int as u32;
     while bits < dstbits {
         let fresh6 = src;
         src = src.offset(1);
-        let mut c: uint32_t = atoi64(*fresh6);
+        let mut c: u32 = atoi64(*fresh6);
         if c > 63 as libc::c_int as libc::c_uint {
-            *dst = 0 as libc::c_int as uint32_t;
+            *dst = 0 as libc::c_int as u32;
             return 0 as *const u8;
         }
         *dst |= c << bits;
-        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
-            as uint32_t;
+        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as u32 as u32;
     }
     return src;
 }
@@ -238,12 +236,12 @@ pub(crate) unsafe fn encode64(
     i = 0 as libc::c_int as size_t;
     while i < srclen {
         let mut dnext: *mut u8 = 0 as *mut u8;
-        let mut value: uint32_t = 0 as libc::c_int as uint32_t;
-        let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
+        let mut value: u32 = 0 as libc::c_int as u32;
+        let mut bits: u32 = 0 as libc::c_int as u32;
         loop {
             let fresh5 = i;
             i = i.wrapping_add(1);
-            value |= (*src.offset(fresh5 as isize) as uint32_t) << bits;
+            value |= (*src.offset(fresh5 as isize) as u32) << bits;
             bits = (bits as libc::c_uint).wrapping_add(8);
             if !(bits < 24 as libc::c_int as libc::c_uint && i < srclen) {
                 break;
@@ -266,19 +264,19 @@ pub(crate) unsafe fn encode64(
 pub(crate) unsafe fn encode64_uint32(
     mut dst: *mut u8,
     mut dstlen: size_t,
-    mut src: uint32_t,
-    mut min: uint32_t,
+    mut src: u32,
+    mut min: u32,
 ) -> *mut u8 {
-    let mut start: uint32_t = 0 as libc::c_int as uint32_t;
-    let mut end: uint32_t = 47 as libc::c_int as uint32_t;
-    let mut chars: uint32_t = 1 as libc::c_int as uint32_t;
-    let mut bits: uint32_t = 0 as libc::c_int as uint32_t;
+    let mut start: u32 = 0 as libc::c_int as u32;
+    let mut end: u32 = 47 as libc::c_int as u32;
+    let mut chars: u32 = 1 as libc::c_int as u32;
+    let mut bits: u32 = 0 as libc::c_int as u32;
     if src < min {
         return 0 as *mut u8;
     }
-    src = (src as libc::c_uint).wrapping_sub(min) as uint32_t as uint32_t;
+    src = (src as libc::c_uint).wrapping_sub(min) as u32 as u32;
     loop {
-        let mut count: uint32_t = end
+        let mut count: u32 = end
             .wrapping_add(1 as libc::c_int as libc::c_uint)
             .wrapping_sub(start)
             << bits;
@@ -294,11 +292,10 @@ pub(crate) unsafe fn encode64_uint32(
                 .wrapping_sub(end)
                 .wrapping_div(2 as libc::c_int as libc::c_uint),
         );
-        src = (src as libc::c_uint).wrapping_sub(count) as uint32_t as uint32_t;
+        src = (src as libc::c_uint).wrapping_sub(count) as u32 as u32;
         chars = chars.wrapping_add(1);
         chars;
-        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
-            as uint32_t;
+        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as u32 as u32;
     }
     if dstlen <= chars as libc::c_ulong {
         return 0 as *mut u8;
@@ -311,8 +308,7 @@ pub(crate) unsafe fn encode64_uint32(
         if !(chars != 0) {
             break;
         }
-        bits = (bits as libc::c_uint).wrapping_sub(6 as libc::c_int as libc::c_uint) as uint32_t
-            as uint32_t;
+        bits = (bits as libc::c_uint).wrapping_sub(6 as libc::c_int as libc::c_uint) as u32 as u32;
         let fresh1 = dst;
         dst = dst.offset(1);
         *fresh1 = itoa64[(src >> bits & 0x3f) as usize];
@@ -324,11 +320,11 @@ pub(crate) unsafe fn encode64_uint32(
 unsafe fn encode64_uint32_fixed(
     mut dst: *mut u8,
     mut dstlen: size_t,
-    mut src: uint32_t,
-    mut srcbits: uint32_t,
+    mut src: u32,
+    mut srcbits: u32,
 ) -> *mut u8 {
-    let mut bits: uint32_t = 0;
-    bits = 0 as libc::c_int as uint32_t;
+    let mut bits: u32 = 0;
+    bits = 0 as libc::c_int as u32;
     while bits < srcbits {
         if dstlen < 2 as libc::c_int as libc::c_ulong {
             return 0 as *mut u8;
@@ -339,8 +335,7 @@ unsafe fn encode64_uint32_fixed(
         dstlen = dstlen.wrapping_sub(1);
         dstlen;
         src >>= 6 as libc::c_int;
-        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
-            as uint32_t;
+        bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as u32 as u32;
     }
     if src != 0 || dstlen < 1 as libc::c_int as libc::c_ulong {
         return 0 as *mut u8;
@@ -435,28 +430,28 @@ pub(crate) unsafe fn encrypt(
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
-    let mut X: *const uint32_t = &*B.offset(
+pub(crate) unsafe fn integerify(mut B: *const u32, mut r: size_t) -> uint64_t {
+    let mut X: *const u32 = &*B.offset(
         (2 as libc::c_int as libc::c_ulong)
             .wrapping_mul(r)
             .wrapping_sub(1 as libc::c_int as libc::c_ulong)
             .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
-    ) as *const uint32_t;
+    ) as *const u32;
     return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
 }
 
 #[inline]
-pub(crate) unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
+pub(crate) unsafe fn le32dec(mut pp: *const libc::c_void) -> u32 {
     let mut p: *const u8 = pp as *const u8;
-    return (*p.offset(0 as libc::c_int as isize) as uint32_t)
-        .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
-        .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 16 as libc::c_int)
-        .wrapping_add((*p.offset(3 as libc::c_int as isize) as uint32_t) << 24 as libc::c_int);
+    return (*p.offset(0 as libc::c_int as isize) as u32)
+        .wrapping_add((*p.offset(1 as libc::c_int as isize) as u32) << 8 as libc::c_int)
+        .wrapping_add((*p.offset(2 as libc::c_int as isize) as u32) << 16 as libc::c_int)
+        .wrapping_add((*p.offset(3 as libc::c_int as isize) as u32) << 24 as libc::c_int);
 }
 
 #[inline]
-pub(crate) unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
+pub(crate) unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: u32) {
     let mut p: *mut u8 = pp as *mut u8;
     *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as u8;
     *p.offset(1 as libc::c_int as isize) =
@@ -482,12 +477,12 @@ unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut s
     }
 }
 
-pub(crate) unsafe fn N2log2(mut N: uint64_t) -> uint32_t {
-    let mut N_log2: uint32_t = 0;
+pub(crate) unsafe fn N2log2(mut N: uint64_t) -> u32 {
+    let mut N_log2: u32 = 0;
     if N < 2 as libc::c_int as libc::c_ulong {
-        return 0 as libc::c_int as uint32_t;
+        return 0 as libc::c_int as u32;
     }
-    N_log2 = 2 as libc::c_int as uint32_t;
+    N_log2 = 2 as libc::c_int as u32;
     while N >> N_log2 != 0 as libc::c_int as libc::c_ulong {
         N_log2 = N_log2.wrapping_add(1);
         N_log2;
@@ -495,7 +490,7 @@ pub(crate) unsafe fn N2log2(mut N: uint64_t) -> uint32_t {
     N_log2 = N_log2.wrapping_sub(1);
     N_log2;
     if N >> N_log2 != 1 as libc::c_int as libc::c_ulong {
-        return 0 as libc::c_int as uint32_t;
+        return 0 as libc::c_int as u32;
     }
     return N_log2;
 }
