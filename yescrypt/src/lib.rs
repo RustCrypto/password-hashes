@@ -307,7 +307,7 @@ pub unsafe fn yescrypt_r(
                         .wrapping_div(6),
                 )
                 .wrapping_add(1);
-            if !(need > buflen as usize || need < saltstrlen) {
+            if !(need > buflen || need < saltstrlen) {
                 if !(yescrypt_kdf(
                     shared,
                     local,

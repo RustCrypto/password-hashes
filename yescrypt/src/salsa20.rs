@@ -2,7 +2,7 @@ use salsa20::cipher::Unsigned;
 
 use crate::{
     common::{blkcpy, blkxor},
-    size_t, uint32_t,
+    uint32_t,
 };
 
 pub(crate) unsafe fn salsa20_2(mut B: *mut uint32_t) {
