@@ -14,87 +14,13 @@ use crate::{
     size_t, uint32_t, uint64_t, uint8_t, Binary, DEC,
 };
 
-static mut itoa64: *const libc::c_char =
-    b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0" as *const u8
-        as *const libc::c_char;
+static mut itoa64: &'static [u8] =
+    b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0";
 static mut atoi64_partial: [uint8_t; 77] = [
-    0 as libc::c_int as uint8_t,
-    1 as libc::c_int as uint8_t,
-    2 as libc::c_int as uint8_t,
-    3 as libc::c_int as uint8_t,
-    4 as libc::c_int as uint8_t,
-    5 as libc::c_int as uint8_t,
-    6 as libc::c_int as uint8_t,
-    7 as libc::c_int as uint8_t,
-    8 as libc::c_int as uint8_t,
-    9 as libc::c_int as uint8_t,
-    10 as libc::c_int as uint8_t,
-    11 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    12 as libc::c_int as uint8_t,
-    13 as libc::c_int as uint8_t,
-    14 as libc::c_int as uint8_t,
-    15 as libc::c_int as uint8_t,
-    16 as libc::c_int as uint8_t,
-    17 as libc::c_int as uint8_t,
-    18 as libc::c_int as uint8_t,
-    19 as libc::c_int as uint8_t,
-    20 as libc::c_int as uint8_t,
-    21 as libc::c_int as uint8_t,
-    22 as libc::c_int as uint8_t,
-    23 as libc::c_int as uint8_t,
-    24 as libc::c_int as uint8_t,
-    25 as libc::c_int as uint8_t,
-    26 as libc::c_int as uint8_t,
-    27 as libc::c_int as uint8_t,
-    28 as libc::c_int as uint8_t,
-    29 as libc::c_int as uint8_t,
-    30 as libc::c_int as uint8_t,
-    31 as libc::c_int as uint8_t,
-    32 as libc::c_int as uint8_t,
-    33 as libc::c_int as uint8_t,
-    34 as libc::c_int as uint8_t,
-    35 as libc::c_int as uint8_t,
-    36 as libc::c_int as uint8_t,
-    37 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    64 as libc::c_int as uint8_t,
-    38 as libc::c_int as uint8_t,
-    39 as libc::c_int as uint8_t,
-    40 as libc::c_int as uint8_t,
-    41 as libc::c_int as uint8_t,
-    42 as libc::c_int as uint8_t,
-    43 as libc::c_int as uint8_t,
-    44 as libc::c_int as uint8_t,
-    45 as libc::c_int as uint8_t,
-    46 as libc::c_int as uint8_t,
-    47 as libc::c_int as uint8_t,
-    48 as libc::c_int as uint8_t,
-    49 as libc::c_int as uint8_t,
-    50 as libc::c_int as uint8_t,
-    51 as libc::c_int as uint8_t,
-    52 as libc::c_int as uint8_t,
-    53 as libc::c_int as uint8_t,
-    54 as libc::c_int as uint8_t,
-    55 as libc::c_int as uint8_t,
-    56 as libc::c_int as uint8_t,
-    57 as libc::c_int as uint8_t,
-    58 as libc::c_int as uint8_t,
-    59 as libc::c_int as uint8_t,
-    60 as libc::c_int as uint8_t,
-    61 as libc::c_int as uint8_t,
-    62 as libc::c_int as uint8_t,
-    63 as libc::c_int as uint8_t,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 64, 64, 64, 64, 64, 64, 64, 12, 13, 14, 15, 16, 17, 18,
+    19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 64, 64, 64, 64, 64,
+    64, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+    61, 62, 63,
 ];
 
 pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
@@ -379,7 +305,7 @@ pub(crate) unsafe fn encode64_uint32(
     }
     let fresh0 = dst;
     dst = dst.offset(1);
-    *fresh0 = *itoa64.offset(start.wrapping_add(src >> bits) as isize) as uint8_t;
+    *fresh0 = itoa64[(start + (src >> bits)) as usize];
     loop {
         chars = chars.wrapping_sub(1);
         if !(chars != 0) {
@@ -389,8 +315,7 @@ pub(crate) unsafe fn encode64_uint32(
             as uint32_t;
         let fresh1 = dst;
         dst = dst.offset(1);
-        *fresh1 =
-            *itoa64.offset((src >> bits & 0x3f as libc::c_int as libc::c_uint) as isize) as uint8_t;
+        *fresh1 = itoa64[(src >> bits & 0x3f) as usize];
     }
     *dst = 0 as libc::c_int as uint8_t;
     return dst;
@@ -410,7 +335,7 @@ unsafe fn encode64_uint32_fixed(
         }
         let fresh4 = dst;
         dst = dst.offset(1);
-        *fresh4 = *itoa64.offset((src & 0x3f as libc::c_int as libc::c_uint) as isize) as uint8_t;
+        *fresh4 = itoa64[(src & 0x3f) as usize];
         dstlen = dstlen.wrapping_sub(1);
         dstlen;
         src >>= 6 as libc::c_int;
