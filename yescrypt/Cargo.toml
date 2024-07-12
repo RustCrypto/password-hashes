@@ -18,6 +18,9 @@ rust-version = "1.71"
 [dependencies]
 libc = "0.2"
 
+#[dev-dependencies]
+hex-literal = "0.4"
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
