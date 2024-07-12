@@ -654,7 +654,6 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> *mut Binary {
         *tag.offset(11 as libc::c_int as isize),
     );
 
-    #[allow(static_mut_refs)]
     return &mut digest;
 }
 
