@@ -1665,10 +1665,7 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
         .wrapping_sub(1 as libc::c_int as libc::c_ulong)
         .wrapping_mul((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
         .wrapping_div(64 as libc::c_int as libc::c_ulong);
-    salsa20::salsa20(
-        &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-        2 as libc::c_int as uint32_t,
-    );
+    salsa20::salsa20_2(&mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize));
     i = i.wrapping_add(1);
     i;
     while i < (2 as libc::c_int as libc::c_ulong).wrapping_mul(r) {
@@ -1680,9 +1677,8 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
             ),
             16 as libc::c_int as size_t,
         );
-        salsa20::salsa20(
+        salsa20::salsa20_2(
             &mut *B.offset(i.wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize),
-            2 as libc::c_int as uint32_t,
         );
         i = i.wrapping_add(1);
         i;
