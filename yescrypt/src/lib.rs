@@ -6,11 +6,11 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 #![warn(
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
+    //clippy::cast_lossless,
+    //clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
+    //clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
     clippy::panic,
@@ -23,6 +23,19 @@
 )]
 // Temporary lint overrides while C code is being translated
 #![allow(
+    clippy::cast_possible_wrap,
+    clippy::collapsible_if,
+    clippy::missing_safety_doc,
+    clippy::needless_return,
+    clippy::no_effect,
+    clippy::nonminimal_bool,
+    clippy::precedence,
+    clippy::ptr_offset_with_cast,
+    clippy::single_match,
+    clippy::too_many_arguments,
+    clippy::toplevel_ref_arg,
+    clippy::unnecessary_mut_passed,
+    clippy::zero_ptr,
     non_camel_case_types,
     non_snake_case,
     non_upper_case_globals,
@@ -30,6 +43,11 @@
     unused_assignments,
     unused_mut
 )]
+
+// Adapted from the yescrypt reference implementation available at:
+// <https://github.com/openwall/yescrypt>
+//
+// Licensed under the same BSD-2-Clause license as a derivative work.
 
 mod common;
 mod salsa20;
@@ -144,17 +162,14 @@ pub unsafe fn yescrypt_r(
     let mut prefixlen: usize = 0;
     let mut saltstrlen: usize = 0;
     let mut saltlen: size_t = 0;
-    let mut params: Params = {
-        let mut init = Params {
-            flags: 0,
-            N: 0,
-            r: 0,
-            p: 1 as libc::c_int as uint32_t,
-            t: 0,
-            g: 0,
-            NROM: 0,
-        };
-        init
+    let mut params: Params = Params {
+        flags: 0,
+        N: 0,
+        r: 0,
+        p: 1,
+        t: 0,
+        g: 0,
+        NROM: 0,
     };
     if *setting.offset(0 as libc::c_int as isize) as libc::c_int != '$' as i32
         || *setting.offset(1 as libc::c_int as isize) as libc::c_int != '7' as i32
