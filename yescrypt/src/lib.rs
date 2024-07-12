@@ -491,7 +491,7 @@ pub unsafe fn yescrypt_init_shared(
             half2.aligned =
                 (half2.aligned as *mut u8).offset(half1.aligned_size as isize) as *mut libc::c_void;
             half2.aligned_size = half1.aligned_size;
-            N = (N as libc::c_ulong).wrapping_div(2 as libc::c_int as libc::c_ulong) as u64 as u64;
+            N = (N as libc::c_ulong).wrapping_div(2 as libc::c_int as libc::c_ulong);
             if !(yescrypt_kdf_body(
                 0 as *const Shared,
                 &mut half1,
@@ -1573,7 +1573,7 @@ unsafe fn pwxform(mut B: *mut u32, mut ctx: *mut PwxformCtx) {
                 xl = (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize];
                 xh = (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize];
                 x = (xh as u64).wrapping_mul(xl as libc::c_ulong);
-                x = (x as libc::c_ulong).wrapping_add(s0) as u64 as u64;
+                x = (x as libc::c_ulong).wrapping_add(s0);
                 x ^= s1;
                 (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize] = x as u32;
                 (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize] =
@@ -1707,16 +1707,14 @@ unsafe fn smix(
         if t <= 1 as libc::c_int as libc::c_uint {
             if t != 0 {
                 Nloop_all = (Nloop_all as libc::c_ulong)
-                    .wrapping_mul(2 as libc::c_int as libc::c_ulong)
-                    as u64 as u64;
+                    .wrapping_mul(2 as libc::c_int as libc::c_ulong);
             }
             Nloop_all = Nloop_all
                 .wrapping_add(2 as libc::c_int as libc::c_ulong)
                 .wrapping_div(3 as libc::c_int as libc::c_ulong);
         } else {
             Nloop_all = (Nloop_all as libc::c_ulong)
-                .wrapping_mul(t.wrapping_sub(1 as libc::c_int as libc::c_uint) as libc::c_ulong)
-                as u64 as u64;
+                .wrapping_mul(t.wrapping_sub(1 as libc::c_int as libc::c_uint) as libc::c_ulong);
         }
     } else if t != 0 {
         if t == 1 as libc::c_int as libc::c_uint {
@@ -1724,9 +1722,9 @@ unsafe fn smix(
                 Nloop_all
                     .wrapping_add(1 as libc::c_int as libc::c_ulong)
                     .wrapping_div(2 as libc::c_int as libc::c_ulong),
-            ) as u64 as u64;
+            );
         }
-        Nloop_all = (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as u64 as u64;
+        Nloop_all = (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong);
     }
     Nloop_rw = 0 as libc::c_int as u64;
     if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
@@ -1802,7 +1800,7 @@ unsafe fn smix(
         );
         i = i.wrapping_add(1);
         i;
-        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as u64 as u64;
+        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk);
     }
     i = 0 as libc::c_int as u32;
     while i < p {
