@@ -601,13 +601,13 @@ pub unsafe fn yescrypt_init_shared(
     return -(1 as libc::c_int);
 }
 
-pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> *mut Binary {
+pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> Binary {
     static mut digest: Binary = Binary { uc: [0; 32] };
     let mut tag: *mut uint32_t = 0 as *mut uint32_t;
     let mut tag1: uint64_t = 0;
     let mut tag2: uint64_t = 0;
     if (*shared).aligned_size < 48 as libc::c_int as libc::c_ulong {
-        return 0 as *mut Binary;
+        return digest;
     }
     tag = ((*shared).aligned as *mut uint8_t)
         .offset((*shared).aligned_size as isize)
@@ -619,7 +619,7 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> *mut Binary {
     if tag1 as libc::c_ulonglong != 0x7470797263736579 as libc::c_ulonglong
         || tag2 as libc::c_ulonglong != 0x687361684d4f522d as libc::c_ulonglong
     {
-        return 0 as *mut Binary;
+        return digest;
     }
     le32enc(
         (digest.uc).as_mut_ptr() as *mut libc::c_void,
@@ -654,7 +654,7 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> *mut Binary {
         *tag.offset(11 as libc::c_int as isize),
     );
 
-    return &mut digest;
+    return digest;
 }
 
 pub unsafe fn yescrypt_encode_params(
