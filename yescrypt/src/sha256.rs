@@ -8,14 +8,14 @@
     unused_mut
 )]
 
-use crate::{size_t, uint64_t};
+use crate::size_t;
 use libc::{memcpy, memset};
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SHA256_CTX {
     pub state: [u32; 8],
-    pub count: uint64_t,
+    pub count: u64,
     pub buf: [u8; 64],
 }
 
@@ -55,7 +55,7 @@ unsafe fn be32enc(mut pp: *mut libc::c_void, mut x: u32) {
 }
 
 #[inline]
-unsafe fn be64enc(mut pp: *mut libc::c_void, mut x: uint64_t) {
+unsafe fn be64enc(mut pp: *mut libc::c_void, mut x: u64) {
     let mut p: *mut u8 = pp as *mut u8;
     *p.offset(7 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_ulong) as u8;
     *p.offset(6 as libc::c_int as isize) =
@@ -1772,7 +1772,7 @@ static mut initial_state: [u32; 8] = [
 ];
 
 pub unsafe fn SHA256_Init(mut ctx: *mut SHA256_CTX) {
-    (*ctx).count = 0 as libc::c_int as uint64_t;
+    (*ctx).count = 0 as libc::c_int as u64;
     memcpy(
         ((*ctx).state).as_mut_ptr() as *mut libc::c_void,
         initial_state.as_ptr() as *const libc::c_void,
@@ -1792,8 +1792,8 @@ unsafe fn _SHA256_Update(
         return;
     }
     r = (*ctx).count as usize >> 3 & 0x3f;
-    (*ctx).count = ((*ctx).count as libc::c_ulong).wrapping_add(len << 3 as libc::c_int) as uint64_t
-        as uint64_t;
+    (*ctx).count =
+        ((*ctx).count as libc::c_ulong).wrapping_add(len << 3 as libc::c_int) as u64 as u64;
     if len < 64usize.wrapping_sub(r) as size_t {
         memcpy(
             &mut *((*ctx).buf).as_mut_ptr().offset(r as isize) as *mut u8 as *mut libc::c_void,
@@ -2044,7 +2044,7 @@ pub unsafe fn PBKDF2_SHA256(
     mut passwdlen: size_t,
     mut salt: *const u8,
     mut saltlen: size_t,
-    mut c: uint64_t,
+    mut c: u64,
     mut buf: *mut u8,
     mut dkLen: size_t,
 ) {
@@ -2091,7 +2091,7 @@ pub unsafe fn PBKDF2_SHA256(
     let mut ivec: [u8; 4] = [0; 4];
     let mut U: [u8; 32] = [0; 32];
     let mut T: [u8; 32] = [0; 32];
-    let mut j: uint64_t = 0;
+    let mut j: u64 = 0;
     let mut k: libc::c_int = 0;
     let mut clen: usize = 0;
     if dkLen
@@ -2107,7 +2107,7 @@ pub unsafe fn PBKDF2_SHA256(
         //         &[u8; 98],
         //         &[libc::c_char; 98],
         //     >(
-        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, uint64_t, u8 *, size_t)\0",
+        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, u64, u8 *, size_t)\0",
         //     ))
         //         .as_ptr(),
         // );
@@ -2126,7 +2126,7 @@ pub unsafe fn PBKDF2_SHA256(
         //         &[u8; 98],
         //         &[libc::c_char; 98],
         //     >(
-        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, uint64_t, u8 *, size_t)\0",
+        //         b"void PBKDF2_SHA256(const u8 *, size_t, const u8 *, size_t, u64, u8 *, size_t)\0",
         //     ))
         //         .as_ptr(),
         // );
@@ -2170,7 +2170,7 @@ pub unsafe fn PBKDF2_SHA256(
                 .offset((oldcount >> 3 as libc::c_int) as isize);
             hctx.octx.count = (hctx.octx.count as libc::c_ulong)
                 .wrapping_add(((32 as libc::c_int) << 3 as libc::c_int) as libc::c_ulong)
-                as uint64_t as uint64_t;
+                as u64 as u64;
             SHA256_Pad_Almost(&mut hctx.octx, (u.tmp8).as_mut_ptr(), tmp32.as_mut_ptr());
             i = 0 as libc::c_int as size_t;
             while i.wrapping_mul(32 as libc::c_int as libc::c_ulong) < dkLen {
@@ -2268,7 +2268,7 @@ pub unsafe fn PBKDF2_SHA256(
                         T.as_mut_ptr() as *const libc::c_void,
                         32,
                     );
-                    j = 2 as libc::c_int as uint64_t;
+                    j = 2 as libc::c_int as u64;
                     while j <= c {
                         memcpy(
                             &mut hctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,

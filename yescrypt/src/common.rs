@@ -11,7 +11,7 @@
 use crate::{
     encrypt_dir_t,
     sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
-    size_t, uint64_t, Binary, DEC,
+    size_t, Binary, DEC,
 };
 
 static mut itoa64: &'static [u8] =
@@ -430,14 +430,14 @@ pub(crate) unsafe fn encrypt(
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const u32, mut r: size_t) -> uint64_t {
+pub(crate) unsafe fn integerify(mut B: *const u32, mut r: size_t) -> u64 {
     let mut X: *const u32 = &*B.offset(
         (2 as libc::c_int as libc::c_ulong)
             .wrapping_mul(r)
             .wrapping_sub(1 as libc::c_int as libc::c_ulong)
             .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
     ) as *const u32;
-    return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
+    return ((*X.offset(13 as libc::c_int as isize) as u64) << 32 as libc::c_int)
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
 }
 
@@ -477,7 +477,7 @@ unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut s
     }
 }
 
-pub(crate) unsafe fn N2log2(mut N: uint64_t) -> u32 {
+pub(crate) unsafe fn N2log2(mut N: u64) -> u32 {
     let mut N_log2: u32 = 0;
     if N < 2 as libc::c_int as libc::c_ulong {
         return 0 as libc::c_int as u32;
@@ -495,8 +495,8 @@ pub(crate) unsafe fn N2log2(mut N: uint64_t) -> u32 {
     return N_log2;
 }
 
-pub(crate) unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
-    let mut y: uint64_t = 0;
+pub(crate) unsafe fn p2floor(mut x: u64) -> u64 {
+    let mut y: u64 = 0;
     loop {
         y = x & x.wrapping_sub(1 as libc::c_int as libc::c_ulong);
         if !(y != 0) {
@@ -507,7 +507,7 @@ pub(crate) unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
     return x;
 }
 
-pub(crate) unsafe fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
-    let mut n: uint64_t = p2floor(i);
+pub(crate) unsafe fn wrap(mut x: u64, mut i: u64) -> u64 {
+    let mut n: u64 = p2floor(i);
     return (x & n.wrapping_sub(1 as libc::c_int as libc::c_ulong)).wrapping_add(i.wrapping_sub(n));
 }
