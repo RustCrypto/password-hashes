@@ -11,7 +11,7 @@
 use crate::{
     encrypt_dir_t,
     sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
-    size_t, uint32_t, uint64_t, uint8_t, yescrypt_binary_t, DEC,
+    size_t, uint32_t, uint64_t, uint8_t, Binary, DEC,
 };
 
 static mut itoa64: *const libc::c_char =
@@ -427,7 +427,7 @@ unsafe fn encode64_uint32_fixed(
 pub(crate) unsafe fn encrypt(
     mut data: *mut libc::c_uchar,
     mut datalen: size_t,
-    mut key: *const yescrypt_binary_t,
+    mut key: *const Binary,
     mut dir: encrypt_dir_t,
 ) {
     let mut ctx: SHA256_CTX = SHA256_CTX {
@@ -460,7 +460,7 @@ pub(crate) unsafe fn encrypt(
     }
     f[32 as libc::c_int as usize] = 0 as libc::c_int as libc::c_uchar;
     f[33 as libc::c_int as usize] =
-        ::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong as libc::c_uchar;
+        ::core::mem::size_of::<Binary>() as libc::c_ulong as libc::c_uchar;
     f[34 as libc::c_int as usize] = datalen as libc::c_uchar;
     loop {
         SHA256_Init(&mut ctx);
@@ -474,7 +474,7 @@ pub(crate) unsafe fn encrypt(
         SHA256_Update(
             &mut ctx,
             key as *const libc::c_void,
-            ::core::mem::size_of::<yescrypt_binary_t>() as libc::c_ulong,
+            ::core::mem::size_of::<Binary>() as libc::c_ulong,
         );
         SHA256_Update(
             &mut ctx,
