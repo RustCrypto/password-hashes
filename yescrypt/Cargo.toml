@@ -19,6 +19,8 @@ rust-version = "1.60"
 libc = "0.2"
 # salsa20 = "0.10.2"
 sha2 = "0.11.0-pre.3"
+hmac = "0.13.0-pre.3"
+pbkdf2 = { version = "0.13.0-pre.0", path = "../pbkdf2" }
 
 #[dev-dependencies]
 hex-literal = "0.4"

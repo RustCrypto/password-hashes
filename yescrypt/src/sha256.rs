@@ -19,11 +19,10 @@ pub struct SHA256_CTX {
     pub buf: [uint8_t; 64],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct HMAC_SHA256_CTX {
-    pub ictx: SHA256_CTX,
-    pub octx: SHA256_CTX,
+    hmac: hmac::Hmac<sha2::Sha256>,
 }
 
 #[derive(Copy, Clone)]
@@ -1774,7 +1773,7 @@ static mut initial_state: [uint32_t; 8] = [
     0x5be0cd19 as libc::c_int as uint32_t,
 ];
 
-pub unsafe fn SHA256_Init(mut ctx: *mut SHA256_CTX) {
+unsafe fn SHA256_Init(mut ctx: *mut SHA256_CTX) {
     (*ctx).count = 0 as libc::c_int as uint64_t;
     memcpy(
         ((*ctx).state).as_mut_ptr() as *mut libc::c_void,
@@ -1835,15 +1834,6 @@ unsafe fn _SHA256_Update(
     );
 }
 
-pub unsafe fn SHA256_Update(
-    mut ctx: *mut SHA256_CTX,
-    mut in_0: *const libc::c_void,
-    mut len: size_t,
-) {
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    _SHA256_Update(ctx, in_0, len, tmp32.as_mut_ptr());
-}
-
 unsafe fn _SHA256_Final(
     mut digest: *mut uint8_t,
     mut ctx: *mut SHA256_CTX,
@@ -1857,128 +1847,47 @@ unsafe fn _SHA256_Final(
     );
 }
 
-pub unsafe fn SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut SHA256_CTX) {
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    _SHA256_Final(digest, ctx, tmp32.as_mut_ptr());
-}
-
 pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
-    let mut ctx: SHA256_CTX = SHA256_CTX {
-        state: [0; 8],
-        count: 0,
-        buf: [0; 64],
-    };
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    SHA256_Init(&mut ctx);
-    _SHA256_Update(&mut ctx, in_0, len, tmp32.as_mut_ptr());
-    _SHA256_Final(digest, &mut ctx, tmp32.as_mut_ptr());
+    use sha2::digest::array::Array;
+    use sha2::Digest;
+    let mut ctx = sha2::Sha256::new();
+    ctx.update(&*core::ptr::slice_from_raw_parts(
+        in_0 as *const u8,
+        len as usize,
+    ));
+    ctx.finalize_into(Array::from_mut_slice(
+        &mut *core::ptr::slice_from_raw_parts_mut(digest, 32),
+    ));
 }
 
 unsafe fn _HMAC_SHA256_Init(
-    mut ctx: *mut HMAC_SHA256_CTX,
+    // mut ctx: *mut HMAC_SHA256_CTX,
     mut _K: *const libc::c_void,
     mut Klen: size_t,
-    mut tmp32: *mut uint32_t,
-    mut pad: *mut uint8_t,
-    mut khash: *mut uint8_t,
-) {
+) -> HMAC_SHA256_CTX {
     let mut K: *const uint8_t = _K as *const uint8_t;
-    let mut i: size_t = 0;
-    if Klen > 64 as libc::c_int as libc::c_ulong {
-        SHA256_Init(&mut (*ctx).ictx);
-        _SHA256_Update(&mut (*ctx).ictx, K as *const libc::c_void, Klen, tmp32);
-        _SHA256_Final(khash, &mut (*ctx).ictx, tmp32);
-        K = khash;
-        Klen = 32;
-    }
-    SHA256_Init(&mut (*ctx).ictx);
-    memset(pad as *mut libc::c_void, 0x36 as libc::c_int, 64);
-    i = 0 as libc::c_int as size_t;
-    while i < Klen {
-        let ref mut fresh56 = *pad.offset(i as isize);
-        *fresh56 = (*fresh56 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as uint8_t;
-        i = i.wrapping_add(1);
-        i;
-    }
-    _SHA256_Update(
-        &mut (*ctx).ictx,
-        pad as *const libc::c_void,
-        64 as libc::c_int as size_t,
-        tmp32,
-    );
-    SHA256_Init(&mut (*ctx).octx);
-    memset(pad as *mut libc::c_void, 0x5c as libc::c_int, 64);
-    i = 0 as libc::c_int as size_t;
-    while i < Klen {
-        let ref mut fresh57 = *pad.offset(i as isize);
-        *fresh57 = (*fresh57 as libc::c_int ^ *K.offset(i as isize) as libc::c_int) as uint8_t;
-        i = i.wrapping_add(1);
-        i;
-    }
-    _SHA256_Update(
-        &mut (*ctx).octx,
-        pad as *const libc::c_void,
-        64 as libc::c_int as size_t,
-        tmp32,
-    );
-}
-
-pub unsafe fn HMAC_SHA256_Init(
-    mut ctx: *mut HMAC_SHA256_CTX,
-    mut _K: *const libc::c_void,
-    mut Klen: size_t,
-) {
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut pad: [uint8_t; 64] = [0; 64];
-    let mut khash: [uint8_t; 32] = [0; 32];
-    _HMAC_SHA256_Init(
-        ctx,
-        _K,
-        Klen,
-        tmp32.as_mut_ptr(),
-        pad.as_mut_ptr(),
-        khash.as_mut_ptr(),
-    );
+    let key = &*core::ptr::slice_from_raw_parts(K, Klen as usize);
+    use hmac::KeyInit;
+    let hmac = hmac::Hmac::new_from_slice(key).unwrap();
+    HMAC_SHA256_CTX { hmac }
 }
 
 unsafe fn _HMAC_SHA256_Update(
-    mut ctx: *mut HMAC_SHA256_CTX,
-    mut in_0: *const libc::c_void,
-    mut len: size_t,
-    mut tmp32: *mut uint32_t,
-) {
-    _SHA256_Update(&mut (*ctx).ictx, in_0, len, tmp32);
-}
-
-pub unsafe fn HMAC_SHA256_Update(
-    mut ctx: *mut HMAC_SHA256_CTX,
+    ctx: &mut HMAC_SHA256_CTX,
     mut in_0: *const libc::c_void,
     mut len: size_t,
 ) {
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    _HMAC_SHA256_Update(ctx, in_0, len, tmp32.as_mut_ptr());
+    use hmac::Mac;
+    ctx.hmac.update(&*core::ptr::slice_from_raw_parts(
+        in_0 as *const u8,
+        len as usize,
+    ));
 }
 
-unsafe fn _HMAC_SHA256_Final(
-    mut digest: *mut uint8_t,
-    mut ctx: *mut HMAC_SHA256_CTX,
-    mut tmp32: *mut uint32_t,
-    mut ihash: *mut uint8_t,
-) {
-    _SHA256_Final(ihash, &mut (*ctx).ictx, tmp32);
-    _SHA256_Update(
-        &mut (*ctx).octx,
-        ihash as *const libc::c_void,
-        32 as libc::c_int as size_t,
-        tmp32,
-    );
-    _SHA256_Final(digest, &mut (*ctx).octx, tmp32);
-}
-
-pub unsafe fn HMAC_SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut HMAC_SHA256_CTX) {
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut ihash: [uint8_t; 32] = [0; 32];
-    _HMAC_SHA256_Final(digest, ctx, tmp32.as_mut_ptr(), ihash.as_mut_ptr());
+unsafe fn _HMAC_SHA256_Final(mut digest: *mut uint8_t, mut ctx: HMAC_SHA256_CTX) {
+    use hmac::Mac;
+    let mac = ctx.hmac.finalize().into_bytes();
+    memcpy(digest as *mut _, mac.as_ptr() as *const _, 32);
 }
 
 pub unsafe fn HMAC_SHA256_Buf(
@@ -1988,35 +1897,9 @@ pub unsafe fn HMAC_SHA256_Buf(
     mut len: size_t,
     mut digest: *mut uint8_t,
 ) {
-    let mut ctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
-        ictx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-        octx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-    };
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut tmp8: [uint8_t; 96] = [0; 96];
-    _HMAC_SHA256_Init(
-        &mut ctx,
-        K,
-        Klen,
-        tmp32.as_mut_ptr(),
-        &mut *tmp8.as_mut_ptr().offset(0 as libc::c_int as isize),
-        &mut *tmp8.as_mut_ptr().offset(64 as libc::c_int as isize),
-    );
-    _HMAC_SHA256_Update(&mut ctx, in_0, len, tmp32.as_mut_ptr());
-    _HMAC_SHA256_Final(
-        digest,
-        &mut ctx,
-        tmp32.as_mut_ptr(),
-        &mut *tmp8.as_mut_ptr().offset(0 as libc::c_int as isize),
-    );
+    let mut ctx = _HMAC_SHA256_Init(K, Klen);
+    _HMAC_SHA256_Update(&mut ctx, in_0, len);
+    _HMAC_SHA256_Final(digest, ctx);
 }
 
 unsafe fn SHA256_Pad_Almost(
@@ -2055,271 +1938,9 @@ pub unsafe fn PBKDF2_SHA256(
     mut buf: *mut uint8_t,
     mut dkLen: size_t,
 ) {
-    let mut current_block: u64;
-    let mut Phctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
-        ictx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-        octx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-    };
-    let mut PShctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
-        ictx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-        octx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-    };
-    let mut hctx: HMAC_SHA256_CTX = HMAC_SHA256_CTX {
-        ictx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-        octx: SHA256_CTX {
-            state: [0; 8],
-            count: 0,
-            buf: [0; 64],
-        },
-    };
-    let mut tmp32: [uint32_t; 72] = [0; 72];
-    let mut u: C2RustUnnamed = C2RustUnnamed { tmp8: [0; 96] };
-    let mut i: size_t = 0;
-    let mut ivec: [uint8_t; 4] = [0; 4];
-    let mut U: [uint8_t; 32] = [0; 32];
-    let mut T: [uint8_t; 32] = [0; 32];
-    let mut j: uint64_t = 0;
-    let mut k: libc::c_int = 0;
-    let mut clen: usize = 0;
-    if dkLen
-        <= (32 as libc::c_int as libc::c_ulong).wrapping_mul(4294967295 as libc::c_uint as size_t)
-    {
-    } else {
-        todo!("assert_fail");
-        // __assert_fail(
-        //     b"dkLen <= 32 * (size_t)(UINT32_MAX)\0" as *const u8 as *const libc::c_char,
-        //     b"sha256.c\0" as *const u8 as *const libc::c_char,
-        //     558 as libc::c_int as libc::c_uint,
-        //     (*::core::mem::transmute::<
-        //         &[u8; 98],
-        //         &[libc::c_char; 98],
-        //     >(
-        //         b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
-        //     ))
-        //         .as_ptr(),
-        // );
-    }
-    if dkLen
-        <= (32 as libc::c_int as libc::c_ulong).wrapping_mul(4294967295 as libc::c_uint as size_t)
-    {
-    } else {
-        todo!("assert_fail");
-        // __assert_fail(
-        //     b"dkLen <= 32 * (size_t)(UINT32_MAX)\0" as *const u8
-        //         as *const libc::c_char,
-        //     b"sha256.c\0" as *const u8 as *const libc::c_char,
-        //     558 as libc::c_int as libc::c_uint,
-        //     (*::core::mem::transmute::<
-        //         &[u8; 98],
-        //         &[libc::c_char; 98],
-        //     >(
-        //         b"void PBKDF2_SHA256(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t, uint8_t *, size_t)\0",
-        //     ))
-        //         .as_ptr(),
-        // );
-    }
-    if c == 1 as libc::c_int as libc::c_ulong
-        && dkLen & 31 as libc::c_int as libc::c_ulong == 0 as libc::c_int as libc::c_ulong
-        && saltlen & 63 as libc::c_int as libc::c_ulong <= 51 as libc::c_int as libc::c_ulong
-    {
-        let mut oldcount: uint32_t = 0;
-        let mut ivecp: *mut uint8_t = 0 as *mut uint8_t;
-        _HMAC_SHA256_Init(
-            &mut hctx,
-            passwd as *const libc::c_void,
-            passwdlen,
-            tmp32.as_mut_ptr(),
-            &mut *(u.tmp8).as_mut_ptr().offset(0 as libc::c_int as isize),
-            &mut *(u.tmp8).as_mut_ptr().offset(64 as libc::c_int as isize),
-        );
-        _HMAC_SHA256_Update(
-            &mut hctx,
-            salt as *const libc::c_void,
-            saltlen,
-            tmp32.as_mut_ptr(),
-        );
-        oldcount = (hctx.ictx.count & ((0x3f as libc::c_int) << 3 as libc::c_int) as libc::c_ulong)
-            as uint32_t;
-        _HMAC_SHA256_Update(
-            &mut hctx,
-            b"\0\0\0\0" as *const u8 as *const libc::c_char as *const libc::c_void,
-            4 as libc::c_int as size_t,
-            tmp32.as_mut_ptr(),
-        );
-        if (hctx.ictx.count & ((0x3f as libc::c_int) << 3 as libc::c_int) as libc::c_ulong)
-            < oldcount as libc::c_ulong
-            || SHA256_Pad_Almost(&mut hctx.ictx, (u.tmp8).as_mut_ptr(), tmp32.as_mut_ptr()) != 0
-        {
-            current_block = 5148802568647841240;
-        } else {
-            ivecp = (hctx.ictx.buf)
-                .as_mut_ptr()
-                .offset((oldcount >> 3 as libc::c_int) as isize);
-            hctx.octx.count = (hctx.octx.count as libc::c_ulong)
-                .wrapping_add(((32 as libc::c_int) << 3 as libc::c_int) as libc::c_ulong)
-                as uint64_t as uint64_t;
-            SHA256_Pad_Almost(&mut hctx.octx, (u.tmp8).as_mut_ptr(), tmp32.as_mut_ptr());
-            i = 0 as libc::c_int as size_t;
-            while i.wrapping_mul(32 as libc::c_int as libc::c_ulong) < dkLen {
-                be32enc(
-                    ivecp as *mut libc::c_void,
-                    i.wrapping_add(1 as libc::c_int as libc::c_ulong) as uint32_t,
-                );
-                memcpy(
-                    (u.state).as_mut_ptr() as *mut libc::c_void,
-                    (hctx.ictx.state).as_mut_ptr() as *const libc::c_void,
-                    core::mem::size_of::<[uint32_t; 8]>(),
-                );
-                SHA256_Transform(
-                    (u.state).as_mut_ptr(),
-                    (hctx.ictx.buf).as_mut_ptr(),
-                    &mut *tmp32.as_mut_ptr().offset(0 as libc::c_int as isize),
-                    &mut *tmp32.as_mut_ptr().offset(64 as libc::c_int as isize),
-                );
-                be32enc_vect(
-                    (hctx.octx.buf).as_mut_ptr(),
-                    (u.state).as_mut_ptr(),
-                    4 as libc::c_int as size_t,
-                );
-                memcpy(
-                    (u.state).as_mut_ptr() as *mut libc::c_void,
-                    (hctx.octx.state).as_mut_ptr() as *const libc::c_void,
-                    core::mem::size_of::<[uint32_t; 8]>(),
-                );
-                SHA256_Transform(
-                    (u.state).as_mut_ptr(),
-                    (hctx.octx.buf).as_mut_ptr(),
-                    &mut *tmp32.as_mut_ptr().offset(0 as libc::c_int as isize),
-                    &mut *tmp32.as_mut_ptr().offset(64 as libc::c_int as isize),
-                );
-                be32enc_vect(
-                    &mut *buf.offset(i.wrapping_mul(32 as libc::c_int as libc::c_ulong) as isize),
-                    (u.state).as_mut_ptr(),
-                    4,
-                );
-                i = i.wrapping_add(1);
-                i;
-            }
-            current_block = 1847472278776910194;
-        }
-    } else {
-        current_block = 5148802568647841240;
-    }
-    match current_block {
-        5148802568647841240 => {
-            _HMAC_SHA256_Init(
-                &mut Phctx,
-                passwd as *const libc::c_void,
-                passwdlen,
-                tmp32.as_mut_ptr(),
-                &mut *(u.tmp8).as_mut_ptr().offset(0 as libc::c_int as isize),
-                &mut *(u.tmp8).as_mut_ptr().offset(64 as libc::c_int as isize),
-            );
-            memcpy(
-                &mut PShctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
-                &mut Phctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
-                core::mem::size_of::<HMAC_SHA256_CTX>(),
-            );
-            _HMAC_SHA256_Update(
-                &mut PShctx,
-                salt as *const libc::c_void,
-                saltlen,
-                tmp32.as_mut_ptr(),
-            );
-            i = 0 as libc::c_int as size_t;
-            while i.wrapping_mul(32 as libc::c_int as libc::c_ulong) < dkLen {
-                be32enc(
-                    ivec.as_mut_ptr() as *mut libc::c_void,
-                    i.wrapping_add(1 as libc::c_int as libc::c_ulong) as uint32_t,
-                );
-                memcpy(
-                    &mut hctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
-                    &mut PShctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
-                    core::mem::size_of::<HMAC_SHA256_CTX>(),
-                );
-                _HMAC_SHA256_Update(
-                    &mut hctx,
-                    ivec.as_mut_ptr() as *const libc::c_void,
-                    4 as libc::c_int as size_t,
-                    tmp32.as_mut_ptr(),
-                );
-                _HMAC_SHA256_Final(
-                    T.as_mut_ptr(),
-                    &mut hctx,
-                    tmp32.as_mut_ptr(),
-                    (u.tmp8).as_mut_ptr(),
-                );
-                if c > 1 as libc::c_int as libc::c_ulong {
-                    memcpy(
-                        U.as_mut_ptr() as *mut libc::c_void,
-                        T.as_mut_ptr() as *const libc::c_void,
-                        32,
-                    );
-                    j = 2 as libc::c_int as uint64_t;
-                    while j <= c {
-                        memcpy(
-                            &mut hctx as *mut HMAC_SHA256_CTX as *mut libc::c_void,
-                            &mut Phctx as *mut HMAC_SHA256_CTX as *const libc::c_void,
-                            core::mem::size_of::<HMAC_SHA256_CTX>(),
-                        );
-                        _HMAC_SHA256_Update(
-                            &mut hctx,
-                            U.as_mut_ptr() as *const libc::c_void,
-                            32 as libc::c_int as size_t,
-                            tmp32.as_mut_ptr(),
-                        );
-                        _HMAC_SHA256_Final(
-                            U.as_mut_ptr(),
-                            &mut hctx,
-                            tmp32.as_mut_ptr(),
-                            (u.tmp8).as_mut_ptr(),
-                        );
-                        k = 0 as libc::c_int;
-                        while k < 32 as libc::c_int {
-                            T[k as usize] = (T[k as usize] as libc::c_int
-                                ^ U[k as usize] as libc::c_int)
-                                as uint8_t;
-                            k += 1;
-                            k;
-                        }
-                        j = j.wrapping_add(1);
-                        j;
-                    }
-                }
-                clen = dkLen.wrapping_sub(i.wrapping_mul(32)) as usize;
-                if clen > 32 {
-                    clen = 32;
-                }
-                memcpy(
-                    &mut *buf.offset(i.wrapping_mul(32 as libc::c_int as libc::c_ulong) as isize)
-                        as *mut uint8_t as *mut libc::c_void,
-                    T.as_mut_ptr() as *const libc::c_void,
-                    clen,
-                );
-                i = i.wrapping_add(1);
-                i;
-            }
-        }
-        _ => {}
-    };
+    let passwd = core::ptr::slice_from_raw_parts(passwd, passwdlen as usize);
+    let salt = core::ptr::slice_from_raw_parts(salt, saltlen as usize);
+    let res = core::ptr::slice_from_raw_parts_mut(buf, dkLen as usize);
+
+    pbkdf2::pbkdf2_hmac::<sha2::Sha256>(&*passwd, &*salt, c as u32, &mut *res);
 }
