@@ -1423,7 +1423,6 @@ unsafe fn yescrypt_kdf_body(
     return -(1 as libc::c_int);
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_kdf(
     mut shared: *const yescrypt_shared_t,
     mut local: *mut yescrypt_local_t,
@@ -1480,7 +1479,6 @@ pub unsafe fn yescrypt_kdf(
     );
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_init_shared(
     mut shared: *mut yescrypt_shared_t,
     mut seed: *const uint8_t,
@@ -1669,7 +1667,6 @@ pub unsafe fn yescrypt_init_shared(
     return -(1 as libc::c_int);
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_digest_shared(mut shared: *mut yescrypt_shared_t) -> *mut yescrypt_binary_t {
     static mut digest: yescrypt_binary_t = yescrypt_binary_t { uc: [0; 32] };
     let mut tag: *mut uint32_t = 0 as *mut uint32_t;
@@ -1727,7 +1724,6 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut yescrypt_shared_t) -> *mut
     return &mut digest;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_free_shared(mut shared: *mut yescrypt_shared_t) -> libc::c_int {
     free((*shared).base);
     (*shared).aligned = 0 as *mut libc::c_void;
@@ -1737,7 +1733,6 @@ pub unsafe fn yescrypt_free_shared(mut shared: *mut yescrypt_shared_t) -> libc::
     return 0 as libc::c_int;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -> libc::c_int {
     (*local).aligned = 0 as *mut libc::c_void;
     (*local).base = (*local).aligned;
@@ -1746,7 +1741,6 @@ pub unsafe fn yescrypt_init_local(mut local: *mut yescrypt_local_t) -> libc::c_i
     return 0 as libc::c_int;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_free_local(_local: *mut yescrypt_local_t) -> libc::c_int {
     return 0 as libc::c_int;
 }

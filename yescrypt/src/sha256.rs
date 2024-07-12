@@ -1774,7 +1774,6 @@ static mut initial_state: [uint32_t; 8] = [
     0x5be0cd19 as libc::c_int as uint32_t,
 ];
 
-#[no_mangle]
 pub unsafe fn SHA256_Init(mut ctx: *mut SHA256_CTX) {
     (*ctx).count = 0 as libc::c_int as uint64_t;
     memcpy(
@@ -1836,7 +1835,6 @@ unsafe fn _SHA256_Update(
     );
 }
 
-#[no_mangle]
 pub unsafe fn SHA256_Update(
     mut ctx: *mut SHA256_CTX,
     mut in_0: *const libc::c_void,
@@ -1859,13 +1857,11 @@ unsafe fn _SHA256_Final(
     );
 }
 
-#[no_mangle]
 pub unsafe fn SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
     _SHA256_Final(digest, ctx, tmp32.as_mut_ptr());
 }
 
-#[no_mangle]
 pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
     let mut ctx: SHA256_CTX = SHA256_CTX {
         state: [0; 8],
@@ -1927,7 +1923,6 @@ unsafe fn _HMAC_SHA256_Init(
     );
 }
 
-#[no_mangle]
 pub unsafe fn HMAC_SHA256_Init(
     mut ctx: *mut HMAC_SHA256_CTX,
     mut _K: *const libc::c_void,
@@ -1955,7 +1950,6 @@ unsafe fn _HMAC_SHA256_Update(
     _SHA256_Update(&mut (*ctx).ictx, in_0, len, tmp32);
 }
 
-#[no_mangle]
 pub unsafe fn HMAC_SHA256_Update(
     mut ctx: *mut HMAC_SHA256_CTX,
     mut in_0: *const libc::c_void,
@@ -1981,14 +1975,12 @@ unsafe fn _HMAC_SHA256_Final(
     _SHA256_Final(digest, &mut (*ctx).octx, tmp32);
 }
 
-#[no_mangle]
 pub unsafe fn HMAC_SHA256_Final(mut digest: *mut uint8_t, mut ctx: *mut HMAC_SHA256_CTX) {
     let mut tmp32: [uint32_t; 72] = [0; 72];
     let mut ihash: [uint8_t; 32] = [0; 32];
     _HMAC_SHA256_Final(digest, ctx, tmp32.as_mut_ptr(), ihash.as_mut_ptr());
 }
 
-#[no_mangle]
 pub unsafe fn HMAC_SHA256_Buf(
     mut K: *const libc::c_void,
     mut Klen: size_t,
@@ -2054,7 +2046,6 @@ unsafe fn SHA256_Pad_Almost(
     return 0 as libc::c_int;
 }
 
-#[no_mangle]
 pub unsafe fn PBKDF2_SHA256(
     mut passwd: *const uint8_t,
     mut passwdlen: size_t,

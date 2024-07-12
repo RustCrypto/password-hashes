@@ -502,7 +502,6 @@ unsafe fn encrypt(
     }
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_r(
     mut shared: *const yescrypt_shared_t,
     mut local: *mut yescrypt_local_t,
@@ -722,7 +721,6 @@ pub unsafe fn yescrypt_r(
     return 0 as *mut uint8_t;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) -> *mut uint8_t {
     static mut buf: [uint8_t; 140] = [0; 140];
     let mut local: yescrypt_local_t = yescrypt_local_t {
@@ -751,7 +749,6 @@ pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) 
     return retval;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_reencrypt(
     mut hash: *mut uint8_t,
     mut from_key: *const yescrypt_binary_t,
@@ -917,7 +914,6 @@ unsafe fn N2log2(mut N: uint64_t) -> uint32_t {
     return N_log2;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_encode_params_r(
     mut params: *const yescrypt_params_t,
     mut src: *const uint8_t,
@@ -1083,7 +1079,6 @@ pub unsafe fn yescrypt_encode_params_r(
     return buf;
 }
 
-#[no_mangle]
 pub unsafe fn yescrypt_encode_params(
     mut params: *const yescrypt_params_t,
     mut src: *const uint8_t,
@@ -1099,7 +1094,6 @@ pub unsafe fn yescrypt_encode_params(
     );
 }
 
-#[no_mangle]
 pub unsafe fn crypto_scrypt(
     mut passwd: *const uint8_t,
     mut passwdlen: size_t,
