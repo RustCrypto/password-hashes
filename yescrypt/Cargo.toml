@@ -1,11 +1,11 @@
 [package]
 name = "yescrypt"
-version = "0.6.0-pre.0"
+version = "0.0.0"
 description = """
 Pure Rust implementation of the yescrypt password hashing function
 """
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
+license = "BSD-2-Clause"
 documentation = "https://docs.rs/yescrypt"
 homepage = "https://github.com/RustCrypto/password-hashes/tree/master/yescrypt"
 repository = "https://github.com/RustCrypto/password-hashes"
