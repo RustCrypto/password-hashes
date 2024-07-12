@@ -584,6 +584,7 @@ checksum = "ca6ad05a4870b2bf5fe995117d3728437bd27d7cd5f06f13c17443ef369775a1"
 name = "yescrypt"
 version = "0.6.0-pre.0"
 dependencies = [
+ "hex-literal",
  "libc",
 ]
 
