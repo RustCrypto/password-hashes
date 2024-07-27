@@ -14,21 +14,21 @@ edition = "2021"
 rust-version = "1.72"
 
 [dependencies]
-digest = { version = "=0.11.0-pre.8", features = ["mac"] }
+digest = { version = "=0.11.0-pre.9", features = ["mac"] }
 
 # optional dependencies
 rayon = { version = "1.7", optional = true }
-password-hash = { version = "=0.6.0-pre.0", default-features = false, optional = true, features = ["rand_core"]  }
-hmac = { version = "=0.13.0-pre.3", default-features = false, optional = true }
-sha1 = { version = "=0.11.0-pre.3", default-features = false, optional = true }
-sha2 = { version = "=0.11.0-pre.3", default-features = false, optional = true }
+password-hash = { version = "=0.6.0-pre.0", default-features = false, optional = true, features = ["rand_core"] }
+hmac = { version = "=0.13.0-pre.4", default-features = false, optional = true }
+sha1 = { version = "=0.11.0-pre.4", default-features = false, optional = true }
+sha2 = { version = "=0.11.0-pre.4", default-features = false, optional = true }
 
 [dev-dependencies]
-hmac = "=0.13.0-pre.3"
-hex-literal = "0.4.0"
-sha1 = "=0.11.0-pre.3"
-sha2 = "=0.11.0-pre.3"
-streebog = "=0.11.0-pre.3"
+hmac = "=0.13.0-pre.4"
+hex-literal = "0.4"
+sha1 = "=0.11.0-pre.4"
+sha2 = "=0.11.0-pre.4"
+streebog = "=0.11.0-pre.4"
 
 [features]
 default = ["hmac"]
