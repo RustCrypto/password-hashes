@@ -452,7 +452,7 @@ ignored_testcase_good!(
 
 // TODO: If version is not provided, verifier incorrectly uses version 0x13
 #[ignore]
-#[cfg(feature = "test_large_ram")]
+#[cfg(test_large_ram)]
 testcase_good!(
     reference_argon2i_v0x10_2_20_1_large_ram,
     Algorithm::Argon2i,
@@ -604,7 +604,7 @@ testcase_good!(
     "$argon2i$v=19$m=65536,t=2,p=1$c29tZXNhbHQ$wWKIMhR9lyDFvRz9YTZweHKfbftvj+qf+YFY4NeBbtA"
 );
 
-#[cfg(feature = "test_large_ram")]
+#[cfg(test_large_ram)]
 testcase_good!(
     reference_argon2i_v0x13_2_20_1,
     Algorithm::Argon2i,

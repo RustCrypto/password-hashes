@@ -193,7 +193,7 @@ where
         output: &mut [u8],
     ) -> Result<()> {
         let output = if output.len() == D::OutputSize::USIZE {
-            Array::from_mut_slice(output)
+            <&mut Array<_, _>>::try_from(output).expect("size mismatch")
         } else {
             return Err(Error::OutputSize {
                 actual: output.len(),

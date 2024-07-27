@@ -257,9 +257,9 @@ mod test {
         ];
 
         for t in tests.iter() {
-            let hpass = Array::from_slice(&t.hpass);
-            let hsalt = Array::from_slice(&t.hsalt);
-            let out = bhash(hpass, hsalt);
+            let hpass = Array(t.hpass);
+            let hsalt = Array(t.hsalt);
+            let out = bhash(&hpass, &hsalt);
             assert_eq!(out[..], t.out[..]);
         }
     }
