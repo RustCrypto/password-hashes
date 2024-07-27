@@ -19,10 +19,10 @@ salsa20 = { version = "=0.11.0-pre.1", default-features = false }
 sha2 = { version = "=0.11.0-pre.4", default-features = false }
 
 # optional dependencies
-password-hash = { version = "=0.6.0-pre.0", default-features = false, features = ["rand_core"], optional = true }
+password-hash = { version = "0.6.0-rc.0", default-features = false, features = ["rand_core"], optional = true }
 
 [dev-dependencies]
-password-hash = { version = "=0.6.0-pre.0", features = ["rand_core"] }
+password-hash = { version = "0.6.0-rc.0", features = ["rand_core"] }
 
 [features]
 default = ["simple", "std"]
