@@ -7,7 +7,8 @@ members = [
     "password-auth",
     "pbkdf2",
     "scrypt",
-    "sha-crypt"
+    "sha-crypt",
+    "yescrypt"
 ]
 exclude = ["benches"]
 
