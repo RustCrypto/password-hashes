@@ -49,6 +49,8 @@
 //
 // Licensed under the same BSD-2-Clause license as a derivative work.
 
+extern crate alloc;
+
 mod common;
 mod salsa20;
 mod sha256;
@@ -60,7 +62,11 @@ use crate::{
     },
     sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256},
 };
-use core::mem::size_of;
+use alloc::{vec, vec::Vec};
+use core::{
+    mem::{self, size_of},
+    ptr,
+};
 use libc::{free, malloc, memcpy, memset, strlen, strncmp, strrchr};
 
 type uint8_t = libc::c_uchar;
@@ -71,20 +77,20 @@ type encrypt_dir_t = libc::c_int;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Local {
+struct Local {
     pub base: *mut libc::c_void,
     pub aligned: *mut libc::c_void,
     pub base_size: size_t,
     pub aligned_size: size_t,
 }
 
-pub type Region = Local;
-pub type Shared = Region;
-pub type Flags = uint32_t;
+type Region = Local;
+type Shared = Region;
+type Flags = uint32_t;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct Params {
+struct Params {
     pub flags: Flags,
     pub N: uint64_t,
     pub r: uint32_t,
@@ -96,14 +102,14 @@ pub struct Params {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union Binary {
+union Binary {
     pub uc: [libc::c_uchar; 32],
     pub u64_0: [uint64_t; 4],
 }
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct PwxformCtx {
+struct PwxformCtx {
     pub S: *mut uint32_t,
     pub S0: *mut [uint32_t; 2],
     pub S1: *mut [uint32_t; 2],
@@ -112,9 +118,56 @@ pub struct PwxformCtx {
 }
 
 const DEC: encrypt_dir_t = -1;
+#[allow(dead_code)]
 const ENC: encrypt_dir_t = 1;
 
-pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) -> *mut uint8_t {
+/// yescrypt Key Derivation Function (KDF)
+pub fn yescrypt_kdf(
+    passwd: &[u8],
+    salt: &[u8],
+    flags: u32,
+    n: u64,
+    r: u32,
+    p: u32,
+    t: u32,
+    g: u32,
+    dstlen: usize,
+) -> Vec<u8> {
+    let params = Params {
+        flags,
+        N: n,
+        r,
+        p,
+        t,
+        g,
+        NROM: 0,
+    };
+
+    let mut local: Local = unsafe { mem::zeroed() };
+    unsafe {
+        yescrypt_init_local(&mut local);
+    }
+
+    let mut dst = vec![0u8; dstlen];
+
+    unsafe {
+        yescrypt_kdf_inner(
+            ptr::null(),
+            &mut local,
+            passwd.as_ptr(),
+            passwd.len(),
+            salt.as_ptr(),
+            salt.len(),
+            &params,
+            dst.as_mut_ptr(),
+            dstlen,
+        )
+    };
+    dst
+}
+
+#[allow(dead_code)]
+unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) -> *mut uint8_t {
     static mut buf: [uint8_t; 140] = [0; 140];
     let mut local: Local = Local {
         base: 0 as *mut libc::c_void,
@@ -142,7 +195,8 @@ pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) 
     return retval;
 }
 
-pub unsafe fn yescrypt_r(
+#[allow(dead_code)]
+unsafe fn yescrypt_r(
     mut shared: *const Shared,
     mut local: *mut Local,
     mut passwd: *const uint8_t,
@@ -309,7 +363,7 @@ pub unsafe fn yescrypt_r(
                 )
                 .wrapping_add(1);
             if !(need > buflen || need < saltstrlen) {
-                if !(yescrypt_kdf(
+                if !(yescrypt_kdf_inner(
                     shared,
                     local,
                     passwd,
@@ -358,7 +412,7 @@ pub unsafe fn yescrypt_r(
     return 0 as *mut uint8_t;
 }
 
-pub unsafe fn yescrypt_kdf(
+unsafe fn yescrypt_kdf_inner(
     mut shared: *const Shared,
     mut local: *mut Local,
     mut passwd: *const uint8_t,
@@ -414,7 +468,8 @@ pub unsafe fn yescrypt_kdf(
     );
 }
 
-pub unsafe fn yescrypt_init_shared(
+#[allow(dead_code)]
+unsafe fn yescrypt_init_shared(
     mut shared: *mut Shared,
     mut seed: *const uint8_t,
     mut seedlen: size_t,
@@ -602,7 +657,8 @@ pub unsafe fn yescrypt_init_shared(
     return -(1 as libc::c_int);
 }
 
-pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> Binary {
+#[allow(dead_code)]
+unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> Binary {
     static mut digest: Binary = Binary { uc: [0; 32] };
     let mut tag: *mut uint32_t = 0 as *mut uint32_t;
     let mut tag1: uint64_t = 0;
@@ -658,7 +714,8 @@ pub unsafe fn yescrypt_digest_shared(mut shared: *mut Shared) -> Binary {
     return digest;
 }
 
-pub unsafe fn yescrypt_encode_params(
+#[allow(dead_code)]
+unsafe fn yescrypt_encode_params(
     mut params: *const Params,
     mut src: *const uint8_t,
     mut srclen: size_t,
@@ -673,7 +730,7 @@ pub unsafe fn yescrypt_encode_params(
     );
 }
 
-pub unsafe fn yescrypt_encode_params_r(
+unsafe fn yescrypt_encode_params_r(
     mut params: *const Params,
     mut src: *const uint8_t,
     mut srclen: size_t,
@@ -836,7 +893,8 @@ pub unsafe fn yescrypt_encode_params_r(
     return buf;
 }
 
-pub unsafe fn yescrypt_free_shared(mut shared: *mut Shared) -> libc::c_int {
+#[allow(dead_code)]
+unsafe fn yescrypt_free_shared(mut shared: *mut Shared) -> libc::c_int {
     free((*shared).base);
     (*shared).aligned = 0 as *mut libc::c_void;
     (*shared).base = (*shared).aligned;
@@ -845,7 +903,7 @@ pub unsafe fn yescrypt_free_shared(mut shared: *mut Shared) -> libc::c_int {
     return 0 as libc::c_int;
 }
 
-pub unsafe fn yescrypt_init_local(mut local: *mut Local) -> libc::c_int {
+unsafe fn yescrypt_init_local(mut local: *mut Local) -> libc::c_int {
     (*local).aligned = 0 as *mut libc::c_void;
     (*local).base = (*local).aligned;
     (*local).aligned_size = 0 as libc::c_int as size_t;
@@ -853,11 +911,12 @@ pub unsafe fn yescrypt_init_local(mut local: *mut Local) -> libc::c_int {
     return 0 as libc::c_int;
 }
 
-pub unsafe fn yescrypt_free_local(_local: *mut Local) -> libc::c_int {
+unsafe fn yescrypt_free_local(_local: *mut Local) -> libc::c_int {
     return 0 as libc::c_int;
 }
 
-pub unsafe fn yescrypt_reencrypt(
+#[allow(dead_code)]
+unsafe fn yescrypt_reencrypt(
     mut hash: *mut uint8_t,
     mut from_key: *const Binary,
     mut to_key: *const Binary,
