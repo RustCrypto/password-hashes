@@ -31,12 +31,7 @@ done with a minor version bump.
 
 ## License
 
-Licensed under either of:
-
-* [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
-* [MIT license](http://opensource.org/licenses/MIT)
-
-at your option.
+Licensed under the BSD 2-clause license. See file [LICENSE] for more information.
 
 ### Contribution
 
@@ -50,7 +45,7 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/yescrypt
 [docs-image]: https://docs.rs/yescrypt/badge.svg
 [docs-link]: https://docs.rs/yescrypt/
-[license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
+[license-image]: https://img.shields.io/crates/l/yescrypt?style=flat-square
 [rustc-image]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
@@ -60,3 +55,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (links)
 
 [yescrypt]: https://www.openwall.com/yescrypt/
+[LICENSE]: ./LICENSE
