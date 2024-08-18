@@ -15,7 +15,6 @@
     clippy::implicit_saturating_sub,
     clippy::panic,
     clippy::panic_in_result_fn,
-    clippy::unwrap_used,
     //missing_docs,
     rust_2018_idioms,
     unused_lifetimes,
@@ -35,6 +34,7 @@
     clippy::too_many_arguments,
     clippy::toplevel_ref_arg,
     clippy::unnecessary_mut_passed,
+    clippy::unwrap_used,
     clippy::zero_ptr,
     non_camel_case_types,
     non_snake_case,
@@ -60,6 +60,7 @@ use crate::{
     },
     sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256},
 };
+use core::mem::size_of;
 use libc::{free, malloc, memcpy, memset, strlen, strncmp, strrchr};
 
 type uint8_t = libc::c_uchar;
@@ -133,7 +134,7 @@ pub unsafe fn yescrypt(mut passwd: *const uint8_t, mut setting: *const uint8_t) 
         setting,
         0 as *const Binary,
         buf.as_mut_ptr(),
-        ::core::mem::size_of::<[uint8_t; 140]>(),
+        size_of::<[uint8_t; 140]>(),
     );
     if yescrypt_free_local(&mut local) != 0 {
         return 0 as *mut uint8_t;
@@ -278,7 +279,7 @@ pub unsafe fn yescrypt_r(
         current_block = 1623252117315916725;
     } else {
         let mut saltend: *const uint8_t = 0 as *const uint8_t;
-        saltlen = core::mem::size_of::<[libc::c_uchar; 64]>() as size_t;
+        saltlen = size_of::<[libc::c_uchar; 64]>() as size_t;
         saltend = decode64(
             saltbin.as_mut_ptr(),
             &mut saltlen,
@@ -301,7 +302,7 @@ pub unsafe fn yescrypt_r(
                 .wrapping_add(saltstrlen)
                 .wrapping_add(1)
                 .wrapping_add(
-                    (core::mem::size_of::<Binary>())
+                    (size_of::<Binary>())
                         .wrapping_mul(8)
                         .wrapping_add(5)
                         .wrapping_div(6),
@@ -317,13 +318,13 @@ pub unsafe fn yescrypt_r(
                     saltlen,
                     &mut params,
                     hashbin.as_mut_ptr(),
-                    ::core::mem::size_of::<[libc::c_uchar; 32]>(),
+                    size_of::<[libc::c_uchar; 32]>(),
                 ) != 0)
                 {
                     if !key.is_null() {
                         encrypt(
                             hashbin.as_mut_ptr(),
-                            ::core::mem::size_of::<[libc::c_uchar; 32]>(),
+                            size_of::<[libc::c_uchar; 32]>(),
                             key,
                             ENC,
                         );
@@ -342,7 +343,7 @@ pub unsafe fn yescrypt_r(
                         dst,
                         buflen.wrapping_sub(dst.offset_from(buf) as usize),
                         hashbin.as_mut_ptr(),
-                        ::core::mem::size_of::<[libc::c_uchar; 32]>(),
+                        size_of::<[libc::c_uchar; 32]>(),
                     );
                     if dst.is_null() || dst >= buf.offset(buflen as isize) {
                         return 0 as *mut uint8_t;
@@ -400,13 +401,13 @@ pub unsafe fn yescrypt_kdf(
             0 as libc::c_int as uint32_t,
             NROM,
             dk.as_mut_ptr(),
-            ::core::mem::size_of::<[uint8_t; 32]>(),
+            size_of::<[uint8_t; 32]>(),
         );
         if retval != 0 {
             return retval;
         }
         passwd = dk.as_mut_ptr();
-        passwdlen = ::core::mem::size_of::<[uint8_t; 32]>();
+        passwdlen = size_of::<[uint8_t; 32]>();
     }
     return yescrypt_kdf_body(
         shared, local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
@@ -510,7 +511,7 @@ pub unsafe fn yescrypt_init_shared(
                 t,
                 0 as libc::c_int as uint64_t,
                 salt.as_mut_ptr(),
-                ::core::mem::size_of::<[uint8_t; 32]>(),
+                size_of::<[uint8_t; 32]>(),
             ) != 0)
             {
                 if !(yescrypt_kdf_body(
@@ -519,7 +520,7 @@ pub unsafe fn yescrypt_init_shared(
                     seed,
                     seedlen,
                     salt.as_mut_ptr(),
-                    ::core::mem::size_of::<[uint8_t; 32]>(),
+                    size_of::<[uint8_t; 32]>(),
                     flags | 0x1000000 as libc::c_int as libc::c_uint,
                     N,
                     r,
@@ -527,7 +528,7 @@ pub unsafe fn yescrypt_init_shared(
                     t,
                     N,
                     salt.as_mut_ptr(),
-                    ::core::mem::size_of::<[uint8_t; 32]>(),
+                    size_of::<[uint8_t; 32]>(),
                 ) != 0)
                 {
                     if !(yescrypt_kdf_body(
@@ -536,7 +537,7 @@ pub unsafe fn yescrypt_init_shared(
                         seed,
                         seedlen,
                         salt.as_mut_ptr(),
-                        ::core::mem::size_of::<[uint8_t; 32]>(),
+                        size_of::<[uint8_t; 32]>(),
                         flags | 0x1000000 as libc::c_int as libc::c_uint,
                         N,
                         r,
@@ -544,7 +545,7 @@ pub unsafe fn yescrypt_init_shared(
                         t,
                         N,
                         salt.as_mut_ptr(),
-                        ::core::mem::size_of::<[uint8_t; 32]>(),
+                        size_of::<[uint8_t; 32]>(),
                     ) != 0)
                     {
                         tag = ((*shared).aligned as *mut uint8_t)
@@ -668,7 +669,7 @@ pub unsafe fn yescrypt_encode_params(
         src,
         srclen,
         buf.as_mut_ptr(),
-        ::core::mem::size_of::<[uint8_t; 96]>(),
+        size_of::<[uint8_t; 96]>(),
     );
 }
 
@@ -907,7 +908,7 @@ pub unsafe fn yescrypt_reencrypt(
     }) as size_t;
     if saltstrlen > ((64 * 8 + 5) / 6)
         || strlen(hashstart as *mut libc::c_char)
-            != (::core::mem::size_of::<Binary>())
+            != (size_of::<Binary>())
                 .wrapping_mul(8)
                 .wrapping_add(5)
                 .wrapping_div(6)
@@ -916,9 +917,11 @@ pub unsafe fn yescrypt_reencrypt(
     }
     if saltstrlen != 0 {
         let mut saltend: *const uint8_t = 0 as *const uint8_t;
-        saltlen = ::core::mem::size_of::<[libc::c_uchar; 64]>();
+        saltlen = size_of::<[libc::c_uchar; 64]>();
         saltend = decode64(saltbin.as_mut_ptr(), &mut saltlen, saltstart, saltstrlen);
-        if saltend.is_null() || *saltend as libc::c_int != '$' as i32 || saltlen < 1 || saltlen > 64
+        if saltend.is_null()
+            || *saltend as libc::c_int != '$' as i32
+            || !(1..=64).contains(&saltlen)
         {
             current_block = 11385396242402735691;
         } else {
@@ -935,19 +938,19 @@ pub unsafe fn yescrypt_reencrypt(
     }
     match current_block {
         14401909646449704462 => {
-            hashlen = ::core::mem::size_of::<[libc::c_uchar; 32]>();
+            hashlen = size_of::<[libc::c_uchar; 32]>();
             hashend = decode64(
                 hashbin.as_mut_ptr(),
                 &mut hashlen,
                 hashstart,
-                (::core::mem::size_of::<Binary>())
+                (size_of::<Binary>())
                     .wrapping_mul(8)
                     .wrapping_add(5)
                     .wrapping_div(6),
             );
             if !(hashend.is_null()
                 || *hashend as libc::c_int != 0
-                || hashlen != ::core::mem::size_of::<[libc::c_uchar; 32]>())
+                || hashlen != size_of::<[libc::c_uchar; 32]>())
             {
                 if !from_key.is_null() {
                     encrypt(hashbin.as_mut_ptr(), hashlen, from_key, DEC);
@@ -977,7 +980,7 @@ pub unsafe fn yescrypt_reencrypt(
                     _ => {
                         if !(encode64(
                             hashstart,
-                            (::core::mem::size_of::<Binary>())
+                            (size_of::<Binary>())
                                 .wrapping_mul(8)
                                 .wrapping_add(5)
                                 .wrapping_div(6)
@@ -1112,9 +1115,9 @@ unsafe fn yescrypt_kdf_body(
                                                     as libc::c_ulong,
                                             )
                                         || p as libc::c_ulong
-                                            > (18446744073709551615 as libc::c_ulong)
-                                                .wrapping_div(::core::mem::size_of::<PwxformCtx>()
-                                                    as libc::c_ulong)
+                                            > (18446744073709551615 as libc::c_ulong).wrapping_div(
+                                                size_of::<PwxformCtx>() as libc::c_ulong,
+                                            )
                                     {
                                         current_block = 15162489974460950378;
                                     } else {
@@ -1278,13 +1281,10 @@ unsafe fn yescrypt_kdf_body(
                                                                             4048828170348623652;
                                                                     } else {
                                                                         pwxform_ctx = malloc(
-                                                                            core::mem::size_of::<
-                                                                                PwxformCtx,
-                                                                            >(
-                                                                            )
-                                                                            .wrapping_mul(
-                                                                                p as usize,
-                                                                            ),
+                                                                            size_of::<PwxformCtx>()
+                                                                                .wrapping_mul(
+                                                                                    p as usize,
+                                                                                ),
                                                                         )
                                                                             as *mut PwxformCtx;
                                                                         if pwxform_ctx.is_null() {
@@ -1316,8 +1316,10 @@ unsafe fn yescrypt_kdf_body(
                                                                             passwd = sha256
                                                                                 .as_mut_ptr()
                                                                                 as *mut uint8_t;
-                                                                            passwdlen = ::core::mem::size_of::<[uint32_t; 8]>()
-                                                                                ;
+                                                                            passwdlen = size_of::<
+                                                                                [uint32_t; 8],
+                                                                            >(
+                                                                            );
                                                                         }
                                                                         PBKDF2_SHA256(
                                                                             passwd,
@@ -1333,10 +1335,16 @@ unsafe fn yescrypt_kdf_body(
                                                                             blkcpy(
                                                                                 sha256.as_mut_ptr(),
                                                                                 B,
-                                                                                (::core::mem::size_of::<[uint32_t; 8]>() )
-                                                                                    .wrapping_div(
-                                                                                        ::core::mem::size_of::<uint32_t>() ,
+                                                                                (size_of::<
+                                                                                    [uint32_t; 8],
+                                                                                >(
+                                                                                ))
+                                                                                .wrapping_div(
+                                                                                    size_of::<
+                                                                                        uint32_t,
+                                                                                    >(
                                                                                     ),
+                                                                                ),
                                                                             );
                                                                         }
                                                                         if flags
@@ -1361,7 +1369,7 @@ unsafe fn yescrypt_kdf_body(
                                                                                                     * ((1 as libc::c_int) << 8 as libc::c_int)
                                                                                                     * 2 as libc::c_int * 8 as libc::c_int) as libc::c_ulong)
                                                                                                     .wrapping_div(
-                                                                                                        ::core::mem::size_of::<uint32_t>() as libc::c_ulong,
+                                                                                                        size_of::<uint32_t>() as libc::c_ulong,
                                                                                                     ),
                                                                                             ) as isize,
                                                                                     ) as *mut uint32_t;
@@ -1417,16 +1425,23 @@ unsafe fn yescrypt_kdf_body(
                                                                         dkp = buf;
                                                                         if flags != 0
                                                                             && buflen
-                                                                            < ::core::mem::size_of::<[uint8_t; 32]>()
+                                                                                < size_of::<
+                                                                                    [uint8_t; 32],
+                                                                                >(
+                                                                                )
                                                                         {
                                                                             PBKDF2_SHA256(
                                                                                 passwd,
                                                                                 passwdlen,
                                                                                 B as *mut uint8_t,
-                                                                                B_size ,
-                                                                                1 as libc::c_int as uint64_t,
+                                                                                B_size,
+                                                                                1 as libc::c_int
+                                                                                    as uint64_t,
                                                                                 dk.as_mut_ptr(),
-                                                                                ::core::mem::size_of::<[uint8_t; 32]>() ,
+                                                                                size_of::<
+                                                                                    [uint8_t; 32],
+                                                                                >(
+                                                                                ),
                                                                             );
                                                                             dkp = dk.as_mut_ptr();
                                                                         }
@@ -1449,7 +1464,7 @@ unsafe fn yescrypt_kdf_body(
                                                                         {
                                                                             HMAC_SHA256_Buf(
                                                                                 dkp as *const libc::c_void,
-                                                                                ::core::mem::size_of::<[uint8_t; 32]>() ,
+                                                                                size_of::<[uint8_t; 32]>() ,
                                                                                 b"Client Key\0" as *const u8 as *const libc::c_char
                                                                                     as *const libc::c_void,
                                                                                 10 as libc::c_int as size_t,
@@ -1457,12 +1472,20 @@ unsafe fn yescrypt_kdf_body(
                                                                             );
                                                                             let mut clen: size_t =
                                                                                 buflen;
-                                                                            if clen > ::core::mem::size_of::<[uint8_t; 32]>() {
-                                                                                clen = ::core::mem::size_of::<[uint8_t; 32]>();
+                                                                            if clen
+                                                                                > size_of::<
+                                                                                    [uint8_t; 32],
+                                                                                >(
+                                                                                )
+                                                                            {
+                                                                                clen = size_of::<
+                                                                                    [uint8_t; 32],
+                                                                                >(
+                                                                                );
                                                                             }
                                                                             SHA256_Buf(
                                                                                 sha256.as_mut_ptr() as *mut uint8_t as *const libc::c_void,
-                                                                                ::core::mem::size_of::<[uint32_t; 8]>(),
+                                                                                size_of::<[uint32_t; 8]>(),
                                                                                 dk.as_mut_ptr(),
                                                                             );
                                                                             memcpy(
@@ -1538,14 +1561,14 @@ unsafe fn pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx) {
                 ((xl & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
                     * 2 as libc::c_int
                     * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
-                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
+                    .wrapping_div(size_of::<[uint32_t; 2]>() as libc::c_ulong)
                     as isize,
             );
             p1 = S1.offset(
                 ((xh & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
                     * 2 as libc::c_int
                     * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
-                    .wrapping_div(::core::mem::size_of::<[uint32_t; 2]>() as libc::c_ulong)
+                    .wrapping_div(size_of::<[uint32_t; 2]>() as libc::c_ulong)
                     as isize,
             );
             k = 0 as libc::c_int as size_t;
@@ -1602,10 +1625,10 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
         X.as_mut_ptr(),
         &mut *B.offset(
             r1.wrapping_sub(1usize)
-                .wrapping_mul((4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()))
+                .wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<uint32_t>()))
                 as isize,
         ),
-        (4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()),
+        (4usize * 2 * 8).wrapping_div(size_of::<uint32_t>()),
     );
     i = 0 as libc::c_int as size_t;
     while i < r1 {
@@ -1613,21 +1636,18 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
             blkxor(
                 X.as_mut_ptr(),
                 &mut *B.offset(
-                    i.wrapping_mul(
-                        (4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()),
-                    ) as isize,
+                    i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<uint32_t>())) as isize,
                 ),
-                (4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()),
+                (4usize * 2 * 8).wrapping_div(size_of::<uint32_t>()),
             );
         }
         pwxform(X.as_mut_ptr(), ctx);
         blkcpy(
             &mut *B.offset(
-                i.wrapping_mul((4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()))
-                    as isize,
+                i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<uint32_t>())) as isize,
             ),
             X.as_mut_ptr(),
-            (4usize * 2 * 8).wrapping_div(::core::mem::size_of::<uint32_t>()),
+            (4usize * 2 * 8).wrapping_div(size_of::<uint32_t>()),
         );
         i = i.wrapping_add(1);
         i;

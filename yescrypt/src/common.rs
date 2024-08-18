@@ -474,6 +474,8 @@ pub(crate) unsafe fn encrypt(
             ctx2.update(&f[0..1]);
         }
 
+        // TODO
+        #[allow(deprecated)]
         ctx2.finalize_into_reset(Array::from_mut_slice(&mut f[..32]));
         which ^= halflen;
         memxor(&mut *data.offset(which as isize), f.as_mut_ptr(), halflen);

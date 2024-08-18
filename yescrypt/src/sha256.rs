@@ -16,6 +16,9 @@ pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut dig
     use sha2::Digest;
     let mut ctx = sha2::Sha256::new();
     ctx.update(&*core::ptr::slice_from_raw_parts(in_0 as *const u8, len));
+
+    // TODO
+    #[allow(deprecated)]
     ctx.finalize_into(Array::from_mut_slice(
         &mut *core::ptr::slice_from_raw_parts_mut(digest, 32),
     ));
