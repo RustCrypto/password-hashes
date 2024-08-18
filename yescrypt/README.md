@@ -11,6 +11,12 @@ Pure Rust implementation of the [yescrypt] password hashing function.
 
 [Documentation][docs-link]
 
+## ⚠️ Security Warning
+
+The implementation contained in this crate has never been independently audited!
+
+USE AT YOUR OWN RISK!
+
 ## Minimum Supported Rust Version
 
 Rust **1.72** or higher.
@@ -48,8 +54,8 @@ dual licensed as above, without any additional terms or conditions.
 [rustc-image]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
-[build-image]: https://github.com/RustCrypto/password-hashes/workflows/yescrypt/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Ayescrypt
+[build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml 
 
 [//]: # (links)
 

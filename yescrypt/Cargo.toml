@@ -1,9 +1,7 @@
 [package]
 name = "yescrypt"
-version = "0.0.0"
-description = """
-Pure Rust implementation of the yescrypt password hashing function
-"""
+version = "0.0.1-alpha"
+description = "Pure Rust implementation of the yescrypt password hashing function"
 authors = ["RustCrypto Developers"]
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/yescrypt"
@@ -22,7 +20,7 @@ pbkdf2 = { version = "=0.13.0-pre.1", path = "../pbkdf2" }
 salsa20 = { version = "=0.11.0-pre.1", default-features = false }
 sha2 = { version = "=0.11.0-pre.4", default-features = false }
 
-#[dev-dependencies]
+[dev-dependencies]
 hex-literal = "0.4"
 
 [package.metadata.docs.rs]
