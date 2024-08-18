@@ -585,7 +585,11 @@ name = "yescrypt"
 version = "0.0.0"
 dependencies = [
  "hex-literal",
+ "hmac",
  "libc",
+ "pbkdf2",
+ "salsa20",
+ "sha2",
 ]
 
 [[package]]

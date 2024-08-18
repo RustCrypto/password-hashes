@@ -8,11 +8,7 @@
     unused_mut
 )]
 
-use crate::{
-    encrypt_dir_t,
-    sha256::{SHA256_Final, SHA256_Init, SHA256_Update, SHA256_CTX},
-    size_t, uint32_t, uint64_t, uint8_t, Binary, DEC,
-};
+use crate::{encrypt_dir_t, size_t, uint32_t, uint64_t, uint8_t, Binary, DEC};
 
 static mut itoa64: *const libc::c_char =
     b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0" as *const u8
@@ -327,10 +323,10 @@ pub(crate) unsafe fn encode64(
         if dnext.is_null() {
             return 0 as *mut uint8_t;
         }
-        dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as u64);
+        dstlen = dstlen.wrapping_sub(dnext.offset_from(dst) as usize);
         dst = dnext;
     }
-    if dstlen < 1 as libc::c_int as libc::c_ulong {
+    if dstlen < 1 {
         return 0 as *mut uint8_t;
     }
     *dst = 0 as libc::c_int as uint8_t;
@@ -374,7 +370,7 @@ pub(crate) unsafe fn encode64_uint32(
         bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
             as uint32_t;
     }
-    if dstlen <= chars as libc::c_ulong {
+    if dstlen <= chars as usize {
         return 0 as *mut uint8_t;
     }
     let fresh0 = dst;
@@ -405,7 +401,7 @@ unsafe fn encode64_uint32_fixed(
     let mut bits: uint32_t = 0;
     bits = 0 as libc::c_int as uint32_t;
     while bits < srcbits {
-        if dstlen < 2 as libc::c_int as libc::c_ulong {
+        if dstlen < 2 {
             return 0 as *mut uint8_t;
         }
         let fresh4 = dst;
@@ -417,7 +413,7 @@ unsafe fn encode64_uint32_fixed(
         bits = (bits as libc::c_uint).wrapping_add(6 as libc::c_int as libc::c_uint) as uint32_t
             as uint32_t;
     }
-    if src != 0 || dstlen < 1 as libc::c_int as libc::c_ulong {
+    if src != 0 || dstlen < 1 {
         return 0 as *mut uint8_t;
     }
     *dst = 0 as libc::c_int as uint8_t;
@@ -430,11 +426,9 @@ pub(crate) unsafe fn encrypt(
     mut key: *const Binary,
     mut dir: encrypt_dir_t,
 ) {
-    let mut ctx: SHA256_CTX = SHA256_CTX {
-        state: [0; 8],
-        count: 0,
-        buf: [0; 64],
-    };
+    use sha2::digest::array::Array;
+    use sha2::Digest;
+
     let mut f: [libc::c_uchar; 36] = [0; 36];
     let mut halflen: size_t = 0;
     let mut which: size_t = 0;
@@ -444,8 +438,8 @@ pub(crate) unsafe fn encrypt(
     if datalen == 0 {
         return;
     }
-    if datalen > 64 as libc::c_int as libc::c_ulong {
-        datalen = 64 as libc::c_int as size_t;
+    if datalen > 64 {
+        datalen = 64;
     }
     halflen = datalen >> 1 as libc::c_int;
     which = 0 as libc::c_int as size_t;
@@ -462,43 +456,30 @@ pub(crate) unsafe fn encrypt(
     f[33 as libc::c_int as usize] =
         ::core::mem::size_of::<Binary>() as libc::c_ulong as libc::c_uchar;
     f[34 as libc::c_int as usize] = datalen as libc::c_uchar;
+    let mut ctx2 = sha2::Sha256::new();
     loop {
-        SHA256_Init(&mut ctx);
         f[35 as libc::c_int as usize] = round;
-        SHA256_Update(
-            &mut ctx,
-            &mut *f.as_mut_ptr().offset(32 as libc::c_int as isize) as *mut libc::c_uchar
-                as *const libc::c_void,
-            4 as libc::c_int as size_t,
-        );
-        SHA256_Update(
-            &mut ctx,
-            key as *const libc::c_void,
-            ::core::mem::size_of::<Binary>() as libc::c_ulong,
-        );
-        SHA256_Update(
-            &mut ctx,
-            &mut *data.offset(which as isize) as *mut libc::c_uchar as *const libc::c_void,
-            halflen,
-        );
-        if datalen & 1 as libc::c_int as libc::c_ulong != 0 {
-            f[0 as libc::c_int as usize] = (*data
-                .offset(datalen.wrapping_sub(1 as libc::c_int as libc::c_ulong) as isize)
-                as libc::c_int
-                & mask as libc::c_int) as libc::c_uchar;
-            SHA256_Update(
-                &mut ctx,
-                f.as_mut_ptr() as *const libc::c_void,
-                1 as libc::c_int as size_t,
-            );
+        ctx2.update(&f[32..]);
+        ctx2.update(&*core::ptr::slice_from_raw_parts(
+            key as *const u8,
+            ::core::mem::size_of::<Binary>(),
+        ));
+        ctx2.update(&*core::ptr::slice_from_raw_parts(
+            data.offset(which as isize),
+            halflen as usize,
+        ));
+
+        if datalen & 1 != 0 {
+            f[0] = *data.offset(datalen.wrapping_sub(1) as isize) & mask;
+            ctx2.update(&f[0..1]);
         }
-        SHA256_Final(f.as_mut_ptr(), &mut ctx);
+
+        ctx2.finalize_into_reset(Array::from_mut_slice(&mut f[..32]));
         which ^= halflen;
         memxor(&mut *data.offset(which as isize), f.as_mut_ptr(), halflen);
-        if datalen & 1 as libc::c_int as libc::c_ulong != 0 {
-            mask = (mask as libc::c_int ^ 0xff as libc::c_int) as libc::c_uchar;
-            let ref mut fresh13 =
-                *data.offset(datalen.wrapping_sub(1 as libc::c_int as libc::c_ulong) as isize);
+        if datalen & 1 != 0 {
+            mask ^= 0xff;
+            let ref mut fresh13 = *data.offset(datalen.wrapping_sub(1) as isize);
             *fresh13 = (*fresh13 as libc::c_int
                 ^ f[halflen as usize] as libc::c_int & mask as libc::c_int)
                 as libc::c_uchar;
@@ -510,12 +491,12 @@ pub(crate) unsafe fn encrypt(
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: size_t) -> uint64_t {
+pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: usize) -> uint64_t {
     let mut X: *const uint32_t = &*B.offset(
-        (2 as libc::c_int as libc::c_ulong)
+        (2usize)
             .wrapping_mul(r)
-            .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            .wrapping_mul(16 as libc::c_int as libc::c_ulong) as isize,
+            .wrapping_sub(1usize)
+            .wrapping_mul(16usize) as isize,
     ) as *const uint32_t;
     return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
