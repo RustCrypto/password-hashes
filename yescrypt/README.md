@@ -7,7 +7,7 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [yescrypt] password hashing function.
+Pure Rust implementation of the [yescrypt] password-based key derivation function.
 
 [Documentation][docs-link]
 
