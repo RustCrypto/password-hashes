@@ -1,0 +1,30 @@
+[package]
+name = "yescrypt"
+version = "0.0.0"
+description = """
+Pure Rust implementation of the yescrypt password hashing function
+"""
+authors = ["RustCrypto Developers"]
+license = "BSD-2-Clause"
+documentation = "https://docs.rs/yescrypt"
+homepage = "https://github.com/RustCrypto/password-hashes/tree/master/yescrypt"
+repository = "https://github.com/RustCrypto/password-hashes"
+keywords = ["crypto", "hashing", "password", "phf"]
+categories = ["authentication", "cryptography", "no-std"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.72"
+
+[dependencies]
+libc = "0.2"
+hmac = { version = "0.13.0-pre.4", default-features = false }
+pbkdf2 = { version = "=0.13.0-pre.1", path = "../pbkdf2" }
+salsa20 = { version = "=0.11.0-pre.1", default-features = false }
+sha2 = { version = "=0.11.0-pre.4", default-features = false }
+
+#[dev-dependencies]
+hex-literal = "0.4"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
