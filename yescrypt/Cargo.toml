@@ -1,7 +1,7 @@
 [package]
 name = "yescrypt"
 version = "0.0.1-alpha"
-description = "Pure Rust implementation of the yescrypt password hashing function"
+description = "Pure Rust implementation of the yescrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "BSD-2-Clause"
 documentation = "https://docs.rs/yescrypt"
