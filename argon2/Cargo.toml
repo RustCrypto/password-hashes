@@ -33,10 +33,10 @@ password-hash = { version = "0.6.0-rc.0", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
-alloc = ["password-hash/alloc"]
-std = ["alloc", "password-hash/std"]
+alloc = ["password-hash?/alloc"]
+std = ["alloc", "password-hash?/std"]
 
-rand = ["password-hash/rand_core"]
+rand = ["password-hash?/rand_core"]
 simple = ["password-hash"]
 
 [lints.rust.unexpected_cfgs]
