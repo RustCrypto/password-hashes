@@ -30,8 +30,11 @@
 //! password-based authentication. Do not use this API to derive cryptographic
 //! keys: see the "key derivation" usage example below.
 //!
-#![cfg_attr(feature = "std", doc = "```")]
-#![cfg_attr(not(feature = "std"), doc = "```ignore")]
+#![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
+#![cfg_attr(
+    not(all(feature = "password-hash", feature = "std")),
+    doc = "```ignore"
+)]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
 //!     password_hash::{
@@ -65,8 +68,11 @@
 //! This API is useful for transforming a password into cryptographic keys for
 //! e.g. password-based encryption.
 //!
-#![cfg_attr(feature = "std", doc = "```")]
-#![cfg_attr(not(feature = "std"), doc = "```ignore")]
+#![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
+#![cfg_attr(
+    not(all(feature = "password-hash", feature = "std")),
+    doc = "```ignore"
+)]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::Argon2;
 //!
