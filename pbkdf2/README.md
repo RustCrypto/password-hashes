@@ -40,7 +40,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://buildstats.info/crate/pbkdf2
+[crate-image]: https://img.shields.io/crates/v/pbkdf2
 [crate-link]: https://crates.io/crates/pbkdf2
 [docs-image]: https://docs.rs/pbkdf2/badge.svg
 [docs-link]: https://docs.rs/pbkdf2/
