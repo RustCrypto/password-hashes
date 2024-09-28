@@ -1,4 +1,4 @@
-use salsa20::cipher::Unsigned;
+use salsa20::cipher::typenum::Unsigned;
 
 use crate::{
     common::{blkcpy, blkxor},
