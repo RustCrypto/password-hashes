@@ -14,7 +14,7 @@ keywords = ["crypto", "password", "hashing"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.81"
 
 [dependencies]
 password-hash = { version = "0.6.0-rc.0", features = ["alloc", "rand_core"] }
