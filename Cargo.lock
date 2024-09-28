@@ -70,9 +70,9 @@ dependencies = [
 
 [[package]]
 name = "blowfish"
-version = "0.10.0-pre.1"
+version = "0.10.0-pre.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f27c154f70281cf2775de16a3380c477f9c2c89ec1f122786b5afa7add0c8a3"
+checksum = "a95055ab63fce093f337ff8ab61732314c11963bd40b7352fe4e3d70a3f45b73"
 dependencies = [
  "byteorder",
  "cipher",
@@ -98,9 +98,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cipher"
-version = "0.5.0-pre.6"
+version = "0.5.0-pre.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c71c893d5a1e8257048dbb29954d2e1f85f091a150304f1defe4ca2806da5d3f"
+checksum = "5b1425e6ce000f05a73096556cabcfb6a10a3ffe3bb4d75416ca8f00819c0b6a"
 dependencies = [
  "crypto-common",
  "inout",
@@ -177,9 +177,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
-version = "0.2.0-rc.0"
+version = "0.2.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c070b79a496dccd931229780ad5bbedd535ceff6c3565605a8e440e18e1aa2b"
+checksum = "b0b8ce8218c97789f16356e7896b3714f26c2ee1079b79c0b7ae7064bb9089fa"
 dependencies = [
  "getrandom",
  "hybrid-array",
@@ -427,8 +427,7 @@ dependencies = [
 [[package]]
 name = "salsa20"
 version = "0.11.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea4ef53595bd236cf843530a2db25c792acb34e619320d0423e6cbc6d8e3c8c5"
+source = "git+https://github.com/RustCrypto/stream-ciphers.git#9fcbf802c3ec29672f6fa2f22fc6ac1abce24996"
 dependencies = [
  "cfg-if",
  "cipher",
