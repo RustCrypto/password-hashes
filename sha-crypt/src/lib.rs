@@ -384,7 +384,7 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
 /// # Arguments
 /// - `password` - expected password
 /// - `hashed_value` - the hashed value which should be used for checking,
-/// should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
+///    should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
 ///
 /// # Return
 /// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
@@ -462,7 +462,7 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 /// # Arguments
 /// - `password` - expected password
 /// - `hashed_value` - the hashed value which should be used for checking,
-/// should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
+///    should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
 ///
 /// # Return
 /// `OK(())` if password matches otherwise Err(CheckError) in case of invalid

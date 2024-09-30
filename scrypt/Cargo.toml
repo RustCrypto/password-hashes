@@ -11,7 +11,7 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.81"
 
 [dependencies]
 pbkdf2 = { version = "=0.13.0-pre.1", path = "../pbkdf2" }

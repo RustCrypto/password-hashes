@@ -11,7 +11,7 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.81"
 
 [dependencies]
 blowfish = { version = "=0.10.0-pre.2", features = ["bcrypt"] }

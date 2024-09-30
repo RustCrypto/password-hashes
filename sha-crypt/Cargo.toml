@@ -14,7 +14,7 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.81"
 
 [dependencies]
 sha2 = { version = "=0.11.0-pre.4", default-features = false }
