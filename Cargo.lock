@@ -426,8 +426,9 @@ dependencies = [
 
 [[package]]
 name = "salsa20"
-version = "0.11.0-pre.1"
-source = "git+https://github.com/RustCrypto/stream-ciphers.git#9fcbf802c3ec29672f6fa2f22fc6ac1abce24996"
+version = "0.11.0-pre.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1affa54a576c40080654b494bb3f3198fa2fe46e0954b85196d122e3561c2fd0"
 dependencies = [
  "cfg-if",
  "cipher",
@@ -441,7 +442,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scrypt"
-version = "0.12.0-pre.1"
+version = "0.12.0-pre.2"
 dependencies = [
  "password-hash",
  "pbkdf2",
