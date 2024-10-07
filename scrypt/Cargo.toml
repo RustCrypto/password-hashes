@@ -1,6 +1,6 @@
 [package]
 name = "scrypt"
-version = "0.12.0-pre.1"
+version = "0.12.0-pre.2"
 description = "Scrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,7 @@ rust-version = "1.81"
 
 [dependencies]
 pbkdf2 = { version = "=0.13.0-pre.1", path = "../pbkdf2" }
-salsa20 = { version = "=0.11.0-pre.1", default-features = false }
+salsa20 = { version = "=0.11.0-pre.2", default-features = false }
 sha2 = { version = "=0.11.0-pre.4", default-features = false }
 
 # optional dependencies
