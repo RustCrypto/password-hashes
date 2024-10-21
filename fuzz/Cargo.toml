@@ -9,9 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-pbkdf2 = { version = "=0.13.0-pre.1", path = "../pbkdf2" }
-salsa20 = { version = "=0.11.0-pre.2", default-features = false }
-sha2 = { version = "=0.11.0-pre.4", default-features = false }
+scrypt = { path = "../scrypt" }
 password-hash = { version = "0.6.0-rc.0", default-features = false, features = ["rand_core"], optional = true }
 hex = "0.4"
 base64 = "0.22.1"
@@ -20,9 +18,6 @@ base64 = "0.22.1"
 default = ["simple", "std"]
 simple = ["password-hash"]
 std = ["password-hash/std"]
-
-[dependencies.scrypt]
-path = "../scrypt"
 
 [[bin]]
 name = "scrypt_fuzzer"
