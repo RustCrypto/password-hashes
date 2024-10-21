@@ -30,7 +30,7 @@ const SAMPLE_HASH: &str =
 
 // Generate random params
 fn fuzzed_params(data: &[u8]) -> Option<Params> {
-    if data.len() >= 4 {
+    if data.len() >= 8 {
         let log_n = data[0] % 16; // Cap log_n to 16
         let r = u32::from_le_bytes([data[1], data[2], data[3], 0]) % 32; // Cap r to a reasonable value like 32
         let p = if data.len() > 4 {

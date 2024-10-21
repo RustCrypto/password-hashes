@@ -9,15 +9,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-scrypt = { path = "../scrypt" }
-password-hash = { version = "0.6.0-rc.0", default-features = false, features = ["rand_core"], optional = true }
+scrypt = { path = "../scrypt", features = ["simple"]}
 hex = "0.4"
-base64 = "0.22.1"
-
-[features]
-default = ["simple", "std"]
-simple = ["password-hash"]
-std = ["password-hash/std"]
 
 [[bin]]
 name = "scrypt_fuzzer"
