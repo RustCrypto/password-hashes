@@ -10,7 +10,6 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 scrypt = { path = "../scrypt", features = ["simple"]}
-hex = "0.4"
 
 [[bin]]
 name = "scrypt_fuzzer"

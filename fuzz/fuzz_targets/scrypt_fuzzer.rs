@@ -107,7 +107,7 @@ fuzz_target!(|data: &[u8]| {
 
         let salt_value = salt_string.as_salt(); // Safe to use now
 
-        let formatted_hash = format!("$scrypt$ln=16,r=8,p=1${}$invalid$", hex::encode(password));
+        let formatted_hash = format!("$scrypt$ln=16,r=8,p=1${}$invalid$", base64ct::Base64::encode_string(password));
 
         if let Ok(hash) =
             PasswordHash::new(SAMPLE_HASH).or_else(|_| PasswordHash::new(formatted_hash.as_str()))
