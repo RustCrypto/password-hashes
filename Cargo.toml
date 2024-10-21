@@ -4,14 +4,13 @@ members = [
     "argon2",
     "balloon-hash",
     "bcrypt-pbkdf",
-    "fuzz",
     "password-auth",
     "pbkdf2",
     "scrypt",
     "sha-crypt",
     "yescrypt"
 ]
-exclude = ["benches"]
+exclude = ["benches", "fuzz"]
 
 [profile.dev]
 opt-level = 2
