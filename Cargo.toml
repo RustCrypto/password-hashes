@@ -7,6 +7,7 @@ members = [
     "password-auth",
     "pbkdf2",
     "scrypt",
+    "scrypt/fuzz",
     "sha-crypt",
     "yescrypt"
 ]
