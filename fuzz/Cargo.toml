@@ -9,6 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+base16ct = { version = "0.2", features = ["alloc"] }
 scrypt = { path = "../scrypt", features = ["simple"]}
 
 [[bin]]

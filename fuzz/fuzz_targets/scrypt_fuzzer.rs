@@ -15,16 +15,9 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use scrypt::{scrypt, Params};
+use scrypt::{scrypt, Params, Scrypt};
+use scrypt::password_hash::{Ident, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 
-#[cfg(feature = "simple")]
-use {
-    password_hash::Ident,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    scrypt::Scrypt,
-};
-
-#[cfg(feature = "simple")]
 const SAMPLE_HASH: &str =
     "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
 
@@ -51,7 +44,6 @@ fn fuzzed_params(data: &[u8]) -> Option<Params> {
 }
 
 // Generate random salt value
-#[cfg(feature = "simple")]
 fn fuzzed_salt(data: &[u8]) -> Option<SaltString> {
     let salt_data = if data.len() >= 16 { &data[..16] } else { data };
     SaltString::encode_b64(salt_data).ok()
@@ -99,7 +91,6 @@ fuzz_target!(|data: &[u8]| {
     let salt = splits.get(1).unwrap_or(&data);
     let mut result = vec![0u8; 256];
 
-    #[cfg(feature = "simple")]
     if let Some(salt_string) = fuzzed_salt(salt) {
         if !validate_salt(salt_string.as_str()) {
             return;
@@ -107,7 +98,7 @@ fuzz_target!(|data: &[u8]| {
 
         let salt_value = salt_string.as_salt(); // Safe to use now
 
-        let formatted_hash = format!("$scrypt$ln=16,r=8,p=1${}$invalid$", base64ct::Base64::encode_string(password));
+        let formatted_hash = format!("$scrypt$ln=16,r=8,p=1${}$invalid$", base16ct::lower::encode_string(password));
 
         if let Ok(hash) =
             PasswordHash::new(SAMPLE_HASH).or_else(|_| PasswordHash::new(formatted_hash.as_str()))
