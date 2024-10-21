@@ -19,9 +19,9 @@ use scrypt::{scrypt, Params};
 
 #[cfg(feature = "simple")]
 use {
+    password_hash::Ident,
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     scrypt::Scrypt,
-    password_hash::Ident,
 };
 
 #[cfg(feature = "simple")]
@@ -33,8 +33,16 @@ fn fuzzed_params(data: &[u8]) -> Option<Params> {
     if data.len() >= 4 {
         let log_n = data[0] % 16; // Cap log_n to 16
         let r = u32::from_le_bytes([data[1], data[2], data[3], 0]) % 32; // Cap r to a reasonable value like 32
-        let p = if data.len() > 4 { u32::from_le_bytes([data[4], data[5], data[6], 0]) % 16 } else { 1 };
-        let len = if data.len() > 7 { data[7] as usize % 65 } else { 32 };
+        let p = if data.len() > 4 {
+            u32::from_le_bytes([data[4], data[5], data[6], 0]) % 16
+        } else {
+            1
+        };
+        let len = if data.len() > 7 {
+            data[7] as usize % 65
+        } else {
+            32
+        };
 
         Params::new(log_n, r, p, len).ok()
     } else {
@@ -45,11 +53,7 @@ fn fuzzed_params(data: &[u8]) -> Option<Params> {
 // Generate random salt value
 #[cfg(feature = "simple")]
 fn fuzzed_salt(data: &[u8]) -> Option<SaltString> {
-    let salt_data = if data.len() >= 16 {
-        &data[..16]
-    } else {
-        &data
-    };
+    let salt_data = if data.len() >= 16 { &data[..16] } else { data };
     SaltString::encode_b64(salt_data).ok()
 }
 
@@ -57,7 +61,7 @@ fn fuzzed_salt(data: &[u8]) -> Option<SaltString> {
 fn validate_salt(salt_str: &str) -> bool {
     // Check length
     let length = salt_str.len();
-    if length < 4 || length > 64 {
+    if !(4..=64).contains(&length) {
         return false;
     }
 
@@ -81,7 +85,7 @@ fn split_fuzz_data<'a>(data: &'a [u8], splits: &[usize]) -> Vec<&'a [u8]> {
             start += split;
         } else {
             result.push(&data[start..]);
-            break; 
+            break;
         }
     }
 
@@ -91,7 +95,7 @@ fn split_fuzz_data<'a>(data: &'a [u8], splits: &[usize]) -> Vec<&'a [u8]> {
 fuzz_target!(|data: &[u8]| {
     let params = fuzzed_params(data).unwrap_or_else(|| Params::new(16, 8, 1, 64).unwrap());
     let splits = split_fuzz_data(data, &[32, 32, 32]);
-    let password = splits.get(0).unwrap_or(&data);
+    let password = splits.first().unwrap_or(&data);
     let salt = splits.get(1).unwrap_or(&data);
     let mut result = vec![0u8; 256];
 
@@ -105,30 +109,38 @@ fuzz_target!(|data: &[u8]| {
 
         let formatted_hash = format!("$scrypt$ln=16,r=8,p=1${}$invalid$", hex::encode(password));
 
-        if let Ok(hash) = PasswordHash::new(SAMPLE_HASH).or_else(|_| PasswordHash::new(formatted_hash.as_str())) {
+        if let Ok(hash) =
+            PasswordHash::new(SAMPLE_HASH).or_else(|_| PasswordHash::new(formatted_hash.as_str()))
+        {
             // Randomly choose the fuzz target function
             let target_selector = if !data.is_empty() { data[0] % 5 } else { 0 };
             match target_selector {
                 0 => {
                     let _ = scrypt(password, salt, &params, &mut result);
-                },
+                }
                 1 => {
                     let _ = Scrypt.verify_password(password, &hash).is_err();
-                },
+                }
                 2 => {
-                    let _ = Scrypt.hash_password_customized(password, Some(Ident::new_unwrap("scrypt")), None, params, salt_value);
-                },
+                    let _ = Scrypt.hash_password_customized(
+                        password,
+                        Some(Ident::new_unwrap("scrypt")),
+                        None,
+                        params,
+                        salt_value,
+                    );
+                }
                 3 => {
                     if let Some(random_params) = fuzzed_params(password) {
                         let _ = scrypt(password, salt, &random_params, &mut result);
                     }
-                },
+                }
                 4 => {
                     let _ = PasswordHash::new(SAMPLE_HASH).is_ok();
-                },
+                }
                 _ => {
                     let _ = scrypt(password, salt, &params, &mut result);
-                },
+                }
             }
         }
     } else {
