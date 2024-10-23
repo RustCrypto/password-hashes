@@ -1,0 +1,19 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+scrypt = { path = "../scrypt", features = ["simple"]}
+
+[[bin]]
+name = "scrypt"
+path = "fuzz_targets/scrypt.rs"
+test = false
+doc = false
+bench = false

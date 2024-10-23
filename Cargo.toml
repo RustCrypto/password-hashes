@@ -10,7 +10,7 @@ members = [
     "sha-crypt",
     "yescrypt"
 ]
-exclude = ["benches"]
+exclude = ["benches", "fuzz"]
 
 [profile.dev]
 opt-level = 2

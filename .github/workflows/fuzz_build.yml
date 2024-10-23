@@ -1,0 +1,27 @@
+name: fuzz-build
+
+on:
+  pull_request:
+    paths:
+      - "fuzz/**"
+  push:
+    branches: master
+
+defaults:
+  run:
+    working-directory: fuzz
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - run: cargo build
