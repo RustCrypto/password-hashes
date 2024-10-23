@@ -1,5 +1,5 @@
 [package]
-name = "scrypt-fuzz"
+name = "fuzz"
 version = "0.0.0"
 publish = false
 edition = "2018"
@@ -9,12 +9,25 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-base16ct = { version = "0.2", features = ["alloc"] }
 scrypt = { path = "../scrypt", features = ["simple"]}
 
 [[bin]]
-name = "scrypt_fuzzer"
-path = "fuzz_targets/scrypt_fuzzer.rs"
+name = "scrypt_hash"
+path = "fuzz_targets/scrypt_hash.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scrypt_phc_verify"
+path = "fuzz_targets/scrypt_phc_verify.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scrypt_phc_hash"
+path = "fuzz_targets/scrypt_phc_hash.rs"
 test = false
 doc = false
 bench = false
