@@ -24,9 +24,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - name: Install cargo-fuzz
-        run: |
-          cargo install cargo-fuzz
-      - name: Build with cargo-fuzz
-        run: |
-          cargo fuzz build -s none
+      - run: cargo build
