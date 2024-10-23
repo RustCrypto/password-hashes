@@ -12,22 +12,8 @@ libfuzzer-sys = "0.4"
 scrypt = { path = "../scrypt", features = ["simple"]}
 
 [[bin]]
-name = "scrypt_hash"
-path = "fuzz_targets/scrypt_hash.rs"
-test = false
-doc = false
-bench = false
-
-[[bin]]
-name = "scrypt_phc_verify"
-path = "fuzz_targets/scrypt_phc_verify.rs"
-test = false
-doc = false
-bench = false
-
-[[bin]]
-name = "scrypt_phc_hash"
-path = "fuzz_targets/scrypt_phc_hash.rs"
+name = "scrypt"
+path = "fuzz_targets/scrypt.rs"
 test = false
 doc = false
 bench = false
