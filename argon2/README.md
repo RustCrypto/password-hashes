@@ -9,8 +9,6 @@
 
 Pure Rust implementation of the [Argon2] password hashing function.
 
-[Documentation][docs-link]
-
 # About
 
 Argon2 is a memory-hard [key derivation function] chosen as the winner of
@@ -27,7 +25,7 @@ ones without `alloc` support.
 
 ## Minimum Supported Rust Version
 
-Rust **1.65** or higher.
+Rust **1.81** or higher.
 
 Minimum supported Rust version can be changed in the future, but it will be
 done with a minor version bump.
@@ -59,7 +57,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/argon2/badge.svg
 [docs-link]: https://docs.rs/argon2/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.65+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.81+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/argon2/badge.svg?branch=master&event=push
