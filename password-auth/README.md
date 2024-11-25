@@ -10,8 +10,6 @@
 Password authentication library with a focus on simplicity and ease-of-use,
 with support for [Argon2], [PBKDF2], and [scrypt] password hashing algorithms.
 
-[Documentation][docs-link]
-
 ## About
 
 `password-auth` is a high-level password authentication library with a simple
@@ -42,7 +40,7 @@ scrypt as well, if you have them in your password database.
 
 ## Minimum Supported Rust Version
 
-Rust **1.65** or higher.
+Rust **1.81** or higher.
 
 Minimum supported Rust version can be changed in the future, but it will be
 done with a minor version bump.
@@ -74,7 +72,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/password-auth/badge.svg
 [docs-link]: https://docs.rs/password-auth/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.65+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.81+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/password-auth/badge.svg?branch=master&event=push
