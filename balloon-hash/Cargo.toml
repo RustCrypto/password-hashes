@@ -32,6 +32,7 @@ alloc = ["password-hash/alloc"]
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
 std = ["alloc", "password-hash/std"]
+zeroize = ["dep:zeroize"]
 
 [package.metadata.docs.rs]
 all-features = true
