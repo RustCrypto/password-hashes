@@ -38,6 +38,7 @@ std = ["alloc", "password-hash?/std"]
 
 rand = ["password-hash?/rand_core"]
 simple = ["password-hash"]
+zeroize = ["dep:zeroize"]
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
