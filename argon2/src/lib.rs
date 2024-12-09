@@ -38,6 +38,7 @@
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
 //!     password_hash::{
+//!         // `OsRng` requires enabled `std` crate feature
 //!         rand_core::OsRng,
 //!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
 //!     },
