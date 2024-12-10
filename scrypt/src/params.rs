@@ -102,9 +102,18 @@ impl Params {
 
     /// log₂ of the Scrypt parameter `N`, the work factor.
     ///
-    /// Memory and CPU usage scale linearly with `N`.
+    /// Memory and CPU usage scale linearly with `N`. If you need `N`, use
+    /// [`Params::n`] instead.
     pub const fn log_n(&self) -> u8 {
         self.log_n
+    }
+
+    /// `N` parameter: the work factor.
+    ///
+    /// This method returns 2 to the power of [`Params::log_n`]. Memory and CPU
+    /// usage scale linearly with `N`.
+    pub const fn n(&self) -> u64 {
+        1 << self.log_n
     }
 
     /// `r` parameter: resource usage.
