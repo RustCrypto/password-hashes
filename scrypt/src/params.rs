@@ -110,7 +110,7 @@ impl Params {
 
     /// `N` parameter: the work factor.
     ///
-    /// This method returns the square of [`Params::log_n`]. Memory and CPU
+    /// This method returns 2 to the power of [`Params::log_n`]. Memory and CPU
     /// usage scale linearly with `N`.
     pub const fn n(&self) -> u64 {
         1 << self.log_n
