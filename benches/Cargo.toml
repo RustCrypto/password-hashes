@@ -11,6 +11,10 @@ argon2 = { path = "../argon2" }
 criterion = { version = "0.4", features = ["html_reports"] }
 pprof = { version = "0.14", features = ["flamegraph", "criterion"] }
 
+[features]
+default = []
+parallel = ["argon2/parallel"]
+
 [[bench]]
 name = "argon2"
 path = "src/argon2.rs"
