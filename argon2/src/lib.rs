@@ -239,7 +239,13 @@ impl<'key> Argon2<'key> {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
-        let mut blocks = vec![Block::default(); self.params.block_count()];
+        // For moderate and large `n`, `vec![Block::new(); n]` is significantly slower than
+        // creating a `Vec` of bytes. But as byte slices have alignment of 1, use a vec one `Block`
+        // alignment too large to ensure that we can get enough aligned blocks out of it.
+        let size = self.params.block_count() * size_of::<Block>() + align_of::<Block>();
+        let mut bytes = vec![0u8; size];
+        // SAFETY: all-zeros is a valid bit pattern for `Block`.
+        let (_, mut blocks, _) = unsafe { bytes.align_to_mut::<Block>() };
         self.hash_password_into_with_memory(pwd, salt, out, &mut blocks)
     }
 
