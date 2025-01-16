@@ -18,7 +18,7 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 
 #[cfg(feature = "parallel")]
-use rayon::iter::{plumbing::bridge, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Block, SYNC_POINTS};
 
@@ -92,14 +92,14 @@ impl<'a> ParallelIterator for SegmentViewIter<'a> {
     where
         C: rayon::iter::plumbing::UnindexedConsumer<Self::Item>,
     {
-        bridge(
-            (0..self.inner.lanes).into_par_iter().map(|lane| {
+        (0..self.inner.lanes)
+            .into_par_iter()
+            .map(|lane| {
                 // SAFETY: `self` mutably borrows the underlying memory region for a single Argon2
                 // slice, and we create exactly one memory view per lane.
                 unsafe { SegmentView::new(self.inner.unsafe_copy(), lane) }
-            }),
-            consumer,
-        )
+            })
+            .drive_unindexed(consumer)
     }
 }
 
