@@ -46,12 +46,8 @@ macro_rules! permute {
 }
 
 /// Structure for the (1 KiB) memory block implemented as 128 64-bit words.
-//
-// Blocks are 128-byte aligned to prevent false sharing. The specific alignment value is based on
-// the notes in `crossbeam-utils::CachePadded` for modern architectures, which either use 128-byte
-// cache lines (aarch64) or pull 64-byte cache lines in pairs (x86-64).
 #[derive(Copy, Clone, Debug)]
-#[repr(align(128))]
+#[repr(align(64))]
 pub struct Block([u64; Self::SIZE / 8]);
 
 impl Block {
