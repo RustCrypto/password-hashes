@@ -11,11 +11,11 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.83"
 
 [dependencies]
 digest = { version = "=0.11.0-pre.9", default-features = false }
-crypto-bigint = { version = "0.6.0-rc.6", default-features = false, features = ["hybrid-array"] }
+crypto-bigint = { version = "0.6.0-rc.7", default-features = false, features = ["hybrid-array"] }
 
 # optional dependencies
 password-hash = { version = "0.6.0-rc.0", default-features = false, optional = true }
