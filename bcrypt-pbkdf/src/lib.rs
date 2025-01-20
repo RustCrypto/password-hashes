@@ -135,7 +135,7 @@ pub fn bcrypt_pbkdf(
     const STACK_STRIDE: usize = 8;
 
     // Allocate a Vec large enough to hold the output we require.
-    let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
+    let stride = output.len().div_ceil(BHASH_OUTPUT_SIZE);
 
     let mut vec_buf;
     let mut stack_buf = [0u8; STACK_STRIDE * BHASH_OUTPUT_SIZE];
@@ -172,7 +172,7 @@ pub fn bcrypt_pbkdf_with_memory(
     output: &mut [u8],
     memory: &mut [u8],
 ) -> Result<(), Error> {
-    let stride = (output.len() + BHASH_OUTPUT_SIZE - 1) / BHASH_OUTPUT_SIZE;
+    let stride = output.len().div_ceil(BHASH_OUTPUT_SIZE);
 
     // Validate inputs in same way as OpenSSH implementation
     let passphrase = passphrase.as_ref();
