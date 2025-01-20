@@ -635,13 +635,13 @@ impl PasswordHasher for Argon2<'_> {
     }
 }
 
-impl<'key> From<Params> for Argon2<'key> {
+impl From<Params> for Argon2<'_> {
     fn from(params: Params) -> Self {
         Self::new(Algorithm::default(), Version::default(), params)
     }
 }
 
-impl<'key> From<&Params> for Argon2<'key> {
+impl From<&Params> for Argon2<'_> {
     fn from(params: &Params) -> Self {
         Self::from(params.clone())
     }

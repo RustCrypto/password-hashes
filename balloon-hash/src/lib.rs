@@ -269,7 +269,7 @@ where
     }
 }
 
-impl<'key, D: Digest + FixedOutputReset> From<Params> for Balloon<'key, D>
+impl<D: Digest + FixedOutputReset> From<Params> for Balloon<'_, D>
 where
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
