@@ -64,7 +64,9 @@
 //! # }
 //! ```
 //!
-//! To pepper as well as salt your passwords:
+//! To [pepper] as well as salt your passwords:
+//!
+//! [pepper]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#peppering
 //!
 #![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
 #![cfg_attr(
@@ -86,7 +88,7 @@
 //!
 //! // Argon2 with default params (Argon2id v19) and pepper
 //! let argon2 = Argon2::new_with_secret(
-//!     b"pepper",
+//!     b"secret pepper",
 //!     Algorithm::default(),
 //!     Version::default(),
 //!     Params::default()
@@ -101,15 +103,15 @@
 //! // NOTE: hash params from `parsed_hash` are used instead of what is configured in the
 //! // `Argon2` instance.
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
-//! assert!(Argon2::new_with_secret(
-//!     b"pepper",
+//! let argon2 = Argon2::new_with_secret(
+//!     b"secret pepper",
 //!     Algorithm::default(),
 //!     Version::default(),
-//!     Params::default()
+//!     Params::default(),
 //! )
-//! .unwrap()
-//! .verify_password(password, &parsed_hash)
-//! .is_ok());
+//! .unwrap();
+//! let res = argon2.verify_password(password, &parsed_hash);
+//! assert!(res.is_ok());
 //! # Ok(())
 //! # }
 //! ```
