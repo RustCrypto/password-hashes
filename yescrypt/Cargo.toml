@@ -21,7 +21,7 @@ salsa20 = { version = "=0.11.0-pre.2", default-features = false }
 sha2 = { version = "=0.11.0-pre.4", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.4"
+hex-literal = "1.0"
 
 [package.metadata.docs.rs]
 all-features = true
