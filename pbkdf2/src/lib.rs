@@ -49,8 +49,8 @@
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "simple", feature = "std"))]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! # #[cfg(feature = "simple")]
 //! # {
 //! use pbkdf2::{
 //!     password_hash::{
@@ -80,9 +80,6 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
-
-#[cfg(feature = "std")]
-extern crate std;
 
 #[cfg(feature = "simple")]
 extern crate alloc;
