@@ -4,7 +4,7 @@ use crate::{Error, Result};
 use core::num::NonZeroU32;
 
 #[cfg(feature = "password-hash")]
-use password_hash::{errors::InvalidValue, ParamsString, PasswordHash};
+use password_hash::{ParamsString, PasswordHash, errors::InvalidValue};
 
 /// Balloon password hash parameters.
 ///

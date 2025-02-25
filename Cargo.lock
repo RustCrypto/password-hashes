@@ -28,6 +28,7 @@ dependencies = [
  "digest",
  "hex-literal",
  "password-hash",
+ "rand_core 0.9.2",
  "rayon",
  "sha2",
  "zeroize",
