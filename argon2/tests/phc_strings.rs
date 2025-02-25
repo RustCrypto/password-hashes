@@ -9,8 +9,8 @@ use argon2::{
     PasswordVerifier, Version,
 };
 use password_hash::{
-    errors::{Error, InvalidValue},
     SaltString,
+    errors::{Error, InvalidValue},
 };
 
 /// Valid password
@@ -48,9 +48,11 @@ fn verifies_correct_password() {
 fn rejects_incorrect_password() {
     for hash_string in VALID_PASSWORD_HASHES {
         let hash = PasswordHash::new(hash_string).unwrap();
-        assert!(Argon2::default()
-            .verify_password(INVALID_PASSWORD, &hash)
-            .is_err());
+        assert!(
+            Argon2::default()
+                .verify_password(INVALID_PASSWORD, &hash)
+                .is_err()
+        );
     }
 }
 
@@ -154,9 +156,11 @@ fn check_decoding_supports_out_of_order_parameters() {
     // parameters order is not mandatory
     let hash = "$argon2d$v=16$m=32,t=2,p=3,keyid=8PDw8A,data=Dw8PDw8P$AAAAAAAAAAA$KnH4gniiaFnDvlA1xev3yovC4cnrrI6tnHOYtmja90o";
     let hash = PasswordHash::new(hash).unwrap();
-    assert!(Argon2::default()
-        .verify_password(b"password", &hash)
-        .is_ok());
+    assert!(
+        Argon2::default()
+            .verify_password(b"password", &hash)
+            .is_ok()
+    );
 }
 
 // TODO: Fix default parameters for decoding !
@@ -166,9 +170,11 @@ fn check_decoding_supports_default_parameters() {
     // parameters order is not mandatory
     let hash = "$argon2i$p=2,m=256,t=2$c29tZXNhbHQ$tsEVYKap1h6scGt5ovl9aLRGOqOth+AMB+KwHpDFZPs";
     let hash = PasswordHash::new(hash).unwrap();
-    assert!(Argon2::default()
-        .verify_password(b"password", &hash)
-        .is_ok());
+    assert!(
+        Argon2::default()
+            .verify_password(b"password", &hash)
+            .is_ok()
+    );
 }
 
 // m/t/p parameters are NOT optional according to spec
@@ -216,5 +222,8 @@ fn check_hash_encoding_parameters_order() {
         .to_string();
 
     // The parameters shall appear in the m,t,p,keyid,data order
-    assert_eq!(password_hash, "$argon2d$v=16$m=32,t=2,p=3,keyid=8PDw8A,data=Dw8PDw8P$AAAAAAAAAAA$KnH4gniiaFnDvlA1xev3yovC4cnrrI6tnHOYtmja90o");
+    assert_eq!(
+        password_hash,
+        "$argon2d$v=16$m=32,t=2,p=3,keyid=8PDw8A,data=Dw8PDw8P$AAAAAAAAAAA$KnH4gniiaFnDvlA1xev3yovC4cnrrI6tnHOYtmja90o"
+    );
 }

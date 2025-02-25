@@ -13,8 +13,8 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
-edition = "2021"
-rust-version = "1.81"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 base64ct = "1"
@@ -34,7 +34,7 @@ password-hash = { version = "0.6.0-rc.0", features = ["rand_core"] }
 [features]
 default = ["alloc", "password-hash", "rand"]
 alloc = ["password-hash?/alloc"]
-std = ["alloc", "password-hash?/std"]
+std = ["alloc", "password-hash?/os_rng"]
 
 rand = ["password-hash?/rand_core"]
 simple = ["password-hash"]

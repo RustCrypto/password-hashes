@@ -14,3 +14,6 @@ exclude = ["benches", "fuzz"]
 
 [profile.dev]
 opt-level = 2
+
+[patch.crates-io]
+password-hash = { git = "https://github.com/RustCrypto/traits.git" }
