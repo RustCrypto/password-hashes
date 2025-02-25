@@ -38,13 +38,6 @@ When multiple algorithms are enabled, it will still default to Argon2 for
 `generate_hash`, but will be able to verify password hashes from PBKDF2 and
 scrypt as well, if you have them in your password database.
 
-## Minimum Supported Rust Version
-
-Rust **1.81** or higher.
-
-Minimum supported Rust version can be changed in the future, but it will be
-done with a minor version bump.
-
 ## SemVer Policy
 
 - All on-by-default features of this library are covered by SemVer
