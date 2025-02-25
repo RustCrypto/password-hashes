@@ -46,7 +46,7 @@ use scrypt::Scrypt;
 /// Uses the best available password hashing algorithm given the enabled
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
-    let salt = SaltString::generate(OsRng);
+    let salt = SaltString::try_from_rng(&mut OsRng).expect("Rng error");
     generate_phc_hash(password.as_ref(), &salt)
         .map(|hash| hash.to_string())
         .expect("password hashing error")
