@@ -10,8 +10,8 @@ homepage = "https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbk
 repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
-edition = "2021"
-rust-version = "1.81"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 blowfish = { version = "=0.10.0-pre.2", features = ["bcrypt"] }

@@ -10,13 +10,6 @@
 Pure Rust implementation of the [`bcrypt_pbkdf`] password-based key derivation
 function, a custom derivative of PBKDF2 [used in OpenSSH].
 
-## Minimum Supported Rust Version
-
-Rust **1.81** or higher.
-
-Minimum supported Rust version can be changed in the future, but it will be
-done with a minor version bump.
-
 ## SemVer Policy
 
 - All on-by-default features of this library are covered by SemVer
@@ -44,7 +37,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/bcrypt-pbkdf/badge.svg
 [docs-link]: https://docs.rs/bcrypt-pbkdf/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.81+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/bcrypt-pbkdf/badge.svg?branch=master&event=push
