@@ -3,8 +3,8 @@
 use crate::pbkdf2_hmac;
 use core::{cmp::Ordering, fmt, str::FromStr};
 use password_hash::{
-    errors::InvalidValue, Decimal, Error, Ident, Output, ParamsString, PasswordHash,
-    PasswordHasher, Result, Salt,
+    Decimal, Error, Ident, Output, ParamsString, PasswordHash, PasswordHasher, Result, Salt,
+    errors::InvalidValue,
 };
 use sha2::{Sha256, Sha512};
 

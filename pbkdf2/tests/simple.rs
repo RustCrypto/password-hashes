@@ -6,8 +6,8 @@
 
 use hex_literal::hex;
 use pbkdf2::{
-    password_hash::{PasswordHasher, Salt},
     Algorithm, Params, Pbkdf2,
+    password_hash::{PasswordHasher, Salt},
 };
 
 const PASSWORD: &str = "password";

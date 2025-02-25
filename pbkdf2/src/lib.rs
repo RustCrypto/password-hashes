@@ -61,7 +61,7 @@
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
 //! let password_hash = Pbkdf2.hash_password(password, &salt)?.to_string();
@@ -103,14 +103,14 @@ pub use crate::simple::{Algorithm, Params, Pbkdf2};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use digest::{typenum::Unsigned, FixedOutput, InvalidLength, KeyInit, Update};
+use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
 use digest::{
+    HashMarker,
     block_buffer::Eager,
     core_api::{BlockSizeUser, BufferKindUser, FixedOutputCore, UpdateCore},
     typenum::{IsLess, Le, NonZero, U256},
-    HashMarker,
 };
 
 #[inline(always)]

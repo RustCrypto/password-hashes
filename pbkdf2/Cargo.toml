@@ -10,8 +10,8 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
-edition = "2021"
-rust-version = "1.81"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 digest = { version = "=0.11.0-pre.9", features = ["mac"] }
@@ -32,7 +32,7 @@ streebog = "=0.11.0-pre.4"
 
 [features]
 default = ["hmac"]
-std = ["password-hash/std"]
+std = ["password-hash/os_rng"]
 
 parallel = ["rayon", "std"]
 simple = ["hmac", "password-hash", "sha2"]
