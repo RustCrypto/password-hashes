@@ -3,7 +3,7 @@ use core::mem::size_of;
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
-use password_hash::{errors::InvalidValue, Error, ParamsString, PasswordHash};
+use password_hash::{Error, ParamsString, PasswordHash, errors::InvalidValue};
 
 /// The Scrypt parameter values.
 #[derive(Clone, Copy, Debug, PartialEq)]

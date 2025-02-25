@@ -1,4 +1,4 @@
-use scrypt::{scrypt, Params};
+use scrypt::{Params, scrypt};
 
 #[cfg(feature = "simple")]
 use {

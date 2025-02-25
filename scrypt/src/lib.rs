@@ -51,8 +51,6 @@
 
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "std")]
-extern crate std;
 
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
@@ -71,7 +69,7 @@ pub use crate::params::Params;
 pub use password_hash;
 
 #[cfg(feature = "simple")]
-pub use crate::simple::{Scrypt, ALG_ID};
+pub use crate::simple::{ALG_ID, Scrypt};
 
 /// The scrypt key derivation function.
 ///
