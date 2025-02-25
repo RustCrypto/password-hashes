@@ -41,7 +41,8 @@
     non_upper_case_globals,
     path_statements,
     unused_assignments,
-    unused_mut
+    unused_mut,
+    unsafe_op_in_unsafe_fn
 )]
 
 // Adapted from the yescrypt reference implementation available at:
@@ -57,7 +58,7 @@ mod sha256;
 
 use crate::{
     common::{blkcpy, blkxor, integerify, le32dec, le32enc, p2floor, wrap},
-    sha256::{HMAC_SHA256_Buf, SHA256_Buf, PBKDF2_SHA256},
+    sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{vec, vec::Vec};
 use core::{

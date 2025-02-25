@@ -15,13 +15,6 @@ The implementation contained in this crate has never been independently audited!
 
 USE AT YOUR OWN RISK!
 
-## Minimum Supported Rust Version
-
-Rust **1.81** or higher.
-
-Minimum supported Rust version can be changed in the future, but it will be
-done with a minor version bump.
-
 ## SemVer Policy
 
 - All on-by-default features of this library are covered by SemVer
