@@ -51,7 +51,7 @@ mod params;
 pub use crate::{
     defs::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512},
     errors::CryptError,
-    params::{Sha256Params, Sha512Params, ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN},
+    params::{ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN, Sha256Params, Sha512Params},
 };
 
 use alloc::{string::String, vec::Vec};
@@ -64,7 +64,7 @@ use {
         errors::CheckError,
     },
     alloc::string::ToString,
-    rand::{distributions::Distribution, thread_rng, Rng},
+    rand::{Rng, distributions::Distribution, thread_rng},
 };
 
 #[cfg(feature = "simple")]
