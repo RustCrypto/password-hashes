@@ -9,11 +9,6 @@
 
 Pure Rust implementation of the [scrypt key derivation function][1].
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:

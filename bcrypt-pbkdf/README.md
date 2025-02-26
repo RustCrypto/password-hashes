@@ -10,11 +10,6 @@
 Pure Rust implementation of the [`bcrypt_pbkdf`] password-based key derivation
 function, a custom derivative of PBKDF2 [used in OpenSSH].
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:

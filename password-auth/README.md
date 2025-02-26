@@ -38,11 +38,6 @@ When multiple algorithms are enabled, it will still default to Argon2 for
 `generate_hash`, but will be able to verify password hashes from PBKDF2 and
 scrypt as well, if you have them in your password database.
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:

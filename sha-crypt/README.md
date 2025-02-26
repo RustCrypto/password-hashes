@@ -13,11 +13,6 @@ a legacy password hashing scheme supported by the [POSIX crypt C library][2].
 Password hashes using this algorithm start with `$6$` when encoded using the
 [PHC string format][3].
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:

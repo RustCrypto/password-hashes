@@ -23,10 +23,6 @@ It implements the following three algorithmic variants:
 Support is provided for embedded (i.e. `no_std`) environments, including
 ones without `alloc` support.
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-
 ## License
 
 Licensed under either of:

@@ -15,11 +15,6 @@ The implementation contained in this crate has never been independently audited!
 
 USE AT YOUR OWN RISK!
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under the BSD 2-clause license. See file [LICENSE] for more information.

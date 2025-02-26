@@ -9,10 +9,6 @@
 
 Pure Rust implementation of the [Password-Based Key Derivation Function v2 (PBKDF2)][1].
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-
 ## License
 
 Licensed under either of:

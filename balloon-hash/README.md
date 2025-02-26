@@ -22,11 +22,6 @@ This algorithm is first practical password hashing function that provides:
 - Performance which meets or exceeds the best heuristically secure
   password-hashing algorithms
 
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:
