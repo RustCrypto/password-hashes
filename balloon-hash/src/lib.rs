@@ -42,7 +42,7 @@
 //! use sha2::Sha256;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = SaltString::try_from_rng(&mut OsRng)?;
 //!
 //! // Balloon with default params
 //! let balloon = Balloon::<Sha256>::default();

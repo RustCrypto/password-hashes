@@ -46,7 +46,7 @@ use scrypt::Scrypt;
 /// Uses the best available password hashing algorithm given the enabled
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
-    let salt = SaltString::generate(OsRng);
+    let salt = SaltString::try_from_rng(&mut OsRng).expect("Rng error");
     generate_phc_hash(password.as_ref(), &salt)
         .map(|hash| hash.to_string())
         .expect("password hashing error")
@@ -147,11 +147,10 @@ mod tests {
 
     #[cfg(feature = "argon2")]
     mod argon2 {
-        use super::{verify_password, EXAMPLE_PASSWORD};
+        use super::{EXAMPLE_PASSWORD, verify_password};
 
         /// Argon2 hash for the string "password".
-        const EXAMPLE_HASH: &str =
-            "$argon2i$v=19$m=65536,t=1,p=1$c29tZXNhbHQAAAAAAAAAAA$+r0d29hqEB0yasKr55ZgICsQGSkl0v0kgwhd+U3wyRo";
+        const EXAMPLE_HASH: &str = "$argon2i$v=19$m=65536,t=1,p=1$c29tZXNhbHQAAAAAAAAAAA$+r0d29hqEB0yasKr55ZgICsQGSkl0v0kgwhd+U3wyRo";
 
         #[test]
         fn verify() {
@@ -162,7 +161,7 @@ mod tests {
 
     #[cfg(feature = "pbkdf2")]
     mod pdkdf2 {
-        use super::{verify_password, EXAMPLE_PASSWORD};
+        use super::{EXAMPLE_PASSWORD, verify_password};
 
         /// PBKDF2 hash for the string "password".
         const EXAMPLE_HASH: &str =
@@ -177,11 +176,10 @@ mod tests {
 
     #[cfg(feature = "scrypt")]
     mod scrypt {
-        use super::{verify_password, EXAMPLE_PASSWORD};
+        use super::{EXAMPLE_PASSWORD, verify_password};
 
         /// scrypt hash for the string "password".
-        const EXAMPLE_HASH: &str =
-            "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
+        const EXAMPLE_HASH: &str = "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
 
         #[test]
         fn verify() {

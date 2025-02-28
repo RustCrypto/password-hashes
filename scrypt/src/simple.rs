@@ -1,6 +1,6 @@
 //! Implementation of the `password-hash` crate API.
 
-use crate::{scrypt, Params};
+use crate::{Params, scrypt};
 use core::cmp::Ordering;
 use password_hash::{Decimal, Error, Ident, Output, PasswordHash, PasswordHasher, Result, Salt};
 

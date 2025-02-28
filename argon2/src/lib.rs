@@ -46,7 +46,7 @@
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
 //!
 //! // Argon2 with default params (Argon2id v19)
 //! let argon2 = Argon2::default();
@@ -84,7 +84,7 @@
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
 //!
 //! // Argon2 with default params (Argon2id v19) and pepper
 //! let argon2 = Argon2::new_with_secret(
@@ -168,12 +168,12 @@ pub use crate::{
 #[cfg(feature = "password-hash")]
 #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use {
-    crate::algorithm::{ARGON2D_IDENT, ARGON2ID_IDENT, ARGON2I_IDENT},
+    crate::algorithm::{ARGON2D_IDENT, ARGON2I_IDENT, ARGON2ID_IDENT},
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
 };
 
 use crate::blake2b_long::blake2b_long;
-use blake2::{digest, Blake2b512, Digest};
+use blake2::{Blake2b512, Digest, digest};
 use core::fmt;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]

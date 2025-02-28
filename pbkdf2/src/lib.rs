@@ -49,8 +49,8 @@
 //! The following example demonstrates the high-level password hashing API:
 //!
 //! ```
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "simple", feature = "std"))]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! # #[cfg(feature = "simple")]
 //! # {
 //! use pbkdf2::{
 //!     password_hash::{
@@ -61,7 +61,7 @@
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
 //! let password_hash = Pbkdf2.hash_password(password, &salt)?.to_string();
@@ -80,9 +80,6 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
-
-#[cfg(feature = "std")]
-extern crate std;
 
 #[cfg(feature = "simple")]
 extern crate alloc;
@@ -103,14 +100,14 @@ pub use crate::simple::{Algorithm, Params, Pbkdf2};
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-use digest::{typenum::Unsigned, FixedOutput, InvalidLength, KeyInit, Update};
+use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
 use digest::{
+    HashMarker,
     block_buffer::Eager,
     core_api::{BlockSizeUser, BufferKindUser, FixedOutputCore, UpdateCore},
     typenum::{IsLess, Le, NonZero, U256},
-    HashMarker,
 };
 
 #[inline(always)]

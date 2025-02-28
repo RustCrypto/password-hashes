@@ -10,12 +10,13 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
-edition = "2021"
-rust-version = "1.83"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
-digest = { version = "=0.11.0-pre.9", default-features = false }
-crypto-bigint = { version = "0.6", default-features = false, features = ["hybrid-array"] }
+digest = { version = "=0.11.0-pre.10", default-features = false }
+crypto-bigint = { version = "=0.7.0-pre.0", default-features = false, features = ["hybrid-array"] }
+rand_core = { version = "0.9", default-features = false }
 
 # optional dependencies
 password-hash = { version = "0.6.0-rc.0", default-features = false, optional = true }
@@ -23,7 +24,7 @@ rayon = { version = "1.7", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-hex-literal = "0.4"
+hex-literal = "1"
 sha2 = "=0.11.0-pre.4"
 
 [features]
@@ -31,7 +32,7 @@ default = ["alloc", "password-hash", "rand"]
 alloc = ["password-hash/alloc"]
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
-std = ["alloc", "password-hash/std"]
+std = ["alloc", "password-hash/os_rng", "rand_core/std"]
 zeroize = ["dep:zeroize"]
 
 [package.metadata.docs.rs]

@@ -3,8 +3,8 @@
 use crate::{Error, Result};
 
 use blake2::{
-    digest::{self, Digest, VariableOutput},
     Blake2b512, Blake2bVar,
+    digest::{self, Digest, VariableOutput},
 };
 
 use core::convert::TryFrom;

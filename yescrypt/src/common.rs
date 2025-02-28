@@ -8,7 +8,7 @@
     unused_mut
 )]
 
-use crate::{encrypt_dir_t, size_t, uint32_t, uint64_t, uint8_t, Binary, DEC};
+use crate::{Binary, DEC, encrypt_dir_t, size_t, uint8_t, uint32_t, uint64_t};
 
 static mut itoa64: *const libc::c_char =
     b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\0" as *const u8
@@ -426,8 +426,8 @@ pub(crate) unsafe fn encrypt(
     mut key: *const Binary,
     mut dir: encrypt_dir_t,
 ) {
-    use sha2::digest::array::Array;
     use sha2::Digest;
+    use sha2::digest::array::Array;
 
     let mut f: [libc::c_uchar; 36] = [0; 36];
     let mut halflen: size_t = 0;

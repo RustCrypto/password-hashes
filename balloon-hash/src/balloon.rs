@@ -1,5 +1,5 @@
-use crate::error::{Error, Result};
 use crate::Params;
+use crate::error::{Error, Result};
 use core::mem;
 use crypto_bigint::{ArrayDecoding, ArrayEncoding, NonZero};
 use digest::array::Array;

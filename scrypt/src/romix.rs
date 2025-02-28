@@ -35,8 +35,8 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
 /// output - the output vector. Must be the same length as input.
 fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     use salsa20::{
-        cipher::{typenum::U4, StreamCipherCore},
         SalsaCore,
+        cipher::{StreamCipherCore, typenum::U4},
     };
 
     type Salsa20_8 = SalsaCore<U4>;

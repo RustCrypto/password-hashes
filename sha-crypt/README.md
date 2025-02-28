@@ -13,18 +13,6 @@ a legacy password hashing scheme supported by the [POSIX crypt C library][2].
 Password hashes using this algorithm start with `$6$` when encoded using the
 [PHC string format][3].
 
-## Minimum Supported Rust Version
-
-Rust **1.81** or higher.
-
-Minimum supported Rust version can be changed in the future, but it will be
-done with a minor version bump.
-
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:

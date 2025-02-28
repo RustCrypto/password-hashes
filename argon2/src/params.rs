@@ -1,6 +1,6 @@
 //! Argon2 password hash parameters.
 
-use crate::{Algorithm, Argon2, Error, Result, Version, SYNC_POINTS};
+use crate::{Algorithm, Argon2, Error, Result, SYNC_POINTS, Version};
 use base64ct::{Base64Unpadded as B64, Encoding};
 use core::str::FromStr;
 

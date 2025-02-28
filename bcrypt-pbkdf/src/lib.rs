@@ -22,12 +22,12 @@ pub use errors::Error;
 
 use blowfish::Blowfish;
 use sha2::{
+    Digest, Sha512,
     digest::{
+        FixedOutput, MacMarker, Output, OutputSizeUser, Update,
         crypto_common::{Key, KeyInit, KeySizeUser},
         typenum::U32,
-        FixedOutput, MacMarker, Output, OutputSizeUser, Update,
     },
-    Digest, Sha512,
 };
 
 #[cfg(feature = "zeroize")]

@@ -8,12 +8,12 @@
     unused_mut
 )]
 
-use crate::{size_t, uint64_t, uint8_t};
+use crate::{size_t, uint8_t, uint64_t};
 use libc::memcpy;
 
 pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
-    use sha2::digest::array::Array;
     use sha2::Digest;
+    use sha2::digest::array::Array;
     let mut ctx = sha2::Sha256::new();
     ctx.update(&*core::ptr::slice_from_raw_parts(in_0 as *const u8, len));
 

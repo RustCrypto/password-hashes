@@ -14,8 +14,7 @@ impl fmt::Display for InvalidOutputLen {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for InvalidOutputLen {}
+impl core::error::Error for InvalidOutputLen {}
 
 impl fmt::Display for InvalidParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -23,5 +22,4 @@ impl fmt::Display for InvalidParams {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for InvalidParams {}
+impl core::error::Error for InvalidParams {}

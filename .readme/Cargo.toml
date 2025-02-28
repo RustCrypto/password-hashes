@@ -12,3 +12,11 @@ password-hash = "0.6.0-rc.0"
 argon2 = { path = "../argon2" }
 pbkdf2 = { path = "../pbkdf2", features = ["simple"] }
 scrypt = { path = "../scrypt" }
+
+[patch.crates-io]
+password-hash = { git = "https://github.com/RustCrypto/traits.git" }
+
+blake2   = { git = "https://github.com/RustCrypto/hashes.git" }
+sha2     = { git = "https://github.com/RustCrypto/hashes.git" }
+
+hmac = { git = "https://github.com/RustCrypto/MACs.git" }

@@ -22,18 +22,6 @@ This algorithm is first practical password hashing function that provides:
 - Performance which meets or exceeds the best heuristically secure
   password-hashing algorithms
 
-## Minimum Supported Rust Version
-
-Rust **1.83** or higher.
-
-Minimum supported Rust version can be changed in the future, but it will be
-done with a minor version bump.
-
-## SemVer Policy
-
-- All on-by-default features of this library are covered by SemVer
-- MSRV is considered exempt from SemVer as noted above
-
 ## License
 
 Licensed under either of:
@@ -56,7 +44,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/balloon-hash/badge.svg
 [docs-link]: https://docs.rs/balloon-hash/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.83+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/balloon-hash.yml/badge.svg
