@@ -28,7 +28,7 @@ dependencies = [
  "digest",
  "hex-literal",
  "password-hash",
- "rand_core 0.9.2",
+ "rand_core 0.9.3",
  "rayon",
  "sha2",
  "zeroize",
@@ -334,7 +334,7 @@ dependencies = [
  "getrandom 0.3.1",
  "password-hash",
  "pbkdf2",
- "rand_core 0.9.2",
+ "rand_core 0.9.3",
  "scrypt",
 ]
 
@@ -344,7 +344,7 @@ version = "0.6.0-rc.0"
 source = "git+https://github.com/RustCrypto/traits.git#3fa125f4ec6f7610de112220d38ce40113c18f2c"
 dependencies = [
  "base64ct",
- "rand_core 0.9.2",
+ "rand_core 0.9.3",
  "subtle",
 ]
 
@@ -418,12 +418,11 @@ dependencies = [
 
 [[package]]
 name = "rand_core"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a509b1a2ffbe92afab0e55c8fd99dea1c280e8171bd2d88682bb20bc41cbc2c"
+checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom 0.3.1",
- "zerocopy",
 ]
 
 [[package]]
@@ -696,26 +695,6 @@ dependencies = [
  "pbkdf2",
  "salsa20",
  "sha2",
-]
-
-[[package]]
-name = "zerocopy"
-version = "0.8.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dde3bb8c68a8f3f1ed4ac9221aad6b10cece3e60a8e2ea54a6a2dec806d0084c"
-dependencies = [
- "zerocopy-derive",
-]
-
-[[package]]
-name = "zerocopy-derive"
-version = "0.8.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eea57037071898bf96a6da35fd626f4f27e9cee3ead2a6c703cf09d472b2e700"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
