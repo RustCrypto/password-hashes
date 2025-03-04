@@ -168,6 +168,10 @@ impl Blocks {
         use alloc::alloc::{Layout, alloc_zeroed};
         use core::ptr::NonNull;
 
+        if len == 0 {
+            return None;
+        }
+        
         let layout = Layout::array::<Block>(len).ok()?;
         // SAFETY: e use `alloc_zeroed` correctly
         let p = unsafe { alloc_zeroed(layout) };
