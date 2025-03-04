@@ -285,7 +285,8 @@ impl<'key> Argon2<'key> {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
-        let mut blocks = block::Blocks::new(self.params.block_count()).ok_or(Error::AllocFail)?;
+        let blocks_len = self.params.block_count();
+        let mut blocks = block::Blocks::new(blocks_len).ok_or(Error::AllocFail)?;
         self.hash_password_into_with_memory(pwd, salt, out, blocks.as_slice())
     }
 
