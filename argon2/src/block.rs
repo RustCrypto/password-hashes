@@ -154,3 +154,48 @@ impl Zeroize for Block {
         self.0.zeroize();
     }
 }
+
+/// `BlockArray` is like `Box<[Block]>`, but have our own abstraction that allows us to force alloc_zeroed.
+///
+/// This also allows easier access to fallible allocation.
+#[cfg(feature = "alloc")]
+pub(crate) struct BlockArray {
+    alloc: *mut u8,
+    block_count: usize,
+}
+
+#[cfg(feature = "alloc")]
+impl BlockArray {
+    fn layout(block_count: usize) -> Result<core::alloc::Layout, crate::Error> {
+        core::alloc::Layout::array::<Block>(block_count).map_err(|_| crate::Error::MemoryTooMuch)
+    }
+
+    pub(crate) fn new(block_count: usize) -> Result<Self, crate::Error> {
+        let alloc_size = Self::layout(block_count)?;
+
+        // Safety: layout has a non-zero size because `block_count` can be minimum 8.
+        let alloc = unsafe { alloc::alloc::alloc_zeroed(alloc_size) };
+        if alloc.is_null() {
+            return Err(crate::Error::MemoryTooMuch);
+        }
+
+        Ok(Self { alloc, block_count })
+    }
+
+    pub(crate) fn blocks(&mut self) -> &mut [Block] {
+        // Safety: self.alloc was allocated with the right alignment and size,
+        // and was allocated with zeroes so it is fully initialized.
+        unsafe { &mut *core::ptr::slice_from_raw_parts_mut(self.alloc.cast(), self.block_count) }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for BlockArray {
+    fn drop(&mut self) {
+        // Safety: layout was already checked on construction
+        let layout = unsafe { Self::layout(self.block_count).unwrap_unchecked() };
+
+        // Safety: was allocated on construction, with the same layout.
+        unsafe { alloc::alloc::dealloc(self.alloc, layout) }
+    }
+}

@@ -144,7 +144,6 @@
 compile_error!("this crate builds on 32-bit and 64-bit platforms only");
 
 #[cfg(feature = "alloc")]
-#[macro_use]
 extern crate alloc;
 
 #[cfg(feature = "std")]
@@ -286,8 +285,8 @@ impl<'key> Argon2<'key> {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
-        let mut blocks = vec![Block::default(); self.params.block_count()];
-        self.hash_password_into_with_memory(pwd, salt, out, &mut blocks)
+        let mut block_array = block::BlockArray::new(self.params.block_count())?;
+        self.hash_password_into_with_memory(pwd, salt, out, block_array.blocks())
     }
 
     /// Hash a password and associated parameters into the provided output buffer.
