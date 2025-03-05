@@ -120,8 +120,7 @@ impl From<Error> for password_hash::Error {
             Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
             Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
             Error::VersionInvalid => password_hash::Error::Version,
-            // TODO: fix after `password_hash::Error::OutOfMemory` will be added
-            Error::OutOfMemory => InvalidValue::TooLong.param_error(),
+            Error::OutOfMemory => password_hash::Error::OutOfMemory,
         }
     }
 }

@@ -287,7 +287,7 @@ dependencies = [
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.0"
-source = "git+https://github.com/RustCrypto/traits.git#27835aa66710bded06caef143284892dda83dda5"
+source = "git+https://github.com/RustCrypto/traits.git#1548d2a7d7ce71a278a783d19d94b59b0103ab15"
 dependencies = [
  "base64ct",
  "rand_core",
