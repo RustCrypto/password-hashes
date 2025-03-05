@@ -55,6 +55,7 @@ pub use crate::{
 };
 
 use alloc::{string::String, vec::Vec};
+use rand::distr::Distribution;
 use sha2::{Digest, Sha256, Sha512};
 
 #[cfg(feature = "simple")]
@@ -64,7 +65,7 @@ use {
         errors::CheckError,
     },
     alloc::string::ToString,
-    rand::{Rng, distributions::Distribution, thread_rng},
+    rand::Rng,
 };
 
 #[cfg(feature = "simple")]
@@ -321,7 +322,7 @@ pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> 
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
-    let rng = thread_rng();
+    let rng = rand::rng();
 
     let salt: String = rng
         .sample_iter(&ShaCryptDistribution)
@@ -357,7 +358,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
 #[cfg(feature = "simple")]
 #[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
-    let rng = thread_rng();
+    let rng = rand::rng();
 
     let salt: String = rng
         .sample_iter(&ShaCryptDistribution)
