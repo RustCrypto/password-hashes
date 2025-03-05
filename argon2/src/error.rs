@@ -123,6 +123,8 @@ impl From<Error> for password_hash::Error {
 impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
+            // TODO: remove afer `B64Error` will implement `core::error::Error`
+            #[cfg(feature = "std")]
             Self::B64Encoding(err) => Some(err),
             _ => None,
         }
