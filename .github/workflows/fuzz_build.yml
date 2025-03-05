@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "fuzz/**"
+      - "scrypt/**"
+      - "Cargo.*"
   push:
     branches: master
 
