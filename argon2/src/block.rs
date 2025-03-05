@@ -173,7 +173,7 @@ impl Blocks {
         }
 
         let layout = Layout::array::<Block>(len).ok()?;
-        // SAFETY: e use `alloc_zeroed` correctly
+        // SAFETY: `alloc_zeroed` is used correctly with non-zero layout
         let p = unsafe { alloc_zeroed(layout) };
 
         let p = NonNull::new(p.cast())?;
