@@ -154,3 +154,47 @@ impl Zeroize for Block {
         self.0.zeroize();
     }
 }
+
+/// Custom implementation of `Box<[Block]>` until `Box::try_new_zeroed_slice` is stabilized.
+#[cfg(feature = "alloc")]
+pub(crate) struct Blocks {
+    p: core::ptr::NonNull<Block>,
+    len: usize,
+}
+
+#[cfg(feature = "alloc")]
+impl Blocks {
+    pub fn new(len: usize) -> Option<Self> {
+        use alloc::alloc::{Layout, alloc_zeroed};
+        use core::ptr::NonNull;
+
+        if len == 0 {
+            return None;
+        }
+
+        let layout = Layout::array::<Block>(len).ok()?;
+        // SAFETY: `alloc_zeroed` is used correctly with non-zero layout
+        let p = unsafe { alloc_zeroed(layout) };
+
+        let p = NonNull::new(p.cast())?;
+        Some(Self { p, len })
+    }
+
+    pub fn as_slice(&mut self) -> &mut [Block] {
+        // SAFETY: `self.p` is a valid non-zero pointer that points to memory of the necessary size
+        unsafe { slice::from_raw_parts_mut(self.p.as_ptr(), self.len) }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Drop for Blocks {
+    fn drop(&mut self) {
+        use alloc::alloc::{Layout, dealloc};
+        // SAFETY: layout was checked during construction
+        let layout = unsafe { Layout::array::<Block>(self.len).unwrap_unchecked() };
+        // SAFETY: we use `dealloc` correctly with the previously allocated pointer
+        unsafe {
+            dealloc(self.p.as_ptr().cast(), layout);
+        }
+    }
+}

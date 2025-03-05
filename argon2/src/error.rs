@@ -56,8 +56,11 @@ pub enum Error {
     /// Time cost is too small.
     TimeTooSmall,
 
-    /// Invalid version
+    /// Invalid version.
     VersionInvalid,
+
+    /// Out of memory (heap allocation failure).
+    OutOfMemory,
 }
 
 impl fmt::Display for Error {
@@ -79,6 +82,7 @@ impl fmt::Display for Error {
             Error::ThreadsTooMany => "too many threads",
             Error::TimeTooSmall => "time cost is too small",
             Error::VersionInvalid => "invalid version",
+            Error::OutOfMemory => "out of memory",
         })
     }
 }
@@ -116,6 +120,8 @@ impl From<Error> for password_hash::Error {
             Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
             Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
             Error::VersionInvalid => password_hash::Error::Version,
+            // TODO: fix after `password_hash::Error::OutOfMemory` will be added
+            Error::OutOfMemory => InvalidValue::TooLong.param_error(),
         }
     }
 }
