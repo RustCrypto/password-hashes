@@ -55,7 +55,6 @@ pub use crate::{
 };
 
 use alloc::{string::String, vec::Vec};
-use rand::distr::Distribution;
 use sha2::{Digest, Sha256, Sha512};
 
 #[cfg(feature = "simple")]
@@ -65,7 +64,7 @@ use {
         errors::CheckError,
     },
     alloc::string::ToString,
-    rand::Rng,
+    rand::{Rng, distr::Distribution},
 };
 
 #[cfg(feature = "simple")]
