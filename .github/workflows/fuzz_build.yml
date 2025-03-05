@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "fuzz/**"
+      - "scrypt/**"
+      - "Cargo.*"
   push:
     branches: master
 
@@ -19,6 +21,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - if: false # disabled while using pre-releases
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
