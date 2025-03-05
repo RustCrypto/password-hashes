@@ -14,14 +14,14 @@ dependencies = [
 
 [[package]]
 name = "base64ct"
-version = "1.7.0"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c103cbbedac994e292597ab79342dbd5b306a362045095db54917d92a9fdfd92"
+checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
 name = "blake2"
 version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#0d0369ff7dab69e98acfb8a08f4724dbda285e04"
+source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
 dependencies = [
  "digest",
 ]
@@ -83,7 +83,7 @@ dependencies = [
 [[package]]
 name = "hmac"
 version = "0.13.0-pre.4"
-source = "git+https://github.com/RustCrypto/MACs.git#c7cbed0bd3f7026cc01251cd4602d0db4d0495b9"
+source = "git+https://github.com/RustCrypto/MACs.git#f6eba0305f33445e404adbaa45483e0369f0bc51"
 dependencies = [
  "digest",
 ]
@@ -108,14 +108,14 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.155"
+version = "0.2.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
+checksum = "875b3680cb2f8f71bdcf9a30f38d48282f5d3c95cbf9b3fa57269bb5d5c06828"
 
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.0"
-source = "git+https://github.com/RustCrypto/traits.git#3fa125f4ec6f7610de112220d38ce40113c18f2c"
+source = "git+https://github.com/RustCrypto/traits.git#1548d2a7d7ce71a278a783d19d94b59b0103ab15"
 dependencies = [
  "base64ct",
  "rand_core",
@@ -133,31 +133,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "proc-macro2"
-version = "1.0.93"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60946a68e5f9d28b0dc1c21bb8a97ee7d018a8b322fa57838ba31cc878e22d99"
-dependencies = [
- "unicode-ident",
-]
-
-[[package]]
-name = "quote"
-version = "1.0.38"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e4dccaaaf89514f546c693ddc140f729f958c247918a13380cccc6078391acc"
-dependencies = [
- "proc-macro2",
-]
-
-[[package]]
 name = "rand_core"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a509b1a2ffbe92afab0e55c8fd99dea1c280e8171bd2d88682bb20bc41cbc2c"
-dependencies = [
- "zerocopy",
-]
+checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 
 [[package]]
 name = "readme"
@@ -192,7 +171,7 @@ dependencies = [
 [[package]]
 name = "sha2"
 version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#0d0369ff7dab69e98acfb8a08f4724dbda285e04"
+source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -201,49 +180,12 @@ dependencies = [
 
 [[package]]
 name = "subtle"
-version = "2.4.1"
+version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
-
-[[package]]
-name = "syn"
-version = "2.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36147f1a48ae0ec2b5b3bc5b537d267457555a10dc06f3dbc8cb11ba3006d3b1"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
+checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "typenum"
-version = "1.17.0"
+version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
-
-[[package]]
-name = "unicode-ident"
-version = "1.0.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00e2473a93778eb0bad35909dff6a10d28e63f792f16ed15e404fca9d5eeedbe"
-
-[[package]]
-name = "zerocopy"
-version = "0.8.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dde3bb8c68a8f3f1ed4ac9221aad6b10cece3e60a8e2ea54a6a2dec806d0084c"
-dependencies = [
- "zerocopy-derive",
-]
-
-[[package]]
-name = "zerocopy-derive"
-version = "0.8.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eea57037071898bf96a6da35fd626f4f27e9cee3ead2a6c703cf09d472b2e700"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
+checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
