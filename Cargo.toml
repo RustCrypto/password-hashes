@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    ".readme",
     "argon2",
     "balloon-hash",
     "bcrypt-pbkdf",
