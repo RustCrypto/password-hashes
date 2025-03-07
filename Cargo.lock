@@ -59,8 +59,9 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 
 [[package]]
 name = "blake2"
-version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
+version = "0.11.0-pre.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f3e9eeb7217624b627452ac313953b7683ccf0c63fbf74e30ca582244b36da6"
 dependencies = [
  "digest",
 ]
@@ -212,7 +213,7 @@ checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 [[package]]
 name = "hmac"
 version = "0.13.0-pre.4"
-source = "git+https://github.com/RustCrypto/MACs.git#f6eba0305f33445e404adbaa45483e0369f0bc51"
+source = "git+https://github.com/RustCrypto/MACs.git#48d909bc7c028df8ccbc4bd746e9315d2cb8757a"
 dependencies = [
  "digest",
 ]
@@ -386,6 +387,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "readme"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "password-hash",
+ "pbkdf2",
+ "scrypt",
+]
+
+[[package]]
 name = "salsa20"
 version = "0.11.0-pre.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -417,8 +428,9 @@ dependencies = [
 
 [[package]]
 name = "sha1"
-version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
+version = "0.11.0-pre.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55f44e40722caefdd99383c25d3ae52a1094a1951215ae76f68837ece4e7f566"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -427,8 +439,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
+version = "0.11.0-pre.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b4241d1a56954dce82cecda5c8e9c794eef6f53abe5e5216bac0a0ea71ffa7"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -437,8 +450,9 @@ dependencies = [
 
 [[package]]
 name = "streebog"
-version = "0.11.0-pre.4"
-source = "git+https://github.com/RustCrypto/hashes.git#374a7a03eef9fcd1332ae5ee52e6449ccacb4c1d"
+version = "0.11.0-pre.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3a275f3837c892b08e1e992cf3ef597aa2aecea6d985a6db2035b367673cfe1"
 dependencies = [
  "digest",
 ]

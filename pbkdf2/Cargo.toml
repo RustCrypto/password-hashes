@@ -20,15 +20,15 @@ digest = { version = "=0.11.0-pre.10", features = ["mac"] }
 rayon = { version = "1.7", optional = true }
 password-hash = { version = "0.6.0-rc.0", default-features = false, optional = true, features = ["rand_core"] }
 hmac = { version = "=0.13.0-pre.4", default-features = false, optional = true }
-sha1 = { version = "=0.11.0-pre.4", default-features = false, optional = true }
-sha2 = { version = "=0.11.0-pre.4", default-features = false, optional = true }
+sha1 = { version = "=0.11.0-pre.5", default-features = false, optional = true }
+sha2 = { version = "=0.11.0-pre.5", default-features = false, optional = true }
 
 [dev-dependencies]
 hmac = "=0.13.0-pre.4"
 hex-literal = "1"
-sha1 = "=0.11.0-pre.4"
-sha2 = "=0.11.0-pre.4"
-streebog = "=0.11.0-pre.4"
+sha1 = "=0.11.0-pre.5"
+sha2 = "=0.11.0-pre.5"
+streebog = "=0.11.0-pre.5"
 
 [features]
 default = ["hmac"]
