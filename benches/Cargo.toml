@@ -19,3 +19,6 @@ parallel = ["argon2/parallel"]
 name = "argon2"
 path = "src/argon2.rs"
 harness = false
+
+[patch.crates-io]
+password-hash = { git = "https://github.com/RustCrypto/traits.git" }
