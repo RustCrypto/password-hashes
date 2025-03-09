@@ -19,6 +19,4 @@ opt-level = 2
 [patch.crates-io]
 password-hash = { git = "https://github.com/RustCrypto/traits.git" }
 
-hmac = { git = "https://github.com/RustCrypto/MACs.git" }
-
 crypto-bigint = { git = "https://github.com/RustCrypto/crypto-bigint.git" }
