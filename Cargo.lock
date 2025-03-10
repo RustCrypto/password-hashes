@@ -212,8 +212,9 @@ checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 
 [[package]]
 name = "hmac"
-version = "0.13.0-pre.4"
-source = "git+https://github.com/RustCrypto/MACs.git#48d909bc7c028df8ccbc4bd746e9315d2cb8757a"
+version = "0.13.0-pre.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62c11fc82c6b89c906b4d26b7b5a305d0b3aebd4b458dd1bd0a7ed98c548a28e"
 dependencies = [
  "digest",
 ]
