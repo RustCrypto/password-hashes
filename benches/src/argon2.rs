@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use argon2::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
@@ -29,7 +29,7 @@ fn bench_default_params(c: &mut Criterion) {
 }
 
 fn bench_vary_params(c: &mut Criterion) {
-    let mut tests = HashSet::new();
+    let mut tests = BTreeSet::new();
     // Vary `m_cost`.
     for m_cost in [2 * 1024, 16 * 1024, 32 * 1024, 64 * 1024, 256 * 1024] {
         tests.insert((m_cost, 4, 4));
