@@ -22,190 +22,141 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Block, SYNC_POINTS};
 
-pub trait SegmentViews<'a> {
-    /// Construct an iterator of parallelizable views into a set of Argon2 memory blocks.
+/// Extension trait for Argon2 memory blocks.
+pub(crate) trait Memory<'a> {
+    /// Compute each Argon2 segment.
     ///
-    /// If the `parallel` feature is enabled, the returned type implements
-    /// [`rayon::iter::ParallelIterator`]; otherwise it implements [`core::iter::Iterator`].
-    fn segment_views(&mut self, slice: usize, lanes: usize) -> SegmentViewIter<'_>;
-}
-
-impl<'a> SegmentViews<'a> for &'a mut [Block] {
-    fn segment_views(&mut self, slice: usize, lanes: usize) -> SegmentViewIter<'_> {
-        // The pointer needs to be derived from a mutable reference because (later) mutating the
-        // blocks through a pointer derived from a shared reference would be UB.
-        let blocks = NonNull::from(&mut **self);
-        // SAFETY: we take `&mut self` and any views derived from the returned iterator carry this
-        // mutable borrow. Therefore, it's impossible to create a `MemoryViewIter` while another
-        // one, or any views derived from it, still exist. Additionally, the pointer and number of
-        // blocks are created from `self`.
-        unsafe { SegmentViewIter::new(blocks.cast(), self.len(), slice, lanes) }
-    }
-}
-
-/// Iterator of parallelizable views into a set of Argon2 memory blocks.
-pub struct SegmentViewIter<'a> {
-    inner: SegmentViewInner<'a>,
-    #[cfg(not(feature = "parallel"))]
-    minted: usize,
-}
-
-impl SegmentViewIter<'_> {
-    /// Construct an Iterator of parallelizable views into a set of Argon2 memory blocks.
-    ///
-    /// # Safety
-    ///
-    /// `blocks` must point to the start of a Rust slice buffer with `block_count` blocks, and
-    /// there currently are no views or view iterators into that memory region.
-    unsafe fn new(blocks: NonNull<Block>, block_count: usize, slice: usize, lanes: usize) -> Self {
-        // SAFETY: the pointer is valid and there currently are no views into the memory region.
-        let inner = unsafe { SegmentViewInner::new(blocks, block_count, slice, lanes) };
-        SegmentViewIter {
-            inner,
-            #[cfg(not(feature = "parallel"))]
-            minted: 0,
-        }
-    }
-}
-
-#[cfg(not(feature = "parallel"))]
-impl<'a> Iterator for SegmentViewIter<'a> {
-    type Item = SegmentView<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.minted < self.inner.lanes {
-            // SAFETY: `self` mutably borrows the underlying memory region for a single Argon2
-            // slice, and we create exactly one memory view per lane.
-            let view = unsafe { SegmentView::new(self.inner.unsafe_copy(), self.minted) };
-            self.minted += 1;
-            Some(view)
-        } else {
-            None
-        }
-    }
-}
-
-#[cfg(feature = "parallel")]
-impl<'a> ParallelIterator for SegmentViewIter<'a> {
-    type Item = SegmentView<'a>;
-
-    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    /// By default computation is single threaded. Parallel computation can be enabled with the
+    /// `parallel` feature, in which case [rayon] is used to compute as many lanes in parallel as
+    /// possible.
+    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
     where
-        C: rayon::iter::plumbing::UnindexedConsumer<Self::Item>,
+        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send;
+}
+
+impl Memory<'_> for &mut [Block] {
+    #[cfg(not(feature = "parallel"))]
+    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
+    where
+        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send,
     {
-        (0..self.inner.lanes)
-            .into_par_iter()
-            .map(|lane| {
-                // SAFETY: `self` mutably borrows the underlying memory region for a single Argon2
-                // slice, and we create exactly one memory view per lane.
-                unsafe { SegmentView::new(self.inner.unsafe_copy(), lane) }
-            })
-            .drive_unindexed(consumer)
+        let inner = MemoryInner::new(self, lanes);
+        for slice in 0..SYNC_POINTS {
+            for lane in 0..lanes {
+                // SAFETY: `self` exclusively borrows the blocks, and we sequentially process
+                // slices and segments.
+                let segment = unsafe { SegmentView::new(inner, slice, lane) };
+                f(segment, slice, lane);
+            }
+        }
+    }
+
+    #[cfg(feature = "parallel")]
+    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
+    where
+        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send,
+    {
+        let inner = MemoryInner::new(self, lanes);
+        for slice in 0..SYNC_POINTS {
+            (0..lanes).into_par_iter().for_each(|lane| {
+                // SAFETY: `self` exclusively borrows the blocks, we sequentially process slices,
+                // and we create exactly one segment view per lane in a slice.
+                let segment = unsafe { SegmentView::new(inner, slice, lane) };
+                f(segment, slice, lane);
+            });
+        }
     }
 }
 
-/// A view into an Argon2 memory region for a particular Argon2 slice and lane.
-pub struct SegmentView<'a> {
-    inner: SegmentViewInner<'a>,
-    lane: usize,
-}
-
-impl<'a> SegmentView<'a> {
-    /// Create a new segment view into Argon2 memory.
-    ///
-    /// # Safety
-    ///
-    /// There can simultaneously exist at most one view per lane into the same memory region, and
-    /// all of them must refer to the same Argon2 slice.
-    unsafe fn new(inner: SegmentViewInner<'a>, lane: usize) -> Self {
-        Self { inner, lane }
-    }
-}
-
-impl SegmentView<'_> {
-    pub fn get_block(&self, index: usize) -> &Block {
-        assert!(index < self.inner.block_count);
-        assert!(
-            index / self.lane_length() == self.lane
-                || index % self.lane_length() / self.segment_length() != self.inner.slice
-        );
-
-        // SAFETY: constructing `self` required the pointer to be valid, and `index` is in bounds.
-        let ptr = unsafe { self.inner.blocks.add(index) };
-        // SAFETY: constructing `self` required that this be the only segment view for this lane,
-        // and that no segment views exist for other Argon2 slices. We check that `index` is is
-        // either on this lane -- in which case there is mutable aliasing because `get_block_mut`
-        // takes `&mut self` -- or on a different Argon2 slice -- in which case there are no
-        // mutable references to it at all.
-        unsafe { ptr.as_ref() }
-    }
-
-    pub fn get_block_mut(&mut self, index: usize) -> &mut Block {
-        assert!(index < self.inner.block_count);
-        assert!(index / self.lane_length() == self.lane);
-
-        // SAFETY: constructing `self` required the pointer to be valid, and `index` is in bounds.
-        let mut ptr = unsafe { self.inner.blocks.add(index) };
-        // SAFETY: constructing `self` required this be the only segment view for this lane, and
-        // that no segment views exist for other Argon2 slices. We check that `index` is on this
-        // lane, and there is no aliasing because we take `&mut self`.
-        unsafe { ptr.as_mut() }
-    }
-
-    pub fn block_count(&self) -> usize {
-        self.inner.block_count
-    }
-
-    pub fn lane(&self) -> usize {
-        self.lane
-    }
-
-    fn lane_length(&self) -> usize {
-        self.inner.block_count / self.inner.lanes
-    }
-
-    fn segment_length(&self) -> usize {
-        self.inner.block_count / self.inner.lanes / SYNC_POINTS
-    }
-}
-
-/// Underlying pointer and associated data for segment views (and view iterators).
-struct SegmentViewInner<'a> {
+/// Low-level pointer and metadata for an Argon2 memory region.
+#[derive(Clone, Copy)]
+struct MemoryInner<'a> {
     blocks: NonNull<Block>,
     block_count: usize,
-    slice: usize,
-    lanes: usize,
+    lane_length: usize,
     phantom: PhantomData<&'a mut Block>,
 }
 
-// SAFETY: this is a private type, and `SegmentView` enforces the aliasing rules at runtime.
-unsafe impl Send for SegmentViewInner<'_> {}
-// SAFETY: this is a private type, and `SegmentView` enforces the aliasing rules at runtime.
-unsafe impl Sync for SegmentViewInner<'_> {}
+impl MemoryInner<'_> {
+    fn new(memory_blocks: &mut [Block], lanes: usize) -> Self {
+        let block_count = memory_blocks.len();
+        let lane_length = block_count / lanes;
 
-impl SegmentViewInner<'_> {
-    /// Wrap the underlying pointer and associated data for a segment view.
-    ///
-    /// # Safety
-    ///
-    /// This method must not be called in a way that causes memory views to mutably alias.
-    /// Additionally, `blocks` must point to the start of a Rust slice buffer with `block_count` blocks.
-    unsafe fn new(blocks: NonNull<Block>, block_count: usize, slice: usize, lanes: usize) -> Self {
-        Self {
-            blocks,
+        // SAFETY: the pointer needs to be derived from a mutable reference because (later)
+        // mutating the blocks through a pointer derived from a shared reference would be UB.
+        let blocks = NonNull::from(memory_blocks);
+
+        MemoryInner {
+            blocks: blocks.cast(),
             block_count,
-            slice,
-            lanes,
+            lane_length,
             phantom: PhantomData,
         }
     }
 
-    /// Copy the underlying pointer and associated data.
+    fn lane_of(&self, index: usize) -> usize {
+        index / self.lane_length
+    }
+
+    fn slice_of(&self, index: usize) -> usize {
+        index / (self.lane_length / SYNC_POINTS) % SYNC_POINTS
+    }
+}
+
+// SAFETY: private type, and just a pointer with some metadata.
+unsafe impl Send for MemoryInner<'_> {}
+
+// SAFETY: private type, and just a pointer with some metadata.
+unsafe impl Sync for MemoryInner<'_> {}
+
+/// A view into Argon2 memory for a particular segment (i.e. slice × lane).
+pub(crate) struct SegmentView<'a> {
+    inner: MemoryInner<'a>,
+    slice: usize,
+    lane: usize,
+}
+
+impl<'a> SegmentView<'a> {
+    /// Create a view into Argon2 memory for a particular segment (i.e. slice × lane).
     ///
     /// # Safety
     ///
-    /// This method must not be called in a way that causes memory views to mutably alias.
-    unsafe fn unsafe_copy(&self) -> Self {
-        Self { ..*self }
+    /// At any time, there can be at most one view for a given Argon2 segment. Additionally, all
+    /// concurrent segment views must be for the same slice.
+    unsafe fn new(inner: MemoryInner<'a>, slice: usize, lane: usize) -> Self {
+        SegmentView { inner, slice, lane }
+    }
+
+    /// Get a shared reference to a block.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds or if the desired block *could* be mutably aliased (if
+    /// it is on the current slice but on a different lane/segment).
+    pub fn get_block(&self, index: usize) -> &Block {
+        assert!(index < self.inner.block_count);
+        assert!(self.inner.lane_of(index) == self.lane || self.inner.slice_of(index) != self.slice);
+
+        // SAFETY: by construction, the base pointer is valid for reads, and we assert that the
+        // index is in bounds. We also assert that the index either lies on this lane, or is on
+        // another slice. Finally, we're the only view into this segment, and mutating through it
+        // requires `&mut self` and is restricted to blocks within the segment.
+        unsafe { self.inner.blocks.add(index).as_ref() }
+    }
+
+    /// Get a mutable reference to a block.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds or if the desired block lies outside this segment.
+    pub fn get_block_mut(&mut self, index: usize) -> &mut Block {
+        assert!(index < self.inner.block_count);
+        assert_eq!(self.inner.lane_of(index), self.lane);
+        assert_eq!(self.inner.slice_of(index), self.slice);
+
+        // SAFETY: by construction, the base pointer is valid for reads and writes, and we assert
+        // that the index is in bounds. We also assert that the index lies on this segment, and
+        // we're the only view for it, taking `&mut self`.
+        unsafe { self.inner.blocks.add(index).as_mut() }
     }
 }
