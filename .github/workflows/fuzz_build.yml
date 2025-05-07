@@ -3,6 +3,7 @@ name: fuzz-build
 on:
   pull_request:
     paths:
+      - ".github/workflows/fuzz_build.yml"
       - "fuzz/**"
       - "scrypt/**"
       - "Cargo.*"
@@ -20,8 +21,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: false # disabled while using pre-releases
     steps:
-      - if: false # disabled while using pre-releases
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
