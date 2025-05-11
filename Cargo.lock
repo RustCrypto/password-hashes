@@ -155,8 +155,9 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crypto-bigint"
-version = "0.7.0-pre.0"
-source = "git+https://github.com/RustCrypto/crypto-bigint.git#e97beae6593c30b4477b7f29e30e5372cd8204bf"
+version = "0.7.0-pre.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87a5061ea0870b06f7fdd5a0f7268e30c04de1932c148cca0ce5c79a88d18bed"
 dependencies = [
  "hybrid-array",
  "num-traits",
@@ -289,7 +290,7 @@ dependencies = [
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.0"
-source = "git+https://github.com/RustCrypto/traits.git#829328e9405143cc86b81c297b39f1a6161700c8"
+source = "git+https://github.com/RustCrypto/traits.git#439fc8c28c61b09eff35349b4c091a5586d70ea7"
 dependencies = [
  "base64ct",
  "rand_core",
