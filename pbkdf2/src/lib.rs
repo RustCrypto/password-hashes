@@ -103,11 +103,13 @@ use rayon::prelude::*;
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
-use digest::{
-    HashMarker,
-    block_buffer::Eager,
-    core_api::{BlockSizeUser, BufferKindUser, FixedOutputCore, UpdateCore},
-    typenum::{IsLess, Le, NonZero, U256},
+use {
+    digest::{
+        HashMarker,
+        block_api::BlockSizeUser,
+        typenum::{IsLess, NonZero, True, U256},
+    },
+    hmac::block_api::EagerHash,
 };
 
 #[inline(always)]
@@ -230,16 +232,9 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
-    D: hmac::EagerHash,
-    D::Core: Sync
-        + HashMarker
-        + UpdateCore
-        + FixedOutputCore
-        + BufferKindUser<BufferKind = Eager>
-        + Default
-        + Clone,
-    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
-    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
+    <D as EagerHash>::Core: Sync,
+    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
 {
     crate::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
@@ -262,16 +257,9 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
 where
-    D: hmac::EagerHash,
-    D::Core: Sync
-        + HashMarker
-        + UpdateCore
-        + FixedOutputCore
-        + BufferKindUser<BufferKind = Eager>
-        + Default
-        + Clone,
-    <D::Core as BlockSizeUser>::BlockSize: IsLess<U256>,
-    Le<<D::Core as BlockSizeUser>::BlockSize, U256>: NonZero,
+    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
+    <D as EagerHash>::Core: Sync,
+    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
 {
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
