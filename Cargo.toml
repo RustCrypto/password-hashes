@@ -17,4 +17,12 @@ exclude = ["benches", "fuzz"]
 opt-level = 2
 
 [patch.crates-io]
-password-hash = { git = "https://github.com/RustCrypto/traits.git" }
+password-hash = { git = "https://github.com/RustCrypto/traits.git", branch = "digest/newtype" }
+crypto-common = { git = "https://github.com/RustCrypto/traits.git", branch = "digest/newtype" }
+digest        = { git = "https://github.com/RustCrypto/traits.git", branch = "digest/newtype" }
+
+streebog = { git = "https://github.com/RustCrypto/hashes.git", branch = "newtype" }
+sha1     = { git = "https://github.com/RustCrypto/hashes.git", branch = "newtype" }
+sha2     = { git = "https://github.com/RustCrypto/hashes.git", branch = "newtype" }
+
+hmac = { git = "https://github.com/baloo/MACs.git", branch = "baloo/digest-pin" }
