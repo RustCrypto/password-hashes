@@ -27,3 +27,6 @@ default = ["alloc", "std"]
 alloc = []
 std = []
 zeroize = ["dep:zeroize"]
+
+[package.metadata.docs.rs]
+all-features = true

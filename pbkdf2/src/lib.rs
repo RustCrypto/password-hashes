@@ -75,7 +75,7 @@
 //! ```
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
@@ -85,7 +85,6 @@
 extern crate alloc;
 
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub use password_hash;
 
 #[cfg(feature = "simple")]
@@ -229,7 +228,6 @@ where
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[cfg(feature = "hmac")]
-#[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
     D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
@@ -254,7 +252,6 @@ where
 /// );
 /// ```
 #[cfg(feature = "hmac")]
-#[cfg_attr(docsrs, doc(cfg(feature = "hmac")))]
 pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
 where
     D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,

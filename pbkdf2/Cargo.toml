@@ -39,4 +39,3 @@ simple = ["hmac", "password-hash", "sha2"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

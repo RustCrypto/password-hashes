@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -165,7 +165,6 @@ pub use crate::{
 };
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use {
     crate::algorithm::{ARGON2D_IDENT, ARGON2I_IDENT, ARGON2ID_IDENT},
     password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
@@ -283,7 +282,6 @@ impl<'key> Argon2<'key> {
 
     /// Hash a password and associated parameters into the provided output buffer.
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
         let blocks_len = self.params.block_count();
         let mut blocks = block::Blocks::new(blocks_len).ok_or(Error::OutOfMemory)?;
@@ -623,8 +621,6 @@ impl<'key> Argon2<'key> {
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl PasswordHasher for Argon2<'_> {
     type Params = Params;
 

@@ -46,4 +46,3 @@ check-cfg = ['cfg(test_large_ram)']
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

@@ -13,7 +13,6 @@ use sha1::Sha1;
 
 /// PBKDF2 type for use with [`PasswordHasher`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub struct Pbkdf2;
 
 impl PasswordHasher for Pbkdf2 {
@@ -65,11 +64,9 @@ impl PasswordHasher for Pbkdf2 {
 /// <https://en.wikipedia.org/wiki/PBKDF2>
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[non_exhaustive]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub enum Algorithm {
     /// PBKDF2 SHA1
     #[cfg(feature = "sha1")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "sha1")))]
     Pbkdf2Sha1,
 
     /// PBKDF2 SHA-256
@@ -164,7 +161,6 @@ impl<'a> TryFrom<Ident<'a>> for Algorithm {
 }
 
 /// PBKDF2 params
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Number of rounds

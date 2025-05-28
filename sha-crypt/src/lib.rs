@@ -28,7 +28,7 @@
 //! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
@@ -319,7 +319,6 @@ pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> 
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
     let rng = rand::rng();
 
@@ -355,7 +354,6 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
     let rng = rand::rng();
 
@@ -392,7 +390,6 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 
@@ -470,7 +467,6 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 ///
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
     let mut iter = hashed_value.split('$');
 

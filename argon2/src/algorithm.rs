@@ -11,17 +11,14 @@ use password_hash::Ident;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub const ARGON2D_IDENT: Ident<'_> = Ident::new_unwrap("argon2d");
 
 /// Argon2i algorithm identifier
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub const ARGON2I_IDENT: Ident<'_> = Ident::new_unwrap("argon2i");
 
 /// Argon2id algorithm identifier
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub const ARGON2ID_IDENT: Ident<'_> = Ident::new_unwrap("argon2id");
 
 /// Argon2 primitive type: variants of the algorithm.
@@ -68,7 +65,6 @@ impl Algorithm {
 
     /// Get the [`Ident`] that corresponds to this Argon2 [`Algorithm`].
     #[cfg(feature = "password-hash")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
     pub const fn ident(&self) -> Ident<'static> {
         match self {
             Algorithm::Argon2d => ARGON2D_IDENT,
@@ -109,7 +105,6 @@ impl FromStr for Algorithm {
 }
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl From<Algorithm> for Ident<'static> {
     fn from(alg: Algorithm) -> Ident<'static> {
         alg.ident()
@@ -117,7 +112,6 @@ impl From<Algorithm> for Ident<'static> {
 }
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl<'a> TryFrom<Ident<'a>> for Algorithm {
     type Error = password_hash::Error;
 
