@@ -33,4 +33,3 @@ wasm_js = ["getrandom/wasm_js"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

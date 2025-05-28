@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -78,7 +78,6 @@ pub use crate::{
 };
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
 
 use core::marker::PhantomData;
@@ -133,7 +132,6 @@ where
 
     /// Hash a password and associated parameters.
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<Array<u8, D::OutputSize>> {
         let mut output = Array::default();
         self.hash_into(pwd, salt, &mut output)?;
@@ -145,7 +143,6 @@ where
     ///
     /// The `output` has to have the same size as the hash output size: `D::OutputSize`.
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn hash_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
         #[cfg(not(feature = "parallel"))]
         let mut memory = alloc::vec![Array::default(); self.params.s_cost.get() as usize];
@@ -217,8 +214,6 @@ where
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl<D: Digest + FixedOutputReset> PasswordHasher for Balloon<'_, D>
 where
     Array<u8, D::OutputSize>: ArrayDecoding,

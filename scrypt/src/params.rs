@@ -137,7 +137,6 @@ impl Default for Params {
 }
 
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
     type Error = password_hash::Error;
 
@@ -173,7 +172,6 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
 }
 
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 impl TryFrom<Params> for ParamsString {
     type Error = password_hash::Error;
 

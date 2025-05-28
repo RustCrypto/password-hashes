@@ -11,7 +11,6 @@ pub const ALG_ID: Ident = Ident::new_unwrap("scrypt");
 ///
 /// See the [crate docs](crate) for a usage example.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 pub struct Scrypt;
 
 impl PasswordHasher for Scrypt {

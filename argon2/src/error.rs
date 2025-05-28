@@ -94,7 +94,6 @@ impl From<base64ct::Error> for Error {
 }
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> password_hash::Error {
         match err {

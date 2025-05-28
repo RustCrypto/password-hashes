@@ -26,12 +26,10 @@ pub enum Algorithm {
 impl Algorithm {
     /// Balloon algorithm identifier
     #[cfg(feature = "password-hash")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
     pub const BALLOON_IDENT: Ident<'static> = Ident::new_unwrap("balloon");
 
     /// BalloonM algorithm identifier
     #[cfg(feature = "password-hash")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
     pub const BALLOON_M_IDENT: Ident<'static> = Ident::new_unwrap("balloon-m");
 
     /// Parse an [`Algorithm`] from the provided string.
@@ -49,7 +47,6 @@ impl Algorithm {
 
     /// Get the [`Ident`] that corresponds to this Balloon [`Algorithm`].
     #[cfg(feature = "password-hash")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
     pub fn ident(&self) -> Ident<'static> {
         match self {
             Algorithm::Balloon => Self::BALLOON_IDENT,
@@ -83,7 +80,6 @@ impl FromStr for Algorithm {
 }
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl From<Algorithm> for Ident<'static> {
     fn from(alg: Algorithm) -> Ident<'static> {
         alg.ident()
@@ -91,7 +87,6 @@ impl From<Algorithm> for Ident<'static> {
 }
 
 #[cfg(feature = "password-hash")]
-#[cfg_attr(docsrs, doc(cfg(feature = "password-hash")))]
 impl<'a> TryFrom<Ident<'a>> for Algorithm {
     type Error = password_hash::Error;
 

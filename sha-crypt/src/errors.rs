@@ -19,7 +19,6 @@ pub enum CryptError {
 
     /// I/O error.
     #[cfg(feature = "std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     IoError(io::Error),
 
     /// UTF-8 error.
@@ -40,7 +39,6 @@ impl From<string::FromUtf8Error> for CryptError {
 }
 
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 #[derive(Debug)]
 pub enum CheckError {
     InvalidFormat(String),
@@ -50,7 +48,6 @@ pub enum CheckError {
 
 /// Decoding errors.
 #[cfg(feature = "simple")]
-#[cfg_attr(docsrs, doc(cfg(feature = "simple")))]
 #[derive(Debug)]
 pub struct DecodeError;
 
