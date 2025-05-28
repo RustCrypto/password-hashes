@@ -109,7 +109,7 @@ use {
         block_api::BlockSizeUser,
         typenum::{IsLess, NonZero, True, U256},
     },
-    hmac::block_api::EagerHash,
+    hmac::EagerHash,
 };
 
 #[inline(always)]

@@ -60,7 +60,7 @@ checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 [[package]]
 name = "blake2"
 version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#7d44caf065dbeb3f10a372a26a8b9f1c927f8433"
+source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
 dependencies = [
  "digest",
 ]
@@ -166,7 +166,7 @@ dependencies = [
 [[package]]
 name = "crypto-common"
 version = "0.2.0-rc.2"
-source = "git+https://github.com/RustCrypto/traits.git#915474f1ed5be0a19fd102d5f75ef8e04c765416"
+source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
 dependencies = [
  "hybrid-array",
 ]
@@ -174,7 +174,7 @@ dependencies = [
 [[package]]
 name = "digest"
 version = "0.11.0-pre.10"
-source = "git+https://github.com/RustCrypto/traits.git#915474f1ed5be0a19fd102d5f75ef8e04c765416"
+source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
 dependencies = [
  "block-buffer",
  "const-oid",
@@ -211,7 +211,7 @@ checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 [[package]]
 name = "hmac"
 version = "0.13.0-pre.5"
-source = "git+https://github.com/RustCrypto/MACs.git#64d671d5c375838173d18e30bc14dffc80c13e51"
+source = "git+https://github.com/RustCrypto/MACs.git#55327cab3a3aea0cfb3b7fafde6649bbd425beb7"
 dependencies = [
  "digest",
 ]
@@ -286,7 +286,7 @@ dependencies = [
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.0"
-source = "git+https://github.com/RustCrypto/traits.git#915474f1ed5be0a19fd102d5f75ef8e04c765416"
+source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
 dependencies = [
  "base64ct",
  "rand_core",
@@ -432,7 +432,7 @@ dependencies = [
 [[package]]
 name = "sha1"
 version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#7d44caf065dbeb3f10a372a26a8b9f1c927f8433"
+source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -442,7 +442,7 @@ dependencies = [
 [[package]]
 name = "sha2"
 version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#7d44caf065dbeb3f10a372a26a8b9f1c927f8433"
+source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -452,7 +452,7 @@ dependencies = [
 [[package]]
 name = "streebog"
 version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#7d44caf065dbeb3f10a372a26a8b9f1c927f8433"
+source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
 dependencies = [
  "digest",
 ]
