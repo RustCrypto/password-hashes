@@ -99,7 +99,7 @@ fn test_sha256_crypt() {
     for t in TEST_VECTORS {
         let params = Sha256Params::new(t.rounds).expect("Rounds error");
         let result = sha256_crypt_b64(t.input.as_bytes(), t.salt.as_bytes(), &params);
-        println!("result  {:?}", result);
+        println!("result  {result:?}");
         println!("correct {:?}", t.result_sha256);
         assert!(result == t.result_sha256);
     }
