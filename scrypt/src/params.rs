@@ -5,14 +5,17 @@ use crate::errors::InvalidParams;
 #[cfg(feature = "simple")]
 use password_hash::{Error, ParamsString, PasswordHash, errors::InvalidValue};
 
+#[cfg(doc)]
+use password_hash::PasswordHasher;
+
 /// The Scrypt parameter values.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
-    #[allow(dead_code)] // this field is used only with the `PasswordHasher` impl
-    pub(crate) len: usize,
+    #[cfg(feature = "password-hash")]
+    pub(crate) len: Option<usize>,
 }
 
 impl Params {
@@ -34,19 +37,16 @@ impl Params {
     /// - `log_n` - The log₂ of the Scrypt parameter `N`
     /// - `r` - The Scrypt parameter `r`
     /// - `p` - The Scrypt parameter `p`
-    /// - `len` - The Scrypt parameter `Key length`
     ///
     /// # Conditions
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
-    /// - `len` must be greater than `9` and less than or equal to `64`
-    pub fn new(log_n: u8, r: u32, p: u32, len: usize) -> Result<Params, InvalidParams> {
+    pub fn new(log_n: u8, r: u32, p: u32) -> Result<Params, InvalidParams> {
         let cond1 = (log_n as usize) < usize::BITS as usize;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
-        let cond4 = (10..=64).contains(&len);
-        if !(r > 0 && p > 0 && cond1 && (cond2 || cond3) && cond4) {
+        if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
             return Err(InvalidParams);
         }
 
@@ -83,8 +83,34 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            len,
+            #[cfg(feature = "password-hash")]
+            len: None,
         })
+    }
+
+    /// Create a new instance of [`Params`], overriding the output length.
+    ///
+    /// Note that this length is only intended for use with the [`PasswordHasher`] API, and not with
+    /// the low-level [`scrypt::scrypt`][`crate::scrypt`] API, which determines the output length
+    /// using the size of the `output` slice.
+    ///
+    /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
+    /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
+    /// because they are intended for use with password hash strings.
+    #[cfg(feature = "password-hash")]
+    pub fn new_with_output_len(
+        log_n: u8,
+        r: u32,
+        p: u32,
+        len: usize,
+    ) -> Result<Params, InvalidParams> {
+        if !(password_hash::Output::MIN_LENGTH..=password_hash::Output::MAX_LENGTH).contains(&len) {
+            return Err(InvalidParams);
+        }
+
+        let mut ret = Self::new(log_n, r, p)?;
+        ret.len = Some(len);
+        Ok(ret)
     }
 
     /// Recommended values according to the [OWASP cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt)
@@ -96,7 +122,8 @@ impl Params {
             log_n: Self::RECOMMENDED_LOG_N,
             r: Self::RECOMMENDED_R,
             p: Self::RECOMMENDED_P,
-            len: Self::RECOMMENDED_LEN,
+            #[cfg(feature = "password-hash")]
+            len: None,
         }
     }
 
@@ -167,7 +194,9 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             .hash
             .map(|out| out.len())
             .unwrap_or(Self::RECOMMENDED_LEN);
-        Params::new(log_n, r, p, len).map_err(|_| InvalidValue::Malformed.param_error())
+
+        Params::new_with_output_len(log_n, r, p, len)
+            .map_err(|_| InvalidValue::Malformed.param_error())
     }
 }
 

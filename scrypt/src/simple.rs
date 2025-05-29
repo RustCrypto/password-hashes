@@ -36,8 +36,9 @@ impl PasswordHasher for Scrypt {
         let salt = salt.into();
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+        let len = params.len.unwrap_or(Params::RECOMMENDED_LEN);
 
-        let output = Output::init_with(params.len, |out| {
+        let output = Output::init_with(len, |out| {
             scrypt(password, salt_bytes, &params, out).map_err(|_| {
                 let provided = if out.is_empty() {
                     Ordering::Less
