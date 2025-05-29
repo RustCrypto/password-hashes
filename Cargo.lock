@@ -59,8 +59,9 @@ checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 
 [[package]]
 name = "blake2"
-version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
+version = "0.11.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce3d950855224a23299348898f8a2127860e1afea78df3e51deebb89d1cb2f8f"
 dependencies = [
  "digest",
 ]
@@ -165,16 +166,18 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
-version = "0.2.0-rc.2"
-source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
+version = "0.2.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a23fa214dea9efd4dacee5a5614646b30216ae0f05d4bb51bafb50e9da1c5be"
 dependencies = [
  "hybrid-array",
 ]
 
 [[package]]
 name = "digest"
-version = "0.11.0-pre.10"
-source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
+version = "0.11.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "460dd7f37e4950526b54a5a6b1f41b6c8e763c58eb9a8fc8fc05ba5c2f44ca7b"
 dependencies = [
  "block-buffer",
  "const-oid",
@@ -210,8 +213,9 @@ checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 
 [[package]]
 name = "hmac"
-version = "0.13.0-pre.5"
-source = "git+https://github.com/RustCrypto/MACs.git#55327cab3a3aea0cfb3b7fafde6649bbd425beb7"
+version = "0.13.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8dc6a2fcc35ab09136c6df2cdf9ca49790701420a3a6b5db0987dddbabc79b21"
 dependencies = [
  "digest",
 ]
@@ -285,8 +289,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.6.0-rc.0"
-source = "git+https://github.com/RustCrypto/traits.git#1cae37d25c5bc6c59570d5136ccb710e1914b07a"
+version = "0.6.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ee14c44aa1c04c22c4d4532c4fa2cdd5b6d31c2514a5898530d889fc2fc2737"
 dependencies = [
  "base64ct",
  "rand_core",
@@ -431,8 +436,9 @@ dependencies = [
 
 [[package]]
 name = "sha1"
-version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
+version = "0.11.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f9318facddf9ac32a33527066936837e189b3f23ced6edc1603720ead5e2b3d"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -441,8 +447,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
+version = "0.11.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa1d2e6b3cc4e43a8258a9a3b17aa5dfd2cc5186c7024bba8a64aa65b2c71a59"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -451,8 +458,9 @@ dependencies = [
 
 [[package]]
 name = "streebog"
-version = "0.11.0-pre.5"
-source = "git+https://github.com/RustCrypto/hashes.git#d9ad085ed12dba58d2a6d75d76a17a1b2706c4c7"
+version = "0.11.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fd1781d17a54baf1c29e23aee9d49ad89accf4551c80ed1b7edd1659a2c6dbb"
 dependencies = [
  "digest",
 ]

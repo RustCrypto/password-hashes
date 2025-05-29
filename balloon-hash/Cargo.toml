@@ -14,7 +14,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-digest = { version = "=0.11.0-pre.10", default-features = false }
+digest = { version = "0.11.0-rc.0", default-features = false }
 crypto-bigint = { version = "=0.7.0-pre.3", default-features = false, features = ["hybrid-array"] }
 rand_core = { version = "0.9", default-features = false }
 
@@ -25,7 +25,7 @@ zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "1"
-sha2 = "=0.11.0-pre.5"
+sha2 = "0.11.0-rc.0"
 
 [features]
 default = ["alloc", "password-hash", "rand"]
