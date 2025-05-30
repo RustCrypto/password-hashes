@@ -14,8 +14,8 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-blowfish = { version = "=0.10.0-pre.2", features = ["bcrypt"] }
-pbkdf2 = { version = "=0.13.0-pre.1", default-features = false, path = "../pbkdf2" }
+blowfish = { version = "0.10.0-rc.0", features = ["bcrypt"] }
+pbkdf2 = { version = "0.13.0-rc.0", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.11.0-rc.0", default-features = false }
 zeroize = { version = "1", default-features = false, optional = true }
 
