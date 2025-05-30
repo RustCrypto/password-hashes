@@ -18,10 +18,10 @@ rust-version = "1.85"
 
 [dependencies]
 base64ct = "1.7"
-blake2 = { version = "=0.11.0-pre.5", default-features = false }
+blake2 = { version = "0.11.0-rc.0", default-features = false }
 
 # optional dependencies
-password-hash = { version = "0.6.0-rc.0", optional = true }
+password-hash = { version = "0.6.0-rc.1", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
@@ -29,7 +29,7 @@ cpufeatures = "0.2.17"
 
 [dev-dependencies]
 hex-literal = "1"
-password-hash = { version = "0.6.0-rc.0", features = ["rand_core"] }
+password-hash = { version = "0.6.0-rc.1", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
