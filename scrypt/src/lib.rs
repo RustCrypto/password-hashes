@@ -84,6 +84,12 @@ pub use crate::simple::{ALG_ID, Scrypt};
 /// `Ok(())` if calculation is successful and `Err(InvalidOutputLen)` if
 /// `output` does not satisfy the following condition:
 /// `output.len() > 0 && output.len() <= (2^32 - 1) * 32`.
+///
+/// # Note about output lengths
+/// The output size is determined entirely by size of the `output` parameter.
+///
+/// If the length of the [`Params`] have been customized using the [`Params::new_with_output_len`]
+/// constructor, that length is ignored and the length of `output` is used instead.
 pub fn scrypt(
     password: &[u8],
     salt: &[u8],
