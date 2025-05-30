@@ -5,7 +5,7 @@ use crate::errors::InvalidParams;
 #[cfg(feature = "simple")]
 use password_hash::{Error, ParamsString, PasswordHash, errors::InvalidValue};
 
-#[cfg(doc)]
+#[cfg(all(feature = "simple", doc))]
 use password_hash::PasswordHasher;
 
 /// The Scrypt parameter values.
