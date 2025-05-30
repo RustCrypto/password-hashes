@@ -77,9 +77,9 @@ dependencies = [
 
 [[package]]
 name = "blowfish"
-version = "0.10.0-pre.2"
+version = "0.10.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a95055ab63fce093f337ff8ab61732314c11963bd40b7352fe4e3d70a3f45b73"
+checksum = "3c0f960d119fb9f71bf044c0f2f91bf6323d749e7302f3ef110a34cd73a5a0d2"
 dependencies = [
  "byteorder",
  "cipher",
@@ -105,9 +105,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cipher"
-version = "0.5.0-pre.7"
+version = "0.5.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b1425e6ce000f05a73096556cabcfb6a10a3ffe3bb4d75416ca8f00819c0b6a"
+checksum = "bd4ef774202f1749465fc7cf88d70fc30620e8cacd5429268f4bff7d003bd976"
 dependencies = [
  "crypto-common",
  "inout",
@@ -300,7 +300,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.13.0-pre.1"
+version = "0.13.0-rc.0"
 dependencies = [
  "digest",
  "hex-literal",
@@ -406,9 +406,9 @@ dependencies = [
 
 [[package]]
 name = "salsa20"
-version = "0.11.0-pre.2"
+version = "0.11.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1affa54a576c40080654b494bb3f3198fa2fe46e0954b85196d122e3561c2fd0"
+checksum = "01a9ebec7e5784021e346c32d27b6d3df9b034e2603f1d60ed84b9e1f701d9b9"
 dependencies = [
  "cfg-if",
  "cipher",
