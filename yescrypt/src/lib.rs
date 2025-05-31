@@ -48,7 +48,8 @@
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
 //
-// Licensed under the same BSD-2-Clause license as a derivative work.
+// Relicensed from the BSD-2-Clause license to Apache 2.0+MIT with permission:
+// <https://github.com/openwall/yescrypt/issues/7>
 
 extern crate alloc;
 
