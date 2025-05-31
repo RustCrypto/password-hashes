@@ -42,7 +42,7 @@ checksum = "89e25b6adfb930f02d1981565a6e5d9c547ac15a96606256d3b59040e5cd4ca3"
 
 [[package]]
 name = "bcrypt-pbkdf"
-version = "0.11.0-pre.1"
+version = "0.11.0-rc.0"
 dependencies = [
  "blowfish",
  "hex-literal",
