@@ -432,9 +432,9 @@ impl<'key> Argon2<'key> {
                     for block in first_block..segment_length {
                         // Extract entropy
                         let rand = if data_independent_addressing {
-                            let addres_index = block % ADDRESSES_IN_BLOCK;
+                            let address_index = block % ADDRESSES_IN_BLOCK;
 
-                            if addres_index == 0 {
+                            if address_index == 0 {
                                 self.update_address_block(
                                     &mut address_block,
                                     &mut input_block,
@@ -442,7 +442,7 @@ impl<'key> Argon2<'key> {
                                 );
                             }
 
-                            address_block.as_ref()[addres_index]
+                            address_block.as_ref()[address_index]
                         } else {
                             memory_blocks[prev_index].as_ref()[0]
                         };
