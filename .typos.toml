@@ -1,0 +1,18 @@
+[files]
+extend-exclude = [
+    ".git/"
+]
+
+[default]
+extend-ignore-re = [
+    # Patterns which appear to be 36 or more characters of Base64/Base64url
+    '\b[0-9A-Za-z+/]{36,}\b',
+    '\b[0-9A-Za-z_-]{36,}\b',
+    # KAT in argon2
+    '\b34 71 9f ba d2 22 61 33 7b 2b 55 29 81 44 09 af\b',
+]
+
+[default.extend-words]
+"GOST" = "GOST"
+# Variable name in yescrypt
+"clen" = "clen"
