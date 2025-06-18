@@ -29,6 +29,7 @@ hex-literal = "1"
 sha1 = "0.11.0-rc.0"
 sha2 = "0.11.0-rc.0"
 streebog = "0.11.0-rc.0"
+belt-hash = "0.2.0-rc.0"
 
 [features]
 default = ["hmac"]
