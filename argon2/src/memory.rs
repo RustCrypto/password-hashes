@@ -8,12 +8,6 @@
 //! > length of q/SL. Segments of the same slice can be computed in parallel and do not reference
 //! > blocks from each other. All other blocks can be referenced.
 
-#![warn(
-    clippy::undocumented_unsafe_blocks,
-    clippy::missing_safety_doc,
-    unsafe_op_in_unsafe_fn
-)]
-
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 

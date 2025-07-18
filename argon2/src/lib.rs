@@ -13,8 +13,10 @@
     clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
+    clippy::missing_safety_doc,
     clippy::panic,
     clippy::panic_in_result_fn,
+    clippy::undocumented_unsafe_blocks,
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
@@ -525,6 +527,7 @@ impl<'key> Argon2<'key> {
             }
 
             if self.cpu_feat_avx2.get() {
+                // SAFETY: checked that AVX2 was detected.
                 return unsafe { compress_avx2(rhs, lhs) };
             }
         }
