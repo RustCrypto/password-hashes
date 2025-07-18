@@ -37,7 +37,7 @@ default = ["alloc", "password-hash", "rand"]
 alloc = ["password-hash?/alloc"]
 std = ["alloc", "password-hash?/os_rng", "base64ct/std"]
 
-parallel = ["dep:rayon", "std"]
+parallel = ["dep:rayon"]
 rand = ["password-hash?/rand_core"]
 simple = ["password-hash"]
 zeroize = ["dep:zeroize"]
