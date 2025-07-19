@@ -13,8 +13,10 @@
     clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
+    clippy::missing_safety_doc,
     clippy::panic,
     clippy::panic_in_result_fn,
+    clippy::undocumented_unsafe_blocks,
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
@@ -153,6 +155,7 @@ mod algorithm;
 mod blake2b_long;
 mod block;
 mod error;
+mod memory;
 mod params;
 mod version;
 
@@ -173,6 +176,7 @@ pub use {
 use crate::blake2b_long::blake2b_long;
 use blake2::{Blake2b512, Digest, digest};
 use core::fmt;
+use memory::Memory;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::{Decimal, Ident, ParamsString, Salt};
@@ -347,7 +351,7 @@ impl<'key> Argon2<'key> {
         mut initial_hash: digest::Output<Blake2b512>,
     ) -> Result<()> {
         let block_count = self.params.block_count();
-        let memory_blocks = memory_blocks
+        let mut memory_blocks = memory_blocks
             .get_mut(..block_count)
             .ok_or(Error::MemoryTooLittle)?;
 
@@ -381,31 +385,59 @@ impl<'key> Argon2<'key> {
 
         // Run passes on blocks
         for pass in 0..iterations {
-            for slice in 0..SYNC_POINTS {
+            memory_blocks.for_each_segment(lanes, |mut memory_view, slice, lane| {
                 let data_independent_addressing = self.algorithm == Algorithm::Argon2i
                     || (self.algorithm == Algorithm::Argon2id
                         && pass == 0
                         && slice < SYNC_POINTS / 2);
 
-                for lane in 0..lanes {
-                    let mut address_block = Block::default();
-                    let mut input_block = Block::default();
-                    let zero_block = Block::default();
+                let mut address_block = Block::default();
+                let mut input_block = Block::default();
+                let zero_block = Block::default();
 
+                if data_independent_addressing {
+                    input_block.as_mut()[..6].copy_from_slice(&[
+                        pass as u64,
+                        lane as u64,
+                        slice as u64,
+                        block_count as u64,
+                        iterations as u64,
+                        self.algorithm as u64,
+                    ]);
+                }
+
+                let first_block = if pass == 0 && slice == 0 {
                     if data_independent_addressing {
-                        input_block.as_mut()[..6].copy_from_slice(&[
-                            pass as u64,
-                            lane as u64,
-                            slice as u64,
-                            memory_blocks.len() as u64,
-                            iterations as u64,
-                            self.algorithm as u64,
-                        ]);
+                        // Generate first set of addresses
+                        self.update_address_block(
+                            &mut address_block,
+                            &mut input_block,
+                            &zero_block,
+                        );
                     }
 
-                    let first_block = if pass == 0 && slice == 0 {
-                        if data_independent_addressing {
-                            // Generate first set of addresses
+                    // The first two blocks of each lane are already initialized
+                    2
+                } else {
+                    0
+                };
+
+                let mut cur_index = lane * lane_length + slice * segment_length + first_block;
+                let mut prev_index = if slice == 0 && first_block == 0 {
+                    // Last block in current lane
+                    cur_index + lane_length - 1
+                } else {
+                    // Previous block
+                    cur_index - 1
+                };
+
+                // Fill blocks in the segment
+                for block in first_block..segment_length {
+                    // Extract entropy
+                    let rand = if data_independent_addressing {
+                        let address_index = block % ADDRESSES_IN_BLOCK;
+
+                        if address_index == 0 {
                             self.update_address_block(
                                 &mut address_block,
                                 &mut input_block,
@@ -413,101 +445,73 @@ impl<'key> Argon2<'key> {
                             );
                         }
 
-                        // The first two blocks of each lane are already initialized
-                        2
+                        address_block.as_ref()[address_index]
+                    } else {
+                        memory_view.get_block(prev_index).as_ref()[0]
+                    };
+
+                    // Calculate source block index for compress function
+                    let ref_lane = if pass == 0 && slice == 0 {
+                        // Cannot reference other lanes yet
+                        lane
+                    } else {
+                        (rand >> 32) as usize % lanes
+                    };
+
+                    let reference_area_size = if pass == 0 {
+                        // First pass
+                        if slice == 0 {
+                            // First slice
+                            block - 1 // all but the previous
+                        } else if ref_lane == lane {
+                            // The same lane => add current segment
+                            slice * segment_length + block - 1
+                        } else {
+                            slice * segment_length - if block == 0 { 1 } else { 0 }
+                        }
+                    } else {
+                        // Second pass
+                        if ref_lane == lane {
+                            lane_length - segment_length + block - 1
+                        } else {
+                            lane_length - segment_length - if block == 0 { 1 } else { 0 }
+                        }
+                    };
+
+                    // 1.2.4. Mapping rand to 0..<reference_area_size-1> and produce
+                    // relative position
+                    let mut map = rand & 0xFFFFFFFF;
+                    map = (map * map) >> 32;
+                    let relative_position = reference_area_size
+                        - 1
+                        - ((reference_area_size as u64 * map) >> 32) as usize;
+
+                    // 1.2.5 Computing starting position
+                    let start_position = if pass != 0 && slice != SYNC_POINTS - 1 {
+                        (slice + 1) * segment_length
                     } else {
                         0
                     };
 
-                    let mut cur_index = lane * lane_length + slice * segment_length + first_block;
-                    let mut prev_index = if slice == 0 && first_block == 0 {
-                        // Last block in current lane
-                        cur_index + lane_length - 1
+                    let lane_index = (start_position + relative_position) % lane_length;
+                    let ref_index = ref_lane * lane_length + lane_index;
+
+                    // Calculate new block
+                    let result = self.compress(
+                        memory_view.get_block(prev_index),
+                        memory_view.get_block(ref_index),
+                    );
+
+                    if self.version == Version::V0x10 || pass == 0 {
+                        *memory_view.get_block_mut(cur_index) = result;
                     } else {
-                        // Previous block
-                        cur_index - 1
+                        *memory_view.get_block_mut(cur_index) ^= &result;
                     };
 
-                    // Fill blocks in the segment
-                    for block in first_block..segment_length {
-                        // Extract entropy
-                        let rand = if data_independent_addressing {
-                            let address_index = block % ADDRESSES_IN_BLOCK;
-
-                            if address_index == 0 {
-                                self.update_address_block(
-                                    &mut address_block,
-                                    &mut input_block,
-                                    &zero_block,
-                                );
-                            }
-
-                            address_block.as_ref()[address_index]
-                        } else {
-                            memory_blocks[prev_index].as_ref()[0]
-                        };
-
-                        // Calculate source block index for compress function
-                        let ref_lane = if pass == 0 && slice == 0 {
-                            // Cannot reference other lanes yet
-                            lane
-                        } else {
-                            (rand >> 32) as usize % lanes
-                        };
-
-                        let reference_area_size = if pass == 0 {
-                            // First pass
-                            if slice == 0 {
-                                // First slice
-                                block - 1 // all but the previous
-                            } else if ref_lane == lane {
-                                // The same lane => add current segment
-                                slice * segment_length + block - 1
-                            } else {
-                                slice * segment_length - if block == 0 { 1 } else { 0 }
-                            }
-                        } else {
-                            // Second pass
-                            if ref_lane == lane {
-                                lane_length - segment_length + block - 1
-                            } else {
-                                lane_length - segment_length - if block == 0 { 1 } else { 0 }
-                            }
-                        };
-
-                        // 1.2.4. Mapping rand to 0..<reference_area_size-1> and produce
-                        // relative position
-                        let mut map = rand & 0xFFFFFFFF;
-                        map = (map * map) >> 32;
-                        let relative_position = reference_area_size
-                            - 1
-                            - ((reference_area_size as u64 * map) >> 32) as usize;
-
-                        // 1.2.5 Computing starting position
-                        let start_position = if pass != 0 && slice != SYNC_POINTS - 1 {
-                            (slice + 1) * segment_length
-                        } else {
-                            0
-                        };
-
-                        let lane_index = (start_position + relative_position) % lane_length;
-                        let ref_index = ref_lane * lane_length + lane_index;
-
-                        // Calculate new block
-                        let result =
-                            self.compress(&memory_blocks[prev_index], &memory_blocks[ref_index]);
-
-                        if self.version == Version::V0x10 || pass == 0 {
-                            memory_blocks[cur_index] = result;
-                        } else {
-                            memory_blocks[cur_index] ^= &result;
-                        };
-
-                        prev_index = cur_index;
-                        cur_index += 1;
-                    }
+                    prev_index = cur_index;
+                    cur_index += 1;
                 }
-            }
+            });
         }
 
         Ok(())
@@ -523,6 +527,7 @@ impl<'key> Argon2<'key> {
             }
 
             if self.cpu_feat_avx2.get() {
+                // SAFETY: checked that AVX2 was detected.
                 return unsafe { compress_avx2(rhs, lhs) };
             }
         }
