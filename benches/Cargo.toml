@@ -8,10 +8,17 @@ publish = false
 
 [dev-dependencies]
 argon2 = { path = "../argon2" }
-criterion = { version = "0.4", features = ["html_reports"] }
+criterion = { version = "0.5", features = ["html_reports"] }
 pprof = { version = "0.14", features = ["flamegraph", "criterion"] }
+
+[features]
+default = []
+parallel = ["argon2/parallel"]
 
 [[bench]]
 name = "argon2"
 path = "src/argon2.rs"
 harness = false
+
+[patch.crates-io]
+password-hash = { git = "https://github.com/RustCrypto/traits.git" }
