@@ -1,16 +1,3 @@
-#[cfg(any(
-    test,
-    not(any(
-        all(
-            any(target_arch = "x86", target_arch = "x86_64"),
-            target_feature = "sse2"
-        ),
-        all(target_arch = "aarch64", target_feature = "neon"),
-        all(target_arch = "wasm32", target_feature = "simd128"),
-    ))
-))]
-mod soft;
-
 cfg_if::cfg_if! {
     if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
         mod pivot;
@@ -25,12 +12,17 @@ cfg_if::cfg_if! {
         mod sse2;
         pub(crate) use sse2::{scrypt_block_mix, shuffle_in, shuffle_out};
     } else {
+        mod soft;
         pub(crate) use soft::scrypt_block_mix;
 
         pub(crate) fn shuffle_in(_input: &mut [u8]) {}
         pub(crate) fn shuffle_out(_input: &mut [u8]) {}
     }
 }
+
+#[cfg(test)]
+#[path = "block_mix/soft.rs"]
+mod soft_test;
 
 #[cfg(test)]
 mod tests {
@@ -44,11 +36,11 @@ mod tests {
 
             let mut expected0 = [0u8; 128];
             let mut expected1 = [0u8; 128]; // check shuffle_out is a correct inverse of shuffle_in
-            soft::scrypt_block_mix(&input, &mut expected0);
+            soft_test::scrypt_block_mix(&input, &mut expected0);
             shuffle_in(&mut input);
             scrypt_block_mix(&input, &mut output);
             shuffle_out(&mut input);
-            soft::scrypt_block_mix(&input, &mut expected1);
+            soft_test::scrypt_block_mix(&input, &mut expected1);
             shuffle_out(&mut output);
             assert_eq!(
                 expected0, expected1,
