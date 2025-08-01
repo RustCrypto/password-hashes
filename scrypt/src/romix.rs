@@ -1,8 +1,16 @@
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "wasm32"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(target_arch = "wasm32", target_feature = "simd128")
+))]
 /// Permute Salsa20 block to column major order
 const PIVOT_ABCD: [usize; 16] = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11];
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "wasm32"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(target_arch = "wasm32", target_feature = "simd128")
+))]
 /// Inverse of PIVOT_ABCD
 const INVERSE_PIVOT_ABCD: [usize; 16] = const {
     let mut index = [0; 16];
