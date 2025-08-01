@@ -1,9 +1,5 @@
 cfg_if::cfg_if! {
-    if #[cfg(all(target_arch = "aarch64", target_feature = "neon"))] {
-        mod pivot;
-        mod neon;
-        pub(crate) use neon::{scrypt_block_mix, shuffle_in, shuffle_out};
-    } else if #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))] {
+    if #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))] {
         mod pivot;
         mod simd128;
         pub(crate) use simd128::{scrypt_block_mix, shuffle_in, shuffle_out};
