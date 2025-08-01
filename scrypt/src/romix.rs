@@ -54,12 +54,22 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
 
     for chunk in v.chunks_mut(len) {
         chunk.copy_from_slice(b);
+
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        scrypt_block_mix_abcd(chunk, b);
+
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
         scrypt_block_mix(chunk, b);
     }
 
     for _ in 0..n {
         let j = integerify(b, n);
         xor(b, &v[j * len..(j + 1) * len], t);
+
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        scrypt_block_mix_abcd(t, b);
+
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
         scrypt_block_mix(t, b);
     }
 
@@ -113,11 +123,11 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     }
 }
 
-/// Execute the BlockMix operation
+/// Execute the BlockMix operation with pre-shuffled input.
 /// input - the input vector. The length must be a multiple of 128.
 /// output - the output vector. Must be the same length as input.
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
+fn scrypt_block_mix_abcd(input: &[u8], output: &mut [u8]) {
     #[cfg(target_arch = "x86")]
     use core::arch::x86::*;
 
@@ -131,13 +141,12 @@ fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
         }};
     }
 
-    let mut x = [0u8; 64];
-    x.copy_from_slice(&input[input.len() - 64..]);
+    let last_block = &input[input.len() - 64..];
 
-    let mut a = unsafe { _mm_loadu_si128(x.as_ptr().cast()) };
-    let mut b = unsafe { _mm_loadu_si128(x.as_ptr().add(16).cast()) };
-    let mut c = unsafe { _mm_loadu_si128(x.as_ptr().add(32).cast()) };
-    let mut d = unsafe { _mm_loadu_si128(x.as_ptr().add(48).cast()) };
+    let mut a = unsafe { _mm_loadu_si128(last_block.as_ptr().cast()) };
+    let mut b = unsafe { _mm_loadu_si128(last_block.as_ptr().add(16).cast()) };
+    let mut c = unsafe { _mm_loadu_si128(last_block.as_ptr().add(32).cast()) };
+    let mut d = unsafe { _mm_loadu_si128(last_block.as_ptr().add(48).cast()) };
 
     for (i, chunk) in input.chunks(64).enumerate() {
         let pos = if i % 2 == 0 {
