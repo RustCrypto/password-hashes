@@ -36,10 +36,7 @@ pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
 
     let last_block = &input[input.len() - 64..];
 
-    let mut a = unsafe { vld1q_u32(last_block.as_ptr().cast()) };
-    let mut b = unsafe { vld1q_u32(last_block.as_ptr().add(16).cast()) };
-    let mut c = unsafe { vld1q_u32(last_block.as_ptr().add(32).cast()) };
-    let mut d = unsafe { vld1q_u32(last_block.as_ptr().add(48).cast()) };
+    let mut x = unsafe { vld1q_u32_x4(last_block.as_ptr().cast()) };
 
     for (i, chunk) in input.chunks(64).enumerate() {
         let pos = if i % 2 == 0 {
@@ -49,17 +46,17 @@ pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
         };
 
         unsafe {
-            let chunk_a = vld1q_u32(chunk.as_ptr().cast());
-            let chunk_b = vld1q_u32(chunk.as_ptr().add(16).cast());
-            let chunk_c = vld1q_u32(chunk.as_ptr().add(32).cast());
-            let chunk_d = vld1q_u32(chunk.as_ptr().add(48).cast());
+            let chunk = vld1q_u32_x4(chunk.as_ptr().cast());
 
-            a = veorq_u32(a, chunk_a);
-            b = veorq_u32(b, chunk_b);
-            c = veorq_u32(c, chunk_c);
-            d = veorq_u32(d, chunk_d);
+            x.0 = veorq_u32(x.0, chunk.0);
+            x.1 = veorq_u32(x.1, chunk.1);
+            x.2 = veorq_u32(x.2, chunk.2);
+            x.3 = veorq_u32(x.3, chunk.3);
 
-            let saves = [a, b, c, d];
+            let mut a = x.0;
+            let mut b = x.1;
+            let mut c = x.2;
+            let mut d = x.3;
 
             for _ in 0..8 {
                 b = veorq_u32(b, vrol_u32!(vaddq_u32(a, d), 7));
@@ -74,15 +71,12 @@ pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
                 (b, d) = (d, b);
             }
 
-            a = vaddq_u32(a, saves[0]);
-            b = vaddq_u32(b, saves[1]);
-            c = vaddq_u32(c, saves[2]);
-            d = vaddq_u32(d, saves[3]);
+            x.0 = vaddq_u32(x.0, a);
+            x.1 = vaddq_u32(x.1, b);
+            x.2 = vaddq_u32(x.2, c);
+            x.3 = vaddq_u32(x.3, d);
 
-            vst1q_u32(output.as_mut_ptr().add(pos).cast(), a);
-            vst1q_u32(output.as_mut_ptr().add(pos + 16).cast(), b);
-            vst1q_u32(output.as_mut_ptr().add(pos + 32).cast(), c);
-            vst1q_u32(output.as_mut_ptr().add(pos + 48).cast(), d);
+            vst1q_u32_x4(output.as_mut_ptr().add(pos).cast(), x);
         }
     }
 }
