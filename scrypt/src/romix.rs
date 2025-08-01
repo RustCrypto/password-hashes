@@ -1,8 +1,8 @@
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "wasm32"))]
 /// Permute Salsa20 block to column major order
 const PIVOT_ABCD: [usize; 16] = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11];
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "wasm32"))]
 /// Inverse of PIVOT_ABCD
 const INVERSE_PIVOT_ABCD: [usize; 16] = const {
     let mut index = [0; 16];
@@ -41,7 +41,11 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
 
     let len = b.len();
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "wasm32", target_feature = "simd128")
+    ))]
     for chunk in b.chunks_exact_mut(64) {
         let mut t = [0u32; 16];
         for (c, b) in chunk.chunks_exact(4).zip(t.iter_mut()) {
@@ -55,10 +59,18 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
     for chunk in v.chunks_mut(len) {
         chunk.copy_from_slice(b);
 
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        #[cfg(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "wasm32", target_feature = "simd128")
+        ))]
         scrypt_block_mix_abcd(chunk, b);
 
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        #[cfg(not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "wasm32", target_feature = "simd128")
+        )))]
         scrypt_block_mix(chunk, b);
     }
 
@@ -66,14 +78,26 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
         let j = integerify(b, n);
         xor(b, &v[j * len..(j + 1) * len], t);
 
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        #[cfg(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "wasm32", target_feature = "simd128")
+        ))]
         scrypt_block_mix_abcd(t, b);
 
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        #[cfg(not(any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            all(target_arch = "wasm32", target_feature = "simd128")
+        )))]
         scrypt_block_mix(t, b);
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(any(
+        target_arch = "x86",
+        target_arch = "x86_64",
+        all(target_arch = "wasm32", target_feature = "simd128")
+    ))]
     for chunk in b.chunks_exact_mut(64) {
         let mut t = [0u32; 16];
         for (c, b) in chunk.chunks_exact(4).zip(t.iter_mut()) {
@@ -88,7 +112,11 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
 /// Execute the BlockMix operation
 /// input - the input vector. The length must be a multiple of 128.
 /// output - the output vector. Must be the same length as input.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(target_arch = "wasm32", target_feature = "simd128")
+)))]
 fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     use salsa20::{
         SalsaCore,
@@ -188,6 +216,72 @@ fn scrypt_block_mix_abcd(input: &[u8], output: &mut [u8]) {
             _mm_storeu_si128(output.as_mut_ptr().add(pos + 16).cast(), b);
             _mm_storeu_si128(output.as_mut_ptr().add(pos + 32).cast(), c);
             _mm_storeu_si128(output.as_mut_ptr().add(pos + 48).cast(), d);
+        }
+    }
+}
+
+/// Execute the BlockMix operation with pre-shuffled input.
+/// input - the input vector. The length must be a multiple of 128.
+/// output - the output vector. Must be the same length as input.
+#[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+fn scrypt_block_mix_abcd(input: &[u8], output: &mut [u8]) {
+    use core::arch::wasm32::*;
+
+    macro_rules! u32x4_rol {
+        ($x:expr, $amt:literal) => {
+            v128_or(u32x4_shl($x, $amt), u32x4_shr($x, 32 - $amt))
+        };
+    }
+
+    let last_block = &input[input.len() - 64..];
+
+    let mut a = unsafe { v128_load(last_block.as_ptr().cast()) };
+    let mut b = unsafe { v128_load(last_block.as_ptr().add(16).cast()) };
+    let mut c = unsafe { v128_load(last_block.as_ptr().add(32).cast()) };
+    let mut d = unsafe { v128_load(last_block.as_ptr().add(48).cast()) };
+
+    for (i, chunk) in input.chunks(64).enumerate() {
+        let pos = if i % 2 == 0 {
+            (i / 2) * 64
+        } else {
+            (i / 2) * 64 + input.len() / 2
+        };
+
+        unsafe {
+            let chunk_a = v128_load(chunk.as_ptr().cast());
+            let chunk_b = v128_load(chunk.as_ptr().add(16).cast());
+            let chunk_c = v128_load(chunk.as_ptr().add(32).cast());
+            let chunk_d = v128_load(chunk.as_ptr().add(48).cast());
+
+            a = v128_xor(a, chunk_a);
+            b = v128_xor(b, chunk_b);
+            c = v128_xor(c, chunk_c);
+            d = v128_xor(d, chunk_d);
+
+            let saves = [a, b, c, d];
+
+            for _ in 0..8 {
+                b = v128_xor(b, u32x4_rol!(u32x4_add(a, d), 7));
+                c = v128_xor(c, u32x4_rol!(u32x4_add(b, a), 9));
+                d = v128_xor(d, u32x4_rol!(u32x4_add(c, b), 13));
+                a = v128_xor(a, u32x4_rol!(u32x4_add(d, c), 18));
+
+                d = i32x4_shuffle::<1, 2, 3, 0>(d, d);
+                c = i32x4_shuffle::<2, 3, 0, 1>(c, c);
+                b = i32x4_shuffle::<3, 0, 1, 2>(b, b);
+
+                (b, d) = (d, b);
+            }
+
+            a = u32x4_add(a, saves[0]);
+            b = u32x4_add(b, saves[1]);
+            c = u32x4_add(c, saves[2]);
+            d = u32x4_add(d, saves[3]);
+
+            v128_store(output.as_mut_ptr().add(pos).cast(), a);
+            v128_store(output.as_mut_ptr().add(pos + 16).cast(), b);
+            v128_store(output.as_mut_ptr().add(pos + 32).cast(), c);
+            v128_store(output.as_mut_ptr().add(pos + 48).cast(), d);
         }
     }
 }
