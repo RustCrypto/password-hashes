@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "argon2"
-version = "0.6.0-rc.0"
+version = "0.6.0-rc.1"
 dependencies = [
  "base64ct",
  "blake2",
@@ -43,7 +43,7 @@ checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
 
 [[package]]
 name = "bcrypt-pbkdf"
-version = "0.11.0-rc.0"
+version = "0.11.0-rc.1"
 dependencies = [
  "blowfish",
  "hex-literal",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.13.0-rc.0"
+version = "0.13.0-rc.1"
 dependencies = [
  "belt-hash",
  "digest",
@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "scrypt"
-version = "0.12.0-rc.1"
+version = "0.12.0-rc.2"
 dependencies = [
  "password-hash",
  "pbkdf2",
