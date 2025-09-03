@@ -15,10 +15,10 @@ rust-version = "1.85"
 
 [dependencies]
 libc = "0.2"
-hmac = { version = "0.13.0-rc.0", default-features = false }
+hmac = { version = "0.13.0-rc.1", default-features = false }
 pbkdf2 = { version = "0.13.0-rc.0", path = "../pbkdf2" }
-salsa20 = { version = "0.11.0-rc.0", default-features = false }
-sha2 = { version = "0.11.0-rc.0", default-features = false }
+salsa20 = { version = "0.11.0-rc.1", default-features = false }
+sha2 = { version = "0.11.0-rc.2", default-features = false }
 
 [dev-dependencies]
 hex-literal = "1"
