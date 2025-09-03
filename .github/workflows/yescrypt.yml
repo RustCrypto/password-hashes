@@ -3,6 +3,7 @@ name: yescrypt
 on:
   pull_request:
     paths:
+      - ".github/workflows/yescrypt.yml"
       - "yescrypt/**"
       - "Cargo.*"
   push:
@@ -50,6 +51,18 @@ jobs:
           targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test
+      - run: cargo test --release
+
+  careful:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2025-08-10
+      - run: cargo install cargo-careful
+      - run: cargo careful test
+      - run: cargo careful test --release
 
 # TODO(tarcieri): 32-bit support
 #  cross:
