@@ -210,7 +210,21 @@ unsafe fn yescrypt_kdf_body(
     buf: *mut uint8_t,
     buflen: size_t,
 ) -> libc::c_int {
-    let mut current_block: u64;
+    #[derive(PartialEq)]
+    #[repr(u64)]
+    enum State {
+        Fail = 15162489974460950378,
+        Good1 = 2868539653012386629,
+        Good2 = 6009453772311597924,
+        AllocV = 14763689060501151050,
+        VAllocated = 9853141518545631134,
+        AllocB = 7746103178988627676,
+        DropXY = 4048828170348623652,
+        RunHash = 12381812505308290051,
+        DropS = 15241037615328978,
+    }
+
+    let mut current_block: State;
     let mut retval: libc::c_int = -(1 as libc::c_int);
     let mut V: *mut uint32_t;
     let mut sha256: [uint32_t; 8] = [0; 8];
@@ -218,16 +232,16 @@ unsafe fn yescrypt_kdf_body(
     match flags & 0x3 as libc::c_int as libc::c_uint {
         0 => {
             if flags != 0 || t != 0 || NROM != 0 {
-                current_block = 15162489974460950378;
+                current_block = State::Fail;
             } else {
-                current_block = 2868539653012386629;
+                current_block = State::Good1;
             }
         }
         1 => {
             if flags != 1 as libc::c_int as libc::c_uint || NROM != 0 {
-                current_block = 15162489974460950378;
+                current_block = State::Fail;
             } else {
-                current_block = 2868539653012386629;
+                current_block = State::Good1;
             }
         }
         2 => {
@@ -240,24 +254,24 @@ unsafe fn yescrypt_kdf_body(
                         | 0x8000000 as libc::c_int
                         | 0x10000000 as libc::c_int) as libc::c_uint
             {
-                current_block = 15162489974460950378;
+                current_block = State::Fail;
             } else if flags & 0x3fc as libc::c_int as libc::c_uint
                 == (0x4 as libc::c_int
                     | 0x10 as libc::c_int
                     | 0x20 as libc::c_int
                     | 0x80 as libc::c_int) as libc::c_uint
             {
-                current_block = 2868539653012386629;
+                current_block = State::Good1;
             } else {
-                current_block = 15162489974460950378;
+                current_block = State::Fail;
             }
         }
         _ => {
-            current_block = 15162489974460950378;
+            current_block = State::Fail;
         }
     }
     match current_block {
-        2868539653012386629 => {
+        State::Good1 => {
             if !(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32)) {
                 if !((r as uint64_t).wrapping_mul(p as uint64_t)
                     >= ((1 as libc::c_int) << 30 as libc::c_int) as libc::c_ulong)
@@ -303,23 +317,23 @@ unsafe fn yescrypt_kdf_body(
                                                 size_of::<PwxformCtx>() as libc::c_ulong,
                                             )
                                     {
-                                        current_block = 15162489974460950378;
+                                        current_block = State::Fail;
                                     } else {
-                                        current_block = 6009453772311597924;
+                                        current_block = State::Good2;
                                     }
                                 } else {
-                                    current_block = 6009453772311597924;
+                                    current_block = State::Good2;
                                 }
                                 match current_block {
-                                    15162489974460950378 => {}
+                                    State::Fail => {}
                                     _ => {
                                         if NROM != 0 {
-                                            current_block = 15162489974460950378;
+                                            current_block = State::Fail;
                                         } else {
-                                            current_block = 14763689060501151050;
+                                            current_block = State::AllocV;
                                         }
                                         match current_block {
-                                            15162489974460950378 => {}
+                                            State::Fail => {}
                                             _ => {
                                                 let V_size = 128usize
                                                     .wrapping_mul(r as usize)
@@ -334,7 +348,7 @@ unsafe fn yescrypt_kdf_body(
                                                             || (*local).base_size != 0
                                                             || (*local).aligned_size != 0
                                                         {
-                                                            current_block = 15162489974460950378;
+                                                            current_block = State::Fail;
                                                         } else {
                                                             V = malloc(V_size) as *mut uint32_t;
                                                             if V.is_null() {
@@ -346,13 +360,13 @@ unsafe fn yescrypt_kdf_body(
                                                             (*local).aligned_size = V_size;
                                                             (*local).base_size =
                                                                 (*local).aligned_size;
-                                                            current_block = 9853141518545631134;
+                                                            current_block = State::VAllocated;
                                                         }
                                                     } else {
-                                                        current_block = 9853141518545631134;
+                                                        current_block = State::VAllocated;
                                                     }
                                                     match current_block {
-                                                        15162489974460950378 => {}
+                                                        State::Fail => {}
                                                         _ => {
                                                             if flags
                                                                 & 0x8000000 as libc::c_int
@@ -361,7 +375,7 @@ unsafe fn yescrypt_kdf_body(
                                                             {
                                                                 return -(2 as libc::c_int);
                                                             }
-                                                            current_block = 7746103178988627676;
+                                                            current_block = State::AllocB;
                                                         }
                                                     }
                                                 } else {
@@ -369,10 +383,10 @@ unsafe fn yescrypt_kdf_body(
                                                     if V.is_null() {
                                                         return -(1 as libc::c_int);
                                                     }
-                                                    current_block = 7746103178988627676;
+                                                    current_block = State::AllocB;
                                                 }
                                                 match current_block {
-                                                    15162489974460950378 => {}
+                                                    State::Fail => {}
                                                     _ => {
                                                         let B_size = 128usize
                                                             .wrapping_mul(r as usize)
@@ -404,7 +418,7 @@ unsafe fn yescrypt_kdf_body(
                                                                         as *mut uint32_t;
                                                                     if S.is_null() {
                                                                         current_block =
-                                                                            4048828170348623652;
+                                                                            State::DropXY;
                                                                     } else {
                                                                         pwxform_ctx = malloc(
                                                                             size_of::<PwxformCtx>()
@@ -415,17 +429,17 @@ unsafe fn yescrypt_kdf_body(
                                                                             as *mut PwxformCtx;
                                                                         if pwxform_ctx.is_null() {
                                                                             current_block =
-                                                                                15241037615328978;
+                                                                                State::DropS;
                                                                         } else {
-                                                                            current_block = 12381812505308290051;
+                                                                            current_block =
+                                                                                State::RunHash;
                                                                         }
                                                                     }
                                                                 } else {
-                                                                    current_block =
-                                                                        12381812505308290051;
+                                                                    current_block = State::RunHash;
                                                                 }
                                                                 match current_block {
-                                                                    12381812505308290051 => {
+                                                                    State::RunHash => {
                                                                         if flags != 0 {
                                                                             HMAC_SHA256_Buf(
                                                                                 b"yescrypt-prehash\0" as *const u8 as *const libc::c_char
@@ -607,12 +621,12 @@ unsafe fn yescrypt_kdf_body(
                                                                         retval = 0 as libc::c_int;
                                                                         free(pwxform_ctx as *mut libc::c_void);
                                                                         current_block =
-                                                                            15241037615328978;
+                                                                            State::DropS;
                                                                     }
                                                                     _ => {}
                                                                 }
                                                                 match current_block {
-                                                                    15241037615328978 => {
+                                                                    State::DropS => {
                                                                         free(
                                                                             S as *mut libc::c_void,
                                                                         );
