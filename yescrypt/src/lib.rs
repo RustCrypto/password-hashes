@@ -273,29 +273,29 @@ unsafe fn yescrypt_kdf_body(
     {
         let mut XY = vec![0u32; 64 * (r as usize)].into_boxed_slice();
         'free_xy: {
-                if flags != 0 {
-                    HMAC_SHA256_Buf(
-                        c"yescrypt-prehash".as_ptr() as *const c_void,
-                        if flags & 0x10000000 != 0 { 16 } else { 8 },
-                        passwd as *const c_void,
-                        passwdlen,
-                        sha256.as_mut_ptr() as *mut u8,
-                    );
-                    passwd = sha256.as_mut_ptr() as *mut u8;
-                    passwdlen = size_of::<[u32; 8]>();
-                }
-                PBKDF2_SHA256(
-                    passwd,
+            if flags != 0 {
+                HMAC_SHA256_Buf(
+                    c"yescrypt-prehash".as_ptr() as *const c_void,
+                    if flags & 0x10000000 != 0 { 16 } else { 8 },
+                    passwd as *const c_void,
                     passwdlen,
-                    salt,
-                    saltlen,
-                    1,
-                    B.as_mut_ptr().cast(),
-                    B_size * 4,
+                    sha256.as_mut_ptr() as *mut u8,
                 );
-                if flags != 0 {
-                    sha256.copy_from_slice(&B[..8]);
-                }
+                passwd = sha256.as_mut_ptr() as *mut u8;
+                passwdlen = size_of::<[u32; 8]>();
+            }
+            PBKDF2_SHA256(
+                passwd,
+                passwdlen,
+                salt,
+                saltlen,
+                1,
+                B.as_mut_ptr().cast(),
+                B_size * 4,
+            );
+            if flags != 0 {
+                sha256.copy_from_slice(&B[..8]);
+            }
 
             if flags & 0x2 != 0 {
                 let S;
@@ -328,68 +328,67 @@ unsafe fn yescrypt_kdf_body(
                         pwxform_ctx,
                         sha256.as_mut_ptr() as *mut u8,
                     );
-                        free(pwxform_ctx as *mut c_void);
-                    }
-                    free(S as *mut c_void);
-                } else {
-                    for i in 0..p {
-                        smix(
-                            B[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..]
-                                .as_mut_ptr(),
-                            r as usize,
-                            N,
-                            1,
-                            t,
-                            flags,
-                            V.as_mut_ptr(),
-                            XY.as_mut_ptr(),
-                            ptr::null_mut(),
-                            ptr::null_mut(),
-                        );
-                    }
+                    free(pwxform_ctx as *mut c_void);
                 }
-                let mut dkp = buf;
-                if flags != 0 && buflen < 32 {
-                    PBKDF2_SHA256(
-                        passwd,
-                        passwdlen,
-                        B.as_ptr().cast(),
-                        B_size * 4,
+                free(S as *mut c_void);
+            } else {
+                for i in 0..p {
+                    smix(
+                        B[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..].as_mut_ptr(),
+                        r as usize,
+                        N,
                         1,
-                        dk.as_mut_ptr(),
-                        32,
+                        t,
+                        flags,
+                        V.as_mut_ptr(),
+                        XY.as_mut_ptr(),
+                        ptr::null_mut(),
+                        ptr::null_mut(),
                     );
-                    dkp = dk.as_mut_ptr();
                 }
+            }
+            let mut dkp = buf;
+            if flags != 0 && buflen < 32 {
                 PBKDF2_SHA256(
                     passwd,
                     passwdlen,
                     B.as_ptr().cast(),
                     B_size * 4,
                     1,
-                    buf,
-                    buflen,
+                    dk.as_mut_ptr(),
+                    32,
                 );
-                if flags != 0 && flags & 0x10000000 == 0 {
-                    HMAC_SHA256_Buf(
-                        dkp as *const c_void,
-                        32,
-                        b"Client Key\0" as *const u8 as *const i8 as *const c_void,
-                        10,
-                        sha256.as_mut_ptr() as *mut u8,
-                    );
-                    let mut clen: usize = buflen;
-                    if clen > 32 {
-                        clen = 32;
-                    }
-                    SHA256_Buf(
-                        sha256.as_mut_ptr() as *mut u8 as *const c_void,
-                        size_of::<[u32; 8]>(),
-                        dk.as_mut_ptr(),
-                    );
-                    memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
+                dkp = dk.as_mut_ptr();
+            }
+            PBKDF2_SHA256(
+                passwd,
+                passwdlen,
+                B.as_ptr().cast(),
+                B_size * 4,
+                1,
+                buf,
+                buflen,
+            );
+            if flags != 0 && flags & 0x10000000 == 0 {
+                HMAC_SHA256_Buf(
+                    dkp as *const c_void,
+                    32,
+                    b"Client Key\0" as *const u8 as *const i8 as *const c_void,
+                    10,
+                    sha256.as_mut_ptr() as *mut u8,
+                );
+                let mut clen: usize = buflen;
+                if clen > 32 {
+                    clen = 32;
                 }
-                retval = 0;
+                SHA256_Buf(
+                    sha256.as_mut_ptr() as *mut u8 as *const c_void,
+                    size_of::<[u32; 8]>(),
+                    dk.as_mut_ptr(),
+                );
+                memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
+            }
+            retval = 0;
         }
         drop(XY);
     }
