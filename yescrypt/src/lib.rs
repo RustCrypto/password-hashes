@@ -150,12 +150,8 @@ unsafe fn yescrypt_kdf_inner(
     }
     if params.flags & 0x2 != 0
         && params.p >= 1
-        && params.N.wrapping_div(params.p as u64) >= 0x100
-        && params
-            .N
-            .wrapping_div(params.p as u64)
-            .wrapping_mul(params.r as u64)
-            >= 0x20000
+        && (params.N / params.p as u64) >= 0x100
+        && params.N / (params.p as u64) / (params.r as u64) >= 0x20000
     {
         let retval = yescrypt_kdf_body(
             local,
@@ -239,21 +235,20 @@ unsafe fn yescrypt_kdf_body(
             return -1;
         }
     }
-    if !(!(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
-        && !((r as u64).wrapping_mul(p as u64) >= (1 << 30) as u64)
-        && !(N & N.wrapping_sub(1) != 0 || N <= 1 || r < 1 || p < 1)
-        && !(r as u64 > u64::MAX.wrapping_div(128).wrapping_div(p as u64)
-            || N > u64::MAX.wrapping_div(128).wrapping_div(r as u64))
-        && !(N > u64::MAX.wrapping_div((t as u64).wrapping_add(1))))
+    if !(!(buflen > ((1 << 32) - 1) * 32)
+        && !((r as u64) * (p as u64) >= (1 << 30) as u64)
+        && !(N & (N - 1) != 0 || N <= 1 || r < 1 || p < 1)
+        && !(r as u64 > u64::MAX / 128 / (p as u64) || N > u64::MAX / 128 / (r as u64))
+        && !(N > u64::MAX / ((t as u64) + 1)))
     {
         return -1;
     }
 
     if flags & 0x2 != 0
-        && (N.wrapping_div(p as u64) <= 1
+        && (N / (p as u64) <= 1
             || r < ((4 * 2 * 8 + 127) / 128) as u32
-            || p as u64 > u64::MAX.wrapping_div(3 * (1 << 8) * 2 * 8)
-            || p as u64 > u64::MAX.wrapping_div(size_of::<PwxformCtx>() as u64))
+            || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
+            || p as u64 > u64::MAX / (size_of::<PwxformCtx>() as u64))
     {
         return -1;
     }
@@ -262,7 +257,7 @@ unsafe fn yescrypt_kdf_body(
         return -1;
     }
 
-    let V_size = 128usize.wrapping_mul(r as usize).wrapping_mul(N as usize);
+    let V_size = 128usize * (r as usize) * (N as usize);
     if flags & 0x1000000 != 0 {
         V = (*local).aligned as *mut u32;
         if (*local).aligned_size < V_size {
@@ -294,13 +289,13 @@ unsafe fn yescrypt_kdf_body(
         }
     }
 
-    let B_size = 128usize.wrapping_mul(r as usize).wrapping_mul(p as usize);
+    let B_size = 128usize * (r as usize) * (p as usize);
     let B = malloc(B_size) as *mut u32;
     if B.is_null() {
         return -1;
     }
     'free_b: {
-        let XY = malloc(256usize.wrapping_mul(r as usize)) as *mut u32;
+        let XY = malloc(256usize * (r as usize)) as *mut u32;
         if XY.is_null() {
             break 'free_b;
         }
@@ -309,15 +304,13 @@ unsafe fn yescrypt_kdf_body(
             'free_s: {
                 let mut pwxform_ctx = ptr::null_mut();
                 if flags & 0x2 != 0 {
-                    S = malloc(
-                        (3usize * ((1usize) << 8usize) * 2usize * 8usize).wrapping_mul(p as usize),
-                    ) as *mut u32;
+                    S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
                     if S.is_null() {
                         break 'free_xy;
                     }
                     {
-                        pwxform_ctx = malloc(size_of::<PwxformCtx>().wrapping_mul(p as usize))
-                            as *mut PwxformCtx;
+                        pwxform_ctx =
+                            malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
                         if pwxform_ctx.is_null() {
                             break 'free_s;
                         }
@@ -326,12 +319,8 @@ unsafe fn yescrypt_kdf_body(
 
                 if flags != 0 {
                     HMAC_SHA256_Buf(
-                        b"yescrypt-prehash\0" as *const u8 as *const i8 as *const c_void,
-                        (if flags & 0x10000000 != 0 {
-                            16_i32
-                        } else {
-                            8_i32
-                        }) as usize,
+                        c"yescrypt-prehash".as_ptr() as *const c_void,
+                        if flags & 0x10000000 != 0 { 16 } else { 8 },
                         passwd as *const c_void,
                         passwdlen,
                         sha256.as_mut_ptr() as *mut u8,
@@ -344,15 +333,15 @@ unsafe fn yescrypt_kdf_body(
                     blkcpy(
                         sha256.as_mut_ptr(),
                         B,
-                        (size_of::<[u32; 8]>()).wrapping_div(size_of::<u32>()),
+                        (size_of::<[u32; 8]>()) / (size_of::<u32>()),
                     );
                 }
                 if flags & 0x2 != 0 {
                     for i in 0..p {
                         let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
-                        *fresh5 = &mut *S.offset((i as u64).wrapping_mul(
-                            ((3 * (1 << 8) * 2 * 8) as u64).wrapping_div(size_of::<u32>() as u64),
-                        ) as isize) as *mut u32;
+                        let offset = (i as u64)
+                            * (((3 * (1 << 8) * 2 * 8) as u64) / (size_of::<u32>() as u64));
+                        *fresh5 = &mut *S.offset(offset as isize) as *mut u32;
                     }
                     smix(
                         B,
@@ -369,8 +358,7 @@ unsafe fn yescrypt_kdf_body(
                 } else {
                     for i in 0..p {
                         smix(
-                            &mut *B
-                                .add((32usize).wrapping_mul(r as usize).wrapping_mul(i as usize)),
+                            &mut *B.add(32 * (r as usize) * (i as usize)),
                             r as usize,
                             N,
                             1,
@@ -440,14 +428,8 @@ unsafe fn pwxform(B: *mut u32, ctx: *mut PwxformCtx) {
         for j in 0..4 {
             let mut xl: u32 = (*X.offset(j as isize))[0][0];
             let mut xh: u32 = (*X.offset(j as isize))[0][1];
-            let p0 = S0.offset(
-                ((xl & (((1 << 8) - 1) * 2 * 8) as u32) as u64)
-                    .wrapping_div(size_of::<[u32; 2]>() as u64) as isize,
-            );
-            let p1 = S1.offset(
-                ((xh & (((1 << 8) - 1) * 2 * 8) as u32) as u64)
-                    .wrapping_div(size_of::<[u32; 2]>() as u64) as isize,
-            );
+            let p0 = S0.offset(((xl as u64 & (((1 << 8) - 1) * 2 * 8)) / 8) as isize);
+            let p1 = S1.offset(((xh as u64 & (((1 << 8) - 1) * 2 * 8)) / 8) as isize);
             for k in 0..2 {
                 let s0 = (((*p0.offset(k as isize))[1] as u64) << 32)
                     .wrapping_add((*p0.offset(k as isize))[0] as u64);
@@ -460,10 +442,10 @@ unsafe fn pwxform(B: *mut u32, ctx: *mut PwxformCtx) {
                 x ^= s1;
                 (*X.offset(j as isize))[k as usize][0] = x as u32;
                 (*X.offset(j as isize))[k as usize][1] = (x >> 32) as u32;
-                if i != 0usize && i != (6 - 1) {
+                if i != 0 && i != (6 - 1) {
                     (*S2.offset(w as isize))[0] = x as u32;
                     (*S2.offset(w as isize))[1] = (x >> 32) as u32;
-                    w = w.wrapping_add(1);
+                    w += 1;
                 }
             }
         }
@@ -505,8 +487,7 @@ unsafe fn blockmix_pwxform(B: *mut u32, ctx: *mut PwxformCtx, r: usize) {
     }
     let i = r1.wrapping_sub(1).wrapping_mul(4 * 2 * 8).wrapping_div(64);
     salsa20::salsa20_2(&mut *B.add(i.wrapping_mul(16)));
-    let i = i.wrapping_add(1);
-    for i in i..(2usize).wrapping_mul(r) {
+    for i in (i + 1)..(2 * r) {
         blkxor(
             &mut *B.offset(i.wrapping_mul(16usize) as isize),
             &mut *B.offset(i.wrapping_sub(1usize).wrapping_mul(16usize) as isize),
@@ -534,17 +515,17 @@ unsafe fn smix(
     if flags & 0x2 != 0 {
         if t <= 1 {
             if t != 0 {
-                Nloop_all = Nloop_all.wrapping_mul(2);
+                Nloop_all *= 2;
             }
-            Nloop_all = Nloop_all.wrapping_add(2).wrapping_div(3);
+            Nloop_all = Nloop_all.div_ceil(3);
         } else {
-            Nloop_all = Nloop_all.wrapping_mul(t.wrapping_sub(1) as u64);
+            Nloop_all *= t as u64 - 1;
         }
     } else if t != 0 {
         if t == 1 {
-            Nloop_all = Nloop_all.wrapping_add(Nloop_all.wrapping_add(1).wrapping_div(2));
+            Nloop_all += Nloop_all.div_ceil(2)
         }
-        Nloop_all = Nloop_all.wrapping_mul(t as u64);
+        Nloop_all *= t as u64;
     }
     let mut Nloop_rw = 0;
     if flags & 0x1000000 != 0 {
@@ -552,11 +533,11 @@ unsafe fn smix(
     } else if flags & 0x2 != 0 {
         Nloop_rw = Nloop_all.wrapping_div(p as u64);
     }
-    Nchunk &= !(1);
-    Nloop_all = Nloop_all.wrapping_add(1);
-    Nloop_all &= !(1);
-    Nloop_rw = Nloop_rw.wrapping_add(1);
-    Nloop_rw &= !(1);
+    Nchunk &= !1;
+    Nloop_all += 1;
+    Nloop_all &= !1;
+    Nloop_rw += 1;
+    Nloop_rw &= !1;
     let mut Vchunk = 0;
     for i in 0..p {
         let Np = if i < p.wrapping_sub(1) {
