@@ -270,11 +270,8 @@ unsafe fn yescrypt_kdf_body(
 
     let B_size = 32 * (r as usize) * (p as usize);
     let mut B = vec![0u32; B_size].into_boxed_slice();
-    'free_b: {
-        let XY = malloc(256usize * (r as usize)) as *mut u32;
-        if XY.is_null() {
-            break 'free_b;
-        }
+    {
+        let mut XY = vec![0u32; 64 * (r as usize)].into_boxed_slice();
         'free_xy: {
             let mut S = ptr::null_mut();
             'free_s: {
@@ -331,7 +328,7 @@ unsafe fn yescrypt_kdf_body(
                         t,
                         flags,
                         V.as_mut_ptr(),
-                        XY,
+                        XY.as_mut_ptr(),
                         pwxform_ctx,
                         sha256.as_mut_ptr() as *mut u8,
                     );
@@ -346,7 +343,7 @@ unsafe fn yescrypt_kdf_body(
                             t,
                             flags,
                             V.as_mut_ptr(),
-                            XY,
+                            XY.as_mut_ptr(),
                             ptr::null_mut(),
                             ptr::null_mut(),
                         );
@@ -398,7 +395,7 @@ unsafe fn yescrypt_kdf_body(
             }
             free(S as *mut c_void);
         }
-        free(XY as *mut c_void);
+        drop(XY);
     }
     drop(B);
     retval
