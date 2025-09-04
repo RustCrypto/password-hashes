@@ -145,27 +145,22 @@ unsafe fn yescrypt_kdf_inner(
     mut passwdlen: size_t,
     salt: *const uint8_t,
     saltlen: size_t,
-    params: *const Params,
+    params: &Params,
     buf: *mut uint8_t,
     buflen: size_t,
 ) -> libc::c_int {
-    let flags: Flags = (*params).flags;
-    let N: uint64_t = (*params).N;
-    let r: uint32_t = (*params).r;
-    let p: uint32_t = (*params).p;
-    let t: uint32_t = (*params).t;
-    let g: uint32_t = (*params).g;
-    let NROM: uint64_t = (*params).NROM;
     let mut dk: [uint8_t; 32] = [0; 32];
-    if g != 0 {
-        return -(1 as libc::c_int);
+    if params.g != 0 {
+        return -1;
     }
-    if flags & 0x2 as libc::c_int as libc::c_uint != 0
-        && p >= 1 as libc::c_int as libc::c_uint
-        && N.wrapping_div(p as libc::c_ulong) >= 0x100 as libc::c_int as libc::c_ulong
-        && N.wrapping_div(p as libc::c_ulong)
-            .wrapping_mul(r as libc::c_ulong)
-            >= 0x20000 as libc::c_int as libc::c_ulong
+    if params.flags & 0x2 != 0
+        && params.p >= 1
+        && params.N.wrapping_div(params.p as u64) >= 0x100
+        && params
+            .N
+            .wrapping_div(params.p as u64)
+            .wrapping_mul(params.r as u64)
+            >= 0x20000
     {
         let retval: libc::c_int = yescrypt_kdf_body(
             local,
@@ -173,12 +168,12 @@ unsafe fn yescrypt_kdf_inner(
             passwdlen,
             salt,
             saltlen,
-            flags | 0x10000000 as libc::c_int as libc::c_uint,
-            N >> 6 as libc::c_int,
-            r,
-            p,
+            params.flags | 0x10000000,
+            params.N >> 6 as libc::c_int,
+            params.r,
+            params.p,
             0 as libc::c_int as uint32_t,
-            NROM,
+            params.NROM,
             dk.as_mut_ptr(),
             32,
         );
@@ -189,7 +184,19 @@ unsafe fn yescrypt_kdf_inner(
         passwdlen = 32;
     }
     return yescrypt_kdf_body(
-        local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
+        local,
+        passwd,
+        passwdlen,
+        salt,
+        saltlen,
+        params.flags,
+        params.N,
+        params.r,
+        params.p,
+        params.t,
+        params.NROM,
+        buf,
+        buflen,
     );
 }
 
