@@ -23,7 +23,6 @@
 // Temporary lint overrides while C code is being translated
 #![allow(
     clippy::cast_possible_wrap,
-    clippy::needless_return,
     clippy::nonminimal_bool,
     clippy::ptr_offset_with_cast,
     clippy::too_many_arguments,

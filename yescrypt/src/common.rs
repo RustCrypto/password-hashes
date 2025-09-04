@@ -43,8 +43,8 @@ pub(crate) unsafe fn integerify(mut B: *const u32, mut r: usize) -> u64 {
             .wrapping_sub(1usize)
             .wrapping_mul(16usize) as isize,
     ) as *const u32;
-    return ((*X.offset(13 as libc::c_int as isize) as u64) << 32 as libc::c_int)
-        .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
+    ((*X.offset(13 as libc::c_int as isize) as u64) << 32 as libc::c_int)
+        .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong)
 }
 
 #[inline]
