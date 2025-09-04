@@ -58,9 +58,7 @@ use libc::{c_void, free, malloc, memcpy};
 #[derive(Copy, Clone)]
 #[repr(C)]
 struct Local {
-    pub base: *mut c_void,
     pub aligned: *mut c_void,
-    pub base_size: usize,
     pub aligned_size: usize,
 }
 
@@ -111,9 +109,7 @@ pub fn yescrypt_kdf(
     };
 
     let mut local = Local {
-        base: ptr::null_mut(),
         aligned: ptr::null_mut(),
-        base_size: 0,
         aligned_size: 0,
     };
 
@@ -261,11 +257,7 @@ unsafe fn yescrypt_kdf_body(
     if flags & 0x1000000 != 0 {
         V = local.aligned as *mut u32;
         if local.aligned_size < V_size {
-            if !(local.base).is_null()
-                || !(local.aligned).is_null()
-                || local.base_size != 0
-                || local.aligned_size != 0
-            {
+            if !(local.aligned).is_null() || local.aligned_size != 0 {
                 return -1;
             }
 
@@ -274,9 +266,7 @@ unsafe fn yescrypt_kdf_body(
                 return -(1);
             }
             local.aligned = V as *mut c_void;
-            local.base = local.aligned;
             local.aligned_size = V_size;
-            local.base_size = local.aligned_size;
         }
         if flags & 0x8000000 != 0 {
             return -2_i32;
