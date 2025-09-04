@@ -72,7 +72,6 @@ type uint8_t = libc::c_uchar;
 type uint32_t = libc::c_uint;
 type uint64_t = libc::c_ulong;
 type size_t = usize;
-type encrypt_dir_t = libc::c_int;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -101,13 +100,6 @@ struct Params {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-union Binary {
-    pub uc: [libc::c_uchar; 32],
-    pub u64_0: [uint64_t; 4],
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
 struct PwxformCtx {
     pub S: *mut uint32_t,
     pub S0: *mut [uint32_t; 2],
@@ -115,8 +107,6 @@ struct PwxformCtx {
     pub S2: *mut [uint32_t; 2],
     pub w: size_t,
 }
-
-const DEC: encrypt_dir_t = -1;
 
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(
