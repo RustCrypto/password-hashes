@@ -68,9 +68,23 @@ struct Local {
     pub aligned: Box<[u32]>,
 }
 
-type Flags = u32;
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct Flags: u32 {
+        const WORM        = 0x001;
+        const RW          = 0x002;
+        const ROUNDS_3    = 0b000;
+        const ROUNDS_6    = 0x004;
+        const GATHER_4    = 0x010;
+        const SIMPLE_2    = 0x020;
+        const SBOX_12K    = 0x080;
+        const INIT_SHARED = 0x01000000;
+        const ALLOC_ONLY  = 0x08000000;
+        const PREHASH     = 0x10000000;
+    }
+}
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 struct Params {
     pub flags: Flags,
@@ -96,7 +110,7 @@ struct PwxformCtx {
 pub fn yescrypt_kdf(
     passwd: &[u8],
     salt: &[u8],
-    flags: u32,
+    flags: Flags,
     n: u64,
     r: u32,
     p: u32,
@@ -124,7 +138,7 @@ pub fn yescrypt_kdf(
         return Err(Error(-1));
     }
 
-    let retval = if params.flags & 0x2 != 0
+    let retval = if params.flags.contains(Flags::RW)
         && params.p >= 1
         && (params.N / params.p as u64) >= 0x100
         && params.N / (params.p as u64) / (params.r as u64) >= 0x20000
@@ -145,7 +159,7 @@ pub fn yescrypt_kdf(
                 passwd.len(),
                 salt.as_ptr(),
                 salt.len(),
-                params.flags | 0x10000000,
+                params.flags | Flags::PREHASH,
                 params.N >> 6,
                 params.r,
                 params.p,
@@ -200,23 +214,31 @@ unsafe fn yescrypt_kdf_body(
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
-    match flags & 0x3 {
+    match flags.bits() & 0x3 {
         0 => {
-            if flags != 0 || t != 0 || NROM != 0 {
+            if !flags.is_empty() || t != 0 || NROM != 0 {
                 return -1;
             }
         }
         1 => {
-            if flags != 1 || NROM != 0 {
+            if flags != Flags::WORM || NROM != 0 {
                 return -1;
             }
         }
         2 => {
-            if flags != flags & (0x3 | 0x3fc | 0x10000 | 0x1000000 | 0x8000000 | 0x10000000) {
+            if flags.bits()
+                != flags.bits()
+                    & (0x3
+                        | 0x3fc
+                        | 0x10000
+                        | 0x1000000
+                        | Flags::ALLOC_ONLY.bits()
+                        | Flags::PREHASH.bits())
+            {
                 return -1;
             }
 
-            if flags & 0x3fc != (0x4 | 0x10 | 0x20 | 0x80) {
+            if flags.bits() & 0x3fc != (0x4 | 0x10 | 0x20 | 0x80) {
                 return -1;
             }
         }
@@ -233,7 +255,7 @@ unsafe fn yescrypt_kdf_body(
         return -1;
     }
 
-    if flags & 0x2 != 0
+    if flags.contains(Flags::RW)
         && (N / (p as u64) <= 1
             || r < ((4 * 2 * 8 + 127) / 128) as u32
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
@@ -248,7 +270,7 @@ unsafe fn yescrypt_kdf_body(
 
     let mut V_owned: Box<[u32]>;
     let V_size = 32 * (r as usize) * (N as usize);
-    let V = if flags & 0x1000000 != 0 {
+    let V = if flags.contains(Flags::INIT_SHARED) {
         if local.aligned.len() < V_size {
             // why can't we just reallocate here?
             if !local.aligned.is_empty() {
@@ -257,8 +279,8 @@ unsafe fn yescrypt_kdf_body(
 
             local.aligned = vec![0; V_size].into_boxed_slice();
         }
-        if flags & 0x8000000 != 0 {
-            return -2_i32;
+        if flags.contains(Flags::ALLOC_ONLY) {
+            return -2;
         }
         &mut *local.aligned
     } else {
@@ -270,10 +292,14 @@ unsafe fn yescrypt_kdf_body(
     let mut B = vec![0u32; B_size].into_boxed_slice();
     let mut XY = vec![0u32; 64 * (r as usize)].into_boxed_slice();
 
-    if flags != 0 {
+    if !flags.is_empty() {
         HMAC_SHA256_Buf(
             c"yescrypt-prehash".as_ptr() as *const c_void,
-            if flags & 0x10000000 != 0 { 16 } else { 8 },
+            if flags.contains(Flags::PREHASH) {
+                16
+            } else {
+                8
+            },
             passwd as *const c_void,
             passwdlen,
             sha256.as_mut_ptr() as *mut u8,
@@ -281,6 +307,7 @@ unsafe fn yescrypt_kdf_body(
         passwd = sha256.as_mut_ptr() as *mut u8;
         passwdlen = size_of::<[u32; 8]>();
     }
+
     PBKDF2_SHA256(
         passwd,
         passwdlen,
@@ -290,11 +317,12 @@ unsafe fn yescrypt_kdf_body(
         B.as_mut_ptr().cast(),
         B_size * 4,
     );
-    if flags != 0 {
+
+    if !flags.is_empty() {
         sha256.copy_from_slice(&B[..8]);
     }
 
-    if flags & 0x2 != 0 {
+    if flags.contains(Flags::RW) {
         let S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
         if S.is_null() {
             return -1;
@@ -340,8 +368,10 @@ unsafe fn yescrypt_kdf_body(
             );
         }
     }
+
     let mut dkp = buf;
-    if flags != 0 && buflen < 32 {
+
+    if !flags.is_empty() && buflen < 32 {
         PBKDF2_SHA256(
             passwd,
             passwdlen,
@@ -353,6 +383,7 @@ unsafe fn yescrypt_kdf_body(
         );
         dkp = dk.as_mut_ptr();
     }
+
     PBKDF2_SHA256(
         passwd,
         passwdlen,
@@ -362,7 +393,8 @@ unsafe fn yescrypt_kdf_body(
         buf,
         buflen,
     );
-    if flags != 0 && flags & 0x10000000 == 0 {
+
+    if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
         HMAC_SHA256_Buf(
             dkp as *const c_void,
             32,
@@ -473,7 +505,7 @@ unsafe fn smix(
     let s: usize = 32 * r;
     let mut Nchunk = N.wrapping_div(p as u64);
     let mut Nloop_all = Nchunk;
-    if flags & 0x2 != 0 {
+    if flags.contains(Flags::RW) {
         if t <= 1 {
             if t != 0 {
                 Nloop_all *= 2;
@@ -489,9 +521,9 @@ unsafe fn smix(
         Nloop_all *= t as u64;
     }
     let mut Nloop_rw = 0;
-    if flags & 0x1000000 != 0 {
+    if flags.contains(Flags::INIT_SHARED) {
         Nloop_rw = Nloop_all;
-    } else if flags & 0x2 != 0 {
+    } else if flags.contains(Flags::RW) {
         Nloop_rw = Nloop_all.wrapping_div(p as u64);
     }
     Nchunk &= !1;
@@ -509,13 +541,13 @@ unsafe fn smix(
         let Bp: *mut u32 = B.add((i).wrapping_mul(s));
         let Vp: *mut u32 = V.add((Vchunk as usize).wrapping_mul(s));
         let mut ctx_i: *mut PwxformCtx = ptr::null_mut();
-        if flags & 0x2 != 0 {
+        if flags.contains(Flags::RW) {
             ctx_i = ctx.add(i);
             smix1(
                 Bp,
                 1,
                 3 * (1 << 8) * 2 * 8 / 128,
-                0,
+                Flags::empty(),
                 (*ctx_i).S,
                 XY,
                 ptr::null_mut(),
@@ -545,10 +577,10 @@ unsafe fn smix(
             r,
             N,
             Nloop_all.wrapping_sub(Nloop_rw),
-            flags & !0x2,
+            flags & !Flags::RW,
             V,
             XY,
-            if flags & 0x2 != 0 {
+            if flags.contains(Flags::RW) {
                 ctx.add(i)
             } else {
                 ptr::null_mut()
@@ -581,7 +613,7 @@ unsafe fn smix1(
     }
     for i in 0..N {
         blkcpy(V.add(usize::try_from(i).unwrap().wrapping_mul(s)), X, s);
-        if flags & 0x2 != 0 && i > 1 {
+        if flags.contains(Flags::RW) && i > 1 {
             let j = wrap(integerify(X, r), i);
             blkxor(X, V.add(usize::try_from(j).unwrap().wrapping_mul(s)), s);
         }
@@ -631,7 +663,7 @@ unsafe fn smix2(
         {
             let j = integerify(X, r) & N.wrapping_sub(1);
             blkxor(X, V.add(usize::try_from(j).unwrap().wrapping_mul(s)), s);
-            if flags & 0x2 != 0 {
+            if flags.contains(Flags::RW) {
                 blkcpy(V.add(usize::try_from(j).unwrap().wrapping_mul(s)), X, s);
             }
         }
