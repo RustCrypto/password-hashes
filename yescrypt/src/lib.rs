@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        Good2 = 6009453772311597924,
         AllocV = 14763689060501151050,
         VAllocated = 9853141518545631134,
         AllocB = 7746103178988627676,
@@ -313,14 +312,10 @@ unsafe fn yescrypt_kdf_body(
                                             )
                                     {
                                         break 'fail;
-                                    } else {
-                                        current_block = State::Good2;
                                     }
-                                } else {
-                                    current_block = State::Good2;
                                 }
-                                match current_block {
-                                    _ => {
+                                match () {
+                                    () => {
                                         if NROM != 0 {
                                             break 'fail;
                                         } else {
