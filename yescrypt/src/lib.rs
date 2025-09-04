@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        AllocV = 14763689060501151050,
         VAllocated = 9853141518545631134,
         AllocB = 7746103178988627676,
         DropXY = 4048828170348623652,
@@ -318,11 +317,9 @@ unsafe fn yescrypt_kdf_body(
                                     () => {
                                         if NROM != 0 {
                                             break 'fail;
-                                        } else {
-                                            current_block = State::AllocV;
                                         }
-                                        match current_block {
-                                            _ => {
+                                        match () {
+                                            () => {
                                                 let V_size = 128usize
                                                     .wrapping_mul(r as usize)
                                                     .wrapping_mul(N as usize);
