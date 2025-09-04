@@ -180,13 +180,13 @@ unsafe fn yescrypt_kdf_inner(
             0 as libc::c_int as uint32_t,
             NROM,
             dk.as_mut_ptr(),
-            size_of::<[uint8_t; 32]>(),
+            32,
         );
         if retval != 0 {
             return retval;
         }
         passwd = dk.as_mut_ptr();
-        passwdlen = size_of::<[uint8_t; 32]>();
+        passwdlen = 32;
     }
     return yescrypt_kdf_body(
         local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
@@ -432,7 +432,7 @@ unsafe fn yescrypt_kdf_body(
                     }
                 }
                 let mut dkp = buf;
-                if flags != 0 && buflen < size_of::<[uint8_t; 32]>() {
+                if flags != 0 && buflen < 32 {
                     PBKDF2_SHA256(
                         passwd,
                         passwdlen,
@@ -440,7 +440,7 @@ unsafe fn yescrypt_kdf_body(
                         B_size,
                         1 as libc::c_int as uint64_t,
                         dk.as_mut_ptr(),
-                        size_of::<[uint8_t; 32]>(),
+                        32,
                     );
                     dkp = dk.as_mut_ptr();
                 }
@@ -456,14 +456,14 @@ unsafe fn yescrypt_kdf_body(
                 if flags != 0 && flags & 0x10000000 as libc::c_int as libc::c_uint == 0 {
                     HMAC_SHA256_Buf(
                         dkp as *const libc::c_void,
-                        size_of::<[uint8_t; 32]>(),
+                        32,
                         b"Client Key\0" as *const u8 as *const libc::c_char as *const libc::c_void,
                         10 as libc::c_int as size_t,
                         sha256.as_mut_ptr() as *mut uint8_t,
                     );
                     let mut clen: size_t = buflen;
-                    if clen > size_of::<[uint8_t; 32]>() {
-                        clen = size_of::<[uint8_t; 32]>();
+                    if clen > 32 {
+                        clen = 32;
                     }
                     SHA256_Buf(
                         sha256.as_mut_ptr() as *mut uint8_t as *const libc::c_void,
