@@ -57,10 +57,7 @@ use crate::{
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{vec, vec::Vec};
-use core::{
-    mem::{self, size_of},
-    ptr,
-};
+use core::ptr;
 use libc::{free, malloc, memcpy};
 
 type uint8_t = libc::c_uchar;
@@ -123,10 +120,12 @@ pub fn yescrypt_kdf(
         NROM: 0,
     };
 
-    let mut local: Local = unsafe { mem::zeroed() };
-    unsafe {
-        yescrypt_init_local(&mut local);
-    }
+    let mut local = Local {
+        base: ptr::null_mut(),
+        aligned: ptr::null_mut(),
+        base_size: 0,
+        aligned_size: 0,
+    };
 
     let mut dst = vec![0u8; dstlen];
 
@@ -197,14 +196,6 @@ unsafe fn yescrypt_kdf_inner(
     return yescrypt_kdf_body(
         local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
     );
-}
-
-unsafe fn yescrypt_init_local(mut local: *mut Local) -> libc::c_int {
-    (*local).aligned = ptr::null_mut();
-    (*local).base = (*local).aligned;
-    (*local).aligned_size = 0 as libc::c_int as size_t;
-    (*local).base_size = (*local).aligned_size;
-    return 0 as libc::c_int;
 }
 
 unsafe fn yescrypt_kdf_body(
