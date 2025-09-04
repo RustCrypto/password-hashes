@@ -77,8 +77,6 @@ struct Local {
     pub aligned_size: size_t,
 }
 
-type Region = Local;
-type Shared = Region;
 type Flags = uint32_t;
 
 #[derive(Copy, Clone)]
@@ -134,7 +132,6 @@ pub fn yescrypt_kdf(
 
     unsafe {
         yescrypt_kdf_inner(
-            ptr::null(),
             &mut local,
             passwd.as_ptr(),
             passwd.len(),
@@ -149,7 +146,6 @@ pub fn yescrypt_kdf(
 }
 
 unsafe fn yescrypt_kdf_inner(
-    mut shared: *const Shared,
     mut local: *mut Local,
     mut passwd: *const uint8_t,
     mut passwdlen: size_t,
@@ -178,7 +174,6 @@ unsafe fn yescrypt_kdf_inner(
             >= 0x20000 as libc::c_int as libc::c_ulong
     {
         let mut retval: libc::c_int = yescrypt_kdf_body(
-            shared,
             local,
             passwd,
             passwdlen,
@@ -200,7 +195,7 @@ unsafe fn yescrypt_kdf_inner(
         passwdlen = size_of::<[uint8_t; 32]>();
     }
     return yescrypt_kdf_body(
-        shared, local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
+        local, passwd, passwdlen, salt, saltlen, flags, N, r, p, t, NROM, buf, buflen,
     );
 }
 
@@ -213,7 +208,6 @@ unsafe fn yescrypt_init_local(mut local: *mut Local) -> libc::c_int {
 }
 
 unsafe fn yescrypt_kdf_body(
-    mut shared: *const Shared,
     mut local: *mut Local,
     mut passwd: *const uint8_t,
     mut passwdlen: size_t,
@@ -341,65 +335,7 @@ unsafe fn yescrypt_kdf_body(
                                     15162489974460950378 => {}
                                     _ => {
                                         VROM = ptr::null();
-                                        if !shared.is_null() {
-                                            let mut expected_size = (128usize)
-                                                .wrapping_mul(r as usize)
-                                                .wrapping_mul(NROM as usize);
-                                            if NROM
-                                                & NROM
-                                                    .wrapping_sub(1 as libc::c_int as libc::c_ulong)
-                                                != 0 as libc::c_int as libc::c_ulong
-                                                || NROM <= 1 as libc::c_int as libc::c_ulong
-                                                || (*shared).aligned_size < expected_size
-                                            {
-                                                current_block = 15162489974460950378;
-                                            } else {
-                                                if flags & 0x1000000 as libc::c_int as libc::c_uint
-                                                    == 0
-                                                {
-                                                    let mut tag: *mut uint32_t = ((*shared).aligned
-                                                        as *mut uint8_t)
-                                                        .offset(expected_size as isize)
-                                                        .offset(-(48 as libc::c_int as isize))
-                                                        as *mut uint32_t;
-                                                    let mut tag1: uint64_t = ((*tag
-                                                        .offset(1 as libc::c_int as isize)
-                                                        as uint64_t)
-                                                        << 32 as libc::c_int)
-                                                        .wrapping_add(
-                                                            *tag.offset(0 as libc::c_int as isize)
-                                                                as libc::c_ulong,
-                                                        );
-                                                    let mut tag2: uint64_t = ((*tag
-                                                        .offset(3 as libc::c_int as isize)
-                                                        as uint64_t)
-                                                        << 32 as libc::c_int)
-                                                        .wrapping_add(
-                                                            *tag.offset(2 as libc::c_int as isize)
-                                                                as libc::c_ulong,
-                                                        );
-                                                    if tag1 as libc::c_ulonglong
-                                                        != 0x7470797263736579 as libc::c_ulonglong
-                                                        || tag2 as libc::c_ulonglong
-                                                            != 0x687361684d4f522d
-                                                                as libc::c_ulonglong
-                                                    {
-                                                        current_block = 15162489974460950378;
-                                                    } else {
-                                                        current_block = 13472856163611868459;
-                                                    }
-                                                } else {
-                                                    current_block = 13472856163611868459;
-                                                }
-                                                match current_block {
-                                                    15162489974460950378 => {}
-                                                    _ => {
-                                                        VROM = (*shared).aligned as *const uint32_t;
-                                                        current_block = 14763689060501151050;
-                                                    }
-                                                }
-                                            }
-                                        } else if NROM != 0 {
+                                        if NROM != 0 {
                                             current_block = 15162489974460950378;
                                         } else {
                                             current_block = 14763689060501151050;
