@@ -33,12 +33,12 @@ pub(crate) unsafe fn blockmix_salsa8(B: *mut u32, Y: *mut u32, r: usize) {
     for i in 0..(2 * r) {
         blkxor(X.as_mut_ptr(), B.add(i * 16), 16);
         salsa20::<salsa20::cipher::consts::U4>(X.as_mut_ptr());
-        blkcpy(&mut *Y.add(i * 16), X.as_mut_ptr(), 16);
+        blkcpy(Y.add(i * 16), X.as_mut_ptr(), 16);
     }
     for i in 0..r {
-        blkcpy(&mut *B.add(i * 16), Y.add((i * 2) * 16), 16);
+        blkcpy(B.add(i * 16), Y.add((i * 2) * 16), 16);
     }
     for i in 0..r {
-        blkcpy(&mut *B.add((i + r) * 16), Y.add((i * 2 + 1) * 16), 16);
+        blkcpy(B.add((i + r) * 16), Y.add((i * 2 + 1) * 16), 16);
     }
 }

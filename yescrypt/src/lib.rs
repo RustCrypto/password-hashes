@@ -307,9 +307,8 @@ unsafe fn yescrypt_kdf_body(
         }
 
         for i in 0..p {
-            let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
             let offset = (i as u64) * (((3 * (1 << 8) * 2 * 8) as u64) / (size_of::<u32>() as u64));
-            *fresh5 = &mut *S.offset(offset as isize) as *mut u32;
+            (*pwxform_ctx.offset(i as isize)).S = S.offset(offset as isize);
         }
 
         smix(
@@ -445,21 +444,20 @@ unsafe fn blockmix_pwxform(B: *mut u32, ctx: *mut PwxformCtx, r: usize) {
         }
         pwxform(X.as_mut_ptr(), ctx);
         blkcpy(
-            &mut *B
-                .offset(i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())) as isize),
+            B.offset(i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())) as isize),
             X.as_mut_ptr(),
             (4usize * 2 * 8).wrapping_div(size_of::<u32>()),
         );
     }
     let i = r1.wrapping_sub(1).wrapping_mul(4 * 2 * 8).wrapping_div(64);
-    salsa20::salsa20_2(&mut *B.add(i.wrapping_mul(16)));
+    salsa20::salsa20_2(B.add(i.wrapping_mul(16)));
     for i in (i + 1)..(2 * r) {
         blkxor(
-            &mut *B.offset(i.wrapping_mul(16usize) as isize),
+            B.offset(i.wrapping_mul(16usize) as isize),
             B.offset(i.wrapping_sub(1usize).wrapping_mul(16usize) as isize),
             16_usize,
         );
-        salsa20::salsa20_2(&mut *B.offset(i.wrapping_mul(16) as isize));
+        salsa20::salsa20_2(B.offset(i.wrapping_mul(16) as isize));
     }
 }
 
@@ -511,11 +509,11 @@ unsafe fn smix(
         } else {
             N.wrapping_sub(Vchunk)
         };
-        let Bp: *mut u32 = &mut *B.offset((i as usize).wrapping_mul(s) as isize) as *mut u32;
-        let Vp: *mut u32 = &mut *V.offset((Vchunk as usize).wrapping_mul(s) as isize) as *mut u32;
+        let Bp: *mut u32 = B.offset((i as usize).wrapping_mul(s) as isize);
+        let Vp: *mut u32 = V.offset((Vchunk as usize).wrapping_mul(s) as isize);
         let mut ctx_i: *mut PwxformCtx = ptr::null_mut();
         if flags & 0x2 != 0 {
-            ctx_i = &mut *ctx.offset(i as isize) as *mut PwxformCtx;
+            ctx_i = ctx.offset(i as isize);
             smix1(
                 Bp,
                 1,
@@ -544,7 +542,7 @@ unsafe fn smix(
         Vchunk = Vchunk.wrapping_add(Nchunk);
     }
     for i in 0..p {
-        let Bp_0: *mut u32 = &mut *B.offset((i as usize).wrapping_mul(s) as isize) as *mut u32;
+        let Bp_0: *mut u32 = B.offset((i as usize).wrapping_mul(s) as isize);
         smix2(
             Bp_0,
             r,
@@ -554,7 +552,7 @@ unsafe fn smix(
             V,
             XY,
             if flags & 0x2 != 0 {
-                &mut *ctx.offset(i as isize)
+                ctx.offset(i as isize)
             } else {
                 ptr::null_mut()
             },
@@ -573,7 +571,7 @@ unsafe fn smix1(
 ) {
     let s: usize = (32usize).wrapping_mul(r);
     let X: *mut u32 = XY;
-    let Y: *mut u32 = &mut *XY.offset(s as isize) as *mut u32;
+    let Y: *mut u32 = XY.offset(s as isize);
     for k in 0..(2usize).wrapping_mul(r) {
         for i in 0..16usize {
             *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize) = le32dec(
@@ -587,7 +585,7 @@ unsafe fn smix1(
     }
     for i in 0..N {
         blkcpy(
-            &mut *V.offset(usize::try_from(i).unwrap().wrapping_mul(s) as isize),
+            V.offset(usize::try_from(i).unwrap().wrapping_mul(s) as isize),
             X,
             s,
         );
@@ -631,7 +629,7 @@ unsafe fn smix2(
 ) {
     let s: usize = (32usize).wrapping_mul(r);
     let X: *mut u32 = XY;
-    let Y: *mut u32 = &mut *XY.offset(s as isize) as *mut u32;
+    let Y: *mut u32 = XY.offset(s as isize);
     for k in 0..(2usize).wrapping_mul(r) {
         for i in 0..16usize {
             *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize) = le32dec(
@@ -653,7 +651,7 @@ unsafe fn smix2(
             );
             if flags & 0x2 != 0 {
                 blkcpy(
-                    &mut *V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
+                    V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
                     X,
                     s,
                 );
