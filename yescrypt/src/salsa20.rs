@@ -9,7 +9,7 @@ pub(crate) unsafe fn salsa20_2(B: *mut u32) {
 unsafe fn salsa20<R: Unsigned>(B: *mut u32) {
     let mut x: [u32; 16] = [0; 16];
     for i in 0..16 {
-        x[i * 5 % 16] = *B.offset(i as isize);
+        x[i * 5 % 16] = *B.add(i);
     }
 
     use salsa20::cipher::StreamCipherCore;
@@ -22,8 +22,8 @@ unsafe fn salsa20<R: Unsigned>(B: *mut u32) {
     }
 
     for i in 0..16 {
-        let x = (*B.offset(i as isize)).wrapping_add(x[i * 5 % 16]);
-        B.offset(i as isize).write(x)
+        let x = (*B.add(i)).wrapping_add(x[i * 5 % 16]);
+        B.add(i).write(x)
     }
 }
 

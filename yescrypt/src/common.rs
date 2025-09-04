@@ -19,11 +19,11 @@ pub(crate) unsafe fn blkxor(mut dst: *mut u32, mut src: *const u32, mut count: u
 }
 
 pub(crate) unsafe fn integerify(mut B: *const u32, mut r: usize) -> u64 {
-    let mut X: *const u32 = B.offset(
+    let mut X: *const u32 = B.add(
         (2usize)
             .wrapping_mul(r)
             .wrapping_sub(1usize)
-            .wrapping_mul(16usize) as isize,
+            .wrapping_mul(16usize),
     );
     ((*X.add(13) as u64) << 32).wrapping_add(*X as u64)
 }
