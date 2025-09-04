@@ -16,7 +16,7 @@ pub(crate) unsafe fn blkcpy(mut dst: *mut u32, mut src: *const u32, mut count: u
         dst = dst.offset(1);
         *fresh1 = *fresh0;
         count = count.wrapping_sub(1);
-        if !(count != 0) {
+        if count == 0 {
             break;
         }
     }
@@ -30,7 +30,7 @@ pub(crate) unsafe fn blkxor(mut dst: *mut u32, mut src: *const u32, mut count: u
         dst = dst.offset(1);
         *fresh3 ^= *fresh2;
         count = count.wrapping_sub(1);
-        if !(count != 0) {
+        if count == 0 {
             break;
         }
     }
@@ -61,7 +61,7 @@ unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut s
     loop {
         let fresh10 = size;
         size = size.wrapping_sub(1);
-        if !(fresh10 != 0) {
+        if fresh10 == 0 {
             break;
         }
         let fresh11 = src;

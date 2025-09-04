@@ -23,7 +23,6 @@
 // Temporary lint overrides while C code is being translated
 #![allow(
     clippy::cast_possible_wrap,
-    clippy::nonminimal_bool,
     clippy::ptr_offset_with_cast,
     clippy::too_many_arguments,
     clippy::toplevel_ref_arg,
@@ -218,7 +217,7 @@ unsafe fn yescrypt_kdf_body(
                 return -1;
             }
 
-            if !(flags & 0x3fc == (0x4 | 0x10 | 0x20 | 0x80)) {
+            if flags & 0x3fc != (0x4 | 0x10 | 0x20 | 0x80) {
                 return -1;
             }
         }
@@ -226,11 +225,11 @@ unsafe fn yescrypt_kdf_body(
             return -1;
         }
     }
-    if !(!(buflen > ((1 << 32) - 1) * 32)
-        && !((r as u64) * (p as u64) >= (1 << 30) as u64)
+    if !((buflen <= ((1 << 32) - 1) * 32)
+        && ((r as u64) * (p as u64) < (1 << 30) as u64)
         && !(N & (N - 1) != 0 || N <= 1 || r < 1 || p < 1)
         && !(r as u64 > u64::MAX / 128 / (p as u64) || N > u64::MAX / 128 / (r as u64))
-        && !(N > u64::MAX / ((t as u64) + 1)))
+        && (N <= u64::MAX / ((t as u64) + 1)))
     {
         return -1;
     }
