@@ -51,17 +51,12 @@ use crate::{
     common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two, wrap},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
-use alloc::{vec, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::ptr;
 use libc::{c_void, free, malloc, memcpy};
 
-#[derive(Copy, Clone)]
-#[repr(C)]
 struct Local {
-    pub base: *mut c_void,
-    pub aligned: *mut c_void,
-    pub base_size: usize,
-    pub aligned_size: usize,
+    pub aligned: Box<[u32]>,
 }
 
 type Flags = u32;
@@ -111,10 +106,7 @@ pub fn yescrypt_kdf(
     };
 
     let mut local = Local {
-        base: ptr::null_mut(),
-        aligned: ptr::null_mut(),
-        base_size: 0,
-        aligned_size: 0,
+        aligned: Vec::new().into_boxed_slice(),
     };
 
     let mut dst = vec![0u8; dstlen];
@@ -135,7 +127,7 @@ pub fn yescrypt_kdf(
 }
 
 unsafe fn yescrypt_kdf_inner(
-    local: *mut Local,
+    local: &mut Local,
     mut passwd: *const u8,
     mut passwdlen: usize,
     salt: *const u8,
@@ -192,7 +184,7 @@ unsafe fn yescrypt_kdf_inner(
 }
 
 unsafe fn yescrypt_kdf_body(
-    local: *mut Local,
+    local: &mut Local,
     mut passwd: *const u8,
     mut passwdlen: usize,
     salt: *const u8,
@@ -206,8 +198,6 @@ unsafe fn yescrypt_kdf_body(
     buf: *mut u8,
     buflen: usize,
 ) -> i32 {
-    let mut retval: i32 = -1;
-    let mut V: *mut u32;
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
@@ -257,165 +247,143 @@ unsafe fn yescrypt_kdf_body(
         return -1;
     }
 
-    let V_size = 128usize * (r as usize) * (N as usize);
-    if flags & 0x1000000 != 0 {
-        V = (*local).aligned as *mut u32;
-        if (*local).aligned_size < V_size {
-            if !((*local).base).is_null()
-                || !((*local).aligned).is_null()
-                || (*local).base_size != 0
-                || (*local).aligned_size != 0
-            {
+    let mut V_owned: Box<[u32]>;
+    let V_size = 32 * (r as usize) * (N as usize);
+    let V = if flags & 0x1000000 != 0 {
+        if local.aligned.len() < V_size {
+            // why can't we just reallocate here?
+            if !local.aligned.is_empty() {
                 return -1;
             }
-            {
-                V = malloc(V_size) as *mut u32;
-                if V.is_null() {
-                    return -(1);
-                }
-                (*local).aligned = V as *mut c_void;
-                (*local).base = (*local).aligned;
-                (*local).aligned_size = V_size;
-                (*local).base_size = (*local).aligned_size;
-            }
+
+            local.aligned = vec![0; V_size].into_boxed_slice();
         }
         if flags & 0x8000000 != 0 {
             return -2_i32;
         }
+        &mut *local.aligned
     } else {
-        V = malloc(V_size) as *mut u32;
-        if V.is_null() {
-            return -(1);
-        }
+        V_owned = vec![0; V_size].into_boxed_slice();
+        &mut *V_owned
+    };
+
+    let B_size = 32 * (r as usize) * (p as usize);
+    let mut B = vec![0u32; B_size].into_boxed_slice();
+    let mut XY = vec![0u32; 64 * (r as usize)].into_boxed_slice();
+
+    if flags != 0 {
+        HMAC_SHA256_Buf(
+            c"yescrypt-prehash".as_ptr() as *const c_void,
+            if flags & 0x10000000 != 0 { 16 } else { 8 },
+            passwd as *const c_void,
+            passwdlen,
+            sha256.as_mut_ptr() as *mut u8,
+        );
+        passwd = sha256.as_mut_ptr() as *mut u8;
+        passwdlen = size_of::<[u32; 8]>();
+    }
+    PBKDF2_SHA256(
+        passwd,
+        passwdlen,
+        salt,
+        saltlen,
+        1,
+        B.as_mut_ptr().cast(),
+        B_size * 4,
+    );
+    if flags != 0 {
+        sha256.copy_from_slice(&B[..8]);
     }
 
-    let B_size = 128usize * (r as usize) * (p as usize);
-    let B = malloc(B_size) as *mut u32;
-    if B.is_null() {
-        return -1;
-    }
-    'free_b: {
-        let XY = malloc(256usize * (r as usize)) as *mut u32;
-        if XY.is_null() {
-            break 'free_b;
+    if flags & 0x2 != 0 {
+        let S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
+        if S.is_null() {
+            return -1;
         }
-        'free_xy: {
-            let mut S = ptr::null_mut();
-            'free_s: {
-                let mut pwxform_ctx = ptr::null_mut();
-                if flags & 0x2 != 0 {
-                    S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
-                    if S.is_null() {
-                        break 'free_xy;
-                    }
-                    {
-                        pwxform_ctx =
-                            malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
-                        if pwxform_ctx.is_null() {
-                            break 'free_s;
-                        }
-                    }
-                }
-
-                if flags != 0 {
-                    HMAC_SHA256_Buf(
-                        c"yescrypt-prehash".as_ptr() as *const c_void,
-                        if flags & 0x10000000 != 0 { 16 } else { 8 },
-                        passwd as *const c_void,
-                        passwdlen,
-                        sha256.as_mut_ptr() as *mut u8,
-                    );
-                    passwd = sha256.as_mut_ptr() as *mut u8;
-                    passwdlen = size_of::<[u32; 8]>();
-                }
-                PBKDF2_SHA256(passwd, passwdlen, salt, saltlen, 1, B as *mut u8, B_size);
-                if flags != 0 {
-                    blkcpy(
-                        sha256.as_mut_ptr(),
-                        B,
-                        (size_of::<[u32; 8]>()) / (size_of::<u32>()),
-                    );
-                }
-                if flags & 0x2 != 0 {
-                    for i in 0..p {
-                        let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
-                        let offset = (i as u64)
-                            * (((3 * (1 << 8) * 2 * 8) as u64) / (size_of::<u32>() as u64));
-                        *fresh5 = &mut *S.offset(offset as isize) as *mut u32;
-                    }
-                    smix(
-                        B,
-                        r as usize,
-                        N,
-                        p,
-                        t,
-                        flags,
-                        V,
-                        XY,
-                        pwxform_ctx,
-                        sha256.as_mut_ptr() as *mut u8,
-                    );
-                } else {
-                    for i in 0..p {
-                        smix(
-                            &mut *B.add(32 * (r as usize) * (i as usize)),
-                            r as usize,
-                            N,
-                            1,
-                            t,
-                            flags,
-                            V,
-                            XY,
-                            ptr::null_mut(),
-                            ptr::null_mut(),
-                        );
-                    }
-                }
-                let mut dkp = buf;
-                if flags != 0 && buflen < 32 {
-                    PBKDF2_SHA256(
-                        passwd,
-                        passwdlen,
-                        B as *mut u8,
-                        B_size,
-                        1,
-                        dk.as_mut_ptr(),
-                        32,
-                    );
-                    dkp = dk.as_mut_ptr();
-                }
-                PBKDF2_SHA256(passwd, passwdlen, B as *mut u8, B_size, 1, buf, buflen);
-                if flags != 0 && flags & 0x10000000 == 0 {
-                    HMAC_SHA256_Buf(
-                        dkp as *const c_void,
-                        32,
-                        b"Client Key\0" as *const u8 as *const i8 as *const c_void,
-                        10,
-                        sha256.as_mut_ptr() as *mut u8,
-                    );
-                    let mut clen: usize = buflen;
-                    if clen > 32 {
-                        clen = 32;
-                    }
-                    SHA256_Buf(
-                        sha256.as_mut_ptr() as *mut u8 as *const c_void,
-                        size_of::<[u32; 8]>(),
-                        dk.as_mut_ptr(),
-                    );
-                    memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
-                }
-                retval = 0;
-                free(pwxform_ctx as *mut c_void);
-            }
+        let pwxform_ctx = malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
+        if pwxform_ctx.is_null() {
             free(S as *mut c_void);
+            return -1;
         }
-        free(XY as *mut c_void);
+
+        for i in 0..p {
+            let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
+            let offset = (i as u64) * (((3 * (1 << 8) * 2 * 8) as u64) / (size_of::<u32>() as u64));
+            *fresh5 = &mut *S.offset(offset as isize) as *mut u32;
+        }
+
+        smix(
+            B.as_mut_ptr(),
+            r as usize,
+            N,
+            p,
+            t,
+            flags,
+            V.as_mut_ptr(),
+            XY.as_mut_ptr(),
+            pwxform_ctx,
+            sha256.as_mut_ptr() as *mut u8,
+        );
+        free(pwxform_ctx as *mut c_void);
+        free(S as *mut c_void);
+    } else {
+        for i in 0..p {
+            smix(
+                B[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..].as_mut_ptr(),
+                r as usize,
+                N,
+                1,
+                t,
+                flags,
+                V.as_mut_ptr(),
+                XY.as_mut_ptr(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+            );
+        }
     }
-    free(B as *mut c_void);
-    if flags & 0x1000000 == 0 {
-        free(V as *mut c_void);
+    let mut dkp = buf;
+    if flags != 0 && buflen < 32 {
+        PBKDF2_SHA256(
+            passwd,
+            passwdlen,
+            B.as_ptr().cast(),
+            B_size * 4,
+            1,
+            dk.as_mut_ptr(),
+            32,
+        );
+        dkp = dk.as_mut_ptr();
     }
-    retval
+    PBKDF2_SHA256(
+        passwd,
+        passwdlen,
+        B.as_ptr().cast(),
+        B_size * 4,
+        1,
+        buf,
+        buflen,
+    );
+    if flags != 0 && flags & 0x10000000 == 0 {
+        HMAC_SHA256_Buf(
+            dkp as *const c_void,
+            32,
+            b"Client Key\0" as *const u8 as *const i8 as *const c_void,
+            10,
+            sha256.as_mut_ptr() as *mut u8,
+        );
+        let mut clen: usize = buflen;
+        if clen > 32 {
+            clen = 32;
+        }
+        SHA256_Buf(
+            sha256.as_mut_ptr() as *mut u8 as *const c_void,
+            size_of::<[u32; 8]>(),
+            dk.as_mut_ptr(),
+        );
+        memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
+    }
+    0
 }
 
 unsafe fn pwxform(B: *mut u32, ctx: *mut PwxformCtx) {
