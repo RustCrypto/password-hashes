@@ -85,24 +85,6 @@ unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut s
     }
 }
 
-pub(crate) unsafe fn N2log2(mut N: uint64_t) -> uint32_t {
-    let mut N_log2: uint32_t = 0;
-    if N < 2 as libc::c_int as libc::c_ulong {
-        return 0 as libc::c_int as uint32_t;
-    }
-    N_log2 = 2 as libc::c_int as uint32_t;
-    while N >> N_log2 != 0 as libc::c_int as libc::c_ulong {
-        N_log2 = N_log2.wrapping_add(1);
-        N_log2;
-    }
-    N_log2 = N_log2.wrapping_sub(1);
-    N_log2;
-    if N >> N_log2 != 1 as libc::c_int as libc::c_ulong {
-        return 0 as libc::c_int as uint32_t;
-    }
-    return N_log2;
-}
-
 pub(crate) unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
     let mut y: uint64_t = 0;
     loop {
