@@ -135,7 +135,7 @@ pub fn yescrypt_kdf(
 }
 
 unsafe fn yescrypt_kdf_inner(
-    local: *mut Local,
+    local: &mut Local,
     mut passwd: *const u8,
     mut passwdlen: usize,
     salt: *const u8,
@@ -192,7 +192,7 @@ unsafe fn yescrypt_kdf_inner(
 }
 
 unsafe fn yescrypt_kdf_body(
-    local: *mut Local,
+    local: &mut Local,
     mut passwd: *const u8,
     mut passwdlen: usize,
     salt: *const u8,
@@ -207,7 +207,6 @@ unsafe fn yescrypt_kdf_body(
     buflen: usize,
 ) -> i32 {
     let mut retval: i32 = -1;
-    let mut V: *mut u32;
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
@@ -257,27 +256,27 @@ unsafe fn yescrypt_kdf_body(
         return -1;
     }
 
+    let mut V: *mut u32;
     let V_size = 128usize * (r as usize) * (N as usize);
     if flags & 0x1000000 != 0 {
-        V = (*local).aligned as *mut u32;
-        if (*local).aligned_size < V_size {
-            if !((*local).base).is_null()
-                || !((*local).aligned).is_null()
-                || (*local).base_size != 0
-                || (*local).aligned_size != 0
+        V = local.aligned as *mut u32;
+        if local.aligned_size < V_size {
+            if !(local.base).is_null()
+                || !(local.aligned).is_null()
+                || local.base_size != 0
+                || local.aligned_size != 0
             {
                 return -1;
             }
-            {
-                V = malloc(V_size) as *mut u32;
-                if V.is_null() {
-                    return -(1);
-                }
-                (*local).aligned = V as *mut c_void;
-                (*local).base = (*local).aligned;
-                (*local).aligned_size = V_size;
-                (*local).base_size = (*local).aligned_size;
+
+            V = malloc(V_size) as *mut u32;
+            if V.is_null() {
+                return -(1);
             }
+            local.aligned = V as *mut c_void;
+            local.base = local.aligned;
+            local.aligned_size = V_size;
+            local.base_size = local.aligned_size;
         }
         if flags & 0x8000000 != 0 {
             return -2_i32;
