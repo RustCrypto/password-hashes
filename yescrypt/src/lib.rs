@@ -52,9 +52,23 @@ use crate::{
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::ptr;
+use core::{fmt, ptr};
 use libc::{c_void, free, malloc, memcpy};
 
+/// Error type.
+#[derive(Debug)]
+pub struct Error(i32);
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "yescrypt error (code {})", self.0)
+    }
+}
+
+impl core::error::Error for Error {}
+
+#[derive(Clone)]
+#[repr(C)]
 struct Local {
     pub aligned: Box<[u32]>,
 }
@@ -94,7 +108,7 @@ pub fn yescrypt_kdf(
     t: u32,
     g: u32,
     dstlen: usize,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, Error> {
     let params = Params {
         flags,
         N: n,
@@ -111,7 +125,7 @@ pub fn yescrypt_kdf(
 
     let mut dst = vec![0u8; dstlen];
 
-    unsafe {
+    let retval = unsafe {
         yescrypt_kdf_inner(
             &mut local,
             passwd.as_ptr(),
@@ -123,7 +137,12 @@ pub fn yescrypt_kdf(
             dstlen,
         )
     };
-    dst
+
+    if retval != 0 {
+        return Err(Error(retval));
+    }
+
+    Ok(dst)
 }
 
 unsafe fn yescrypt_kdf_inner(
