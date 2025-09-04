@@ -51,15 +51,12 @@ use crate::{
     common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two, wrap},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
-use alloc::{vec, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::ptr;
 use libc::{c_void, free, malloc, memcpy};
 
-#[derive(Copy, Clone)]
-#[repr(C)]
 struct Local {
-    pub aligned: *mut c_void,
-    pub aligned_size: usize,
+    pub aligned: Box<[u32]>,
 }
 
 type Flags = u32;
@@ -109,8 +106,7 @@ pub fn yescrypt_kdf(
     };
 
     let mut local = Local {
-        aligned: ptr::null_mut(),
-        aligned_size: 0,
+        aligned: Vec::new().into_boxed_slice(),
     };
 
     let mut dst = vec![0u8; dstlen];
@@ -252,31 +248,25 @@ unsafe fn yescrypt_kdf_body(
         return -1;
     }
 
-    let mut V: *mut u32;
-    let V_size = 128usize * (r as usize) * (N as usize);
-    if flags & 0x1000000 != 0 {
-        V = local.aligned as *mut u32;
-        if local.aligned_size < V_size {
-            if !(local.aligned).is_null() || local.aligned_size != 0 {
+    let mut V_owned: Box<[u32]>;
+    let V_size = 32 * (r as usize) * (N as usize);
+    let V = if flags & 0x1000000 != 0 {
+        if local.aligned.len() < V_size {
+            // why can't we just reallocate here?
+            if !local.aligned.is_empty() {
                 return -1;
             }
 
-            V = malloc(V_size) as *mut u32;
-            if V.is_null() {
-                return -(1);
-            }
-            local.aligned = V as *mut c_void;
-            local.aligned_size = V_size;
+            local.aligned = vec![0; V_size].into_boxed_slice();
         }
         if flags & 0x8000000 != 0 {
             return -2_i32;
         }
+        &mut *local.aligned
     } else {
-        V = malloc(V_size) as *mut u32;
-        if V.is_null() {
-            return -(1);
-        }
-    }
+        V_owned = vec![0; V_size].into_boxed_slice();
+        &mut *V_owned
+    };
 
     let B_size = 128usize * (r as usize) * (p as usize);
     let B = malloc(B_size) as *mut u32;
@@ -339,7 +329,7 @@ unsafe fn yescrypt_kdf_body(
                         p,
                         t,
                         flags,
-                        V,
+                        V.as_mut_ptr(),
                         XY,
                         pwxform_ctx,
                         sha256.as_mut_ptr() as *mut u8,
@@ -353,7 +343,7 @@ unsafe fn yescrypt_kdf_body(
                             1,
                             t,
                             flags,
-                            V,
+                            V.as_mut_ptr(),
                             XY,
                             ptr::null_mut(),
                             ptr::null_mut(),
@@ -401,9 +391,6 @@ unsafe fn yescrypt_kdf_body(
         free(XY as *mut c_void);
     }
     free(B as *mut c_void);
-    if flags & 0x1000000 == 0 {
-        free(V as *mut c_void);
-    }
     retval
 }
 
