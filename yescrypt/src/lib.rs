@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        AllocB = 7746103178988627676,
         DropXY = 4048828170348623652,
         RunHash = 12381812505308290051,
         DropS = 15241037615328978,
@@ -355,7 +354,6 @@ unsafe fn yescrypt_kdf_body(
                                                             {
                                                                 return -(2 as libc::c_int);
                                                             }
-                                                            current_block = State::AllocB;
                                                         }
                                                     }
                                                 } else {
@@ -363,10 +361,9 @@ unsafe fn yescrypt_kdf_body(
                                                     if V.is_null() {
                                                         return -(1 as libc::c_int);
                                                     }
-                                                    current_block = State::AllocB;
                                                 }
-                                                match current_block {
-                                                    _ => {
+                                                match () {
+                                                    () => {
                                                         let B_size = 128usize
                                                             .wrapping_mul(r as usize)
                                                             .wrapping_mul(p as usize);
