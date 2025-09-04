@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        DropXY = 4048828170348623652,
         RunHash = 12381812505308290051,
         DropS = 15241037615328978,
     }
@@ -374,6 +373,7 @@ unsafe fn yescrypt_kdf_body(
                                                             )
                                                                 as *mut uint32_t;
                                                             if !XY.is_null() {
+                                                                'free_xy: {
                                                                 let mut S = ptr::null_mut();
                                                                 let mut pwxform_ctx =
                                                                     ptr::null_mut();
@@ -393,8 +393,7 @@ unsafe fn yescrypt_kdf_body(
                                                                     )
                                                                         as *mut uint32_t;
                                                                     if S.is_null() {
-                                                                        current_block =
-                                                                            State::DropXY;
+                                                                        break 'free_xy;
                                                                     } else {
                                                                         pwxform_ctx = malloc(
                                                                             size_of::<PwxformCtx>()
@@ -608,6 +607,7 @@ unsafe fn yescrypt_kdf_body(
                                                                         );
                                                                     }
                                                                     _ => {}
+                                                                }
                                                                 }
                                                                 free(XY as *mut libc::c_void);
                                                             }
