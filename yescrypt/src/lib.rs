@@ -28,6 +28,7 @@
     clippy::nonminimal_bool,
     clippy::ptr_offset_with_cast,
     clippy::single_match,
+    clippy::match_single_binding,
     clippy::too_many_arguments,
     clippy::toplevel_ref_arg,
     clippy::unnecessary_mut_passed,
@@ -213,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        Fail = 15162489974460950378,
         Good1 = 2868539653012386629,
         Good2 = 6009453772311597924,
         AllocV = 14763689060501151050,
@@ -229,17 +229,18 @@ unsafe fn yescrypt_kdf_body(
     let mut V: *mut uint32_t;
     let mut sha256: [uint32_t; 8] = [0; 8];
     let mut dk: [uint8_t; 32] = [0; 32];
+    'fail: {
     match flags & 0x3 as libc::c_int as libc::c_uint {
         0 => {
             if flags != 0 || t != 0 || NROM != 0 {
-                current_block = State::Fail;
+                break 'fail;
             } else {
                 current_block = State::Good1;
             }
         }
         1 => {
             if flags != 1 as libc::c_int as libc::c_uint || NROM != 0 {
-                current_block = State::Fail;
+                break 'fail;
             } else {
                 current_block = State::Good1;
             }
@@ -254,7 +255,7 @@ unsafe fn yescrypt_kdf_body(
                         | 0x8000000 as libc::c_int
                         | 0x10000000 as libc::c_int) as libc::c_uint
             {
-                current_block = State::Fail;
+                break 'fail;
             } else if flags & 0x3fc as libc::c_int as libc::c_uint
                 == (0x4 as libc::c_int
                     | 0x10 as libc::c_int
@@ -263,11 +264,11 @@ unsafe fn yescrypt_kdf_body(
             {
                 current_block = State::Good1;
             } else {
-                current_block = State::Fail;
+                break 'fail;
             }
         }
         _ => {
-            current_block = State::Fail;
+            break 'fail;
         }
     }
     match current_block {
@@ -317,7 +318,7 @@ unsafe fn yescrypt_kdf_body(
                                                 size_of::<PwxformCtx>() as libc::c_ulong,
                                             )
                                     {
-                                        current_block = State::Fail;
+                                        break 'fail;
                                     } else {
                                         current_block = State::Good2;
                                     }
@@ -325,15 +326,13 @@ unsafe fn yescrypt_kdf_body(
                                     current_block = State::Good2;
                                 }
                                 match current_block {
-                                    State::Fail => {}
                                     _ => {
                                         if NROM != 0 {
-                                            current_block = State::Fail;
+                                            break 'fail;
                                         } else {
                                             current_block = State::AllocV;
                                         }
                                         match current_block {
-                                            State::Fail => {}
                                             _ => {
                                                 let V_size = 128usize
                                                     .wrapping_mul(r as usize)
@@ -348,7 +347,7 @@ unsafe fn yescrypt_kdf_body(
                                                             || (*local).base_size != 0
                                                             || (*local).aligned_size != 0
                                                         {
-                                                            current_block = State::Fail;
+                                                            break 'fail;
                                                         } else {
                                                             V = malloc(V_size) as *mut uint32_t;
                                                             if V.is_null() {
@@ -366,7 +365,6 @@ unsafe fn yescrypt_kdf_body(
                                                         current_block = State::VAllocated;
                                                     }
                                                     match current_block {
-                                                        State::Fail => {}
                                                         _ => {
                                                             if flags
                                                                 & 0x8000000 as libc::c_int
@@ -386,7 +384,6 @@ unsafe fn yescrypt_kdf_body(
                                                     current_block = State::AllocB;
                                                 }
                                                 match current_block {
-                                                    State::Fail => {}
                                                     _ => {
                                                         let B_size = 128usize
                                                             .wrapping_mul(r as usize)
@@ -658,6 +655,7 @@ unsafe fn yescrypt_kdf_body(
             }
         }
         _ => {}
+    }
     }
     return -(1 as libc::c_int);
 }
