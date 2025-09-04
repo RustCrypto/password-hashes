@@ -34,7 +34,6 @@
     clippy::unwrap_used,
     non_camel_case_types,
     non_snake_case,
-    path_statements,
     unused_assignments,
     unused_mut,
     unsafe_op_in_unsafe_fn
@@ -512,7 +511,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                 i = i.wrapping_add(
                                                                                     1,
                                                                                 );
-                                                                                i;
                                                                             }
                                                                             smix(
                                                                                 B,
@@ -551,7 +549,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                 i = i.wrapping_add(
                                                                                     1,
                                                                                 );
-                                                                                i;
                                                                             }
                                                                         }
                                                                         dkp = buf;
@@ -731,16 +728,12 @@ unsafe fn pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx) {
                     (*S2.offset(w as isize))[1 as libc::c_int as usize] =
                         (x >> 32 as libc::c_int) as uint32_t;
                     w = w.wrapping_add(1);
-                    w;
                 }
                 k = k.wrapping_add(1);
-                k;
             }
             j = j.wrapping_add(1);
-            j;
         }
         i = i.wrapping_add(1);
-        i;
     }
     (*ctx).S0 = S2;
     (*ctx).S1 = S0;
@@ -782,12 +775,10 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
             (4usize * 2 * 8).wrapping_div(size_of::<uint32_t>()),
         );
         i = i.wrapping_add(1);
-        i;
     }
     i = r1.wrapping_sub(1).wrapping_mul(4 * 2 * 8).wrapping_div(64);
     salsa20::salsa20_2(&mut *B.add(i.wrapping_mul(16)));
     i = i.wrapping_add(1);
-    i;
     while i < (2usize).wrapping_mul(r) {
         blkxor(
             &mut *B.offset(i.wrapping_mul(16usize) as isize),
@@ -796,7 +787,6 @@ unsafe fn blockmix_pwxform(mut B: *mut uint32_t, mut ctx: *mut PwxformCtx, mut r
         );
         salsa20::salsa20_2(&mut *B.offset(i.wrapping_mul(16) as isize));
         i = i.wrapping_add(1);
-        i;
     }
 }
 
@@ -854,10 +844,8 @@ unsafe fn smix(
     }
     Nchunk &= !(1 as libc::c_int as uint64_t);
     Nloop_all = Nloop_all.wrapping_add(1);
-    Nloop_all;
     Nloop_all &= !(1 as libc::c_int as uint64_t);
     Nloop_rw = Nloop_rw.wrapping_add(1);
-    Nloop_rw;
     Nloop_rw &= !(1 as libc::c_int as uint64_t);
     i = 0 as libc::c_int as uint32_t;
     Vchunk = 0 as libc::c_int as uint64_t;
@@ -906,7 +894,6 @@ unsafe fn smix(
         smix1(Bp, r, Np, flags, Vp, XY, ctx_i);
         smix2(Bp, r, prev_power_of_two(Np), Nloop_rw, flags, Vp, XY, ctx_i);
         i = i.wrapping_add(1);
-        i;
         Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t as uint64_t;
     }
     i = 0 as libc::c_int as uint32_t;
@@ -928,7 +915,6 @@ unsafe fn smix(
             },
         );
         i = i.wrapping_add(1);
-        i;
     }
 }
 
@@ -959,10 +945,8 @@ unsafe fn smix1(
                 ),
             );
             i = i.wrapping_add(1);
-            i;
         }
         k = k.wrapping_add(1);
-        k;
     }
     let mut i = 0;
     while i < N {
@@ -986,7 +970,6 @@ unsafe fn smix1(
             salsa20::blockmix_salsa8(X, Y, r);
         }
         i = i.wrapping_add(1);
-        i;
     }
     k = 0 as libc::c_int as size_t;
     while k < (2usize).wrapping_mul(r) {
@@ -1001,10 +984,8 @@ unsafe fn smix1(
                 *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize),
             );
             i = i.wrapping_add(1);
-            i;
         }
         k = k.wrapping_add(1);
-        k;
     }
 }
 
@@ -1036,10 +1017,8 @@ unsafe fn smix2(
                 ),
             );
             i = i.wrapping_add(1);
-            i;
         }
         k = k.wrapping_add(1);
-        k;
     }
     let mut i = 0;
     while i < Nloop {
@@ -1064,7 +1043,6 @@ unsafe fn smix2(
             salsa20::blockmix_salsa8(X, Y, r);
         }
         i = i.wrapping_add(1);
-        i;
     }
     k = 0 as libc::c_int as size_t;
     while k < (2usize).wrapping_mul(r) {
@@ -1079,9 +1057,7 @@ unsafe fn smix2(
                 *X.offset(k.wrapping_mul(16).wrapping_add(i) as isize),
             );
             i = i.wrapping_add(1);
-            i;
         }
         k = k.wrapping_add(1);
-        k;
     }
 }
