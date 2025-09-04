@@ -279,7 +279,7 @@ unsafe fn yescrypt_kdf_body(
         {
             break 'fail;
         }
-        {
+
             if flags & 0x2 as libc::c_int as libc::c_uint != 0
                 && (N.wrapping_div(p as libc::c_ulong) <= 1 as libc::c_int as libc::c_ulong
                     || r < ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int
@@ -313,7 +313,8 @@ unsafe fn yescrypt_kdf_body(
                         || (*local).aligned_size != 0
                     {
                         break 'fail;
-                    } else {
+                    }
+                    {
                         V = malloc(V_size) as *mut uint32_t;
                         if V.is_null() {
                             return -(1 as libc::c_int);
@@ -336,10 +337,16 @@ unsafe fn yescrypt_kdf_body(
 
             let B_size = 128usize.wrapping_mul(r as usize).wrapping_mul(p as usize);
             let B = malloc(B_size) as *mut uint32_t;
-            if !B.is_null() {
+            if B.is_null() {
+                break 'fail
+            }
+            'free_b: {
                 let XY = malloc(256usize.wrapping_mul(r as usize)) as *mut uint32_t;
-                if !XY.is_null() {
-                    'free_xy: {
+                if XY.is_null() {
+                    break 'free_b
+                }
+                'free_xy: {
+                    {
                         let mut S = ptr::null_mut();
                         let mut pwxform_ctx = ptr::null_mut();
                         if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
@@ -501,16 +508,15 @@ unsafe fn yescrypt_kdf_body(
                             free(S as *mut libc::c_void);
                         }
                     }
-                    free(XY as *mut libc::c_void);
                 }
-                free(B as *mut libc::c_void);
+                free(XY as *mut libc::c_void);
             }
+            free(B as *mut libc::c_void);
             if flags & 0x1000000 as libc::c_int as libc::c_uint == 0 {
                 free(V as *mut libc::c_void);
             }
             return retval;
         }
-    }
     return -(1 as libc::c_int);
 }
 
