@@ -28,9 +28,7 @@
     clippy::ptr_offset_with_cast,
     clippy::too_many_arguments,
     clippy::toplevel_ref_arg,
-    clippy::unnecessary_mut_passed,
     clippy::unwrap_used,
-    non_camel_case_types,
     non_snake_case,
     unsafe_op_in_unsafe_fn
 )]
@@ -433,7 +431,7 @@ unsafe fn blockmix_pwxform(B: *mut u32, ctx: *mut PwxformCtx, r: usize) {
     let r1 = (128usize).wrapping_mul(r).wrapping_div(4 * 2 * 8);
     blkcpy(
         X.as_mut_ptr(),
-        &mut *B.offset(
+        B.offset(
             r1.wrapping_sub(1usize)
                 .wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())) as isize,
         ),
@@ -443,9 +441,7 @@ unsafe fn blockmix_pwxform(B: *mut u32, ctx: *mut PwxformCtx, r: usize) {
         if r1 > 1 {
             blkxor(
                 X.as_mut_ptr(),
-                &mut *B.offset(
-                    i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())) as isize,
-                ),
+                B.offset(i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())) as isize),
                 (4usize * 2 * 8).wrapping_div(size_of::<u32>()),
             );
         }
@@ -462,7 +458,7 @@ unsafe fn blockmix_pwxform(B: *mut u32, ctx: *mut PwxformCtx, r: usize) {
     for i in (i + 1)..(2 * r) {
         blkxor(
             &mut *B.offset(i.wrapping_mul(16usize) as isize),
-            &mut *B.offset(i.wrapping_sub(1usize).wrapping_mul(16usize) as isize),
+            B.offset(i.wrapping_sub(1usize).wrapping_mul(16usize) as isize),
             16_usize,
         );
         salsa20::salsa20_2(&mut *B.offset(i.wrapping_mul(16) as isize));
@@ -601,7 +597,7 @@ unsafe fn smix1(
             let j = wrap(integerify(X, r), i);
             blkxor(
                 X,
-                &mut *V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
+                V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
                 s,
             );
         }
@@ -654,7 +650,7 @@ unsafe fn smix2(
             let j = integerify(X, r) & N.wrapping_sub(1);
             blkxor(
                 X,
-                &mut *V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
+                V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
                 s,
             );
             if flags & 0x2 != 0 {
