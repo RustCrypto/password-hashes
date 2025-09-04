@@ -53,7 +53,7 @@ mod salsa20;
 mod sha256;
 
 use crate::{
-    common::{blkcpy, blkxor, integerify, le32dec, le32enc, p2floor, wrap},
+    common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two, wrap},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{vec, vec::Vec};
@@ -917,7 +917,7 @@ unsafe fn smix(
         smix2(
             Bp,
             r,
-            p2floor(Np),
+            prev_power_of_two(Np),
             Nloop_rw,
             flags,
             Vp,

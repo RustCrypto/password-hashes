@@ -85,19 +85,19 @@ unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut s
     }
 }
 
-pub(crate) unsafe fn p2floor(mut x: uint64_t) -> uint64_t {
-    let mut y: uint64_t = 0;
+pub(crate) fn prev_power_of_two(mut x: u64) -> u64 {
+    let mut y = 0;
     loop {
-        y = x & x.wrapping_sub(1 as libc::c_int as libc::c_ulong);
-        if !(y != 0) {
+        y = x & x.wrapping_sub(1);
+        if y == 0 {
             break;
         }
         x = y;
     }
-    return x;
+    x
 }
 
-pub(crate) unsafe fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
-    let mut n: uint64_t = p2floor(i);
-    return (x & n.wrapping_sub(1 as libc::c_int as libc::c_ulong)).wrapping_add(i.wrapping_sub(n));
+pub(crate) fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
+    let mut n: uint64_t = prev_power_of_two(i);
+    (x & n.wrapping_sub(1)).wrapping_add(i.wrapping_sub(n))
 }
