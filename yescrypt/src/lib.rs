@@ -273,23 +273,6 @@ unsafe fn yescrypt_kdf_body(
     {
         let mut XY = vec![0u32; 64 * (r as usize)].into_boxed_slice();
         'free_xy: {
-            let mut S = ptr::null_mut();
-            'free_s: {
-                let mut pwxform_ctx = ptr::null_mut();
-                if flags & 0x2 != 0 {
-                    S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
-                    if S.is_null() {
-                        break 'free_xy;
-                    }
-                    {
-                        pwxform_ctx =
-                            malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
-                        if pwxform_ctx.is_null() {
-                            break 'free_s;
-                        }
-                    }
-                }
-
                 if flags != 0 {
                     HMAC_SHA256_Buf(
                         c"yescrypt-prehash".as_ptr() as *const c_void,
@@ -313,7 +296,20 @@ unsafe fn yescrypt_kdf_body(
                 if flags != 0 {
                     sha256.copy_from_slice(&B[..8]);
                 }
-                if flags & 0x2 != 0 {
+
+            if flags & 0x2 != 0 {
+                let S;
+                'free_s: {
+                    S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
+                    if S.is_null() {
+                        break 'free_xy;
+                    }
+                    let pwxform_ctx =
+                        malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
+                    if pwxform_ctx.is_null() {
+                        break 'free_s;
+                    }
+
                     for i in 0..p {
                         let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
                         let offset = (i as u64)
@@ -332,6 +328,9 @@ unsafe fn yescrypt_kdf_body(
                         pwxform_ctx,
                         sha256.as_mut_ptr() as *mut u8,
                     );
+                        free(pwxform_ctx as *mut c_void);
+                    }
+                    free(S as *mut c_void);
                 } else {
                     for i in 0..p {
                         smix(
@@ -391,9 +390,6 @@ unsafe fn yescrypt_kdf_body(
                     memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
                 }
                 retval = 0;
-                free(pwxform_ctx as *mut c_void);
-            }
-            free(S as *mut c_void);
         }
         drop(XY);
     }
