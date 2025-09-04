@@ -215,7 +215,6 @@ unsafe fn yescrypt_kdf_body(
 ) -> libc::c_int {
     let mut current_block: u64;
     let mut retval: libc::c_int = -(1 as libc::c_int);
-    let mut VROM: *const uint32_t = ptr::null();
     let mut B_size: usize = 0;
     let mut V_size: usize = 0;
     let mut B: *mut uint32_t = ptr::null_mut();
@@ -325,7 +324,6 @@ unsafe fn yescrypt_kdf_body(
                                 match current_block {
                                     15162489974460950378 => {}
                                     _ => {
-                                        VROM = ptr::null();
                                         if NROM != 0 {
                                             current_block = 15162489974460950378;
                                         } else {
@@ -525,7 +523,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                 flags,
                                                                                 V,
                                                                                 NROM,
-                                                                                VROM,
                                                                                 XY,
                                                                                 pwxform_ctx,
                                                                                 sha256.as_mut_ptr()
@@ -549,7 +546,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                     flags,
                                                                                     V,
                                                                                     NROM,
-                                                                                    VROM,
                                                                                     XY,
                                                                                     ptr::null_mut(),
                                                                                     ptr::null_mut(),
@@ -815,7 +811,6 @@ unsafe fn smix(
     mut flags: Flags,
     mut V: *mut uint32_t,
     mut NROM: u64,
-    mut VROM: *const uint32_t,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
     mut passwd: *mut uint8_t,
@@ -893,7 +888,6 @@ unsafe fn smix(
                 0 as libc::c_int as Flags,
                 (*ctx_i).S,
                 0 as libc::c_int as uint64_t,
-                ptr::null(),
                 XY,
                 ptr::null_mut(),
             );
@@ -913,7 +907,7 @@ unsafe fn smix(
                 );
             }
         }
-        smix1(Bp, r, Np, flags, Vp, NROM, VROM, XY, ctx_i);
+        smix1(Bp, r, Np, flags, Vp, NROM, XY, ctx_i);
         smix2(
             Bp,
             r,
@@ -922,7 +916,6 @@ unsafe fn smix(
             flags,
             Vp,
             NROM,
-            VROM,
             XY,
             ctx_i,
         );
@@ -942,7 +935,6 @@ unsafe fn smix(
             flags & !(0x2 as libc::c_int) as libc::c_uint,
             V,
             NROM,
-            VROM,
             XY,
             if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
                 &mut *ctx.offset(i as isize)
@@ -961,8 +953,7 @@ unsafe fn smix1(
     mut N: uint64_t,
     mut flags: Flags,
     mut V: *mut uint32_t,
-    mut NROM: uint64_t,
-    mut VROM: *const uint32_t,
+    mut _NROM: uint64_t,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
 ) {
@@ -996,26 +987,7 @@ unsafe fn smix1(
             X,
             s,
         );
-        if !VROM.is_null() && i == 0 as libc::c_int as libc::c_ulong {
-            blkxor(
-                X,
-                &*VROM.offset(
-                    usize::try_from(NROM)
-                        .unwrap()
-                        .wrapping_sub(1)
-                        .wrapping_mul(s) as isize,
-                ),
-                s,
-            );
-        } else if !VROM.is_null() && i & 1 as libc::c_int as libc::c_ulong != 0 {
-            j = integerify(X, r) & NROM.wrapping_sub(1);
-            blkxor(
-                X,
-                &*VROM.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
-                s,
-            );
-        } else if flags & 0x2 as libc::c_int as libc::c_uint != 0
-            && i > 1 as libc::c_int as libc::c_ulong
+        if flags & 0x2 as libc::c_int as libc::c_uint != 0 && i > 1 as libc::c_int as libc::c_ulong
         {
             j = wrap(integerify(X, r), i);
             blkxor(
@@ -1059,8 +1031,7 @@ unsafe fn smix2(
     mut Nloop: u64,
     mut flags: Flags,
     mut V: *mut uint32_t,
-    mut NROM: u64,
-    mut VROM: *const uint32_t,
+    mut _NROM: u64,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
 ) {
@@ -1089,14 +1060,7 @@ unsafe fn smix2(
     }
     let mut i = 0;
     while i < Nloop {
-        if !VROM.is_null() && i & 1 != 0 {
-            j = integerify(X, r) & NROM.wrapping_sub(1);
-            blkxor(
-                X,
-                &*VROM.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
-                s,
-            );
-        } else {
+        {
             j = integerify(X, r) & N.wrapping_sub(1);
             blkxor(
                 X,
