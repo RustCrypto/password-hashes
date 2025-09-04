@@ -125,17 +125,59 @@ pub fn yescrypt_kdf(
 
     let mut dst = vec![0u8; dstlen];
 
-    let retval = unsafe {
-        yescrypt_kdf_inner(
-            &mut local,
-            passwd.as_ptr(),
-            passwd.len(),
-            salt.as_ptr(),
-            salt.len(),
-            &params,
-            dst.as_mut_ptr(),
-            dstlen,
-        )
+    if params.g != 0 {
+        return Err(Error(-1));
+    }
+
+    let retval = if params.flags & 0x2 != 0
+        && params.p >= 1
+        && (params.N / params.p as u64) >= 0x100
+        && params.N / (params.p as u64) / (params.r as u64) >= 0x20000
+    {
+        // TODO(tarcieri): get rid of this? yescrypt-ref.c has this comment about it:
+        // This reference implementation's yescrypt_kdf_body()
+        // (de)allocates memory on each call, which defeats the purpose
+        // of this pre-hashing.  The optimized implementations, which
+        // you should actually use, make the larger allocation first
+        // and then reuse it.  Thus, this implementation doing things
+        // differently serves as a test that the computation result is
+        // unaffected by such differences.
+        let mut dk = [0u8; 32];
+        unsafe {
+            yescrypt_kdf_body(
+                &mut local,
+                passwd.as_ptr(),
+                passwd.len(),
+                salt.as_ptr(),
+                salt.len(),
+                params.flags | 0x10000000,
+                params.N >> 6,
+                params.r,
+                params.p,
+                0,
+                params.NROM,
+                dk.as_mut_ptr(),
+                32,
+            )
+        }
+    } else {
+        unsafe {
+            yescrypt_kdf_body(
+                &mut local,
+                passwd.as_ptr(),
+                passwd.len(),
+                salt.as_ptr(),
+                salt.len(),
+                params.flags,
+                params.N,
+                params.r,
+                params.p,
+                params.t,
+                params.NROM,
+                dst.as_mut_ptr(),
+                dst.len(),
+            )
+        }
     };
 
     if retval != 0 {
@@ -143,63 +185,6 @@ pub fn yescrypt_kdf(
     }
 
     Ok(dst)
-}
-
-unsafe fn yescrypt_kdf_inner(
-    local: &mut Local,
-    mut passwd: *const u8,
-    mut passwdlen: usize,
-    salt: *const u8,
-    saltlen: usize,
-    params: &Params,
-    buf: *mut u8,
-    buflen: usize,
-) -> i32 {
-    let mut dk: [u8; 32] = [0; 32];
-    if params.g != 0 {
-        return -1;
-    }
-    if params.flags & 0x2 != 0
-        && params.p >= 1
-        && (params.N / params.p as u64) >= 0x100
-        && params.N / (params.p as u64) / (params.r as u64) >= 0x20000
-    {
-        let retval = yescrypt_kdf_body(
-            local,
-            passwd,
-            passwdlen,
-            salt,
-            saltlen,
-            params.flags | 0x10000000,
-            params.N >> 6,
-            params.r,
-            params.p,
-            0,
-            params.NROM,
-            dk.as_mut_ptr(),
-            32,
-        );
-        if retval != 0 {
-            return retval;
-        }
-        passwd = dk.as_mut_ptr();
-        passwdlen = 32;
-    }
-    return yescrypt_kdf_body(
-        local,
-        passwd,
-        passwdlen,
-        salt,
-        saltlen,
-        params.flags,
-        params.N,
-        params.r,
-        params.p,
-        params.t,
-        params.NROM,
-        buf,
-        buflen,
-    );
 }
 
 unsafe fn yescrypt_kdf_body(
