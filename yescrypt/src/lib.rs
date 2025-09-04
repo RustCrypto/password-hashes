@@ -268,11 +268,8 @@ unsafe fn yescrypt_kdf_body(
         &mut *V_owned
     };
 
-    let B_size = 128usize * (r as usize) * (p as usize);
-    let B = malloc(B_size) as *mut u32;
-    if B.is_null() {
-        return -1;
-    }
+    let B_size = 32 * (r as usize) * (p as usize);
+    let mut B = vec![0u32; B_size].into_boxed_slice();
     'free_b: {
         let XY = malloc(256usize * (r as usize)) as *mut u32;
         if XY.is_null() {
@@ -307,13 +304,17 @@ unsafe fn yescrypt_kdf_body(
                     passwd = sha256.as_mut_ptr() as *mut u8;
                     passwdlen = size_of::<[u32; 8]>();
                 }
-                PBKDF2_SHA256(passwd, passwdlen, salt, saltlen, 1, B as *mut u8, B_size);
+                PBKDF2_SHA256(
+                    passwd,
+                    passwdlen,
+                    salt,
+                    saltlen,
+                    1,
+                    B.as_mut_ptr().cast(),
+                    B_size * 4,
+                );
                 if flags != 0 {
-                    blkcpy(
-                        sha256.as_mut_ptr(),
-                        B,
-                        (size_of::<[u32; 8]>()) / (size_of::<u32>()),
-                    );
+                    sha256.copy_from_slice(&B[..8]);
                 }
                 if flags & 0x2 != 0 {
                     for i in 0..p {
@@ -323,7 +324,7 @@ unsafe fn yescrypt_kdf_body(
                         *fresh5 = &mut *S.offset(offset as isize) as *mut u32;
                     }
                     smix(
-                        B,
+                        B.as_mut_ptr(),
                         r as usize,
                         N,
                         p,
@@ -337,7 +338,8 @@ unsafe fn yescrypt_kdf_body(
                 } else {
                     for i in 0..p {
                         smix(
-                            &mut *B.add(32 * (r as usize) * (i as usize)),
+                            B[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..]
+                                .as_mut_ptr(),
                             r as usize,
                             N,
                             1,
@@ -355,15 +357,23 @@ unsafe fn yescrypt_kdf_body(
                     PBKDF2_SHA256(
                         passwd,
                         passwdlen,
-                        B as *mut u8,
-                        B_size,
+                        B.as_ptr().cast(),
+                        B_size * 4,
                         1,
                         dk.as_mut_ptr(),
                         32,
                     );
                     dkp = dk.as_mut_ptr();
                 }
-                PBKDF2_SHA256(passwd, passwdlen, B as *mut u8, B_size, 1, buf, buflen);
+                PBKDF2_SHA256(
+                    passwd,
+                    passwdlen,
+                    B.as_ptr().cast(),
+                    B_size * 4,
+                    1,
+                    buf,
+                    buflen,
+                );
                 if flags != 0 && flags & 0x10000000 == 0 {
                     HMAC_SHA256_Buf(
                         dkp as *const c_void,
@@ -390,7 +400,7 @@ unsafe fn yescrypt_kdf_body(
         }
         free(XY as *mut c_void);
     }
-    free(B as *mut c_void);
+    drop(B);
     retval
 }
 
