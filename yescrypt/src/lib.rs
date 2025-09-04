@@ -208,14 +208,6 @@ unsafe fn yescrypt_kdf_body(
     buf: *mut uint8_t,
     buflen: size_t,
 ) -> libc::c_int {
-    #[derive(PartialEq)]
-    #[repr(u64)]
-    enum State {
-        RunHash = 12381812505308290051,
-        DropS = 15241037615328978,
-    }
-
-    let mut current_block: State;
     let mut retval: libc::c_int = -(1 as libc::c_int);
     let mut V: *mut uint32_t;
     let mut sha256: [uint32_t; 8] = [0; 8];
@@ -346,8 +338,8 @@ unsafe fn yescrypt_kdf_body(
                     break 'free_b
                 }
                 'free_xy: {
-                    {
-                        let mut S = ptr::null_mut();
+                    let mut S = ptr::null_mut();
+                    'free_s: {
                         let mut pwxform_ctx = ptr::null_mut();
                         if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
                             S = malloc(
@@ -362,15 +354,11 @@ unsafe fn yescrypt_kdf_body(
                                     malloc(size_of::<PwxformCtx>().wrapping_mul(p as usize))
                                         as *mut PwxformCtx;
                                 if pwxform_ctx.is_null() {
-                                    current_block = State::DropS;
-                                } else {
-                                    current_block = State::RunHash;
+                                    break 'free_s;
                                 }
                             }
-                        } else {
-                            current_block = State::RunHash;
                         }
-                        if current_block == State::RunHash {
+                        {
                             if flags != 0 {
                                 HMAC_SHA256_Buf(
                                     b"yescrypt-prehash\0" as *const u8 as *const libc::c_char
@@ -502,12 +490,9 @@ unsafe fn yescrypt_kdf_body(
                             }
                             retval = 0 as libc::c_int;
                             free(pwxform_ctx as *mut libc::c_void);
-                            current_block = State::DropS;
-                        }
-                        if current_block == State::DropS {
-                            free(S as *mut libc::c_void);
                         }
                     }
+                    free(S as *mut libc::c_void);
                 }
                 free(XY as *mut libc::c_void);
             }
