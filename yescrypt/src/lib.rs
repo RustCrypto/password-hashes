@@ -243,13 +243,14 @@ unsafe fn yescrypt_kdf_body(
                             | 0x10000000 as libc::c_int) as libc::c_uint
                 {
                     break 'fail;
-                } else if flags & 0x3fc as libc::c_int as libc::c_uint
+                }
+
+                if !(flags & 0x3fc as libc::c_int as libc::c_uint
                     == (0x4 as libc::c_int
                         | 0x10 as libc::c_int
                         | 0x20 as libc::c_int
-                        | 0x80 as libc::c_int) as libc::c_uint
+                        | 0x80 as libc::c_int) as libc::c_uint)
                 {
-                } else {
                     break 'fail;
                 }
             }
@@ -257,7 +258,7 @@ unsafe fn yescrypt_kdf_body(
                 break 'fail;
             }
         }
-        if !(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
+        if !(!(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
             && !((r as uint64_t).wrapping_mul(p as uint64_t)
                 >= ((1 as libc::c_int) << 30 as libc::c_int) as libc::c_ulong)
             && !(N & N.wrapping_sub(1 as libc::c_int as libc::c_ulong)
@@ -274,7 +275,10 @@ unsafe fn yescrypt_kdf_body(
                     .wrapping_div(r as libc::c_ulong))
             && !(N
                 > (18446744073709551615 as libc::c_ulong)
-                    .wrapping_div((t as uint64_t).wrapping_add(1 as libc::c_int as libc::c_ulong)))
+                    .wrapping_div((t as uint64_t).wrapping_add(1 as libc::c_int as libc::c_ulong))))
+        {
+            break 'fail;
+        }
         {
             if flags & 0x2 as libc::c_int as libc::c_uint != 0
                 && (N.wrapping_div(p as libc::c_ulong) <= 1 as libc::c_int as libc::c_ulong
@@ -345,7 +349,8 @@ unsafe fn yescrypt_kdf_body(
                             ) as *mut uint32_t;
                             if S.is_null() {
                                 break 'free_xy;
-                            } else {
+                            }
+                            {
                                 pwxform_ctx =
                                     malloc(size_of::<PwxformCtx>().wrapping_mul(p as usize))
                                         as *mut PwxformCtx;
