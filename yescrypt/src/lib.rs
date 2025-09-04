@@ -212,16 +212,16 @@ unsafe fn yescrypt_kdf_body(
     let mut V: *mut uint32_t;
     let mut sha256: [uint32_t; 8] = [0; 8];
     let mut dk: [uint8_t; 32] = [0; 32];
-    'fail: {
+    {
         match flags & 0x3 as libc::c_int as libc::c_uint {
             0 => {
                 if flags != 0 || t != 0 || NROM != 0 {
-                    break 'fail;
+                    return -1;
                 }
             }
             1 => {
                 if flags != 1 as libc::c_int as libc::c_uint || NROM != 0 {
-                    break 'fail;
+                    return -1;
                 }
             }
             2 => {
@@ -234,7 +234,7 @@ unsafe fn yescrypt_kdf_body(
                             | 0x8000000 as libc::c_int
                             | 0x10000000 as libc::c_int) as libc::c_uint
                 {
-                    break 'fail;
+                    return -1;
                 }
 
                 if !(flags & 0x3fc as libc::c_int as libc::c_uint
@@ -243,11 +243,11 @@ unsafe fn yescrypt_kdf_body(
                         | 0x20 as libc::c_int
                         | 0x80 as libc::c_int) as libc::c_uint)
                 {
-                    break 'fail;
+                    return -1;
                 }
             }
             _ => {
-                break 'fail;
+                return -1;
             }
         }
         if !(!(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
@@ -269,7 +269,7 @@ unsafe fn yescrypt_kdf_body(
                 > (18446744073709551615 as libc::c_ulong)
                     .wrapping_div((t as uint64_t).wrapping_add(1 as libc::c_int as libc::c_ulong))))
         {
-            break 'fail;
+            return -1;
         }
 
             if flags & 0x2 as libc::c_int as libc::c_uint != 0
@@ -288,11 +288,11 @@ unsafe fn yescrypt_kdf_body(
                         > (18446744073709551615 as libc::c_ulong)
                             .wrapping_div(size_of::<PwxformCtx>() as libc::c_ulong))
             {
-                break 'fail;
+                return -1;
             }
 
             if NROM != 0 {
-                break 'fail;
+                return -1;
             }
 
             let V_size = 128usize.wrapping_mul(r as usize).wrapping_mul(N as usize);
@@ -304,7 +304,7 @@ unsafe fn yescrypt_kdf_body(
                         || (*local).base_size != 0
                         || (*local).aligned_size != 0
                     {
-                        break 'fail;
+                        return -1;
                     }
                     {
                         V = malloc(V_size) as *mut uint32_t;
@@ -330,7 +330,7 @@ unsafe fn yescrypt_kdf_body(
             let B_size = 128usize.wrapping_mul(r as usize).wrapping_mul(p as usize);
             let B = malloc(B_size) as *mut uint32_t;
             if B.is_null() {
-                break 'fail
+                return -1;
             }
             'free_b: {
                 let XY = malloc(256usize.wrapping_mul(r as usize)) as *mut uint32_t;
@@ -502,7 +502,6 @@ unsafe fn yescrypt_kdf_body(
             }
             return retval;
         }
-    return -(1 as libc::c_int);
 }
 
 unsafe fn pwxform(B: *mut uint32_t, ctx: *mut PwxformCtx) {
