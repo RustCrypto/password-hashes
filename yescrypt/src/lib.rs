@@ -162,17 +162,17 @@ unsafe fn yescrypt_kdf_inner(
             .wrapping_mul(params.r as u64)
             >= 0x20000
     {
-        let retval: libc::c_int = yescrypt_kdf_body(
+        let retval = yescrypt_kdf_body(
             local,
             passwd,
             passwdlen,
             salt,
             saltlen,
             params.flags | 0x10000000,
-            params.N >> 6 as libc::c_int,
+            params.N >> 6,
             params.r,
             params.p,
-            0 as libc::c_int as uint32_t,
+            0,
             params.NROM,
             dk.as_mut_ptr(),
             32,
@@ -215,41 +215,28 @@ unsafe fn yescrypt_kdf_body(
     buf: *mut uint8_t,
     buflen: size_t,
 ) -> libc::c_int {
-    let mut retval: libc::c_int = -(1 as libc::c_int);
+    let mut retval: libc::c_int = -1;
     let mut V: *mut uint32_t;
     let mut sha256: [uint32_t; 8] = [0; 8];
     let mut dk: [uint8_t; 32] = [0; 32];
 
-    match flags & 0x3 as libc::c_int as libc::c_uint {
+    match flags & 0x3 {
         0 => {
             if flags != 0 || t != 0 || NROM != 0 {
                 return -1;
             }
         }
         1 => {
-            if flags != 1 as libc::c_int as libc::c_uint || NROM != 0 {
+            if flags != 1 || NROM != 0 {
                 return -1;
             }
         }
         2 => {
-            if flags
-                != flags
-                    & (0x3 as libc::c_int
-                        | 0x3fc as libc::c_int
-                        | 0x10000 as libc::c_int
-                        | 0x1000000 as libc::c_int
-                        | 0x8000000 as libc::c_int
-                        | 0x10000000 as libc::c_int) as libc::c_uint
-            {
+            if flags != flags & (0x3 | 0x3fc | 0x10000 | 0x1000000 | 0x8000000 | 0x10000000) {
                 return -1;
             }
 
-            if !(flags & 0x3fc as libc::c_int as libc::c_uint
-                == (0x4 as libc::c_int
-                    | 0x10 as libc::c_int
-                    | 0x20 as libc::c_int
-                    | 0x80 as libc::c_int) as libc::c_uint)
-            {
+            if !(flags & 0x3fc == (0x4 | 0x10 | 0x20 | 0x80)) {
                 return -1;
             }
         }
@@ -258,38 +245,27 @@ unsafe fn yescrypt_kdf_body(
         }
     }
     if !(!(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
-        && !((r as uint64_t).wrapping_mul(p as uint64_t)
-            >= ((1 as libc::c_int) << 30 as libc::c_int) as libc::c_ulong)
-        && !(N & N.wrapping_sub(1 as libc::c_int as libc::c_ulong)
-            != 0 as libc::c_int as libc::c_ulong
-            || N <= 1 as libc::c_int as libc::c_ulong
-            || r < 1 as libc::c_int as libc::c_uint
-            || p < 1 as libc::c_int as libc::c_uint)
+        && !((r as uint64_t).wrapping_mul(p as uint64_t) >= (1 << 30) as libc::c_ulong)
+        && !(N & N.wrapping_sub(1) != 0 || N <= 1 || r < 1 || p < 1)
         && !(r as libc::c_ulong
             > (18446744073709551615 as libc::c_ulong)
-                .wrapping_div(128 as libc::c_int as libc::c_ulong)
+                .wrapping_div(128 as libc::c_ulong)
                 .wrapping_div(p as libc::c_ulong)
             || N > (18446744073709551615 as libc::c_ulong)
-                .wrapping_div(128 as libc::c_int as libc::c_ulong)
+                .wrapping_div(128 as libc::c_ulong)
                 .wrapping_div(r as libc::c_ulong))
         && !(N
             > (18446744073709551615 as libc::c_ulong)
-                .wrapping_div((t as uint64_t).wrapping_add(1 as libc::c_int as libc::c_ulong))))
+                .wrapping_div((t as uint64_t).wrapping_add(1))))
     {
         return -1;
     }
 
-    if flags & 0x2 as libc::c_int as libc::c_uint != 0
-        && (N.wrapping_div(p as libc::c_ulong) <= 1 as libc::c_int as libc::c_ulong
-            || r < ((4 as libc::c_int * 2 as libc::c_int * 8 as libc::c_int + 127 as libc::c_int)
-                / 128 as libc::c_int) as libc::c_uint
+    if flags & 0x2 != 0
+        && (N.wrapping_div(p as libc::c_ulong) <= 1
+            || r < ((4 * 2 * 8 + 127) / 128) as libc::c_uint
             || p as libc::c_ulong
-                > (18446744073709551615 as libc::c_ulong).wrapping_div(
-                    (3 as libc::c_int
-                        * ((1 as libc::c_int) << 8 as libc::c_int)
-                        * 2 as libc::c_int
-                        * 8 as libc::c_int) as libc::c_ulong,
-                )
+                > (18446744073709551615 as libc::c_ulong).wrapping_div(3 * (1 << 8) * 2 * 8)
             || p as libc::c_ulong
                 > (18446744073709551615 as libc::c_ulong)
                     .wrapping_div(size_of::<PwxformCtx>() as libc::c_ulong))
@@ -302,7 +278,7 @@ unsafe fn yescrypt_kdf_body(
     }
 
     let V_size = 128usize.wrapping_mul(r as usize).wrapping_mul(N as usize);
-    if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
+    if flags & 0x1000000 != 0 {
         V = (*local).aligned as *mut uint32_t;
         if (*local).aligned_size < V_size {
             if !((*local).base).is_null()
@@ -315,7 +291,7 @@ unsafe fn yescrypt_kdf_body(
             {
                 V = malloc(V_size) as *mut uint32_t;
                 if V.is_null() {
-                    return -(1 as libc::c_int);
+                    return -(1);
                 }
                 (*local).aligned = V as *mut libc::c_void;
                 (*local).base = (*local).aligned;
@@ -323,13 +299,13 @@ unsafe fn yescrypt_kdf_body(
                 (*local).base_size = (*local).aligned_size;
             }
         }
-        if flags & 0x8000000 as libc::c_int as libc::c_uint != 0 {
+        if flags & 0x8000000 != 0 {
             return -(2 as libc::c_int);
         }
     } else {
         V = malloc(V_size) as *mut uint32_t;
         if V.is_null() {
-            return -(1 as libc::c_int);
+            return -(1);
         }
     }
 
@@ -347,7 +323,7 @@ unsafe fn yescrypt_kdf_body(
             let mut S = ptr::null_mut();
             'free_s: {
                 let mut pwxform_ctx = ptr::null_mut();
-                if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+                if flags & 0x2 != 0 {
                     S = malloc(
                         (3usize * ((1usize) << 8usize) * 2usize * 8usize).wrapping_mul(p as usize),
                     ) as *mut uint32_t;
@@ -367,7 +343,7 @@ unsafe fn yescrypt_kdf_body(
                     HMAC_SHA256_Buf(
                         b"yescrypt-prehash\0" as *const u8 as *const libc::c_char
                             as *const libc::c_void,
-                        (if flags & 0x10000000 as libc::c_int as libc::c_uint != 0 {
+                        (if flags & 0x10000000 != 0 {
                             16 as libc::c_int
                         } else {
                             8 as libc::c_int
@@ -384,7 +360,7 @@ unsafe fn yescrypt_kdf_body(
                     passwdlen,
                     salt,
                     saltlen,
-                    1 as libc::c_int as uint64_t,
+                    1,
                     B as *mut uint8_t,
                     B_size,
                 );
@@ -395,19 +371,12 @@ unsafe fn yescrypt_kdf_body(
                         (size_of::<[uint32_t; 8]>()).wrapping_div(size_of::<uint32_t>()),
                     );
                 }
-                if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+                if flags & 0x2 != 0 {
                     for i in 0..p {
                         let ref mut fresh5 = (*pwxform_ctx.offset(i as isize)).S;
-                        *fresh5 = &mut *S.offset(
-                            (i as libc::c_ulong).wrapping_mul(
-                                ((3 as libc::c_int
-                                    * ((1 as libc::c_int) << 8 as libc::c_int)
-                                    * 2 as libc::c_int
-                                    * 8 as libc::c_int)
-                                    as libc::c_ulong)
-                                    .wrapping_div(size_of::<uint32_t>() as libc::c_ulong),
-                            ) as isize,
-                        ) as *mut uint32_t;
+                        *fresh5 = &mut *S.offset((i as u64).wrapping_mul(
+                            ((3 * (1 << 8) * 2 * 8) as u64).wrapping_div(size_of::<u32>() as u64),
+                        ) as isize) as *mut u32;
                     }
                     smix(
                         B,
@@ -428,7 +397,7 @@ unsafe fn yescrypt_kdf_body(
                                 .add((32usize).wrapping_mul(r as usize).wrapping_mul(i as usize)),
                             r as size_t,
                             N,
-                            1 as libc::c_int as uint32_t,
+                            1,
                             t,
                             flags,
                             V,
@@ -445,27 +414,19 @@ unsafe fn yescrypt_kdf_body(
                         passwdlen,
                         B as *mut uint8_t,
                         B_size,
-                        1 as libc::c_int as uint64_t,
+                        1,
                         dk.as_mut_ptr(),
                         32,
                     );
                     dkp = dk.as_mut_ptr();
                 }
-                PBKDF2_SHA256(
-                    passwd,
-                    passwdlen,
-                    B as *mut uint8_t,
-                    B_size,
-                    1 as libc::c_int as uint64_t,
-                    buf,
-                    buflen,
-                );
-                if flags != 0 && flags & 0x10000000 as libc::c_int as libc::c_uint == 0 {
+                PBKDF2_SHA256(passwd, passwdlen, B as *mut uint8_t, B_size, 1, buf, buflen);
+                if flags != 0 && flags & 0x10000000 == 0 {
                     HMAC_SHA256_Buf(
                         dkp as *const libc::c_void,
                         32,
                         b"Client Key\0" as *const u8 as *const libc::c_char as *const libc::c_void,
-                        10 as libc::c_int as size_t,
+                        10,
                         sha256.as_mut_ptr() as *mut uint8_t,
                     );
                     let mut clen: size_t = buflen;
@@ -483,7 +444,7 @@ unsafe fn yescrypt_kdf_body(
                         clen as usize,
                     );
                 }
-                retval = 0 as libc::c_int;
+                retval = 0;
                 free(pwxform_ctx as *mut libc::c_void);
             }
             free(S as *mut libc::c_void);
@@ -491,7 +452,7 @@ unsafe fn yescrypt_kdf_body(
         free(XY as *mut libc::c_void);
     }
     free(B as *mut libc::c_void);
-    if flags & 0x1000000 as libc::c_int as libc::c_uint == 0 {
+    if flags & 0x1000000 == 0 {
         free(V as *mut libc::c_void);
     }
     retval
@@ -505,47 +466,33 @@ unsafe fn pwxform(B: *mut uint32_t, ctx: *mut PwxformCtx) {
     let mut w: size_t = (*ctx).w;
     for i in 0..6 {
         for j in 0..4 {
-            let mut xl: uint32_t =
-                (*X.offset(j as isize))[0 as libc::c_int as usize][0 as libc::c_int as usize];
-            let mut xh: uint32_t =
-                (*X.offset(j as isize))[0 as libc::c_int as usize][1 as libc::c_int as usize];
+            let mut xl: uint32_t = (*X.offset(j as isize))[0][0];
+            let mut xh: uint32_t = (*X.offset(j as isize))[0][1];
             let p0 = S0.offset(
-                ((xl & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
+                ((xl & (((1 << 8) - 1) * 2 * 8) as libc::c_uint) as libc::c_ulong)
                     .wrapping_div(size_of::<[uint32_t; 2]>() as libc::c_ulong)
                     as isize,
             );
             let p1 = S1.offset(
-                ((xh & ((((1 as libc::c_int) << 8 as libc::c_int) - 1 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int) as libc::c_uint) as libc::c_ulong)
+                ((xh & (((1 << 8) - 1) * 2 * 8) as libc::c_uint) as libc::c_ulong)
                     .wrapping_div(size_of::<[uint32_t; 2]>() as libc::c_ulong)
                     as isize,
             );
             for k in 0..2 {
-                let s0 = (((*p0.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
-                    << 32 as libc::c_int)
-                    .wrapping_add(
-                        (*p0.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
-                    );
-                let s1 = (((*p1.offset(k as isize))[1 as libc::c_int as usize] as uint64_t)
-                    << 32 as libc::c_int)
-                    .wrapping_add(
-                        (*p1.offset(k as isize))[0 as libc::c_int as usize] as libc::c_ulong,
-                    );
-                xl = (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize];
-                xh = (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize];
+                let s0 = (((*p0.offset(k as isize))[1] as uint64_t) << 32)
+                    .wrapping_add((*p0.offset(k as isize))[0] as libc::c_ulong);
+                let s1 = (((*p1.offset(k as isize))[1] as uint64_t) << 32)
+                    .wrapping_add((*p1.offset(k as isize))[0] as libc::c_ulong);
+                xl = (*X.offset(j as isize))[k as usize][0];
+                xh = (*X.offset(j as isize))[k as usize][1];
                 let mut x = (xh as uint64_t).wrapping_mul(xl as libc::c_ulong);
-                x = (x as libc::c_ulong).wrapping_add(s0) as uint64_t as uint64_t;
+                x = (x as libc::c_ulong).wrapping_add(s0) as uint64_t;
                 x ^= s1;
-                (*X.offset(j as isize))[k as usize][0 as libc::c_int as usize] = x as uint32_t;
-                (*X.offset(j as isize))[k as usize][1 as libc::c_int as usize] =
-                    (x >> 32 as libc::c_int) as uint32_t;
+                (*X.offset(j as isize))[k as usize][0] = x as uint32_t;
+                (*X.offset(j as isize))[k as usize][1] = (x >> 32) as uint32_t;
                 if i != 0usize && i != (6 - 1) {
-                    (*S2.offset(w as isize))[0 as libc::c_int as usize] = x as uint32_t;
-                    (*S2.offset(w as isize))[1 as libc::c_int as usize] =
-                        (x >> 32 as libc::c_int) as uint32_t;
+                    (*S2.offset(w as isize))[0] = x as uint32_t;
+                    (*S2.offset(w as isize))[1] = (x >> 32) as uint32_t;
                     w = w.wrapping_add(1);
                 }
             }
@@ -595,7 +542,7 @@ unsafe fn blockmix_pwxform(B: *mut uint32_t, ctx: *mut PwxformCtx, r: usize) {
         blkxor(
             &mut *B.offset(i.wrapping_mul(16usize) as isize),
             &mut *B.offset(i.wrapping_sub(1usize).wrapping_mul(16usize) as isize),
-            16 as libc::c_int as size_t,
+            16 as size_t,
         );
         salsa20::salsa20_2(&mut *B.offset(i.wrapping_mul(16) as isize));
     }
@@ -616,46 +563,39 @@ unsafe fn smix(
     let s: size_t = (32 * r) as size_t;
     let mut Nchunk = N.wrapping_div(p as libc::c_ulong);
     let mut Nloop_all = Nchunk;
-    if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
-        if t <= 1 as libc::c_int as libc::c_uint {
+    if flags & 0x2 != 0 {
+        if t <= 1 {
             if t != 0 {
-                Nloop_all = (Nloop_all as libc::c_ulong)
-                    .wrapping_mul(2 as libc::c_int as libc::c_ulong)
-                    as uint64_t as uint64_t;
+                Nloop_all = (Nloop_all as libc::c_ulong).wrapping_mul(2) as uint64_t;
             }
-            Nloop_all = Nloop_all
-                .wrapping_add(2 as libc::c_int as libc::c_ulong)
-                .wrapping_div(3 as libc::c_int as libc::c_ulong);
+            Nloop_all = Nloop_all.wrapping_add(2).wrapping_div(3);
         } else {
             Nloop_all = (Nloop_all as libc::c_ulong)
-                .wrapping_mul(t.wrapping_sub(1 as libc::c_int as libc::c_uint) as libc::c_ulong)
-                as uint64_t as uint64_t;
+                .wrapping_mul(t.wrapping_sub(1) as libc::c_ulong)
+                as uint64_t;
         }
     } else if t != 0 {
-        if t == 1 as libc::c_int as libc::c_uint {
-            Nloop_all = (Nloop_all as libc::c_ulong).wrapping_add(
-                Nloop_all
-                    .wrapping_add(1 as libc::c_int as libc::c_ulong)
-                    .wrapping_div(2 as libc::c_int as libc::c_ulong),
-            ) as uint64_t as uint64_t;
+        if t == 1 {
+            Nloop_all = (Nloop_all as libc::c_ulong)
+                .wrapping_add(Nloop_all.wrapping_add(1).wrapping_div(2))
+                as uint64_t;
         }
-        Nloop_all =
-            (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as uint64_t as uint64_t;
+        Nloop_all = (Nloop_all as libc::c_ulong).wrapping_mul(t as libc::c_ulong) as uint64_t;
     }
-    let mut Nloop_rw = 0 as libc::c_int as uint64_t;
-    if flags & 0x1000000 as libc::c_int as libc::c_uint != 0 {
+    let mut Nloop_rw = 0;
+    if flags & 0x1000000 != 0 {
         Nloop_rw = Nloop_all;
-    } else if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+    } else if flags & 0x2 != 0 {
         Nloop_rw = Nloop_all.wrapping_div(p as libc::c_ulong);
     }
-    Nchunk &= !(1 as libc::c_int as uint64_t);
+    Nchunk &= !(1);
     Nloop_all = Nloop_all.wrapping_add(1);
-    Nloop_all &= !(1 as libc::c_int as uint64_t);
+    Nloop_all &= !(1);
     Nloop_rw = Nloop_rw.wrapping_add(1);
-    Nloop_rw &= !(1 as libc::c_int as uint64_t);
-    let mut Vchunk = 0 as libc::c_int as uint64_t;
+    Nloop_rw &= !(1);
+    let mut Vchunk = 0;
     for i in 0..p {
-        let Np: uint64_t = if i < p.wrapping_sub(1 as libc::c_int as libc::c_uint) {
+        let Np = if i < p.wrapping_sub(1) {
             Nchunk
         } else {
             N.wrapping_sub(Vchunk)
@@ -665,40 +605,34 @@ unsafe fn smix(
         let Vp: *mut uint32_t =
             &mut *V.offset((Vchunk as usize).wrapping_mul(s) as isize) as *mut uint32_t;
         let mut ctx_i: *mut PwxformCtx = ptr::null_mut();
-        if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+        if flags & 0x2 != 0 {
             ctx_i = &mut *ctx.offset(i as isize) as *mut PwxformCtx;
             smix1(
                 Bp,
-                1 as libc::c_int as size_t,
-                (3 as libc::c_int
-                    * ((1 as libc::c_int) << 8 as libc::c_int)
-                    * 2 as libc::c_int
-                    * 8 as libc::c_int
-                    / 128 as libc::c_int) as uint64_t,
-                0 as libc::c_int as Flags,
+                1,
+                3 * (1 << 8) * 2 * 8 / 128,
+                0,
                 (*ctx_i).S,
                 XY,
                 ptr::null_mut(),
             );
             (*ctx_i).S2 = (*ctx_i).S as *mut [uint32_t; 2];
-            (*ctx_i).S1 = ((*ctx_i).S2)
-                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
-            (*ctx_i).S0 = ((*ctx_i).S1)
-                .offset((((1 as libc::c_int) << 8 as libc::c_int) * 2 as libc::c_int) as isize);
-            (*ctx_i).w = 0 as libc::c_int as size_t;
-            if i == 0 as libc::c_int as libc::c_uint {
+            (*ctx_i).S1 = ((*ctx_i).S2).offset(((1 << 8) * 2) as isize);
+            (*ctx_i).S0 = ((*ctx_i).S1).offset(((1 << 8) * 2) as isize);
+            (*ctx_i).w = 0;
+            if i == 0 {
                 HMAC_SHA256_Buf(
                     Bp.offset(s.wrapping_sub(16) as isize) as *const libc::c_void,
-                    64 as libc::c_int as size_t,
+                    64,
                     passwd as *const libc::c_void,
-                    32 as libc::c_int as size_t,
+                    32,
                     passwd,
                 );
             }
         }
         smix1(Bp, r, Np, flags, Vp, XY, ctx_i);
         smix2(Bp, r, prev_power_of_two(Np), Nloop_rw, flags, Vp, XY, ctx_i);
-        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t as uint64_t;
+        Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t;
     }
     for i in 0..p {
         let Bp_0: *mut uint32_t =
@@ -708,10 +642,10 @@ unsafe fn smix(
             r,
             N,
             Nloop_all.wrapping_sub(Nloop_rw),
-            flags & !(0x2 as libc::c_int) as libc::c_uint,
+            flags & !0x2,
             V,
             XY,
-            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+            if flags & 0x2 != 0 {
                 &mut *ctx.offset(i as isize)
             } else {
                 ptr::null_mut()
@@ -749,8 +683,7 @@ unsafe fn smix1(
             X,
             s,
         );
-        if flags & 0x2 as libc::c_int as libc::c_uint != 0 && i > 1 as libc::c_int as libc::c_ulong
-        {
+        if flags & 0x2 != 0 && i > 1 {
             let j = wrap(integerify(X, r), i);
             blkxor(
                 X,
@@ -810,7 +743,7 @@ unsafe fn smix2(
                 &mut *V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
                 s,
             );
-            if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
+            if flags & 0x2 != 0 {
                 blkcpy(
                     &mut *V.offset(usize::try_from(j).unwrap().wrapping_mul(s) as isize),
                     X,
