@@ -242,14 +242,9 @@ unsafe fn yescrypt_kdf_body(
     if !(!(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32))
         && !((r as u64).wrapping_mul(p as u64) >= (1 << 30) as u64)
         && !(N & N.wrapping_sub(1) != 0 || N <= 1 || r < 1 || p < 1)
-        && !(r as u64
-            > 18446744073709551615_u64
-                .wrapping_div(128_u64)
-                .wrapping_div(p as u64)
-            || N > 18446744073709551615_u64
-                .wrapping_div(128_u64)
-                .wrapping_div(r as u64))
-        && !(N > 18446744073709551615_u64.wrapping_div((t as u64).wrapping_add(1))))
+        && !(r as u64 > u64::MAX.wrapping_div(128).wrapping_div(p as u64)
+            || N > u64::MAX.wrapping_div(128).wrapping_div(r as u64))
+        && !(N > u64::MAX.wrapping_div((t as u64).wrapping_add(1))))
     {
         return -1;
     }
@@ -257,8 +252,8 @@ unsafe fn yescrypt_kdf_body(
     if flags & 0x2 != 0
         && (N.wrapping_div(p as u64) <= 1
             || r < ((4 * 2 * 8 + 127) / 128) as u32
-            || p as u64 > 18446744073709551615_u64.wrapping_div(3 * (1 << 8) * 2 * 8)
-            || p as u64 > 18446744073709551615_u64.wrapping_div(size_of::<PwxformCtx>() as u64))
+            || p as u64 > u64::MAX.wrapping_div(3 * (1 << 8) * 2 * 8)
+            || p as u64 > u64::MAX.wrapping_div(size_of::<PwxformCtx>() as u64))
     {
         return -1;
     }
