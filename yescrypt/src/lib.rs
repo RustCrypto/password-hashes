@@ -977,11 +977,11 @@ unsafe fn smix1(
         i = 0;
         while i < 16usize {
             *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize) = le32dec(
-                &mut *B.offset(
+                B.offset(
                     k.wrapping_mul(16usize)
                         .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize))
                         as isize,
-                ) as *mut uint32_t as *const libc::c_void,
+                ),
             );
             i = i.wrapping_add(1);
             i;
@@ -1037,11 +1037,11 @@ unsafe fn smix1(
         let mut i = 0;
         while i < 16usize {
             le32enc(
-                &mut *B.offset(
+                B.offset(
                     k.wrapping_mul(16usize)
                         .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize))
                         as isize,
-                ) as *mut uint32_t as *mut libc::c_void,
+                ),
                 *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize),
             );
             i = i.wrapping_add(1);
@@ -1075,11 +1075,11 @@ unsafe fn smix2(
         let mut i = 0;
         while i < 16usize {
             *X.offset(k.wrapping_mul(16usize).wrapping_add(i) as isize) = le32dec(
-                &mut *B.offset(
+                B.offset(
                     k.wrapping_mul(16usize)
                         .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize))
                         as isize,
-                ) as *mut uint32_t as *const libc::c_void,
+                ),
             );
             i = i.wrapping_add(1);
             i;
@@ -1124,11 +1124,11 @@ unsafe fn smix2(
         let mut i = 0;
         while i < 16usize {
             le32enc(
-                &mut *B.offset(
+                B.offset(
                     k.wrapping_mul(16)
                         .wrapping_add(i.wrapping_mul(5).wrapping_rem(16))
                         as isize,
-                ) as *mut uint32_t as *mut libc::c_void,
+                ),
                 *X.offset(k.wrapping_mul(16).wrapping_add(i) as isize),
             );
             i = i.wrapping_add(1);

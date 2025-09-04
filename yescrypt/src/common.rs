@@ -8,7 +8,7 @@
     unused_mut
 )]
 
-use crate::{size_t, uint8_t, uint32_t, uint64_t};
+use crate::{size_t, uint32_t, uint64_t};
 
 pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
     loop {
@@ -50,24 +50,13 @@ pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: usize) -> uint64_
 }
 
 #[inline]
-pub(crate) unsafe fn le32dec(mut pp: *const libc::c_void) -> uint32_t {
-    let mut p: *const uint8_t = pp as *const uint8_t;
-    return (*p.offset(0 as libc::c_int as isize) as uint32_t)
-        .wrapping_add((*p.offset(1 as libc::c_int as isize) as uint32_t) << 8 as libc::c_int)
-        .wrapping_add((*p.offset(2 as libc::c_int as isize) as uint32_t) << 16 as libc::c_int)
-        .wrapping_add((*p.offset(3 as libc::c_int as isize) as uint32_t) << 24 as libc::c_int);
+pub(crate) unsafe fn le32dec(mut pp: *const u32) -> uint32_t {
+    u32::from_le_bytes(pp.cast::<[u8; 4]>().read())
 }
 
 #[inline]
-pub(crate) unsafe fn le32enc(mut pp: *mut libc::c_void, mut x: uint32_t) {
-    let mut p: *mut uint8_t = pp as *mut uint8_t;
-    *p.offset(0 as libc::c_int as isize) = (x & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(1 as libc::c_int as isize) =
-        (x >> 8 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(2 as libc::c_int as isize) =
-        (x >> 16 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
-    *p.offset(3 as libc::c_int as isize) =
-        (x >> 24 as libc::c_int & 0xff as libc::c_int as libc::c_uint) as uint8_t;
+pub(crate) unsafe fn le32enc(mut pp: *mut u32, mut x: uint32_t) {
+    pp.cast::<[u8; 4]>().write(x.to_le_bytes());
 }
 
 unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut size: size_t) {
