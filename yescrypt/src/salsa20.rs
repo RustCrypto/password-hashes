@@ -1,16 +1,13 @@
 use salsa20::cipher::typenum::Unsigned;
 
-use crate::{
-    common::{blkcpy, blkxor},
-    uint32_t,
-};
+use crate::common::{blkcpy, blkxor};
 
-pub(crate) unsafe fn salsa20_2(B: *mut uint32_t) {
+pub(crate) unsafe fn salsa20_2(B: *mut u32) {
     salsa20::<salsa20::cipher::consts::U1>(B);
 }
 
-unsafe fn salsa20<R: Unsigned>(B: *mut uint32_t) {
-    let mut x: [uint32_t; 16] = [0; 16];
+unsafe fn salsa20<R: Unsigned>(B: *mut u32) {
+    let mut x: [u32; 16] = [0; 16];
     for i in 0..16 {
         x[i * 5 % 16] = *B.offset(i as isize);
     }
@@ -30,8 +27,8 @@ unsafe fn salsa20<R: Unsigned>(B: *mut uint32_t) {
     }
 }
 
-pub(crate) unsafe fn blockmix_salsa8(B: *mut uint32_t, Y: *mut uint32_t, r: usize) {
-    let mut X: [uint32_t; 16] = [0; 16];
+pub(crate) unsafe fn blockmix_salsa8(B: *mut u32, Y: *mut u32, r: usize) {
+    let mut X: [u32; 16] = [0; 16];
     blkcpy(X.as_mut_ptr(), &mut *B.add((2 * r - 1) * 16), 16);
     for i in 0..(2 * r) {
         blkxor(X.as_mut_ptr(), &mut *B.add(i * 16), 16);

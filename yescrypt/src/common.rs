@@ -8,9 +8,7 @@
     unused_mut
 )]
 
-use crate::{size_t, uint32_t, uint64_t};
-
-pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+pub(crate) unsafe fn blkcpy(mut dst: *mut u32, mut src: *const u32, mut count: usize) {
     loop {
         let fresh0 = src;
         src = src.offset(1);
@@ -24,7 +22,7 @@ pub(crate) unsafe fn blkcpy(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
     }
 }
 
-pub(crate) unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mut count: size_t) {
+pub(crate) unsafe fn blkxor(mut dst: *mut u32, mut src: *const u32, mut count: usize) {
     loop {
         let fresh2 = src;
         src = src.offset(1);
@@ -38,28 +36,28 @@ pub(crate) unsafe fn blkxor(mut dst: *mut uint32_t, mut src: *const uint32_t, mu
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const uint32_t, mut r: usize) -> uint64_t {
-    let mut X: *const uint32_t = &*B.offset(
+pub(crate) unsafe fn integerify(mut B: *const u32, mut r: usize) -> u64 {
+    let mut X: *const u32 = &*B.offset(
         (2usize)
             .wrapping_mul(r)
             .wrapping_sub(1usize)
             .wrapping_mul(16usize) as isize,
-    ) as *const uint32_t;
-    return ((*X.offset(13 as libc::c_int as isize) as uint64_t) << 32 as libc::c_int)
+    ) as *const u32;
+    return ((*X.offset(13 as libc::c_int as isize) as u64) << 32 as libc::c_int)
         .wrapping_add(*X.offset(0 as libc::c_int as isize) as libc::c_ulong);
 }
 
 #[inline]
-pub(crate) unsafe fn le32dec(mut pp: *const u32) -> uint32_t {
+pub(crate) unsafe fn le32dec(mut pp: *const u32) -> u32 {
     u32::from_le_bytes(pp.cast::<[u8; 4]>().read())
 }
 
 #[inline]
-pub(crate) unsafe fn le32enc(mut pp: *mut u32, mut x: uint32_t) {
+pub(crate) unsafe fn le32enc(mut pp: *mut u32, mut x: u32) {
     pp.cast::<[u8; 4]>().write(x.to_le_bytes());
 }
 
-unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut size: size_t) {
+unsafe fn memxor(mut dst: *mut libc::c_uchar, mut src: *mut libc::c_uchar, mut size: usize) {
     loop {
         let fresh10 = size;
         size = size.wrapping_sub(1);
@@ -86,7 +84,7 @@ pub(crate) fn prev_power_of_two(mut x: u64) -> u64 {
     x
 }
 
-pub(crate) fn wrap(mut x: uint64_t, mut i: uint64_t) -> uint64_t {
-    let mut n: uint64_t = prev_power_of_two(i);
+pub(crate) fn wrap(mut x: u64, mut i: u64) -> u64 {
+    let mut n: u64 = prev_power_of_two(i);
     (x & n.wrapping_sub(1)).wrapping_add(i.wrapping_sub(n))
 }

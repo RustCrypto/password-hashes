@@ -8,10 +8,9 @@
     unused_mut
 )]
 
-use crate::{size_t, uint8_t, uint64_t};
 use libc::memcpy;
 
-pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut digest: *mut uint8_t) {
+pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: usize, mut digest: *mut u8) {
     use sha2::Digest;
     use sha2::digest::array::Array;
     let mut ctx = sha2::Sha256::new();
@@ -26,15 +25,15 @@ pub unsafe fn SHA256_Buf(mut in_0: *const libc::c_void, mut len: size_t, mut dig
 
 pub unsafe fn HMAC_SHA256_Buf(
     mut K: *const libc::c_void,
-    mut Klen: size_t,
+    mut Klen: usize,
     mut in_0: *const libc::c_void,
-    mut len: size_t,
-    mut digest: *mut uint8_t,
+    mut len: usize,
+    mut digest: *mut u8,
 ) {
     use hmac::KeyInit;
     use hmac::Mac;
 
-    let key = &*core::ptr::slice_from_raw_parts(K as *const uint8_t, Klen);
+    let key = &*core::ptr::slice_from_raw_parts(K as *const u8, Klen);
 
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(key)
         .expect("key length should always be valid with hmac");
@@ -48,13 +47,13 @@ pub unsafe fn HMAC_SHA256_Buf(
 }
 
 pub unsafe fn PBKDF2_SHA256(
-    mut passwd: *const uint8_t,
-    mut passwdlen: size_t,
-    mut salt: *const uint8_t,
-    mut saltlen: size_t,
-    mut c: uint64_t,
-    mut buf: *mut uint8_t,
-    mut dkLen: size_t,
+    mut passwd: *const u8,
+    mut passwdlen: usize,
+    mut salt: *const u8,
+    mut saltlen: usize,
+    mut c: u64,
+    mut buf: *mut u8,
+    mut dkLen: usize,
 ) {
     let passwd = core::ptr::slice_from_raw_parts(passwd, passwdlen);
     let salt = core::ptr::slice_from_raw_parts(salt, saltlen);
