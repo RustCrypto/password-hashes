@@ -522,7 +522,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                 t,
                                                                                 flags,
                                                                                 V,
-                                                                                NROM,
                                                                                 XY,
                                                                                 pwxform_ctx,
                                                                                 sha256.as_mut_ptr()
@@ -545,7 +544,6 @@ unsafe fn yescrypt_kdf_body(
                                                                                     t,
                                                                                     flags,
                                                                                     V,
-                                                                                    NROM,
                                                                                     XY,
                                                                                     ptr::null_mut(),
                                                                                     ptr::null_mut(),
@@ -810,7 +808,6 @@ unsafe fn smix(
     mut t: uint32_t,
     mut flags: Flags,
     mut V: *mut uint32_t,
-    mut NROM: u64,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
     mut passwd: *mut uint8_t,
@@ -887,7 +884,6 @@ unsafe fn smix(
                     / 128 as libc::c_int) as uint64_t,
                 0 as libc::c_int as Flags,
                 (*ctx_i).S,
-                0 as libc::c_int as uint64_t,
                 XY,
                 ptr::null_mut(),
             );
@@ -907,18 +903,8 @@ unsafe fn smix(
                 );
             }
         }
-        smix1(Bp, r, Np, flags, Vp, NROM, XY, ctx_i);
-        smix2(
-            Bp,
-            r,
-            prev_power_of_two(Np),
-            Nloop_rw,
-            flags,
-            Vp,
-            NROM,
-            XY,
-            ctx_i,
-        );
+        smix1(Bp, r, Np, flags, Vp, XY, ctx_i);
+        smix2(Bp, r, prev_power_of_two(Np), Nloop_rw, flags, Vp, XY, ctx_i);
         i = i.wrapping_add(1);
         i;
         Vchunk = (Vchunk as libc::c_ulong).wrapping_add(Nchunk) as uint64_t as uint64_t;
@@ -934,7 +920,6 @@ unsafe fn smix(
             Nloop_all.wrapping_sub(Nloop_rw),
             flags & !(0x2 as libc::c_int) as libc::c_uint,
             V,
-            NROM,
             XY,
             if flags & 0x2 as libc::c_int as libc::c_uint != 0 {
                 &mut *ctx.offset(i as isize)
@@ -953,7 +938,6 @@ unsafe fn smix1(
     mut N: uint64_t,
     mut flags: Flags,
     mut V: *mut uint32_t,
-    mut _NROM: uint64_t,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
 ) {
@@ -1031,7 +1015,6 @@ unsafe fn smix2(
     mut Nloop: u64,
     mut flags: Flags,
     mut V: *mut uint32_t,
-    mut _NROM: u64,
     mut XY: *mut uint32_t,
     mut ctx: *mut PwxformCtx,
 ) {
