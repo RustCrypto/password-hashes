@@ -116,8 +116,8 @@ pub fn yescrypt_kdf(
     p: u32,
     t: u32,
     g: u32,
-    dstlen: usize,
-) -> Result<Vec<u8>, Error> {
+    dst: &mut [u8],
+) -> Result<(), Error> {
     let params = Params {
         flags,
         N: n,
@@ -131,8 +131,6 @@ pub fn yescrypt_kdf(
     let mut local = Local {
         aligned: Vec::new().into_boxed_slice(),
     };
-
-    let mut dst = vec![0u8; dstlen];
 
     if params.g != 0 {
         return Err(Error(-1));
@@ -193,7 +191,7 @@ pub fn yescrypt_kdf(
         return Err(Error(retval));
     }
 
-    Ok(dst)
+    Ok(())
 }
 
 unsafe fn yescrypt_kdf_body(
