@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        Good1 = 2868539653012386629,
         Good2 = 6009453772311597924,
         AllocV = 14763689060501151050,
         VAllocated = 9853141518545631134,
@@ -234,15 +233,11 @@ unsafe fn yescrypt_kdf_body(
         0 => {
             if flags != 0 || t != 0 || NROM != 0 {
                 break 'fail;
-            } else {
-                current_block = State::Good1;
             }
         }
         1 => {
             if flags != 1 as libc::c_int as libc::c_uint || NROM != 0 {
                 break 'fail;
-            } else {
-                current_block = State::Good1;
             }
         }
         2 => {
@@ -262,7 +257,6 @@ unsafe fn yescrypt_kdf_body(
                     | 0x20 as libc::c_int
                     | 0x80 as libc::c_int) as libc::c_uint
             {
-                current_block = State::Good1;
             } else {
                 break 'fail;
             }
@@ -271,8 +265,8 @@ unsafe fn yescrypt_kdf_body(
             break 'fail;
         }
     }
-    match current_block {
-        State::Good1 => {
+    match () {
+        () => {
             if !(buflen > (1usize << 32).wrapping_sub(1).wrapping_mul(32)) {
                 if !((r as uint64_t).wrapping_mul(p as uint64_t)
                     >= ((1 as libc::c_int) << 30 as libc::c_int) as libc::c_ulong)
@@ -654,7 +648,6 @@ unsafe fn yescrypt_kdf_body(
                 }
             }
         }
-        _ => {}
     }
     }
     return -(1 as libc::c_int);
