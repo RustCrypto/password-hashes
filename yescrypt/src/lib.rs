@@ -214,7 +214,6 @@ unsafe fn yescrypt_kdf_body(
     #[derive(PartialEq)]
     #[repr(u64)]
     enum State {
-        VAllocated = 9853141518545631134,
         AllocB = 7746103178988627676,
         DropXY = 4048828170348623652,
         RunHash = 12381812505308290051,
@@ -345,13 +344,10 @@ unsafe fn yescrypt_kdf_body(
                                                             (*local).aligned_size = V_size;
                                                             (*local).base_size =
                                                                 (*local).aligned_size;
-                                                            current_block = State::VAllocated;
                                                         }
-                                                    } else {
-                                                        current_block = State::VAllocated;
                                                     }
-                                                    match current_block {
-                                                        _ => {
+                                                    match () {
+                                                        () => {
                                                             if flags
                                                                 & 0x8000000 as libc::c_int
                                                                     as libc::c_uint
