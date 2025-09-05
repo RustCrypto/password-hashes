@@ -237,7 +237,7 @@ unsafe fn yescrypt_kdf_body(
         let mut pwxform_ctx = PwxformCtx::new(p as usize, s);
 
         smix::smix(
-            b.as_mut_ptr(),
+            &mut b,
             r as usize,
             n,
             p,
@@ -255,7 +255,7 @@ unsafe fn yescrypt_kdf_body(
         for i in 0..p {
             // 3: B_i <-- MF(B_i, N)
             smix::smix(
-                b[(32 * (r as usize) * (i as usize))..].as_mut_ptr(),
+                &mut b[(32 * (r as usize) * (i as usize))..],
                 r as usize,
                 n,
                 1,

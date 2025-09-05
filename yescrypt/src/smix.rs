@@ -15,7 +15,7 @@ use core::ffi::c_void;
 /// length; the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
 pub(crate) unsafe fn smix(
-    b: *mut u32,
+    b: &mut [u32],
     r: usize,
     n: u64,
     p: u32,
@@ -83,7 +83,7 @@ pub(crate) unsafe fn smix(
         } else {
             n - vchunk
         };
-        let bp = b.add(i * s);
+        let bp = b.as_mut_ptr().add(i * s);
         let vp = v.add(vchunk as usize * s);
 
         // 17: if YESCRYPT_RW flag is set
@@ -157,7 +157,7 @@ pub(crate) unsafe fn smix(
 
         // 31: SMix2_r(B_i, N, Nloop_all - Nloop_rw, V, flags excluding YESCRYPT_RW)
         smix2(
-            b.add(i * s),
+            b.as_mut_ptr().add(i * s),
             r,
             n,
             nloop_all - nloop_rw,
