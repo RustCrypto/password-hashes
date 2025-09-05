@@ -1,41 +1,26 @@
-#![allow(
-    dead_code,
-    mutable_transmutes,
-    non_camel_case_types,
-    non_snake_case,
-    non_upper_case_globals,
-    unused_assignments,
-    unused_mut
-)]
-
-pub(crate) unsafe fn blkcpy(mut dst: *mut u32, mut src: *const u32, mut count: usize) {
+pub(crate) unsafe fn blkcpy(dst: *mut u32, src: *const u32, count: usize) {
     dst.copy_from(src, count);
 }
 
-pub(crate) unsafe fn blkxor(mut dst: *mut u32, mut src: *const u32, mut count: usize) {
+pub(crate) unsafe fn blkxor(dst: *mut u32, src: *const u32, count: usize) {
     for i in 0..count {
         *dst.add(i) ^= *src.add(i);
     }
 }
 
-pub(crate) unsafe fn integerify(mut B: *const u32, mut r: usize) -> u64 {
-    let mut X: *const u32 = B.add(
+pub(crate) unsafe fn integerify(b: *const u32, r: usize) -> u64 {
+    let x: *const u32 = b.add(
         (2usize)
             .wrapping_mul(r)
             .wrapping_sub(1usize)
             .wrapping_mul(16usize),
     );
-    ((*X.add(13) as u64) << 32).wrapping_add(*X as u64)
-}
-
-unsafe fn memxor(mut dst: *mut u8, mut src: *mut u8, mut size: usize) {
-    for i in 0..size {
-        *dst.add(i) ^= *src.add(i);
-    }
+    ((*x.add(13) as u64) << 32).wrapping_add(*x as u64)
 }
 
 pub(crate) fn prev_power_of_two(mut x: u64) -> u64 {
-    let mut y = 0;
+    let mut y;
+
     loop {
         y = x & x.wrapping_sub(1);
         if y == 0 {
