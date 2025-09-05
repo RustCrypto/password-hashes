@@ -59,7 +59,6 @@ use core::ptr;
 use libc::{c_void, free, malloc, memcpy};
 
 #[derive(Clone)]
-#[repr(C)]
 struct Local {
     pub aligned: Box<[u32]>,
 }
