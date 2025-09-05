@@ -5,7 +5,7 @@ use crate::{
     salsa20,
 };
 use alloc::vec::Vec;
-use core::ptr;
+use core::{marker::PhantomData, ptr};
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -17,23 +17,27 @@ const SWIDTH: usize = 8;
 const PWXBYTES: usize = PWXGATHER * PWXSIMPLE * 8;
 const PWXWORDS: usize = PWXBYTES / size_of::<u32>();
 const SMASK: usize = ((1 << SWIDTH) - 1) * PWXSIMPLE * 8;
-const SWORDS: usize = SBYTES / size_of::<u32>();
-pub(crate) const SBYTES: usize = 3 * (1 << SWIDTH) * PWXSIMPLE * 8;
+const SBYTES: usize = 3 * (1 << SWIDTH) * PWXSIMPLE * 8;
+pub(crate) const SWORDS: usize = SBYTES / size_of::<u32>();
 pub(crate) const RMIN: usize = PWXBYTES.div_ceil(128);
 
 /// Parallel wide transformation (pwxform) context.
+// TODO(tarcieri): have `PwxformCtx` own its state instead of using pointers
 #[derive(Copy, Clone)]
-pub(crate) struct PwxformCtx {
-    pub s: *mut u32,
-    pub s0: *mut [u32; 2],
-    pub s1: *mut [u32; 2],
-    pub s2: *mut [u32; 2],
-    pub w: usize,
+pub(crate) struct PwxformCtx<'a> {
+    pub(crate) s: *mut u32,
+    pub(crate) s0: *mut [u32; 2],
+    pub(crate) s1: *mut [u32; 2],
+    pub(crate) s2: *mut [u32; 2],
+    pub(crate) w: usize,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl PwxformCtx {
-    /// Allocate a parallel wide transformation context.
-    pub(crate) unsafe fn new(p: usize, s: *mut u32) -> Vec<PwxformCtx> {
+impl<'a> PwxformCtx<'a> {
+    /// Initialize a vector of parallel wide transformation contexts, one for each degree of
+    /// parallelism (i.e. the `p` parameter).
+    pub(crate) fn new(p: usize, s: &'a mut [u32]) -> Vec<PwxformCtx<'a>> {
+        assert_eq!(s.len(), SWORDS * p, "state buffer is incorrectly sized");
         let mut pwxform_ctx = Vec::with_capacity(p);
 
         for i in 0..p {
@@ -43,10 +47,11 @@ impl PwxformCtx {
                 s1: ptr::null_mut(),
                 s2: ptr::null_mut(),
                 w: 0,
+                phantom: PhantomData,
             };
 
             let offset = i * SWORDS;
-            ctx.s = s.add(offset);
+            ctx.s = s[offset..(offset + SWORDS)].as_mut_ptr();
             pwxform_ctx.push(ctx)
         }
 
@@ -90,7 +95,7 @@ impl PwxformCtx {
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
             blkxor(b.add(i * 16), b.add((i - 1) * 16), 16);
-            salsa20::salsa20_2(b.add(i.wrapping_mul(16)));
+            salsa20::salsa20_2(b.add(i * 16));
         }
     }
 
