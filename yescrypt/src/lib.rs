@@ -89,7 +89,7 @@ bitflags::bitflags! {
 
 #[derive(Clone, Copy)]
 #[repr(C)]
-struct Params {
+pub struct Params {
     pub flags: Flags,
     pub N: u64,
     pub r: u32,
@@ -97,6 +97,21 @@ struct Params {
     pub t: u32,
     pub g: u32,
     pub NROM: u64,
+}
+
+impl Params {
+    /// Initialize params.
+    pub fn new(flags: Flags, n: u64, r: u32, p: u32, t: u32, g: u32) -> Params {
+        Params {
+            flags,
+            N: n,
+            r,
+            p,
+            t,
+            g,
+            NROM: 0,
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -113,24 +128,9 @@ struct PwxformCtx {
 pub fn yescrypt_kdf(
     passwd: &[u8],
     salt: &[u8],
-    flags: Flags,
-    n: u64,
-    r: u32,
-    p: u32,
-    t: u32,
-    g: u32,
+    params: &Params,
     dst: &mut [u8],
 ) -> Result<(), Error> {
-    let params = Params {
-        flags,
-        N: n,
-        r,
-        p,
-        t,
-        g,
-        NROM: 0,
-    };
-
     let mut local = Local {
         aligned: Vec::new().into_boxed_slice(),
     };
