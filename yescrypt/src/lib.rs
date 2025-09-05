@@ -51,7 +51,7 @@ pub use crate::{
 };
 
 use crate::{
-    pwxform::PwxformCtx,
+    pwxform::{PwxformCtx, RMIN, SBYTES},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -115,18 +115,20 @@ unsafe fn yescrypt_kdf_body(
     let mut sha256 = [0u32; 8];
     let mut dk = [0u8; 32];
 
-    match flags.bits() & Flags::MODE_MASK.bits() {
-        0 => {
+    match flags & Flags::MODE_MASK {
+        // 0 (masking and bitflags play somewhat oddly together)
+        Flags::ROUNDS_3 => {
+            // classic scrypt - can't have anything non-standard
             if !flags.is_empty() || t != 0 || nrom != 0 {
                 return Err(Error);
             }
         }
-        1 => {
+        Flags::WORM => {
             if flags != Flags::WORM || nrom != 0 {
                 return Err(Error);
             }
         }
-        2 => {
+        Flags::RW => {
             if flags
                 != flags
                     & (Flags::MODE_MASK
@@ -160,7 +162,7 @@ unsafe fn yescrypt_kdf_body(
 
     if flags.contains(Flags::RW)
         && (n / (p as u64) <= 1
-            || r < ((4 * 2 * 8 + 127) / 128) as u32
+            || r < RMIN as u32
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
             || p as u64 > u64::MAX / (size_of::<PwxformCtx>() as u64))
     {
@@ -211,6 +213,7 @@ unsafe fn yescrypt_kdf_body(
         passwdlen = size_of::<[u32; 8]>();
     }
 
+    // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
     PBKDF2_SHA256(
         passwd,
         passwdlen,
@@ -226,7 +229,7 @@ unsafe fn yescrypt_kdf_body(
     }
 
     if flags.contains(Flags::RW) {
-        let s = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
+        let s = malloc(SBYTES * (p as usize)) as *mut u32;
         if s.is_null() {
             return Err(Error);
         }
@@ -248,9 +251,11 @@ unsafe fn yescrypt_kdf_body(
 
         free(s as *mut c_void);
     } else {
+        // 2: for i = 0 to p - 1 do
         for i in 0..p {
+            // 3: B_i <-- MF(B_i, N)
             smix::smix(
-                b[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..].as_mut_ptr(),
+                b[(32 * (r as usize) * (i as usize))..].as_mut_ptr(),
                 r as usize,
                 n,
                 1,
@@ -279,6 +284,7 @@ unsafe fn yescrypt_kdf_body(
         dkp = dk.as_mut_ptr();
     }
 
+    // 5: DK <-- PBKDF2(P, B, 1, dkLen)
     PBKDF2_SHA256(
         passwd,
         passwdlen,
@@ -289,14 +295,22 @@ unsafe fn yescrypt_kdf_body(
         out.len(),
     );
 
+    // Except when computing classic scrypt, allow all computation so far
+    // to be performed on the client.  The final steps below match those of
+    // SCRAM (RFC 5802), so that an extension of SCRAM (with the steps so
+    // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
+    // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
     if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
+        // Compute ClientKey
         HMAC_SHA256_Buf(
             dkp as *const c_void,
             32,
-            b"Client Key\0" as *const u8 as *const i8 as *const c_void,
+            c"Client Key".as_ptr() as *const c_void,
             10,
             sha256.as_mut_ptr() as *mut u8,
         );
+
+        // Compute StoredKey
         let mut clen: usize = out.len();
         if clen > 32 {
             clen = 32;

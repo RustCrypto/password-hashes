@@ -17,6 +17,9 @@ const SWIDTH: usize = 8;
 const PWXBYTES: usize = PWXGATHER * PWXSIMPLE * 8;
 const PWXWORDS: usize = PWXBYTES / size_of::<u32>();
 const SMASK: usize = ((1 << SWIDTH) - 1) * PWXSIMPLE * 8;
+const SWORDS: usize = SBYTES / size_of::<u32>();
+pub(crate) const SBYTES: usize = 3 * (1 << SWIDTH) * PWXSIMPLE * 8;
+pub(crate) const RMIN: usize = (PWXBYTES + 127) / 128;
 
 /// Parallel wide transformation (pwxform) context.
 #[derive(Copy, Clone)]
@@ -42,7 +45,7 @@ impl PwxformCtx {
                 w: 0,
             };
 
-            let offset = i * (((3 * (1 << 8) * 2 * 8) as usize) / size_of::<u32>());
+            let offset = i * SWORDS;
             ctx.s = s.add(offset);
             pwxform_ctx.push(ctx)
         }
