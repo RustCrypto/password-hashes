@@ -4,19 +4,44 @@ bitflags::bitflags! {
     /// Flags for controlling the operation of `yescrypt`.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct Flags: u32 {
-        const WORM                = 0x001;
-        const RW                  = 0x002;
-        const ROUNDS_3            = 0b000;
-        const ROUNDS_6            = 0x004;
-        const GATHER_4            = 0x010;
-        const SIMPLE_2            = 0x020;
-        const SBOX_12K            = 0x080;
+        /// Write once read many
+        const WORM = 0x001;
+
+        /// Read/write
+        const RW = 0x002;
+
+        /// 3 rounds
+        const ROUNDS_3 = 0b000;
+
+        /// 6 rounds
+        const ROUNDS_6 = 0x004;
+
+        /// Gather 4
+        const GATHER_4 = 0x010;
+
+        /// Simple 2
+        const SIMPLE_2 = 0x020;
+
+        /// SBox 12k
+        const SBOX_12K = 0x080;
+
+        /// Use shared preallocated memory
         const SHARED_PREALLOCATED = 0x10000;
-        const MODE_MASK           = 0x3;
-        const RW_FLAVOR_MASK      = 0x3fc;
-        const INIT_SHARED         = 0x01000000;
-        const ALLOC_ONLY          = 0x08000000;
-        const PREHASH             = 0x10000000;
+
+        /// Mode mask value
+        const MODE_MASK = 0x3;
+
+        /// Read/write flavor mask value
+        const RW_FLAVOR_MASK = 0x3fc;
+
+        /// Initialize shared memory
+        const INIT_SHARED = 0x01000000;
+
+        /// Allocate only
+        const ALLOC_ONLY = 0x08000000;
+
+        /// Prehash
+        const PREHASH = 0x10000000;
     }
 }
 

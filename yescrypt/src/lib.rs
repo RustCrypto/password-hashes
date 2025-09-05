@@ -10,24 +10,18 @@
     //clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
-    //clippy::cast_sign_loss,
+    clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
     clippy::panic,
     clippy::panic_in_result_fn,
-    //missing_docs,
+    missing_docs,
     rust_2018_idioms,
     unused_lifetimes,
     unused_qualifications
 )]
 // Temporary lint overrides while C code is being translated
-#![allow(
-    clippy::cast_possible_wrap,
-    clippy::too_many_arguments,
-    clippy::toplevel_ref_arg,
-    clippy::unwrap_used,
-    unsafe_op_in_unsafe_fn
-)]
+#![allow(clippy::too_many_arguments, unsafe_op_in_unsafe_fn)]
 
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
