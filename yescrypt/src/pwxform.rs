@@ -1,9 +1,6 @@
 //! pwxform: parallel wide transformation
 
-use crate::{
-    common::{blkcpy, blkxor},
-    salsa20,
-};
+use crate::{salsa20, xor};
 use alloc::vec::Vec;
 use core::{marker::PhantomData, ptr};
 
@@ -70,21 +67,22 @@ impl<'a> PwxformCtx<'a> {
         let r1 = (128 * r) / PWXBYTES;
 
         // 2: X <-- B'_{r_1 - 1}
-        blkcpy(x.as_mut_ptr(), b.add((r1 - 1) * PWXWORDS), PWXWORDS);
+        x.as_mut_ptr()
+            .copy_from(b.add((r1 - 1) * PWXWORDS), PWXWORDS);
 
         // 3: for i = 0 to r_1 - 1 do
         for i in 0..r1 {
             // 4: if r_1 > 1
             if r1 > 1 {
                 // 5: X <-- X xor B'_i
-                blkxor(x.as_mut_ptr(), b.add(i * PWXWORDS), PWXWORDS);
+                xor(x.as_mut_ptr(), b.add(i * PWXWORDS), PWXWORDS);
             }
 
             // 7: X <-- pwxform(X)
             self.pwxform(&mut x);
 
             // 8: B'_i <-- X
-            blkcpy(b.add(i * PWXWORDS), x.as_mut_ptr(), PWXWORDS);
+            b.add(i * PWXWORDS).copy_from(x.as_mut_ptr(), PWXWORDS);
         }
 
         // 10: i <-- floor((r_1 - 1) * PWXbytes / 64)
@@ -95,7 +93,7 @@ impl<'a> PwxformCtx<'a> {
 
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
-            blkxor(b.add(i * 16), b.add((i - 1) * 16), 16);
+            xor(b.add(i * 16), b.add((i - 1) * 16), 16);
             salsa20::salsa20_2(b.add(i * 16));
         }
     }
