@@ -19,7 +19,7 @@ const PWXWORDS: usize = PWXBYTES / size_of::<u32>();
 const SMASK: usize = ((1 << SWIDTH) - 1) * PWXSIMPLE * 8;
 const SWORDS: usize = SBYTES / size_of::<u32>();
 pub(crate) const SBYTES: usize = 3 * (1 << SWIDTH) * PWXSIMPLE * 8;
-pub(crate) const RMIN: usize = (PWXBYTES + 127) / 128;
+pub(crate) const RMIN: usize = PWXBYTES.div_ceil(128);
 
 /// Parallel wide transformation (pwxform) context.
 #[derive(Copy, Clone)]
