@@ -139,62 +139,31 @@ pub fn yescrypt_kdf(
         return Err(Error(-1));
     }
 
-    let retval = if params.flags.contains(Flags::RW)
+    if params.flags.contains(Flags::RW)
         && params.p >= 1
         && (params.N / params.p as u64) >= 0x100
         && params.N / (params.p as u64) / (params.r as u64) >= 0x20000
     {
-        // TODO(tarcieri): get rid of this? yescrypt-ref.c has this comment about it:
-        // This reference implementation's yescrypt_kdf_body()
-        // (de)allocates memory on each call, which defeats the purpose
-        // of this pre-hashing.  The optimized implementations, which
-        // you should actually use, make the larger allocation first
-        // and then reuse it.  Thus, this implementation doing things
-        // differently serves as a test that the computation result is
-        // unaffected by such differences.
-        let mut dk = [0u8; 32];
-        unsafe {
-            yescrypt_kdf_body(
-                &mut local,
-                passwd.as_ptr(),
-                passwd.len(),
-                salt.as_ptr(),
-                salt.len(),
-                params.flags | Flags::PREHASH,
-                params.N >> 6,
-                params.r,
-                params.p,
-                0,
-                params.NROM,
-                dk.as_mut_ptr(),
-                32,
-            )
-        }
-    } else {
-        unsafe {
-            yescrypt_kdf_body(
-                &mut local,
-                passwd.as_ptr(),
-                passwd.len(),
-                salt.as_ptr(),
-                salt.len(),
-                params.flags,
-                params.N,
-                params.r,
-                params.p,
-                params.t,
-                params.NROM,
-                dst.as_mut_ptr(),
-                dst.len(),
-            )
-        }
-    };
-
-    if retval != 0 {
-        return Err(Error(retval));
+        return Err(Error(-1));
     }
 
-    Ok(())
+    unsafe {
+        yescrypt_kdf_body(
+            &mut local,
+            passwd.as_ptr(),
+            passwd.len(),
+            salt.as_ptr(),
+            salt.len(),
+            params.flags,
+            params.N,
+            params.r,
+            params.p,
+            params.t,
+            params.NROM,
+            dst.as_mut_ptr(),
+            dst.len(),
+        )
+    }
 }
 
 unsafe fn yescrypt_kdf_body(
@@ -211,19 +180,19 @@ unsafe fn yescrypt_kdf_body(
     NROM: u64,
     buf: *mut u8,
     buflen: usize,
-) -> i32 {
+) -> Result<(), Error> {
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
     match flags.bits() & Flags::MODE_MASK.bits() {
         0 => {
             if !flags.is_empty() || t != 0 || NROM != 0 {
-                return -1;
+                return Err(Error(-1));
             }
         }
         1 => {
             if flags != Flags::WORM || NROM != 0 {
-                return -1;
+                return Err(Error(-1));
             }
         }
         2 => {
@@ -236,17 +205,17 @@ unsafe fn yescrypt_kdf_body(
                         | Flags::ALLOC_ONLY
                         | Flags::PREHASH)
             {
-                return -1;
+                return Err(Error(-1));
             }
 
             if (flags & Flags::RW_FLAVOR_MASK)
                 != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
             {
-                return -1;
+                return Err(Error(-1));
             }
         }
         _ => {
-            return -1;
+            return Err(Error(-1));
         }
     }
     if !((buflen <= ((1 << 32) - 1) * 32)
@@ -255,7 +224,7 @@ unsafe fn yescrypt_kdf_body(
         && !(r as u64 > u64::MAX / 128 / (p as u64) || N > u64::MAX / 128 / (r as u64))
         && (N <= u64::MAX / ((t as u64) + 1)))
     {
-        return -1;
+        return Err(Error(-1));
     }
 
     if flags.contains(Flags::RW)
@@ -264,11 +233,11 @@ unsafe fn yescrypt_kdf_body(
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
             || p as u64 > u64::MAX / (size_of::<PwxformCtx>() as u64))
     {
-        return -1;
+        return Err(Error(-1));
     }
 
     if NROM != 0 {
-        return -1;
+        return Err(Error(-1));
     }
 
     let mut V_owned: Box<[u32]>;
@@ -277,13 +246,13 @@ unsafe fn yescrypt_kdf_body(
         if local.aligned.len() < V_size {
             // why can't we just reallocate here?
             if !local.aligned.is_empty() {
-                return -1;
+                return Err(Error(-1));
             }
 
             local.aligned = vec![0; V_size].into_boxed_slice();
         }
         if flags.contains(Flags::ALLOC_ONLY) {
-            return -2;
+            return Err(Error(-2));
         }
         &mut *local.aligned
     } else {
@@ -328,12 +297,12 @@ unsafe fn yescrypt_kdf_body(
     if flags.contains(Flags::RW) {
         let S = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
         if S.is_null() {
-            return -1;
+            return Err(Error(-1));
         }
         let pwxform_ctx = malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
         if pwxform_ctx.is_null() {
             free(S as *mut c_void);
-            return -1;
+            return Err(Error(-1));
         }
 
         for i in 0..p as usize {
@@ -416,7 +385,8 @@ unsafe fn yescrypt_kdf_body(
         );
         memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
     }
-    0
+
+    Ok(())
 }
 
 unsafe fn pwxform(B: *mut u32, ctx: *mut PwxformCtx) {
