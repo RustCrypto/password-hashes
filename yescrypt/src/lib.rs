@@ -49,7 +49,7 @@ use crate::{
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::ptr;
+use core::{ptr, slice};
 
 #[derive(Clone)]
 struct Local {
@@ -232,10 +232,10 @@ unsafe fn yescrypt_kdf_body(
             p,
             t,
             flags,
-            v.as_mut_ptr(),
-            xy.as_mut_ptr(),
-            pwxform_ctx.as_mut_slice(),
-            sha256.as_mut_ptr() as *mut u8,
+            v,
+            &mut xy,
+            &mut pwxform_ctx,
+            slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
         );
     } else {
         // 2: for i = 0 to p - 1 do
@@ -248,10 +248,10 @@ unsafe fn yescrypt_kdf_body(
                 1,
                 t,
                 flags,
-                v.as_mut_ptr(),
-                xy.as_mut_ptr(),
+                v,
+                &mut xy,
                 &mut [],
-                ptr::null_mut(),
+                &mut [],
             );
         }
     }

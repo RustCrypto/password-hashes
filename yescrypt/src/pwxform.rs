@@ -61,7 +61,8 @@ impl<'a> PwxformCtx<'a> {
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.
-    pub(crate) unsafe fn blockmix_pwxform(&mut self, b: *mut u32, r: usize) {
+    pub(crate) unsafe fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
+        let b = b.as_mut_ptr();
         let mut x = [0u32; 16];
 
         // Convert 128-byte blocks to PWXbytes blocks
