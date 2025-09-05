@@ -1,18 +1,22 @@
-use salsa20::cipher::typenum::Unsigned;
+//! Wrapper functions for invoking the `salsa20` crate.
 
 use crate::common::{blkcpy, blkxor};
+use salsa20::cipher::{
+    StreamCipherCore,
+    consts::{U1, U4},
+    typenum::Unsigned,
+};
 
-pub(crate) unsafe fn salsa20_2(B: *mut u32) {
-    salsa20::<salsa20::cipher::consts::U1>(B);
+pub(crate) unsafe fn salsa20_2(b: *mut u32) {
+    salsa20::<U1>(b);
 }
 
-unsafe fn salsa20<R: Unsigned>(B: *mut u32) {
-    let mut x: [u32; 16] = [0; 16];
-    for i in 0..16 {
-        x[i * 5 % 16] = *B.add(i);
-    }
+unsafe fn salsa20<R: Unsigned>(b: *mut u32) {
+    let mut x = [0u32; 16];
 
-    use salsa20::cipher::StreamCipherCore;
+    for i in 0..16 {
+        x[i * 5 % 16] = *b.add(i);
+    }
 
     let mut block = [0u8; 64];
     salsa20::SalsaCore::<R>::from_raw_state(x).write_keystream_block((&mut block).into());
@@ -22,23 +26,26 @@ unsafe fn salsa20<R: Unsigned>(B: *mut u32) {
     }
 
     for i in 0..16 {
-        let x = (*B.add(i)).wrapping_add(x[i * 5 % 16]);
-        B.add(i).write(x)
+        let x = (*b.add(i)).wrapping_add(x[i * 5 % 16]);
+        b.add(i).write(x)
     }
 }
 
-pub(crate) unsafe fn blockmix_salsa8(B: *mut u32, Y: *mut u32, r: usize) {
-    let mut X: [u32; 16] = [0; 16];
-    blkcpy(X.as_mut_ptr(), B.add((2 * r - 1) * 16), 16);
+pub(crate) unsafe fn blockmix_salsa8(b: *mut u32, y: *mut u32, r: usize) {
+    let mut x = [0u32; 16];
+    blkcpy(x.as_mut_ptr(), b.add((2 * r - 1) * 16), 16);
+
     for i in 0..(2 * r) {
-        blkxor(X.as_mut_ptr(), B.add(i * 16), 16);
-        salsa20::<salsa20::cipher::consts::U4>(X.as_mut_ptr());
-        blkcpy(Y.add(i * 16), X.as_mut_ptr(), 16);
+        blkxor(x.as_mut_ptr(), b.add(i * 16), 16);
+        salsa20::<U4>(x.as_mut_ptr());
+        blkcpy(y.add(i * 16), x.as_mut_ptr(), 16);
     }
+
     for i in 0..r {
-        blkcpy(B.add(i * 16), Y.add((i * 2) * 16), 16);
+        blkcpy(b.add(i * 16), y.add((i * 2) * 16), 16);
     }
+
     for i in 0..r {
-        blkcpy(B.add((i + r) * 16), Y.add((i * 2 + 1) * 16), 16);
+        blkcpy(b.add((i + r) * 16), y.add((i * 2 + 1) * 16), 16);
     }
 }
