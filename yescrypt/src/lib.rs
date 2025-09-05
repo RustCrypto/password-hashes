@@ -51,12 +51,12 @@ pub use crate::{
 };
 
 use crate::{
-    pwxform::{PwxformCtx, RMIN, SBYTES},
+    pwxform::{PwxformCtx, RMIN, SWORDS},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::ptr;
-use libc::{c_void, free, malloc, memcpy};
+use libc::{c_void, memcpy};
 
 #[derive(Clone)]
 struct Local {
@@ -164,7 +164,7 @@ unsafe fn yescrypt_kdf_body(
         && (n / (p as u64) <= 1
             || r < RMIN as u32
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
-            || p as u64 > u64::MAX / (size_of::<PwxformCtx>() as u64))
+            || p as u64 > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
     {
         return Err(Error);
     }
@@ -229,12 +229,8 @@ unsafe fn yescrypt_kdf_body(
     }
 
     if flags.contains(Flags::RW) {
-        let s = malloc(SBYTES * (p as usize)) as *mut u32;
-        if s.is_null() {
-            return Err(Error);
-        }
-
-        let mut pwxform_ctx = PwxformCtx::new(p as usize, s);
+        let mut s = vec![0u32; SWORDS * p as usize];
+        let mut pwxform_ctx = PwxformCtx::new(p as usize, &mut s);
 
         smix::smix(
             &mut b,
@@ -248,8 +244,6 @@ unsafe fn yescrypt_kdf_body(
             pwxform_ctx.as_mut_slice(),
             sha256.as_mut_ptr() as *mut u8,
         );
-
-        free(s as *mut c_void);
     } else {
         // 2: for i = 0 to p - 1 do
         for i in 0..p {

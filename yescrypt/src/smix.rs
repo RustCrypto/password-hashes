@@ -23,7 +23,7 @@ pub(crate) unsafe fn smix(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: &mut [PwxformCtx],
+    ctx: &mut [PwxformCtx<'_>],
     passwd: *mut u8,
 ) {
     let s = 32 * r;
@@ -180,7 +180,7 @@ unsafe fn smix1(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: &mut Option<&mut PwxformCtx>,
+    ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
     let s = 32 * r;
     let x = xy;
@@ -231,7 +231,7 @@ unsafe fn smix2(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: &mut Option<&mut PwxformCtx>,
+    ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
     let s = 32 * r;
     let x = xy;
