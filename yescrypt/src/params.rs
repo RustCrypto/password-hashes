@@ -35,7 +35,7 @@ pub struct Params {
     pub flags: Flags,
 
     /// `N`: CPU/memory cost (like `scrypt`).
-    pub N: u64,
+    pub n: u64,
 
     /// `r`: block size (like `scrypt`).
     pub r: u32,
@@ -50,7 +50,7 @@ pub struct Params {
     pub g: u32,
 
     /// special to yescrypt.
-    pub NROM: u64,
+    pub nrom: u64,
 }
 
 impl Params {
@@ -58,12 +58,12 @@ impl Params {
     pub fn new(flags: Flags, n: u64, r: u32, p: u32, t: u32, g: u32) -> Params {
         Params {
             flags,
-            N: n,
+            n,
             r,
             p,
             t,
             g,
-            NROM: 0,
+            nrom: 0,
         }
     }
 }
@@ -77,12 +77,12 @@ impl Default for Params {
         // flags = YESCRYPT_DEFAULTS, N = 4096, r = 32, p = 1, t = 0, g = 0, NROM = 0
         Params {
             flags: Flags::default(),
-            N: 4096,
+            n: 4096,
             r: 32,
             p: 1,
             t: 0,
             g: 0,
-            NROM: 0,
+            nrom: 0,
         }
     }
 }
