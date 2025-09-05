@@ -5,8 +5,7 @@ use crate::{
     common::{blkcpy, blkxor},
     salsa20,
 };
-use core::ffi::c_void;
-use libc::{free, malloc};
+use libc::malloc;
 
 /// Parallel wide transformation (pwxform) context.
 #[derive(Copy, Clone)]
@@ -21,13 +20,14 @@ pub(crate) struct PwxformCtx {
 
 impl PwxformCtx {
     /// Allocate a parallel wide transformation context.
-    // TODO(tarcieri): avoid `malloc` and `unsafe`
+    ///
+    /// Caller is responsible for freeing it.
+    // TODO(tarcieri): avoid `malloc` and `unsafe`, use RAII
     pub(crate) unsafe fn alloc(p: u32, s: *mut u32) -> Result<*mut PwxformCtx> {
         let pwxform_ctx = malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
 
         if pwxform_ctx.is_null() {
-            free(s as *mut c_void);
-            return Err(Error(-1));
+            return Err(Error);
         }
 
         for i in 0..p as usize {
