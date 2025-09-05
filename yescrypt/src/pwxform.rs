@@ -71,7 +71,7 @@ impl PwxformCtx {
             }
 
             // 7: X <-- pwxform(X)
-            self.pwxform(x.as_mut_ptr());
+            self.pwxform(&mut x);
 
             // 8: B'_i <-- X
             blkcpy(
@@ -99,8 +99,8 @@ impl PwxformCtx {
     }
 
     /// Transform the provided block using the provided S-boxes.
-    unsafe fn pwxform(&mut self, b: *mut u32) {
-        let x0 = b as *mut [[u32; 2]; 2];
+    unsafe fn pwxform(&mut self, b: &mut [u32; 16]) {
+        let xptr: *mut [[u32; 2]; 2] = b.as_mut_ptr().cast();
         let s0 = self.s0;
         let s1 = self.s1;
         let s2 = self.s2;
@@ -110,8 +110,8 @@ impl PwxformCtx {
         for i in 0..6 {
             // 2: for j = 0 to PWXgather - 1 do
             for j in 0..4 {
-                let mut xl: u32 = (*x0.add(j))[0][0];
-                let mut xh: u32 = (*x0.add(j))[0][1];
+                let mut xl: u32 = (*xptr.add(j))[0][0];
+                let mut xh: u32 = (*xptr.add(j))[0][1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
                 let p0 = s0.add((xl as usize & (((1 << 8) - 1) * 2 * 8)) / 8);
@@ -125,15 +125,15 @@ impl PwxformCtx {
                     let s0 = (((*p0.add(k))[1] as u64) << 32).wrapping_add((*p0.add(k))[0] as u64);
                     let s1 = (((*p1.add(k))[1] as u64) << 32).wrapping_add((*p1.add(k))[0] as u64);
 
-                    xl = (*x0.add(j))[k][0];
-                    xh = (*x0.add(j))[k][1];
+                    xl = (*xptr.add(j))[k][0];
+                    xh = (*xptr.add(j))[k][1];
 
                     let mut x = (xh as u64).wrapping_mul(xl as u64);
                     x = x.wrapping_add(s0);
                     x ^= s1;
 
-                    (*x0.add(j))[k][0] = x as u32;
-                    (*x0.add(j))[k][1] = (x >> 32) as u32;
+                    (*xptr.add(j))[k][0] = x as u32;
+                    (*xptr.add(j))[k][1] = (x >> 32) as u32;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (6 - 1) {
@@ -152,6 +152,6 @@ impl PwxformCtx {
         self.s2 = s1;
 
         // 15: w <-- w mod 2^Swidth
-        self.w = w & (((1usize) << 8usize) * 2usize - 1usize);
+        self.w = w & ((1 << 8) * 2 - 1);
     }
 }
