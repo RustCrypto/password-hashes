@@ -39,79 +39,28 @@
 extern crate alloc;
 
 mod common;
+mod error;
+mod params;
 mod salsa20;
 mod sha256;
+
+pub use crate::{
+    error::{Error, Result},
+    params::{Flags, Params},
+};
 
 use crate::{
     common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two, wrap},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::{fmt, ptr};
+use core::ptr;
 use libc::{c_void, free, malloc, memcpy};
-
-/// Error type.
-#[derive(Debug)]
-pub struct Error(i32);
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "yescrypt error (code {})", self.0)
-    }
-}
-
-impl core::error::Error for Error {}
 
 #[derive(Clone)]
 #[repr(C)]
 struct Local {
     pub aligned: Box<[u32]>,
-}
-
-bitflags::bitflags! {
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub struct Flags: u32 {
-        const WORM                = 0x001;
-        const RW                  = 0x002;
-        const ROUNDS_3            = 0b000;
-        const ROUNDS_6            = 0x004;
-        const GATHER_4            = 0x010;
-        const SIMPLE_2            = 0x020;
-        const SBOX_12K            = 0x080;
-        const SHARED_PREALLOCATED = 0x10000;
-        const MODE_MASK           = 0x3;
-        const RW_FLAVOR_MASK      = 0x3fc;
-        const INIT_SHARED         = 0x01000000;
-        const ALLOC_ONLY          = 0x08000000;
-        const PREHASH             = 0x10000000;
-    }
-}
-
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct Params {
-    pub flags: Flags,
-    pub N: u64,
-    pub r: u32,
-    pub p: u32,
-    pub t: u32,
-    pub g: u32,
-    pub NROM: u64,
-}
-
-impl Params {
-    /// Initialize params.
-    pub fn new(flags: Flags, n: u64, r: u32, p: u32, t: u32, g: u32) -> Params {
-        Params {
-            flags,
-            N: n,
-            r,
-            p,
-            t,
-            g,
-            NROM: 0,
-        }
-    }
 }
 
 #[derive(Copy, Clone)]
@@ -125,12 +74,7 @@ struct PwxformCtx {
 }
 
 /// yescrypt Key Derivation Function (KDF)
-pub fn yescrypt_kdf(
-    passwd: &[u8],
-    salt: &[u8],
-    params: &Params,
-    dst: &mut [u8],
-) -> Result<(), Error> {
+pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, dst: &mut [u8]) -> Result<()> {
     let mut local = Local {
         aligned: Vec::new().into_boxed_slice(),
     };
@@ -180,7 +124,7 @@ unsafe fn yescrypt_kdf_body(
     NROM: u64,
     buf: *mut u8,
     buflen: usize,
-) -> Result<(), Error> {
+) -> Result<()> {
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
