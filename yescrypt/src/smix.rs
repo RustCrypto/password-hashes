@@ -7,7 +7,6 @@ use crate::{
     salsa20,
     sha256::HMAC_SHA256_Buf,
 };
-use core::ffi::c_void;
 
 /// Compute `B = SMix_r(B, N)`.
 ///
@@ -115,9 +114,9 @@ pub(crate) unsafe fn smix(
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
                 HMAC_SHA256_Buf(
-                    bp.add(s - 16) as *const c_void,
+                    bp.add(s - 16) as *const u8,
                     64,
-                    passwd as *const c_void,
+                    passwd as *const u8,
                     32,
                     passwd,
                 );

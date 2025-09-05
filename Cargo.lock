@@ -595,7 +595,6 @@ dependencies = [
  "bitflags",
  "hex-literal",
  "hmac",
- "libc",
  "pbkdf2",
  "salsa20",
  "sha2",
