@@ -28,16 +28,6 @@ pub(crate) unsafe fn integerify(mut B: *const u32, mut r: usize) -> u64 {
     ((*X.add(13) as u64) << 32).wrapping_add(*X as u64)
 }
 
-#[inline]
-pub(crate) unsafe fn le32dec(mut pp: *const u32) -> u32 {
-    u32::from_le_bytes(pp.cast::<[u8; 4]>().read())
-}
-
-#[inline]
-pub(crate) unsafe fn le32enc(mut pp: *mut u32, mut x: u32) {
-    pp.cast::<[u8; 4]>().write(x.to_le_bytes());
-}
-
 unsafe fn memxor(mut dst: *mut u8, mut src: *mut u8, mut size: usize) {
     for i in 0..size {
         *dst.add(i) ^= *src.add(i);

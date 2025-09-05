@@ -149,7 +149,7 @@ unsafe fn yescrypt_kdf_body(
             return Err(Error);
         }
     }
-    if !((out.len() <= ((1 << 32) - 1) * 32)
+    if !((out.len() as u64 <= u32::MAX as u64 * 32)
         && ((r as u64) * (p as u64) < (1 << 30) as u64)
         && !(n & (n - 1) != 0 || n <= 1 || r < 1 || p < 1)
         && !(r as u64 > u64::MAX / 128 / (p as u64) || n > u64::MAX / 128 / (r as u64))
