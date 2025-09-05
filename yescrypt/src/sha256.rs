@@ -14,7 +14,7 @@ pub unsafe fn SHA256_Buf(mut in_0: *const u8, mut len: usize, mut digest: *mut u
     use sha2::Digest;
     use sha2::digest::array::Array;
     let mut ctx = sha2::Sha256::new();
-    ctx.update(&*ptr::slice_from_raw_parts(in_0 as *const u8, len));
+    ctx.update(&*ptr::slice_from_raw_parts(in_0, len));
 
     // TODO
     #[allow(deprecated)]
@@ -30,17 +30,16 @@ pub unsafe fn HMAC_SHA256_Buf(
     mut len: usize,
     mut digest: *mut u8,
 ) {
-    use hmac::KeyInit;
-    use hmac::Mac;
+    use hmac::{KeyInit, Mac};
 
-    let key = &*ptr::slice_from_raw_parts(K as *const u8, Klen);
+    let key = &*ptr::slice_from_raw_parts(K, Klen);
 
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(key)
         .expect("key length should always be valid with hmac");
 
     let mut in_0 = in_0;
     let mut len = len;
-    hmac.update(&*ptr::slice_from_raw_parts(in_0 as *const u8, len));
+    hmac.update(&*ptr::slice_from_raw_parts(in_0, len));
 
     let mac = hmac.finalize().into_bytes();
     ptr::copy_nonoverlapping(mac.as_ptr() as *const _, digest as *mut _, 32);
