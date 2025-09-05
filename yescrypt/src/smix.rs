@@ -247,14 +247,14 @@ unsafe fn smix2(
     // 6: for i = 0 to N - 1 do
     for _ in 0..nloop {
         // 7: j <-- Integerify(X) mod N
-        let j = (integerify(x, r) & (n - 1)) as usize;
+        let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
         blkxor(x, v.add(j * s), s);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
-            blkcpy(v.add(usize::try_from(j).unwrap() * s), x, s);
+            blkcpy(v.add(j * s), x, s);
         }
 
         // 8.2: X <-- H(X)
