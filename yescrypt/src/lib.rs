@@ -74,7 +74,7 @@ struct PwxformCtx {
 }
 
 /// yescrypt Key Derivation Function (KDF)
-pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, dst: &mut [u8]) -> Result<()> {
+pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
     let mut local = Local {
         aligned: Vec::new().into_boxed_slice(),
     };
@@ -94,37 +94,34 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, dst: &mut [u8])
     unsafe {
         yescrypt_kdf_body(
             &mut local,
-            passwd.as_ptr(),
-            passwd.len(),
-            salt.as_ptr(),
-            salt.len(),
+            passwd,
+            salt,
             params.flags,
             params.n,
             params.r,
             params.p,
             params.t,
             params.nrom,
-            dst.as_mut_ptr(),
-            dst.len(),
+            out,
         )
     }
 }
 
 unsafe fn yescrypt_kdf_body(
     local: &mut Local,
-    mut passwd: *const u8,
-    mut passwdlen: usize,
-    salt: *const u8,
-    saltlen: usize,
+    passwd: &[u8],
+    salt: &[u8],
     flags: Flags,
     n: u64,
     r: u32,
     p: u32,
     t: u32,
     nrom: u64,
-    buf: *mut u8,
-    buflen: usize,
+    out: &mut [u8],
 ) -> Result<()> {
+    let mut passwdlen: usize = passwd.len();
+    let mut passwd = passwd.as_ptr();
+
     let mut sha256 = [0u32; 8];
     let mut dk = [0u8; 32];
 
@@ -162,7 +159,7 @@ unsafe fn yescrypt_kdf_body(
             return Err(Error(-1));
         }
     }
-    if !((buflen <= ((1 << 32) - 1) * 32)
+    if !((out.len() <= ((1 << 32) - 1) * 32)
         && ((r as u64) * (p as u64) < (1 << 30) as u64)
         && !(n & (n - 1) != 0 || n <= 1 || r < 1 || p < 1)
         && !(r as u64 > u64::MAX / 128 / (p as u64) || n > u64::MAX / 128 / (r as u64))
@@ -227,8 +224,8 @@ unsafe fn yescrypt_kdf_body(
     PBKDF2_SHA256(
         passwd,
         passwdlen,
-        salt,
-        saltlen,
+        salt.as_ptr(),
+        salt.len(),
         1,
         b.as_mut_ptr().cast(),
         b_size * 4,
@@ -288,9 +285,9 @@ unsafe fn yescrypt_kdf_body(
         }
     }
 
-    let mut dkp = buf;
+    let mut dkp = out.as_mut_ptr();
 
-    if !flags.is_empty() && buflen < 32 {
+    if !flags.is_empty() && out.len() < 32 {
         PBKDF2_SHA256(
             passwd,
             passwdlen,
@@ -309,8 +306,8 @@ unsafe fn yescrypt_kdf_body(
         b.as_ptr().cast(),
         b_size * 4,
         1,
-        buf,
-        buflen,
+        out.as_mut_ptr(),
+        out.len(),
     );
 
     if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
@@ -321,7 +318,7 @@ unsafe fn yescrypt_kdf_body(
             10,
             sha256.as_mut_ptr() as *mut u8,
         );
-        let mut clen: usize = buflen;
+        let mut clen: usize = out.len();
         if clen > 32 {
             clen = 32;
         }
@@ -330,7 +327,11 @@ unsafe fn yescrypt_kdf_body(
             size_of::<[u32; 8]>(),
             dk.as_mut_ptr(),
         );
-        memcpy(buf as *mut c_void, dk.as_mut_ptr() as *const c_void, clen);
+        memcpy(
+            out.as_mut_ptr() as *mut c_void,
+            dk.as_mut_ptr() as *const c_void,
+            clen,
+        );
     }
 
     Ok(())
