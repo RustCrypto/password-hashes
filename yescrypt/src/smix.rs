@@ -23,10 +23,12 @@ pub(crate) unsafe fn smix(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: *mut PwxformCtx,
+    ctx: &mut [PwxformCtx],
     passwd: *mut u8,
 ) {
-    let s: usize = 32 * r;
+    // TODO(tarcieri): switch from pointers to Rust references
+    let ctx = ctx.as_mut_ptr();
+    let s = 32 * r;
 
     // 1: n <-- N / p
     let mut nchunk = n / (p as u64);
@@ -84,7 +86,7 @@ pub(crate) unsafe fn smix(
         };
         let bp = b.add(i.wrapping_mul(s));
         let vp = v.add((vchunk as usize).wrapping_mul(s));
-        let mut ctx_i: *mut PwxformCtx = ptr::null_mut();
+        let mut ctx_i = ptr::null_mut();
 
         // 17: if YESCRYPT_RW flag is set
         if flags.contains(Flags::RW) {
@@ -158,8 +160,8 @@ pub(crate) unsafe fn smix(
 
 /// Compute first loop of `B = SMix_r(B, N)`.
 ///
-/// The input B must be 128r bytes in length; the temporary storage V must be 128rN bytes in length;
-/// the temporary storage XY must be 256r bytes in length.
+/// The input B must be 128r bytes in length; the temporary storage `V` must be 128rN bytes in
+/// length; the temporary storage `XY` must be 256r bytes in length.
 unsafe fn smix1(
     b: *mut u32,
     r: usize,
