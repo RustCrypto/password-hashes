@@ -71,16 +71,19 @@ struct Local {
 bitflags::bitflags! {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct Flags: u32 {
-        const WORM        = 0x001;
-        const RW          = 0x002;
-        const ROUNDS_3    = 0b000;
-        const ROUNDS_6    = 0x004;
-        const GATHER_4    = 0x010;
-        const SIMPLE_2    = 0x020;
-        const SBOX_12K    = 0x080;
-        const INIT_SHARED = 0x01000000;
-        const ALLOC_ONLY  = 0x08000000;
-        const PREHASH     = 0x10000000;
+        const WORM                = 0x001;
+        const RW                  = 0x002;
+        const ROUNDS_3            = 0b000;
+        const ROUNDS_6            = 0x004;
+        const GATHER_4            = 0x010;
+        const SIMPLE_2            = 0x020;
+        const SBOX_12K            = 0x080;
+        const SHARED_PREALLOCATED = 0x10000;
+        const MODE_MASK           = 0x3;
+        const RW_FLAVOR_MASK      = 0x3fc;
+        const INIT_SHARED         = 0x01000000;
+        const ALLOC_ONLY          = 0x08000000;
+        const PREHASH             = 0x10000000;
     }
 }
 
@@ -212,7 +215,7 @@ unsafe fn yescrypt_kdf_body(
     let mut sha256: [u32; 8] = [0; 8];
     let mut dk: [u8; 32] = [0; 32];
 
-    match flags.bits() & 0x3 {
+    match flags.bits() & Flags::MODE_MASK.bits() {
         0 => {
             if !flags.is_empty() || t != 0 || NROM != 0 {
                 return -1;
@@ -224,19 +227,21 @@ unsafe fn yescrypt_kdf_body(
             }
         }
         2 => {
-            if flags.bits()
-                != flags.bits()
-                    & (0x3
-                        | 0x3fc
-                        | 0x10000
-                        | 0x1000000
-                        | Flags::ALLOC_ONLY.bits()
-                        | Flags::PREHASH.bits())
+            if flags
+                != flags
+                    & (Flags::MODE_MASK
+                        | Flags::RW_FLAVOR_MASK
+                        | Flags::SHARED_PREALLOCATED
+                        | Flags::INIT_SHARED
+                        | Flags::ALLOC_ONLY
+                        | Flags::PREHASH)
             {
                 return -1;
             }
 
-            if flags.bits() & 0x3fc != (0x4 | 0x10 | 0x20 | 0x80) {
+            if (flags & Flags::RW_FLAVOR_MASK)
+                != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
+            {
                 return -1;
             }
         }
