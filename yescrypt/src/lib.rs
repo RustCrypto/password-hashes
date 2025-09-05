@@ -232,13 +232,7 @@ unsafe fn yescrypt_kdf_body(
             return Err(Error);
         }
 
-        let pwxform_ctx = match PwxformCtx::alloc(p, s) {
-            Ok(ctx) => ctx,
-            Err(e) => {
-                free(s as *mut c_void);
-                return Err(e);
-            }
-        };
+        let mut pwxform_ctx = PwxformCtx::new(p as usize, s);
 
         smix::smix(
             b.as_mut_ptr(),
@@ -249,11 +243,10 @@ unsafe fn yescrypt_kdf_body(
             flags,
             v.as_mut_ptr(),
             xy.as_mut_ptr(),
-            pwxform_ctx,
+            pwxform_ctx.as_mut_slice(),
             sha256.as_mut_ptr() as *mut u8,
         );
 
-        free(pwxform_ctx as *mut c_void);
         free(s as *mut c_void);
     } else {
         for i in 0..p {
@@ -266,7 +259,7 @@ unsafe fn yescrypt_kdf_body(
                 flags,
                 v.as_mut_ptr(),
                 xy.as_mut_ptr(),
-                ptr::null_mut(),
+                &mut [],
                 ptr::null_mut(),
             );
         }

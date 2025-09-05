@@ -1,11 +1,11 @@
 //! pwxform: parallel wide transformation
 
 use crate::{
-    Error, Result,
     common::{blkcpy, blkxor},
     salsa20,
 };
-use libc::malloc;
+use alloc::vec::Vec;
+use core::ptr;
 
 /// Parallel wide transformation (pwxform) context.
 #[derive(Copy, Clone)]
@@ -20,22 +20,24 @@ pub(crate) struct PwxformCtx {
 
 impl PwxformCtx {
     /// Allocate a parallel wide transformation context.
-    ///
-    /// Caller is responsible for freeing it.
-    // TODO(tarcieri): avoid `malloc` and `unsafe`, use RAII
-    pub(crate) unsafe fn alloc(p: u32, s: *mut u32) -> Result<*mut PwxformCtx> {
-        let pwxform_ctx = malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
+    pub(crate) unsafe fn new(p: usize, s: *mut u32) -> Vec<PwxformCtx> {
+        let mut pwxform_ctx = Vec::with_capacity(p);
 
-        if pwxform_ctx.is_null() {
-            return Err(Error);
-        }
+        for i in 0..p {
+            let mut ctx = PwxformCtx {
+                s: ptr::null_mut(),
+                s0: ptr::null_mut(),
+                s1: ptr::null_mut(),
+                s2: ptr::null_mut(),
+                w: 0,
+            };
 
-        for i in 0..p as usize {
             let offset = i * (((3 * (1 << 8) * 2 * 8) as usize) / size_of::<u32>());
-            (*pwxform_ctx.add(i)).s = s.add(offset);
+            ctx.s = s.add(offset);
+            pwxform_ctx.push(ctx)
         }
 
-        Ok(pwxform_ctx)
+        pwxform_ctx
     }
 
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
