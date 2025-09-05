@@ -2,7 +2,7 @@
 
 use crate::{
     Flags,
-    common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two},
+    common::{blkcpy, blkxor, integerify, prev_power_of_two},
     pwxform::PwxformCtx,
     salsa20,
     sha256::HMAC_SHA256_Buf,
@@ -189,7 +189,7 @@ unsafe fn smix1(
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *x.add(k * 16 + i) = le32dec(b.add((k * 16) + (i * 5 % 16)));
+            *x.add(k * 16 + i) = u32::from_le(*b.add((k * 16) + (i * 5 % 16)));
         }
     }
 
@@ -213,7 +213,7 @@ unsafe fn smix1(
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            le32enc(b.add((k * 16) + ((i * 5) % 16)), *x.add(k * 16 + i));
+            *b.add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
         }
     }
 }
@@ -240,7 +240,7 @@ unsafe fn smix2(
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.add(k * 16 + i) = le32dec(b.add((k * 16) + (i * 5 % 16usize)));
+            *x.add(k * 16 + i) = u32::from_le(*b.add((k * 16) + (i * 5 % 16usize)));
         }
     }
 
@@ -267,7 +267,7 @@ unsafe fn smix2(
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            le32enc(b.add((k * 16) + ((i * 5) % 16)), *x.add(k * 16 + i));
+            *b.add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
         }
     }
 }
