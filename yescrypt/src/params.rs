@@ -27,35 +27,48 @@ impl Default for Flags {
     }
 }
 
-/// `yescrypt` parameters.
+/// `yescrypt` algorithm parameters.
+///
+/// These are various algorithm settings which can control e.g. the amount of resource utilization.
 #[derive(Clone, Copy, Debug)]
-#[repr(C)]
 pub struct Params {
     /// Flags which provide fine-grained behavior control.
-    pub flags: Flags,
+    pub(crate) flags: Flags,
 
     /// `N`: CPU/memory cost (like `scrypt`).
-    pub n: u64,
+    pub(crate) n: u64,
 
     /// `r`: block size (like `scrypt`).
-    pub r: u32,
+    pub(crate) r: u32,
 
     /// `p`: parallelism (like `scrypt`).
-    pub p: u32,
+    pub(crate) p: u32,
 
     /// special to yescrypt.
-    pub t: u32,
+    pub(crate) t: u32,
 
     /// special to yescrypt.
-    pub g: u32,
+    pub(crate) g: u32,
 
     /// special to yescrypt.
-    pub nrom: u64,
+    pub(crate) nrom: u64,
 }
 
 impl Params {
     /// Initialize params.
-    pub fn new(flags: Flags, n: u64, r: u32, p: u32, t: u32, g: u32) -> Params {
+    pub const fn new(flags: Flags, n: u64, r: u32, p: u32) -> Params {
+        Self::new_with_all_params(flags, n, r, p, 0, 0)
+    }
+
+    /// Initialize params.
+    pub const fn new_with_all_params(
+        flags: Flags,
+        n: u64,
+        r: u32,
+        p: u32,
+        t: u32,
+        g: u32,
+    ) -> Params {
         Params {
             flags,
             n,
@@ -66,6 +79,25 @@ impl Params {
             nrom: 0,
         }
     }
+
+    /// `N`: CPU/memory cost (like `scrypt`).
+    ///
+    /// Memory and CPU usage scale linearly with `N`.
+    pub const fn n(&self) -> u64 {
+        self.n
+    }
+
+    /// `r` parameter: resource usage (like `scrypt`).
+    ///
+    /// Memory and CPU usage scales linearly with this parameter.
+    pub const fn r(&self) -> u32 {
+        self.r
+    }
+
+    /// `p` parameter: parallelization (like `scrypt`).
+    pub const fn p(&self) -> u32 {
+        self.p
+    }
 }
 
 impl Default for Params {
@@ -75,14 +107,6 @@ impl Default for Params {
     // > latency 10-30 ms and throughput 1000+ per second on a 16-core server)
     fn default() -> Self {
         // flags = YESCRYPT_DEFAULTS, N = 4096, r = 32, p = 1, t = 0, g = 0, NROM = 0
-        Params {
-            flags: Flags::default(),
-            n: 4096,
-            r: 32,
-            p: 1,
-            t: 0,
-            g: 0,
-            nrom: 0,
-        }
+        Params::new(Flags::default(), 4096, 32, 1)
     }
 }
