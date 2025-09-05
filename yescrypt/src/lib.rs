@@ -40,9 +40,9 @@ extern crate alloc;
 mod common;
 mod error;
 mod params;
+mod pwxform;
 mod salsa20;
 mod sha256;
-mod smix;
 
 pub use crate::{
     error::{Error, Result},
@@ -50,7 +50,7 @@ pub use crate::{
 };
 
 use crate::{
-    common::{blkcpy, blkxor},
+    pwxform::PwxformCtx,
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -61,16 +61,6 @@ use libc::{c_void, free, malloc, memcpy};
 #[repr(C)]
 struct Local {
     pub aligned: Box<[u32]>,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-struct PwxformCtx {
-    pub s: *mut u32,
-    pub s0: *mut [u32; 2],
-    pub s1: *mut [u32; 2],
-    pub s2: *mut [u32; 2],
-    pub w: usize,
 }
 
 /// yescrypt Key Derivation Function (KDF)
@@ -253,7 +243,7 @@ unsafe fn yescrypt_kdf_body(
             (*pwxform_ctx.add(i)).s = s.add(offset);
         }
 
-        smix::smix(
+        pwxform::smix(
             b.as_mut_ptr(),
             r as usize,
             n,
@@ -270,7 +260,7 @@ unsafe fn yescrypt_kdf_body(
         free(s as *mut c_void);
     } else {
         for i in 0..p {
-            smix::smix(
+            pwxform::smix(
                 b[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..].as_mut_ptr(),
                 r as usize,
                 n,
@@ -335,79 +325,4 @@ unsafe fn yescrypt_kdf_body(
     }
 
     Ok(())
-}
-
-unsafe fn pwxform(b: *mut u32, ctx: *mut PwxformCtx) {
-    let x0 = b as *mut [[u32; 2]; 2];
-    let s0 = (*ctx).s0;
-    let s1 = (*ctx).s1;
-    let s2 = (*ctx).s2;
-    let mut w = (*ctx).w;
-
-    for i in 0..6 {
-        for j in 0..4 {
-            let mut xl: u32 = (*x0.add(j))[0][0];
-            let mut xh: u32 = (*x0.add(j))[0][1];
-            let p0 = s0.add((xl as usize & (((1 << 8) - 1) * 2 * 8)) / 8);
-            let p1 = s1.add((xh as usize & (((1 << 8) - 1) * 2 * 8)) / 8);
-            for k in 0..2 {
-                let s0 = (((*p0.add(k))[1] as u64) << 32).wrapping_add((*p0.add(k))[0] as u64);
-                let s1 = (((*p1.add(k))[1] as u64) << 32).wrapping_add((*p1.add(k))[0] as u64);
-                xl = (*x0.add(j))[k][0];
-                xh = (*x0.add(j))[k][1];
-                let mut x = (xh as u64).wrapping_mul(xl as u64);
-                x = x.wrapping_add(s0);
-                x ^= s1;
-                (*x0.add(j))[k][0] = x as u32;
-                (*x0.add(j))[k][1] = (x >> 32) as u32;
-                if i != 0 && i != (6 - 1) {
-                    (*s2.add(w))[0] = x as u32;
-                    (*s2.add(w))[1] = (x >> 32) as u32;
-                    w += 1;
-                }
-            }
-        }
-    }
-    (*ctx).s0 = s2;
-    (*ctx).s1 = s0;
-    (*ctx).s2 = s1;
-    (*ctx).w = w & (((1usize) << 8usize) * 2usize - 1usize);
-}
-
-unsafe fn blockmix_pwxform(b: *mut u32, ctx: *mut PwxformCtx, r: usize) {
-    let mut x = [0u32; 16];
-    let r1 = 128usize.wrapping_mul(r).wrapping_div(4 * 2 * 8);
-    blkcpy(
-        x.as_mut_ptr(),
-        b.add(
-            r1.wrapping_sub(1usize)
-                .wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>())),
-        ),
-        (4usize * 2 * 8).wrapping_div(size_of::<u32>()),
-    );
-    for i in 0..r1 {
-        if r1 > 1 {
-            blkxor(
-                x.as_mut_ptr(),
-                b.add(i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>()))),
-                (4usize * 2 * 8).wrapping_div(size_of::<u32>()),
-            );
-        }
-        pwxform(x.as_mut_ptr(), ctx);
-        blkcpy(
-            b.add(i.wrapping_mul((4usize * 2 * 8).wrapping_div(size_of::<u32>()))),
-            x.as_mut_ptr(),
-            (4usize * 2 * 8).wrapping_div(size_of::<u32>()),
-        );
-    }
-    let i = r1.wrapping_sub(1).wrapping_mul(4 * 2 * 8).wrapping_div(64);
-    salsa20::salsa20_2(b.add(i.wrapping_mul(16)));
-    for i in (i + 1)..(2 * r) {
-        blkxor(
-            b.add(i.wrapping_mul(16usize)),
-            b.add(i.wrapping_sub(1usize).wrapping_mul(16usize)),
-            16_usize,
-        );
-        salsa20::salsa20_2(b.add(i.wrapping_mul(16)));
-    }
 }
