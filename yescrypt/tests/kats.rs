@@ -139,8 +139,7 @@ fn kat12() {
         "0cd5af76eb241df8119a9a122ae36920bcc7f414b9c0d58f45008060dade46b0"
         "c80922bdcc16a3ab5d201d4c6140c671be1f75272ca904739d5ad1ff672b0c21"
     );
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 0, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 0, 0);
     let mut actual = [0u8; 64];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -149,8 +148,7 @@ fn kat12() {
 #[test]
 fn kat13() {
     const EXPECTED: [u8; 4] = hex!("0cd5af76");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 0, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 0, 0);
     let mut actual = [0u8; 4];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -162,8 +160,7 @@ fn kat14() {
         "23b6adf0b60c9a997f58583d80cda48c638cdc2f289edf93a70807725a0d35c4"
         "68ca362c5557cc04b6811e2e730841f526d8f4f7acfbfa9e06fe1f383a71155e"
     );
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 1, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 1, 0);
     let mut actual = [0u8; 64];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -173,8 +170,7 @@ fn kat14() {
 fn kat15() {
     const EXPECTED: [u8; 33] =
         hex!("23b6adf0b60c9a997f58583d80cda48c638cdc2f289edf93a70807725a0d35c468");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 1, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 1, 0);
     let mut actual = [0u8; 33];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -184,8 +180,7 @@ fn kat15() {
 fn kat16() {
     const EXPECTED: [u8; 32] =
         hex!("23b6adf0b60c9a997f58583d80cda48c638cdc2f289edf93a70807725a0d35c4");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 1, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 1, 0);
     let mut actual = [0u8; 32];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -195,8 +190,7 @@ fn kat16() {
 fn kat17() {
     const EXPECTED: [u8; 31] =
         hex!("23b6adf0b60c9a997f58583d80cda48c638cdc2f289edf93a70807725a0d35");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 1, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 1, 0);
     let mut actual = [0u8; 31];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -205,8 +199,7 @@ fn kat17() {
 #[test]
 fn kat18() {
     const EXPECTED: [u8; 1] = hex!("23");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 4, 1, 1, 1, 0);
+    let params = Params::new(Flags::default(), 4, 1, 1, 1, 0);
     let mut actual = [0u8; 1];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -216,8 +209,7 @@ fn kat18() {
 fn kat19() {
     const EXPECTED: [u8; 40] =
         hex!("e1f981733a94052fcd7acb1405df0bbde8e499b6a1331b775909b48c2f516c40dcc8301635b7237b");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 16, 8, 1, 10, 0);
+    let params = Params::new(Flags::default(), 16, 8, 1, 10, 0);
     let mut actual = [0u8; 40];
     yescrypt_kdf(b"p", b"s", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -237,8 +229,7 @@ fn kat20() {
 fn kat21() {
     const EXPECTED: [u8; 40] =
         hex!("c8c7ff1122b0b291c3f2608948782cd689cc45579017aaa5ff8baa74a632ec99c3d66930fb2023bb");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 16, 8, 1, 0, 0);
+    let params = Params::new(Flags::default(), 16, 8, 1, 0, 0);
     let mut actual = [0u8; 40];
     yescrypt_kdf(b"p", b"s", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -258,8 +249,7 @@ fn kat22() {
 fn kat23() {
     const EXPECTED: [u8; 32] =
         hex!("c8c7ff1122b0b291c3f2608948782cd689cc45579017aaa5ff8baa74a632ec99");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 16, 8, 1, 0, 0);
+    let params = Params::new(Flags::default(), 16, 8, 1, 0, 0);
     let mut actual = [0u8; 32];
     yescrypt_kdf(b"p", b"s", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -268,8 +258,7 @@ fn kat23() {
 #[test]
 fn kat24() {
     const EXPECTED: [u8; 8] = hex!("c8c7ff1122b0b291");
-    let flags = Flags::ROUNDS_6 | Flags::RW | Flags::SBOX_12K | Flags::GATHER_4 | Flags::SIMPLE_2;
-    let params = Params::new(flags, 16, 8, 1, 0, 0);
+    let params = Params::new(Flags::default(), 16, 8, 1, 0, 0);
     let mut actual = [0u8; 8];
     yescrypt_kdf(b"p", b"s", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
