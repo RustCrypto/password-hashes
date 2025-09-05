@@ -2,12 +2,12 @@
 
 use crate::{
     Flags,
-    common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two, wrap},
+    common::{blkcpy, blkxor, integerify, le32dec, le32enc, prev_power_of_two},
     pwxform::PwxformCtx,
     salsa20,
     sha256::HMAC_SHA256_Buf,
 };
-use core::{ffi::c_void, ptr};
+use core::ffi::c_void;
 
 /// Compute `B = SMix_r(B, N)`.
 ///
@@ -26,8 +26,6 @@ pub(crate) unsafe fn smix(
     ctx: &mut [PwxformCtx],
     passwd: *mut u8,
 ) {
-    // TODO(tarcieri): switch from pointers to Rust references
-    let ctx = ctx.as_mut_ptr();
     let s = 32 * r;
 
     // 1: n <-- N / p
@@ -74,6 +72,7 @@ pub(crate) unsafe fn smix(
 
     // 11: for i = 0 to p - 1 do
     // 12: u <-- in
+    #[allow(clippy::needless_range_loop)]
     for i in 0..p as usize {
         // 13: if i = p - 1
         // 14:   n <-- N - u
@@ -82,78 +81,90 @@ pub(crate) unsafe fn smix(
         let np = if i < p as usize - 1 {
             nchunk
         } else {
-            n.wrapping_sub(vchunk)
+            n - vchunk
         };
-        let bp = b.add(i.wrapping_mul(s));
-        let vp = v.add((vchunk as usize).wrapping_mul(s));
-        let mut ctx_i = ptr::null_mut();
+        let bp = b.add(i * s);
+        let vp = v.add(vchunk as usize * s);
 
         // 17: if YESCRYPT_RW flag is set
-        if flags.contains(Flags::RW) {
-            ctx_i = ctx.add(i);
-
+        let mut ctx_i = if flags.contains(Flags::RW) {
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
             smix1(
                 bp,
                 1,
                 3 * (1 << 8) * 2 * 8 / 128,
                 Flags::empty(),
-                (*ctx_i).s,
+                ctx[i].s,
                 xy,
-                ptr::null_mut(),
+                &mut None,
             );
 
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
-            (*ctx_i).s2 = (*ctx_i).s as *mut [u32; 2];
+            ctx[i].s2 = ctx[i].s as *mut [u32; 2];
 
             // 20: S1_i <-- S_{i,2^Swidth...2*2^Swidth-1}
-            (*ctx_i).s1 = ((*ctx_i).s2).add((1 << 8) * 2);
+            ctx[i].s1 = (ctx[i].s2).add((1 << 8) * 2);
 
             // 21: S0_i <-- S_{i,2*2^Swidth...3*2^Swidth-1}
-            (*ctx_i).s0 = ((*ctx_i).s1).add((1 << 8) * 2);
+            ctx[i].s0 = (ctx[i].s1).add((1 << 8) * 2);
 
             // 22: w_i <-- 0
-            (*ctx_i).w = 0;
+            ctx[i].w = 0;
 
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
                 HMAC_SHA256_Buf(
-                    bp.add(s.wrapping_sub(16)) as *const c_void,
+                    bp.add(s - 16) as *const c_void,
                     64,
                     passwd as *const c_void,
                     32,
                     passwd,
                 );
             }
-        }
+
+            Some(&mut ctx[i])
+        } else {
+            None
+        };
 
         // 27: SMix1_r(B_i, n, V_{u..v}, flags)
-        smix1(bp, r, np, flags, vp, xy, ctx_i);
+        smix1(bp, r, np, flags, vp, xy, &mut ctx_i);
 
         // 28: SMix2_r(B_i, p2floor(n), Nloop_rw, V_{u..v}, flags)
-        smix2(bp, r, prev_power_of_two(np), nloop_rw, flags, vp, xy, ctx_i);
+        smix2(
+            bp,
+            r,
+            prev_power_of_two(np),
+            nloop_rw,
+            flags,
+            vp,
+            xy,
+            &mut ctx_i,
+        );
+
         vchunk += nchunk;
     }
 
     // 30: for i = 0 to p - 1 do
+    #[allow(clippy::needless_range_loop)]
     for i in 0..p as usize {
-        let bp_0 = b.add(i.wrapping_mul(s));
+        let mut ctx_i = if flags.contains(Flags::RW) {
+            Some(&mut ctx[i])
+        } else {
+            None
+        };
 
         // 31: SMix2_r(B_i, N, Nloop_all - Nloop_rw, V, flags excluding YESCRYPT_RW)
         smix2(
-            bp_0,
+            b.add(i * s),
             r,
             n,
-            nloop_all.wrapping_sub(nloop_rw),
+            nloop_all - nloop_rw,
             flags & !Flags::RW,
             v,
             xy,
-            if flags.contains(Flags::RW) {
-                ctx.add(i)
-            } else {
-                ptr::null_mut()
-            },
+            &mut ctx_i,
         );
     }
 }
@@ -169,51 +180,40 @@ unsafe fn smix1(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: *mut PwxformCtx,
+    ctx: &mut Option<&mut PwxformCtx>,
 ) {
-    let s = (32usize).wrapping_mul(r);
+    let s = 32 * r;
     let x = xy;
     let y = xy.add(s);
 
     // 1: X <-- B
-    for k in 0..(2usize).wrapping_mul(r) {
-        for i in 0..16usize {
-            *x.add(k.wrapping_mul(16usize).wrapping_add(i)) = le32dec(
-                b.add(
-                    k.wrapping_mul(16usize)
-                        .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize)),
-                ),
-            );
+    for k in 0..(2 * r) {
+        for i in 0..16 {
+            *x.add(k * 16 + i) = le32dec(b.add((k * 16) + (i * 5 % 16)));
         }
     }
 
     // 2: for i = 0 to N - 1 do
     for i in 0..n {
         // 3: V_i <-- X
-        blkcpy(v.add(usize::try_from(i).unwrap().wrapping_mul(s)), x, s);
+        blkcpy(v.add(usize::try_from(i).unwrap() * s), x, s);
         if flags.contains(Flags::RW) && i > 1 {
-            let j = wrap(integerify(x, r), i);
-            blkxor(x, v.add(usize::try_from(j).unwrap().wrapping_mul(s)), s);
+            let n = prev_power_of_two(i);
+            let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
+            blkxor(x, v.add(j * s), s);
         }
 
         // 4: X <-- H(X)
-        if !ctx.is_null() {
-            PwxformCtx::blockmix_pwxform(&mut *ctx, x, r);
-        } else {
-            salsa20::blockmix_salsa8(x, y, r);
+        match ctx {
+            Some(ctx) => PwxformCtx::blockmix_pwxform(ctx, x, r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 
     /* B' <-- X */
-    for k in 0..2usize.wrapping_mul(r) {
-        for i in 0..16usize {
-            le32enc(
-                b.add(
-                    k.wrapping_mul(16usize)
-                        .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize)),
-                ),
-                *x.add(k.wrapping_mul(16usize).wrapping_add(i)),
-            );
+    for k in 0..(2 * r) {
+        for i in 0..16 {
+            le32enc(b.add((k * 16) + ((i * 5) % 16)), *x.add(k * 16 + i));
         }
     }
 }
@@ -231,55 +231,43 @@ unsafe fn smix2(
     flags: Flags,
     v: *mut u32,
     xy: *mut u32,
-    ctx: *mut PwxformCtx,
+    ctx: &mut Option<&mut PwxformCtx>,
 ) {
-    let s = 32usize.wrapping_mul(r);
+    let s = 32 * r;
     let x = xy;
     let y = xy.add(s);
 
     /* X <-- B */
-    for k in 0..2usize.wrapping_mul(r) {
+    for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.add(k.wrapping_mul(16usize).wrapping_add(i)) = le32dec(
-                b.add(
-                    k.wrapping_mul(16usize)
-                        .wrapping_add(i.wrapping_mul(5usize).wrapping_rem(16usize)),
-                ),
-            );
+            *x.add(k * 16 + i) = le32dec(b.add((k * 16) + (i * 5 % 16usize)));
         }
     }
 
     // 6: for i = 0 to N - 1 do
     for _ in 0..nloop {
         // 7: j <-- Integerify(X) mod N
-        let j = integerify(x, r) & n.wrapping_sub(1);
+        let j = (integerify(x, r) & (n - 1)) as usize;
 
         // 8.1: X <-- X xor V_j
-        blkxor(x, v.add(usize::try_from(j).unwrap().wrapping_mul(s)), s);
+        blkxor(x, v.add(j * s), s);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
-            blkcpy(v.add(usize::try_from(j).unwrap().wrapping_mul(s)), x, s);
+            blkcpy(v.add(usize::try_from(j).unwrap() * s), x, s);
         }
 
         // 8.2: X <-- H(X)
-        if !ctx.is_null() {
-            PwxformCtx::blockmix_pwxform(&mut *ctx, x, r);
-        } else {
-            salsa20::blockmix_salsa8(x, y, r);
+        match ctx {
+            Some(ctx) => PwxformCtx::blockmix_pwxform(ctx, x, r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 
     // 10: B' <-- X
-    for k in 0..(2usize).wrapping_mul(r) {
-        for i in 0..16usize {
-            le32enc(
-                b.add(
-                    k.wrapping_mul(16)
-                        .wrapping_add(i.wrapping_mul(5).wrapping_rem(16)),
-                ),
-                *x.add(k.wrapping_mul(16).wrapping_add(i)),
-            );
+    for k in 0..(2 * r) {
+        for i in 0..16 {
+            le32enc(b.add((k * 16) + ((i * 5) % 16)), *x.add(k * 16 + i));
         }
     }
 }

@@ -9,7 +9,6 @@ use core::ptr;
 
 /// Parallel wide transformation (pwxform) context.
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub(crate) struct PwxformCtx {
     pub s: *mut u32,
     pub s0: *mut [u32; 2],

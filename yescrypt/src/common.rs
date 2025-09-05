@@ -55,8 +55,3 @@ pub(crate) fn prev_power_of_two(mut x: u64) -> u64 {
     }
     x
 }
-
-pub(crate) fn wrap(mut x: u64, mut i: u64) -> u64 {
-    let mut n: u64 = prev_power_of_two(i);
-    (x & n.wrapping_sub(1)).wrapping_add(i.wrapping_sub(n))
-}
