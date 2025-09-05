@@ -43,6 +43,7 @@ mod params;
 mod pwxform;
 mod salsa20;
 mod sha256;
+mod smix;
 
 pub use crate::{
     error::{Error, Result},
@@ -231,19 +232,9 @@ unsafe fn yescrypt_kdf_body(
             return Err(Error(-1));
         }
 
-        let pwxform_ctx = malloc(size_of::<PwxformCtx>() * (p as usize)) as *mut PwxformCtx;
+        let pwxform_ctx = PwxformCtx::alloc(p, s)?;
 
-        if pwxform_ctx.is_null() {
-            free(s as *mut c_void);
-            return Err(Error(-1));
-        }
-
-        for i in 0..p as usize {
-            let offset = i * (((3 * (1 << 8) * 2 * 8) as usize) / size_of::<u32>());
-            (*pwxform_ctx.add(i)).s = s.add(offset);
-        }
-
-        pwxform::smix(
+        smix::smix(
             b.as_mut_ptr(),
             r as usize,
             n,
@@ -260,7 +251,7 @@ unsafe fn yescrypt_kdf_body(
         free(s as *mut c_void);
     } else {
         for i in 0..p {
-            pwxform::smix(
+            smix::smix(
                 b[32usize.wrapping_mul(r as usize).wrapping_mul(i as usize)..].as_mut_ptr(),
                 r as usize,
                 n,
