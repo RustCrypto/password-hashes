@@ -56,7 +56,6 @@ use crate::{
 };
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::ptr;
-use libc::{c_void, memcpy};
 
 #[derive(Clone)]
 struct Local {
@@ -199,13 +198,13 @@ unsafe fn yescrypt_kdf_body(
 
     if !flags.is_empty() {
         HMAC_SHA256_Buf(
-            c"yescrypt-prehash".as_ptr() as *const c_void,
+            c"yescrypt-prehash".as_ptr() as *const u8,
             if flags.contains(Flags::PREHASH) {
                 16
             } else {
                 8
             },
-            passwd as *const c_void,
+            passwd,
             passwdlen,
             sha256.as_mut_ptr() as *mut u8,
         );
@@ -297,9 +296,9 @@ unsafe fn yescrypt_kdf_body(
     if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
         // Compute ClientKey
         HMAC_SHA256_Buf(
-            dkp as *const c_void,
+            dkp,
             32,
-            c"Client Key".as_ptr() as *const c_void,
+            c"Client Key".as_ptr() as *const u8,
             10,
             sha256.as_mut_ptr() as *mut u8,
         );
@@ -310,15 +309,11 @@ unsafe fn yescrypt_kdf_body(
             clen = 32;
         }
         SHA256_Buf(
-            sha256.as_mut_ptr() as *mut u8 as *const c_void,
+            sha256.as_ptr() as *const u8,
             size_of::<[u32; 8]>(),
             dk.as_mut_ptr(),
         );
-        memcpy(
-            out.as_mut_ptr() as *mut c_void,
-            dk.as_mut_ptr() as *const c_void,
-            clen,
-        );
+        ptr::copy_nonoverlapping(dk.as_mut_ptr(), out.as_mut_ptr(), clen);
     }
 
     Ok(())
