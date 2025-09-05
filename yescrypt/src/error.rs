@@ -4,11 +4,11 @@ use core::fmt;
 
 /// Error type.
 #[derive(Debug)]
-pub struct Error(pub(crate) i32);
+pub struct Error;
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "yescrypt error (code {})", self.0)
+        write!(f, "yescrypt error")
     }
 }
 

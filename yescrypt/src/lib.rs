@@ -71,7 +71,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
     };
 
     if params.g != 0 {
-        return Err(Error(-1));
+        return Err(Error);
     }
 
     if params.flags.contains(Flags::RW)
@@ -79,7 +79,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         && (params.n / params.p as u64) >= 0x100
         && params.n / (params.p as u64) / (params.r as u64) >= 0x20000
     {
-        return Err(Error(-1));
+        return Err(Error);
     }
 
     unsafe {
@@ -119,12 +119,12 @@ unsafe fn yescrypt_kdf_body(
     match flags.bits() & Flags::MODE_MASK.bits() {
         0 => {
             if !flags.is_empty() || t != 0 || nrom != 0 {
-                return Err(Error(-1));
+                return Err(Error);
             }
         }
         1 => {
             if flags != Flags::WORM || nrom != 0 {
-                return Err(Error(-1));
+                return Err(Error);
             }
         }
         2 => {
@@ -137,17 +137,17 @@ unsafe fn yescrypt_kdf_body(
                         | Flags::ALLOC_ONLY
                         | Flags::PREHASH)
             {
-                return Err(Error(-1));
+                return Err(Error);
             }
 
             if (flags & Flags::RW_FLAVOR_MASK)
                 != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
             {
-                return Err(Error(-1));
+                return Err(Error);
             }
         }
         _ => {
-            return Err(Error(-1));
+            return Err(Error);
         }
     }
     if !((out.len() <= ((1 << 32) - 1) * 32)
@@ -156,7 +156,7 @@ unsafe fn yescrypt_kdf_body(
         && !(r as u64 > u64::MAX / 128 / (p as u64) || n > u64::MAX / 128 / (r as u64))
         && (n <= u64::MAX / ((t as u64) + 1)))
     {
-        return Err(Error(-1));
+        return Err(Error);
     }
 
     if flags.contains(Flags::RW)
@@ -165,11 +165,11 @@ unsafe fn yescrypt_kdf_body(
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
             || p as u64 > u64::MAX / (size_of::<PwxformCtx>() as u64))
     {
-        return Err(Error(-1));
+        return Err(Error);
     }
 
     if nrom != 0 {
-        return Err(Error(-1));
+        return Err(Error);
     }
 
     let mut v_owned: Box<[u32]>;
@@ -178,13 +178,13 @@ unsafe fn yescrypt_kdf_body(
         if local.aligned.len() < v_size {
             // why can't we just reallocate here?
             if !local.aligned.is_empty() {
-                return Err(Error(-1));
+                return Err(Error);
             }
 
             local.aligned = vec![0; v_size].into_boxed_slice();
         }
         if flags.contains(Flags::ALLOC_ONLY) {
-            return Err(Error(-2));
+            return Err(Error);
         }
         &mut *local.aligned
     } else {
@@ -229,10 +229,16 @@ unsafe fn yescrypt_kdf_body(
     if flags.contains(Flags::RW) {
         let s = malloc((3 * (1 << 8) * 2 * 8) * (p as usize)) as *mut u32;
         if s.is_null() {
-            return Err(Error(-1));
+            return Err(Error);
         }
 
-        let pwxform_ctx = PwxformCtx::alloc(p, s)?;
+        let pwxform_ctx = match PwxformCtx::alloc(p, s) {
+            Ok(ctx) => ctx,
+            Err(e) => {
+                free(s as *mut c_void);
+                return Err(e);
+            }
+        };
 
         smix::smix(
             b.as_mut_ptr(),
