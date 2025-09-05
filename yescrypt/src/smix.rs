@@ -8,6 +8,8 @@ use crate::{
     sha256::HMAC_SHA256_Buf,
 };
 
+const SBYTES: u64 = crate::pwxform::SBYTES as u64;
+
 /// Compute `B = SMix_r(B, N)`.
 ///
 /// The input B must be 128rp bytes in length; the temporary storage V must be 128rN bytes in
@@ -82,21 +84,14 @@ pub(crate) unsafe fn smix(
         } else {
             n - vchunk
         };
-        let bp = b.as_mut_ptr().add(i * s);
+
+        let bs = &mut b[(i * s)..];
         let vp = v.add(vchunk as usize * s);
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if flags.contains(Flags::RW) {
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
-            smix1(
-                bp,
-                1,
-                3 * (1 << 8) * 2 * 8 / 128,
-                Flags::empty(),
-                ctx[i].s,
-                xy,
-                &mut None,
-            );
+            smix1(bs, 1, SBYTES / 128, Flags::empty(), ctx[i].s, xy, &mut None);
 
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
             ctx[i].s2 = ctx[i].s as *mut [u32; 2];
@@ -114,7 +109,7 @@ pub(crate) unsafe fn smix(
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
                 HMAC_SHA256_Buf(
-                    bp.add(s - 16) as *const u8,
+                    bs[(s - 16)..].as_ptr() as *const u8,
                     64,
                     passwd as *const u8,
                     32,
@@ -128,11 +123,11 @@ pub(crate) unsafe fn smix(
         };
 
         // 27: SMix1_r(B_i, n, V_{u..v}, flags)
-        smix1(bp, r, np, flags, vp, xy, &mut ctx_i);
+        smix1(bs, r, np, flags, vp, xy, &mut ctx_i);
 
         // 28: SMix2_r(B_i, p2floor(n), Nloop_rw, V_{u..v}, flags)
         smix2(
-            bp,
+            bs,
             r,
             prev_power_of_two(np),
             nloop_rw,
@@ -156,7 +151,7 @@ pub(crate) unsafe fn smix(
 
         // 31: SMix2_r(B_i, N, Nloop_all - Nloop_rw, V, flags excluding YESCRYPT_RW)
         smix2(
-            b.as_mut_ptr().add(i * s),
+            &mut b[(i * s)..],
             r,
             n,
             nloop_all - nloop_rw,
@@ -173,7 +168,7 @@ pub(crate) unsafe fn smix(
 /// The input B must be 128r bytes in length; the temporary storage `V` must be 128rN bytes in
 /// length; the temporary storage `XY` must be 256r bytes in length.
 unsafe fn smix1(
-    b: *mut u32,
+    b: &mut [u32],
     r: usize,
     n: u64,
     flags: Flags,
@@ -188,7 +183,7 @@ unsafe fn smix1(
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *x.add(k * 16 + i) = u32::from_le(*b.add((k * 16) + (i * 5 % 16)));
+            *x.add(k * 16 + i) = u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
         }
     }
 
@@ -204,7 +199,7 @@ unsafe fn smix1(
 
         // 4: X <-- H(X)
         match ctx {
-            Some(ctx) => PwxformCtx::blockmix_pwxform(ctx, x, r),
+            Some(ctx) => ctx.blockmix_pwxform(x, r),
             None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
@@ -212,7 +207,7 @@ unsafe fn smix1(
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
+            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
         }
     }
 }
@@ -223,7 +218,7 @@ unsafe fn smix1(
 /// the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
 unsafe fn smix2(
-    b: *mut u32,
+    b: &mut [u32],
     r: usize,
     n: u64,
     nloop: u64,
@@ -239,7 +234,7 @@ unsafe fn smix2(
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.add(k * 16 + i) = u32::from_le(*b.add((k * 16) + (i * 5 % 16usize)));
+            *x.add(k * 16 + i) = u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
         }
     }
 
@@ -258,7 +253,7 @@ unsafe fn smix2(
 
         // 8.2: X <-- H(X)
         match ctx {
-            Some(ctx) => PwxformCtx::blockmix_pwxform(ctx, x, r),
+            Some(ctx) => ctx.blockmix_pwxform(x, r),
             None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
@@ -266,7 +261,7 @@ unsafe fn smix2(
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
+            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
         }
     }
 }
