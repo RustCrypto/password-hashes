@@ -22,10 +22,10 @@ pub(crate) unsafe fn smix(
     p: u32,
     t: u32,
     flags: Flags,
-    v: *mut u32,
-    xy: *mut u32,
+    v: &mut [u32],
+    xy: &mut [u32],
     ctx: &mut [PwxformCtx<'_>],
-    passwd: *mut u8,
+    passwd: &mut [u8],
 ) {
     let s = 32 * r;
 
@@ -86,7 +86,7 @@ pub(crate) unsafe fn smix(
         };
 
         let bs = &mut b[(i * s)..];
-        let vp = v.add(vchunk as usize * s);
+        let vp = v.as_mut_ptr().add(vchunk as usize * s);
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if flags.contains(Flags::RW) {
@@ -111,9 +111,9 @@ pub(crate) unsafe fn smix(
                 HMAC_SHA256_Buf(
                     bs[(s - 16)..].as_ptr() as *const u8,
                     64,
-                    passwd as *const u8,
+                    passwd.as_ptr(),
                     32,
-                    passwd,
+                    passwd.as_mut_ptr(),
                 );
             }
 
@@ -156,7 +156,7 @@ pub(crate) unsafe fn smix(
             n,
             nloop_all - nloop_rw,
             flags & !Flags::RW,
-            v,
+            v.as_mut_ptr(),
             xy,
             &mut ctx_i,
         );
@@ -173,41 +173,42 @@ unsafe fn smix1(
     n: u64,
     flags: Flags,
     v: *mut u32,
-    xy: *mut u32,
+    xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
     let s = 32 * r;
-    let x = xy;
-    let y = xy.add(s);
+    let (x, y) = xy.split_at_mut(s);
 
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *x.add(k * 16 + i) = u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            *x.as_mut_ptr().add(k * 16 + i) =
+                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
         }
     }
 
     // 2: for i = 0 to N - 1 do
     for i in 0..n {
         // 3: V_i <-- X
-        blkcpy(v.add(usize::try_from(i).unwrap() * s), x, s);
+        blkcpy(v.add(usize::try_from(i).unwrap() * s), x.as_ptr(), s);
         if flags.contains(Flags::RW) && i > 1 {
             let n = prev_power_of_two(i);
-            let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
-            blkxor(x, v.add(j * s), s);
+            let j = usize::try_from((integerify(x.as_ptr(), r) & (n - 1)) + (i - n)).unwrap();
+            blkxor(x.as_mut_ptr(), v.add(j * s), s);
         }
 
         // 4: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x, y, r),
+            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
         }
     }
 
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
+            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) =
+                (*x.as_mut_ptr().add(k * 16 + i)).to_le();
         }
     }
 }
@@ -224,44 +225,44 @@ unsafe fn smix2(
     nloop: u64,
     flags: Flags,
     v: *mut u32,
-    xy: *mut u32,
+    xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
     let s = 32 * r;
-    let x = xy;
-    let y = xy.add(s);
+    let (x, y) = xy.split_at_mut(s);
 
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.add(k * 16 + i) = u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            *x.as_mut_ptr().add(k * 16 + i) =
+                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
         }
     }
 
     // 6: for i = 0 to N - 1 do
     for _ in 0..nloop {
         // 7: j <-- Integerify(X) mod N
-        let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
+        let j = usize::try_from(integerify(x.as_ptr(), r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
-        blkxor(x, v.add(j * s), s);
+        blkxor(x.as_mut_ptr(), v.add(j * s), s);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
-            blkcpy(v.add(j * s), x, s);
+            blkcpy(v.add(j * s), x.as_mut_ptr(), s);
         }
 
         // 8.2: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x, y, r),
+            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
         }
     }
 
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.add(k * 16 + i)).to_le();
+            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.as_ptr().add(k * 16 + i)).to_le();
         }
     }
 }
