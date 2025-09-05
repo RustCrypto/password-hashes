@@ -31,7 +31,6 @@
 
 extern crate alloc;
 
-mod common;
 mod error;
 mod params;
 mod pwxform;
@@ -49,7 +48,7 @@ use crate::{
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::{ptr, slice};
+use core::{ops::BitXorAssign, slice};
 
 #[derive(Clone)]
 struct Local {
@@ -307,8 +306,17 @@ unsafe fn yescrypt_kdf_body(
             size_of::<[u32; 8]>(),
             dk.as_mut_ptr(),
         );
-        ptr::copy_nonoverlapping(dk.as_mut_ptr(), out.as_mut_ptr(), clen);
+        out.as_mut_ptr().copy_from(dk.as_mut_ptr(), clen);
     }
 
     Ok(())
+}
+
+unsafe fn xor<T>(dst: *mut T, src: *const T, count: usize)
+where
+    T: BitXorAssign + Copy,
+{
+    for i in 0..count {
+        *dst.add(i) ^= *src.add(i);
+    }
 }

@@ -1,6 +1,6 @@
 //! Wrapper functions for invoking the `salsa20` crate.
 
-use crate::common::{blkcpy, blkxor};
+use crate::xor;
 use salsa20::cipher::{
     StreamCipherCore,
     consts::{U1, U4},
@@ -33,19 +33,19 @@ unsafe fn salsa20<R: Unsigned>(b: *mut u32) {
 
 pub(crate) unsafe fn blockmix_salsa8(b: *mut u32, y: *mut u32, r: usize) {
     let mut x = [0u32; 16];
-    blkcpy(x.as_mut_ptr(), b.add((2 * r - 1) * 16), 16);
+    x.as_mut_ptr().copy_from(b.add((2 * r - 1) * 16), 16);
 
     for i in 0..(2 * r) {
-        blkxor(x.as_mut_ptr(), b.add(i * 16), 16);
+        xor(x.as_mut_ptr(), b.add(i * 16), 16);
         salsa20::<U4>(x.as_mut_ptr());
-        blkcpy(y.add(i * 16), x.as_mut_ptr(), 16);
+        y.add(i * 16).copy_from(x.as_mut_ptr(), 16);
     }
 
     for i in 0..r {
-        blkcpy(b.add(i * 16), y.add((i * 2) * 16), 16);
+        b.add(i * 16).copy_from(y.add((i * 2) * 16), 16);
     }
 
     for i in 0..r {
-        blkcpy(b.add((i + r) * 16), y.add((i * 2 + 1) * 16), 16);
+        b.add((i + r) * 16).copy_from(y.add((i * 2 + 1) * 16), 16);
     }
 }

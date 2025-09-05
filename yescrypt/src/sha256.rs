@@ -42,7 +42,7 @@ pub unsafe fn HMAC_SHA256_Buf(
     hmac.update(&*ptr::slice_from_raw_parts(in_0, len));
 
     let mac = hmac.finalize().into_bytes();
-    ptr::copy_nonoverlapping(mac.as_ptr() as *const _, digest as *mut _, 32);
+    digest.copy_from(mac.as_ptr() as *const _, 32);
 }
 
 pub unsafe fn PBKDF2_SHA256(

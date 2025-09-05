@@ -1,12 +1,6 @@
 //! Core sequential memory-hard mixing function, inherited from the scrypt key derivation function.
 
-use crate::{
-    Flags,
-    common::{blkcpy, blkxor, integerify, prev_power_of_two},
-    pwxform::PwxformCtx,
-    salsa20,
-    sha256::HMAC_SHA256_Buf,
-};
+use crate::{Flags, pwxform::PwxformCtx, salsa20, sha256::HMAC_SHA256_Buf, xor};
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 
@@ -190,11 +184,12 @@ unsafe fn smix1(
     // 2: for i = 0 to N - 1 do
     for i in 0..n {
         // 3: V_i <-- X
-        blkcpy(v.add(usize::try_from(i).unwrap() * s), x.as_ptr(), s);
+        v.add(usize::try_from(i).unwrap() * s)
+            .copy_from(x.as_ptr(), s);
         if flags.contains(Flags::RW) && i > 1 {
             let n = prev_power_of_two(i);
-            let j = usize::try_from((integerify(x.as_ptr(), r) & (n - 1)) + (i - n)).unwrap();
-            blkxor(x.as_mut_ptr(), v.add(j * s), s);
+            let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
+            xor(x.as_mut_ptr(), v.add(j * s), s);
         }
 
         // 4: X <-- H(X)
@@ -242,14 +237,14 @@ unsafe fn smix2(
     // 6: for i = 0 to N - 1 do
     for _ in 0..nloop {
         // 7: j <-- Integerify(X) mod N
-        let j = usize::try_from(integerify(x.as_ptr(), r) & (n - 1)).unwrap();
+        let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
-        blkxor(x.as_mut_ptr(), v.add(j * s), s);
+        xor(x.as_mut_ptr(), v.add(j * s), s);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
-            blkcpy(v.add(j * s), x.as_mut_ptr(), s);
+            v.add(j * s).copy_from(x.as_mut_ptr(), s);
         }
 
         // 8.2: X <-- H(X)
@@ -265,4 +260,24 @@ unsafe fn smix2(
             *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.as_ptr().add(k * 16 + i)).to_le();
         }
     }
+}
+
+/// Return the result of parsing B_{2r-1} as a little-endian integer.
+unsafe fn integerify(b: &[u32], r: usize) -> u64 {
+    let x: *const u32 = b.as_ptr().add(((2 * r) - 1) * 16);
+    ((*x.add(13) as u64) << 32).wrapping_add(*x as u64)
+}
+
+/// Largest power of 2 not greater than argument.
+fn prev_power_of_two(mut x: u64) -> u64 {
+    let mut y;
+
+    loop {
+        y = x & (x - 1);
+        if y == 0 {
+            break;
+        }
+        x = y;
+    }
+    x
 }
