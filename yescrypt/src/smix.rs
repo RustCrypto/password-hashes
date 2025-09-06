@@ -1,7 +1,5 @@
 //! Core sequential memory-hard mixing function, inherited from the scrypt key derivation function.
 
-use core::marker::PhantomData;
-
 use alloc::vec::Vec;
 
 use crate::{
@@ -81,6 +79,7 @@ pub(crate) unsafe fn smix(
         Vec::new()
     };
     let mut ctxs = Vec::with_capacity(sn.len());
+    let mut sn = sn.iter_mut();
 
     // 11: for i = 0 to p - 1 do
     // 12: u <-- in
@@ -101,19 +100,30 @@ pub(crate) unsafe fn smix(
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if flags.contains(Flags::RW) {
-            let si = sn.as_mut_ptr().add(i).cast();
+            let si = sn.next().unwrap();
 
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
-            smix1(bs, 1, SBYTES / 128, Flags::empty(), si, xy, &mut None);
+            smix1(
+                bs,
+                1,
+                SBYTES / 128,
+                Flags::empty(),
+                si[..].as_mut_ptr(),
+                xy,
+                &mut None,
+            );
+
+            let (s2, s10) = si.split_at_mut((1 << 8) * 4);
+            let (s1, s0) = s10.split_at_mut((1 << 8) * 4);
 
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
-            let s2 = si as *mut [u32; 2];
+            let (s2, _) = s2.as_chunks_mut::<2>();
 
             // 20: S1_i <-- S_{i,2^Swidth...2*2^Swidth-1}
-            let s1 = s2.add((1 << 8) * 2);
+            let (s1, _) = s1.as_chunks_mut::<2>();
 
             // 21: S0_i <-- S_{i,2*2^Swidth...3*2^Swidth-1}
-            let s0 = s1.add((1 << 8) * 2);
+            let (s0, _) = s0.as_chunks_mut::<2>();
 
             // 22: w_i <-- 0
             let w = 0;
@@ -130,13 +140,7 @@ pub(crate) unsafe fn smix(
                 );
             }
 
-            ctxs.push(PwxformCtx {
-                s0,
-                s1,
-                s2,
-                w,
-                phantom: PhantomData,
-            });
+            ctxs.push(PwxformCtx { s0, s1, s2, w });
             ctxs.last_mut()
         } else {
             None
