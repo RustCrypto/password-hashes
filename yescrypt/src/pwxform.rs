@@ -37,9 +37,13 @@ impl<'a> PwxformCtx<'a> {
         assert_eq!(s.len(), SWORDS * p, "state buffer is incorrectly sized");
         let mut pwxform_ctx = Vec::with_capacity(p);
 
-        for i in 0..p {
-            let mut ctx = PwxformCtx {
-                s: ptr::null_mut(),
+        let (swords, _rest) = s.as_chunks_mut::<SWORDS>();
+        assert!(_rest.is_empty());
+        assert_eq!(swords.len(), p);
+
+        for sword in swords {
+            let ctx = PwxformCtx {
+                s: sword.as_mut_ptr(),
                 s0: ptr::null_mut(),
                 s1: ptr::null_mut(),
                 s2: ptr::null_mut(),
@@ -47,8 +51,6 @@ impl<'a> PwxformCtx<'a> {
                 phantom: PhantomData,
             };
 
-            let offset = i * SWORDS;
-            ctx.s = s[offset..(offset + SWORDS)].as_mut_ptr();
             pwxform_ctx.push(ctx)
         }
 
