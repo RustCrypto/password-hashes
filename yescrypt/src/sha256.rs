@@ -45,18 +45,6 @@ pub unsafe fn HMAC_SHA256_Buf(
     digest.copy_from(mac.as_ptr() as *const _, 32);
 }
 
-pub unsafe fn PBKDF2_SHA256(
-    mut passwd: *const u8,
-    mut passwdlen: usize,
-    mut salt: *const u8,
-    mut saltlen: usize,
-    mut c: u64,
-    mut buf: *mut u8,
-    mut dkLen: usize,
-) {
-    let passwd = ptr::slice_from_raw_parts(passwd, passwdlen);
-    let salt = ptr::slice_from_raw_parts(salt, saltlen);
-    let res = ptr::slice_from_raw_parts_mut(buf, dkLen);
-
-    pbkdf2::pbkdf2_hmac::<sha2::Sha256>(&*passwd, &*salt, c as u32, &mut *res);
+pub fn PBKDF2_SHA256(mut passwd: &[u8], mut salt: &[u8], mut c: u64, mut res: &mut [u8]) {
+    pbkdf2::pbkdf2_hmac::<sha2::Sha256>(passwd, salt, c as u32, res);
 }

@@ -101,8 +101,7 @@ unsafe fn yescrypt_kdf_body(
     nrom: u64,
     out: &mut [u8],
 ) -> Result<()> {
-    let mut passwdlen: usize = passwd.len();
-    let mut passwd = passwd.as_ptr();
+    let mut passwd = passwd;
 
     let mut sha256 = [0u32; 8];
     let mut dk = [0u8; 32];
@@ -197,29 +196,19 @@ unsafe fn yescrypt_kdf_body(
             } else {
                 8
             },
-            passwd,
-            passwdlen,
+            passwd.as_ptr(),
+            passwd.len(),
             sha256.as_mut_ptr() as *mut u8,
         );
-        passwd = sha256.as_mut_ptr() as *mut u8;
-        passwdlen = size_of::<[u32; 8]>();
+        passwd = cast_slice(&sha256);
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    PBKDF2_SHA256(
-        passwd,
-        passwdlen,
-        salt.as_ptr(),
-        salt.len(),
-        1,
-        b.as_mut_ptr().cast(),
-        b_size * 4,
-    );
+    PBKDF2_SHA256(passwd, salt, 1, cast_slice_mut(&mut b));
 
     if !flags.is_empty() {
         sha256.copy_from_slice(&b[..8]);
-        passwd = sha256.as_mut_ptr() as *mut u8;
-        passwdlen = size_of::<[u32; 8]>();
+        passwd = cast_slice(&sha256);
     }
 
     if flags.contains(Flags::RW) {
@@ -234,8 +223,7 @@ unsafe fn yescrypt_kdf_body(
             &mut xy,
             slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
         );
-        passwd = sha256.as_mut_ptr() as *mut u8;
-        passwdlen = size_of::<[u32; 8]>();
+        passwd = cast_slice(&sha256);
     } else {
         // 2: for i = 0 to p - 1 do
         for i in 0..p {
@@ -255,27 +243,11 @@ unsafe fn yescrypt_kdf_body(
     }
 
     if !flags.is_empty() && out.len() < 32 {
-        PBKDF2_SHA256(
-            passwd,
-            passwdlen,
-            b.as_ptr().cast(),
-            b_size * 4,
-            1,
-            dk.as_mut_ptr(),
-            32,
-        );
+        PBKDF2_SHA256(passwd, cast_slice(&b), 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    PBKDF2_SHA256(
-        passwd,
-        passwdlen,
-        b.as_ptr().cast(),
-        b_size * 4,
-        1,
-        out.as_mut_ptr(),
-        out.len(),
-    );
+    PBKDF2_SHA256(passwd, cast_slice(&b), 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -331,4 +303,20 @@ where
     for (dst, src) in core::iter::zip(dst, src) {
         *dst ^= *src
     }
+}
+
+fn cast_slice(input: &[u32]) -> &[u8] {
+    let new_len = input
+        .len()
+        .checked_mul(size_of::<u32>() / size_of::<u8>())
+        .unwrap();
+    unsafe { slice::from_raw_parts(input.as_ptr().cast(), new_len) }
+}
+
+fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
+    let new_len = input
+        .len()
+        .checked_mul(size_of::<u32>() / size_of::<u8>())
+        .unwrap();
+    unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
 }
