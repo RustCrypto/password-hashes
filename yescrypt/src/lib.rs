@@ -267,11 +267,7 @@ unsafe fn yescrypt_kdf_body(
         if clen > 32 {
             clen = 32;
         }
-        SHA256_Buf(
-            sha256.as_ptr() as *const u8,
-            size_of::<[u32; 8]>(),
-            dk.as_mut_ptr(),
-        );
+        SHA256_Buf(cast_slice(&sha256), &mut dk);
         out.as_mut_ptr().copy_from(dk.as_mut_ptr(), clen);
     }
 

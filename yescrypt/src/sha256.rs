@@ -8,19 +8,11 @@
     unused_mut
 )]
 
-use core::ptr;
-
-pub unsafe fn SHA256_Buf(mut in_0: *const u8, mut len: usize, mut digest: *mut u8) {
+pub fn SHA256_Buf(mut in_0: &[u8], mut digest: &mut [u8; 32]) {
     use sha2::Digest;
-    use sha2::digest::array::Array;
     let mut ctx = sha2::Sha256::new();
-    ctx.update(&*ptr::slice_from_raw_parts(in_0, len));
-
-    // TODO
-    #[allow(deprecated)]
-    ctx.finalize_into(Array::from_mut_slice(&mut *ptr::slice_from_raw_parts_mut(
-        digest, 32,
-    )));
+    ctx.update(in_0);
+    ctx.finalize_into(digest.into());
 }
 
 pub fn HMAC_SHA256_Buf(mut key: &[u8], mut in_0: &[u8], mut digest: &mut [u8; 32]) {
