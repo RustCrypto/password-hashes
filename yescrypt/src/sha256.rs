@@ -8,16 +8,14 @@
     unused_mut
 )]
 
+use hmac::{KeyInit, Mac};
+use sha2::Digest;
+
 pub fn SHA256_Buf(mut in_0: &[u8], mut digest: &mut [u8; 32]) {
-    use sha2::Digest;
-    let mut ctx = sha2::Sha256::new();
-    ctx.update(in_0);
-    ctx.finalize_into(digest.into());
+    *digest = sha2::Sha256::digest(in_0).into();
 }
 
 pub fn HMAC_SHA256_Buf(mut key: &[u8], mut in_0: &[u8], mut digest: &mut [u8; 32]) {
-    use hmac::{KeyInit, Mac};
-
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(key)
         .expect("key length should always be valid with hmac");
 

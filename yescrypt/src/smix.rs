@@ -202,8 +202,7 @@ unsafe fn smix1(
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *x.as_mut_ptr().add(k * 16 + i) =
-                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -227,8 +226,7 @@ unsafe fn smix1(
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) =
-                (*x.as_mut_ptr().add(k * 16 + i)).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
 }
@@ -254,8 +252,7 @@ unsafe fn smix2(
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.as_mut_ptr().add(k * 16 + i) =
-                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -282,15 +279,15 @@ unsafe fn smix2(
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.as_ptr().add(k * 16 + i)).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
 }
 
 /// Return the result of parsing B_{2r-1} as a little-endian integer.
-unsafe fn integerify(b: &[u32], r: usize) -> u64 {
-    let x: *const u32 = b.as_ptr().add(((2 * r) - 1) * 16);
-    ((*x.add(13) as u64) << 32).wrapping_add(*x as u64)
+fn integerify(b: &[u32], r: usize) -> u64 {
+    let x = &b[((2 * r) - 1) * 16..];
+    ((x[13] as u64) << 32).wrapping_add(x[0] as u64)
 }
 
 /// Largest power of 2 not greater than argument.
