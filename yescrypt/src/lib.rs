@@ -190,15 +190,13 @@ unsafe fn yescrypt_kdf_body(
 
     if !flags.is_empty() {
         HMAC_SHA256_Buf(
-            c"yescrypt-prehash".as_ptr() as *const u8,
             if flags.contains(Flags::PREHASH) {
-                16
+                &b"yescrypt-prehash"[..]
             } else {
-                8
+                &b"yescrypt"[..]
             },
-            passwd.as_ptr(),
-            passwd.len(),
-            sha256.as_mut_ptr() as *mut u8,
+            passwd,
+            cast_array_mut(&mut sha256),
         );
         passwd = cast_slice(&sha256);
     }
@@ -262,13 +260,7 @@ unsafe fn yescrypt_kdf_body(
         };
 
         // Compute ClientKey
-        HMAC_SHA256_Buf(
-            dkp.as_mut_ptr(),
-            32,
-            c"Client Key".as_ptr() as *const u8,
-            10,
-            sha256.as_mut_ptr() as *mut u8,
-        );
+        HMAC_SHA256_Buf(&dkp[..32], b"Client Key", cast_array_mut(&mut sha256));
 
         // Compute StoredKey
         let mut clen: usize = out.len();
@@ -319,4 +311,8 @@ fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
         .checked_mul(size_of::<u32>() / size_of::<u8>())
         .unwrap();
     unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
+}
+
+fn cast_array_mut(input: &mut [u32; 8]) -> &mut [u8; 32] {
+    unsafe { core::mem::transmute(input) }
 }

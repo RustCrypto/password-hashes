@@ -23,26 +23,15 @@ pub unsafe fn SHA256_Buf(mut in_0: *const u8, mut len: usize, mut digest: *mut u
     )));
 }
 
-pub unsafe fn HMAC_SHA256_Buf(
-    mut K: *const u8,
-    mut Klen: usize,
-    mut in_0: *const u8,
-    mut len: usize,
-    mut digest: *mut u8,
-) {
+pub fn HMAC_SHA256_Buf(mut key: &[u8], mut in_0: &[u8], mut digest: &mut [u8; 32]) {
     use hmac::{KeyInit, Mac};
-
-    let key = &*ptr::slice_from_raw_parts(K, Klen);
 
     let mut hmac = hmac::Hmac::<sha2::Sha256>::new_from_slice(key)
         .expect("key length should always be valid with hmac");
 
-    let mut in_0 = in_0;
-    let mut len = len;
-    hmac.update(&*ptr::slice_from_raw_parts(in_0, len));
+    hmac.update(in_0);
 
-    let mac = hmac.finalize().into_bytes();
-    digest.copy_from(mac.as_ptr() as *const _, 32);
+    *digest = hmac.finalize().into_bytes().into();
 }
 
 pub fn PBKDF2_SHA256(mut passwd: &[u8], mut salt: &[u8], mut c: u64, mut res: &mut [u8]) {

@@ -3,7 +3,7 @@
 use alloc::vec::Vec;
 
 use crate::{
-    Flags,
+    Flags, cast_slice,
     pwxform::{PwxformCtx, SWORDS},
     salsa20,
     sha256::HMAC_SHA256_Buf,
@@ -131,13 +131,9 @@ pub(crate) unsafe fn smix(
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
-                HMAC_SHA256_Buf(
-                    bs[(s - 16)..].as_ptr() as *const u8,
-                    64,
-                    passwd.as_ptr(),
-                    32,
-                    passwd.as_mut_ptr(),
-                );
+                let mut digest = [0u8; 32];
+                HMAC_SHA256_Buf(cast_slice(&bs[(s - 16)..s]), &passwd[..32], &mut digest);
+                passwd[..32].copy_from_slice(&digest);
             }
 
             ctxs.push(PwxformCtx { s0, s1, s2, w });
