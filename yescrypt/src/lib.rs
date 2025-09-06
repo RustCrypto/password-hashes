@@ -315,3 +315,13 @@ where
         *dst.add(i) ^= *src.add(i);
     }
 }
+
+fn xor_safe<T>(dst: &mut [T], src: &[T])
+where
+    T: BitXorAssign + Copy,
+{
+    assert_eq!(dst.len(), src.len());
+    for (dst, src) in core::iter::zip(dst, src) {
+        *dst ^= *src
+    }
+}

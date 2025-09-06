@@ -7,7 +7,7 @@ use crate::{
     pwxform::{PwxformCtx, SWORDS},
     salsa20,
     sha256::HMAC_SHA256_Buf,
-    xor,
+    xor_safe,
 };
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
@@ -96,7 +96,7 @@ pub(crate) unsafe fn smix(
         };
 
         let bs = &mut b[(i * s)..];
-        let vp = v.as_mut_ptr().add(vchunk as usize * s);
+        let vp = &mut v[vchunk as usize * s..];
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if flags.contains(Flags::RW) {
@@ -108,7 +108,7 @@ pub(crate) unsafe fn smix(
                 1,
                 SBYTES / 128,
                 Flags::empty(),
-                si[..].as_mut_ptr(),
+                &mut si[..],
                 xy,
                 &mut None,
             );
@@ -180,7 +180,7 @@ pub(crate) unsafe fn smix(
             n,
             nloop_all - nloop_rw,
             flags & !Flags::RW,
-            v.as_mut_ptr(),
+            v,
             xy,
             &mut ctx_i,
         );
@@ -196,7 +196,7 @@ unsafe fn smix1(
     r: usize,
     n: u64,
     flags: Flags,
-    v: *mut u32,
+    v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
@@ -214,12 +214,11 @@ unsafe fn smix1(
     // 2: for i = 0 to N - 1 do
     for i in 0..n {
         // 3: V_i <-- X
-        v.add(usize::try_from(i).unwrap() * s)
-            .copy_from(x.as_ptr(), s);
+        v[i as usize * s..][..s].copy_from_slice(x);
         if flags.contains(Flags::RW) && i > 1 {
             let n = prev_power_of_two(i);
             let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
-            xor(x.as_mut_ptr(), v.add(j * s), s);
+            xor_safe(x, &v[j * s..][..s]);
         }
 
         // 4: X <-- H(X)
@@ -249,7 +248,7 @@ unsafe fn smix2(
     n: u64,
     nloop: u64,
     flags: Flags,
-    v: *mut u32,
+    v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
 ) {
@@ -270,11 +269,11 @@ unsafe fn smix2(
         let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
-        xor(x.as_mut_ptr(), v.add(j * s), s);
+        xor_safe(x, &v[j * s..][..s]);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
-            v.add(j * s).copy_from(x.as_mut_ptr(), s);
+            v[j as usize * s..][..s].copy_from_slice(x);
         }
 
         // 8.2: X <-- H(X)
