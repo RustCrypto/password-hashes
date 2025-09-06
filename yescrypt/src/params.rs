@@ -1,5 +1,7 @@
 //! Algorithm parameters.
 
+mod encoding;
+
 bitflags::bitflags! {
     /// Flags for controlling the operation of `yescrypt`.
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
