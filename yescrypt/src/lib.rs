@@ -218,6 +218,8 @@ unsafe fn yescrypt_kdf_body(
 
     if !flags.is_empty() {
         sha256.copy_from_slice(&b[..8]);
+        passwd = sha256.as_mut_ptr() as *mut u8;
+        passwdlen = size_of::<[u32; 8]>();
     }
 
     if flags.contains(Flags::RW) {
@@ -232,6 +234,8 @@ unsafe fn yescrypt_kdf_body(
             &mut xy,
             slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
         );
+        passwd = sha256.as_mut_ptr() as *mut u8;
+        passwdlen = size_of::<[u32; 8]>();
     } else {
         // 2: for i = 0 to p - 1 do
         for i in 0..p {
@@ -250,8 +254,6 @@ unsafe fn yescrypt_kdf_body(
         }
     }
 
-    let mut dkp = out.as_mut_ptr();
-
     if !flags.is_empty() && out.len() < 32 {
         PBKDF2_SHA256(
             passwd,
@@ -262,7 +264,6 @@ unsafe fn yescrypt_kdf_body(
             dk.as_mut_ptr(),
             32,
         );
-        dkp = dk.as_mut_ptr();
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
@@ -282,9 +283,15 @@ unsafe fn yescrypt_kdf_body(
     // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
     // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
     if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
+        let dkp = if !flags.is_empty() && out.len() < 32 {
+            &mut dk
+        } else {
+            &mut *out
+        };
+
         // Compute ClientKey
         HMAC_SHA256_Buf(
-            dkp,
+            dkp.as_mut_ptr(),
             32,
             c"Client Key".as_ptr() as *const u8,
             10,
