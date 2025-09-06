@@ -1,8 +1,7 @@
 //! pwxform: parallel wide transformation
 
 use crate::{salsa20, xor};
-use alloc::vec::Vec;
-use core::{marker::PhantomData, ptr};
+use core::marker::PhantomData;
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -22,41 +21,14 @@ pub(crate) const RMIN: usize = PWXBYTES.div_ceil(128);
 // TODO(tarcieri): have `PwxformCtx` own its state instead of using pointers
 #[derive(Copy, Clone)]
 pub(crate) struct PwxformCtx<'a> {
-    pub(crate) s: *mut u32,
     pub(crate) s0: *mut [u32; 2],
     pub(crate) s1: *mut [u32; 2],
     pub(crate) s2: *mut [u32; 2],
     pub(crate) w: usize,
-    phantom: PhantomData<&'a ()>,
+    pub(crate) phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> PwxformCtx<'a> {
-    /// Initialize a vector of parallel wide transformation contexts, one for each degree of
-    /// parallelism (i.e. the `p` parameter).
-    pub(crate) fn new(p: usize, s: &'a mut [u32]) -> Vec<PwxformCtx<'a>> {
-        assert_eq!(s.len(), SWORDS * p, "state buffer is incorrectly sized");
-        let mut pwxform_ctx = Vec::with_capacity(p);
-
-        let (swords, _rest) = s.as_chunks_mut::<SWORDS>();
-        assert!(_rest.is_empty());
-        assert_eq!(swords.len(), p);
-
-        for sword in swords {
-            let ctx = PwxformCtx {
-                s: sword.as_mut_ptr(),
-                s0: ptr::null_mut(),
-                s1: ptr::null_mut(),
-                s2: ptr::null_mut(),
-                w: 0,
-                phantom: PhantomData,
-            };
-
-            pwxform_ctx.push(ctx)
-        }
-
-        pwxform_ctx
-    }
-
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.

@@ -1,6 +1,16 @@
 //! Core sequential memory-hard mixing function, inherited from the scrypt key derivation function.
 
-use crate::{Flags, pwxform::PwxformCtx, salsa20, sha256::HMAC_SHA256_Buf, xor};
+use core::marker::PhantomData;
+
+use alloc::vec::Vec;
+
+use crate::{
+    Flags,
+    pwxform::{PwxformCtx, SWORDS},
+    salsa20,
+    sha256::HMAC_SHA256_Buf,
+    xor,
+};
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 
@@ -18,7 +28,6 @@ pub(crate) unsafe fn smix(
     flags: Flags,
     v: &mut [u32],
     xy: &mut [u32],
-    ctx: &mut [PwxformCtx<'_>],
     passwd: &mut [u8],
 ) {
     let s = 32 * r;
@@ -65,6 +74,14 @@ pub(crate) unsafe fn smix(
     nloop_rw &= !1; // round up to even
     let mut vchunk = 0;
 
+    // S_n = [S_i for i in 0..p]
+    let mut sn = if flags.contains(Flags::RW) {
+        alloc::vec![[0u32; SWORDS]; p as usize]
+    } else {
+        Vec::new()
+    };
+    let mut ctxs = Vec::with_capacity(sn.len());
+
     // 11: for i = 0 to p - 1 do
     // 12: u <-- in
     #[allow(clippy::needless_range_loop)]
@@ -84,20 +101,22 @@ pub(crate) unsafe fn smix(
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if flags.contains(Flags::RW) {
+            let si = sn.as_mut_ptr().add(i).cast();
+
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
-            smix1(bs, 1, SBYTES / 128, Flags::empty(), ctx[i].s, xy, &mut None);
+            smix1(bs, 1, SBYTES / 128, Flags::empty(), si, xy, &mut None);
 
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
-            ctx[i].s2 = ctx[i].s as *mut [u32; 2];
+            let s2 = si as *mut [u32; 2];
 
             // 20: S1_i <-- S_{i,2^Swidth...2*2^Swidth-1}
-            ctx[i].s1 = (ctx[i].s2).add((1 << 8) * 2);
+            let s1 = s2.add((1 << 8) * 2);
 
             // 21: S0_i <-- S_{i,2*2^Swidth...3*2^Swidth-1}
-            ctx[i].s0 = (ctx[i].s1).add((1 << 8) * 2);
+            let s0 = s1.add((1 << 8) * 2);
 
             // 22: w_i <-- 0
-            ctx[i].w = 0;
+            let w = 0;
 
             // 23: if i = 0
             if i == 0 {
@@ -111,7 +130,14 @@ pub(crate) unsafe fn smix(
                 );
             }
 
-            Some(&mut ctx[i])
+            ctxs.push(PwxformCtx {
+                s0,
+                s1,
+                s2,
+                w,
+                phantom: PhantomData,
+            });
+            ctxs.last_mut()
         } else {
             None
         };
@@ -138,7 +164,7 @@ pub(crate) unsafe fn smix(
     #[allow(clippy::needless_range_loop)]
     for i in 0..p as usize {
         let mut ctx_i = if flags.contains(Flags::RW) {
-            Some(&mut ctx[i])
+            Some(&mut ctxs[i])
         } else {
             None
         };
