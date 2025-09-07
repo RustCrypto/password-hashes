@@ -1,5 +1,7 @@
 //! Core sequential memory-hard mixing function, inherited from the scrypt key derivation function.
 
+#![allow(clippy::too_many_arguments)]
+
 use alloc::vec::Vec;
 
 use crate::{

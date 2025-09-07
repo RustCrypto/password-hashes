@@ -27,7 +27,7 @@ pub(crate) struct PwxformCtx<'a> {
     pub(crate) w: usize,
 }
 
-impl<'a> PwxformCtx<'a> {
+impl PwxformCtx<'_> {
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.
