@@ -1,8 +1,6 @@
 //! pwxform: parallel wide transformation
 
 use crate::{salsa20, xor};
-use alloc::vec::Vec;
-use core::{marker::PhantomData, ptr};
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -19,42 +17,14 @@ pub(crate) const SWORDS: usize = SBYTES / size_of::<u32>();
 pub(crate) const RMIN: usize = PWXBYTES.div_ceil(128);
 
 /// Parallel wide transformation (pwxform) context.
-// TODO(tarcieri): have `PwxformCtx` own its state instead of using pointers
-#[derive(Copy, Clone)]
 pub(crate) struct PwxformCtx<'a> {
-    pub(crate) s: *mut u32,
-    pub(crate) s0: *mut [u32; 2],
-    pub(crate) s1: *mut [u32; 2],
-    pub(crate) s2: *mut [u32; 2],
+    pub(crate) s0: &'a mut [[u32; 2]],
+    pub(crate) s1: &'a mut [[u32; 2]],
+    pub(crate) s2: &'a mut [[u32; 2]],
     pub(crate) w: usize,
-    phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> PwxformCtx<'a> {
-    /// Initialize a vector of parallel wide transformation contexts, one for each degree of
-    /// parallelism (i.e. the `p` parameter).
-    pub(crate) fn new(p: usize, s: &'a mut [u32]) -> Vec<PwxformCtx<'a>> {
-        assert_eq!(s.len(), SWORDS * p, "state buffer is incorrectly sized");
-        let mut pwxform_ctx = Vec::with_capacity(p);
-
-        for i in 0..p {
-            let mut ctx = PwxformCtx {
-                s: ptr::null_mut(),
-                s0: ptr::null_mut(),
-                s1: ptr::null_mut(),
-                s2: ptr::null_mut(),
-                w: 0,
-                phantom: PhantomData,
-            };
-
-            let offset = i * SWORDS;
-            ctx.s = s[offset..(offset + SWORDS)].as_mut_ptr();
-            pwxform_ctx.push(ctx)
-        }
-
-        pwxform_ctx
-    }
-
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.
@@ -101,9 +71,6 @@ impl<'a> PwxformCtx<'a> {
     /// Transform the provided block using the provided S-boxes.
     unsafe fn pwxform(&mut self, b: &mut [u32; 16]) {
         let xptr: *mut [[u32; PWXSIMPLE]; 2] = b.as_mut_ptr().cast();
-        let s0 = self.s0;
-        let s1 = self.s1;
-        let s2 = self.s2;
         let mut w = self.w;
 
         // 1: for i = 0 to PWXrounds - 1 do
@@ -114,16 +81,16 @@ impl<'a> PwxformCtx<'a> {
                 let mut xh: u32 = (*xptr.add(j))[0][1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
-                let p0 = s0.add((xl as usize & SMASK) / 8);
+                let p0 = &self.s0[(xl as usize & SMASK) / 8..];
 
                 // 4: p1 <-- (hi(B_{j,0}) & Smask) / (PWXsimple * 8)
-                let p1 = s1.add((xh as usize & SMASK) / 8);
+                let p1 = &self.s1[(xh as usize & SMASK) / 8..];
 
                 // 5: for k = 0 to PWXsimple - 1 do
                 for k in 0..PWXSIMPLE {
                     // 6: B_{j,k} <-- (hi(B_{j,k}) * lo(B_{j,k}) + S0_{p0,k}) xor S1_{p1,k}
-                    let s0 = (((*p0.add(k))[1] as u64) << 32).wrapping_add((*p0.add(k))[0] as u64);
-                    let s1 = (((*p1.add(k))[1] as u64) << 32).wrapping_add((*p1.add(k))[0] as u64);
+                    let s0 = ((p0[k][1] as u64) << 32).wrapping_add(p0[k][0] as u64);
+                    let s1 = ((p1[k][1] as u64) << 32).wrapping_add(p1[k][0] as u64);
 
                     xl = (*xptr.add(j))[k][0];
                     xh = (*xptr.add(j))[k][1];
@@ -138,8 +105,8 @@ impl<'a> PwxformCtx<'a> {
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
                         // 9: S2_w <-- B_j
-                        (*s2.add(w))[0] = x as u32;
-                        (*s2.add(w))[1] = (x >> 32) as u32;
+                        self.s2[w][0] = x as u32;
+                        self.s2[w][1] = (x >> 32) as u32;
                         w += 1;
                     }
                 }
@@ -147,9 +114,8 @@ impl<'a> PwxformCtx<'a> {
         }
 
         // 14: (S0, S1, S2) <-- (S2, S0, S1)
-        self.s0 = s2;
-        self.s1 = s0;
-        self.s2 = s1;
+        core::mem::swap(&mut self.s0, &mut self.s2);
+        core::mem::swap(&mut self.s1, &mut self.s2);
 
         // 15: w <-- w mod 2^Swidth
         self.w = w & ((1 << SWIDTH) * PWXSIMPLE - 1);

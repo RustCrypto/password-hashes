@@ -44,7 +44,7 @@ pub use crate::{
 };
 
 use crate::{
-    pwxform::{PwxformCtx, RMIN, SWORDS},
+    pwxform::{PwxformCtx, RMIN},
     sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -221,9 +221,6 @@ unsafe fn yescrypt_kdf_body(
     }
 
     if flags.contains(Flags::RW) {
-        let mut s = vec![0u32; SWORDS * p as usize];
-        let mut pwxform_ctx = PwxformCtx::new(p as usize, &mut s);
-
         smix::smix(
             &mut b,
             r as usize,
@@ -233,7 +230,6 @@ unsafe fn yescrypt_kdf_body(
             flags,
             v,
             &mut xy,
-            &mut pwxform_ctx,
             slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
         );
     } else {
@@ -249,7 +245,6 @@ unsafe fn yescrypt_kdf_body(
                 flags,
                 v,
                 &mut xy,
-                &mut [],
                 &mut [],
             );
         }
@@ -318,5 +313,15 @@ where
 {
     for i in 0..count {
         *dst.add(i) ^= *src.add(i);
+    }
+}
+
+fn xor_safe<T>(dst: &mut [T], src: &[T])
+where
+    T: BitXorAssign + Copy,
+{
+    assert_eq!(dst.len(), src.len());
+    for (dst, src) in core::iter::zip(dst, src) {
+        *dst ^= *src
     }
 }
