@@ -17,7 +17,7 @@ const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 /// The input B must be 128rp bytes in length; the temporary storage V must be 128rN bytes in
 /// length; the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
-pub(crate) unsafe fn smix(
+pub(crate) fn smix(
     b: &mut [u32],
     r: usize,
     n: u64,
@@ -187,7 +187,7 @@ pub(crate) unsafe fn smix(
 ///
 /// The input B must be 128r bytes in length; the temporary storage `V` must be 128rN bytes in
 /// length; the temporary storage `XY` must be 256r bytes in length.
-unsafe fn smix1(
+fn smix1(
     b: &mut [u32],
     r: usize,
     n: u64,
@@ -236,7 +236,7 @@ unsafe fn smix1(
 /// The input B must be 128r bytes in length; the temporary storage V must be 128rN bytes in length;
 /// the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
-unsafe fn smix2(
+fn smix2(
     b: &mut [u32],
     r: usize,
     n: u64,

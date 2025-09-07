@@ -73,23 +73,21 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         return Err(Error);
     }
 
-    unsafe {
-        yescrypt_kdf_body(
-            &mut local,
-            passwd,
-            salt,
-            params.flags,
-            params.n,
-            params.r,
-            params.p,
-            params.t,
-            params.nrom,
-            out,
-        )
-    }
+    yescrypt_kdf_body(
+        &mut local,
+        passwd,
+        salt,
+        params.flags,
+        params.n,
+        params.r,
+        params.p,
+        params.t,
+        params.nrom,
+        out,
+    )
 }
 
-unsafe fn yescrypt_kdf_body(
+fn yescrypt_kdf_body(
     local: &mut Local,
     passwd: &[u8],
     salt: &[u8],
@@ -219,7 +217,7 @@ unsafe fn yescrypt_kdf_body(
             flags,
             v,
             &mut xy,
-            slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
+            cast_slice_mut(&mut sha256),
         );
         passwd = cast_slice(&sha256);
     } else {
@@ -268,7 +266,7 @@ unsafe fn yescrypt_kdf_body(
             clen = 32;
         }
         SHA256_Buf(cast_slice(&sha256), &mut dk);
-        out.as_mut_ptr().copy_from(dk.as_mut_ptr(), clen);
+        out[..clen].copy_from_slice(&dk[..clen]);
     }
 
     Ok(())
