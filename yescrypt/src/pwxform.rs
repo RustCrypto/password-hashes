@@ -1,5 +1,7 @@
 //! pwxform: parallel wide transformation
 
+use core::mem::transmute;
+
 use crate::{salsa20, xor_safe};
 
 // These are tunable, but they must meet certain constraints.
@@ -28,7 +30,7 @@ impl<'a> PwxformCtx<'a> {
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.
-    pub(crate) unsafe fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
+    pub(crate) fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
         // Convert 128-byte blocks to PWXbytes blocks
         let (b, _b) = b.as_chunks_mut::<PWXWORDS>();
         assert_eq!(b.len(), 2 * r);
@@ -73,16 +75,17 @@ impl<'a> PwxformCtx<'a> {
     }
 
     /// Transform the provided block using the provided S-boxes.
-    unsafe fn pwxform(&mut self, b: &mut [u32; 16]) {
-        let xptr: *mut [[u32; PWXSIMPLE]; 2] = b.as_mut_ptr().cast();
+    fn pwxform(&mut self, b: &mut [u32; 16]) {
+        let xptr = reshape_block(b);
         let mut w = self.w;
 
         // 1: for i = 0 to PWXrounds - 1 do
         for i in 0..PWXROUNDS {
             // 2: for j = 0 to PWXgather - 1 do
+            #[allow(clippy::needless_range_loop)]
             for j in 0..PWXGATHER {
-                let mut xl: u32 = (*xptr.add(j))[0][0];
-                let mut xh: u32 = (*xptr.add(j))[0][1];
+                let mut xl: u32 = xptr[j][0][0];
+                let mut xh: u32 = xptr[j][0][1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
                 let p0 = &self.s0[(xl as usize & SMASK) / 8..];
@@ -96,15 +99,15 @@ impl<'a> PwxformCtx<'a> {
                     let s0 = ((p0[k][1] as u64) << 32).wrapping_add(p0[k][0] as u64);
                     let s1 = ((p1[k][1] as u64) << 32).wrapping_add(p1[k][0] as u64);
 
-                    xl = (*xptr.add(j))[k][0];
-                    xh = (*xptr.add(j))[k][1];
+                    xl = xptr[j][k][0];
+                    xh = xptr[j][k][1];
 
                     let mut x = (xh as u64).wrapping_mul(xl as u64);
                     x = x.wrapping_add(s0);
                     x ^= s1;
 
-                    (*xptr.add(j))[k][0] = x as u32;
-                    (*xptr.add(j))[k][1] = (x >> 32) as u32;
+                    xptr[j][k][0] = x as u32;
+                    xptr[j][k][1] = (x >> 32) as u32;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
@@ -124,4 +127,8 @@ impl<'a> PwxformCtx<'a> {
         // 15: w <-- w mod 2^Swidth
         self.w = w & ((1 << SWIDTH) * PWXSIMPLE - 1);
     }
+}
+
+fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
+    unsafe { transmute(b) }
 }
