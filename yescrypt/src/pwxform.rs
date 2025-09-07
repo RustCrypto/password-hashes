@@ -28,57 +28,62 @@ impl<'a> PwxformCtx<'a> {
     /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
     ///
     /// The input `B` must be 128r bytes in length.
-    pub(crate) unsafe fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
-        let b = b.as_mut_ptr();
-        let mut x = [0u32; 16];
-
+    pub(crate) fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
         // Convert 128-byte blocks to PWXbytes blocks
+        let (b, _b) = b.as_chunks_mut::<PWXWORDS>();
+        assert_eq!(b.len(), 2 * r);
+        assert!(_b.is_empty());
+
         // 1: r_1 <-- 128r / PWXbytes
         let r1 = (128 * r) / PWXBYTES;
 
         // 2: X <-- B'_{r_1 - 1}
-        x.as_mut_ptr()
-            .copy_from(b.add((r1 - 1) * PWXWORDS), PWXWORDS);
+        let mut x = b[r1 - 1];
 
         // 3: for i = 0 to r_1 - 1 do
+        #[allow(clippy::needless_range_loop)]
         for i in 0..r1 {
             // 4: if r_1 > 1
             if r1 > 1 {
                 // 5: X <-- X xor B'_i
-                xor(x.as_mut_ptr(), b.add(i * PWXWORDS), PWXWORDS);
+                xor(&mut x, &b[i]);
             }
 
             // 7: X <-- pwxform(X)
             self.pwxform(&mut x);
 
             // 8: B'_i <-- X
-            b.add(i * PWXWORDS).copy_from(x.as_mut_ptr(), PWXWORDS);
+            b[i] = x;
         }
 
         // 10: i <-- floor((r_1 - 1) * PWXbytes / 64)
         let i = (r1 - 1) * PWXBYTES / 64;
 
         // 11: B_i <-- H(B_i)
-        salsa20::salsa20_2(b.add(i * 16));
+        salsa20::salsa20_2(&mut b[i]);
 
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
-            xor(b.add(i * 16), b.add((i - 1) * 16), 16);
-            salsa20::salsa20_2(b.add(i * 16));
+            let [bim1, bi] = b.get_disjoint_mut([i - 1, i]).unwrap();
+
+            /* 13: B_i <-- H(B_i xor B_{i-1}) */
+            xor(bi, bim1);
+            salsa20::salsa20_2(bi);
         }
     }
 
     /// Transform the provided block using the provided S-boxes.
-    unsafe fn pwxform(&mut self, b: &mut [u32; 16]) {
-        let xptr: *mut [[u32; PWXSIMPLE]; 2] = b.as_mut_ptr().cast();
+    fn pwxform(&mut self, b: &mut [u32; 16]) {
+        let xptr = reshape_block(b);
         let mut w = self.w;
 
         // 1: for i = 0 to PWXrounds - 1 do
         for i in 0..PWXROUNDS {
             // 2: for j = 0 to PWXgather - 1 do
+            #[allow(clippy::needless_range_loop)]
             for j in 0..PWXGATHER {
-                let mut xl: u32 = (*xptr.add(j))[0][0];
-                let mut xh: u32 = (*xptr.add(j))[0][1];
+                let mut xl: u32 = xptr[j][0][0];
+                let mut xh: u32 = xptr[j][0][1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
                 let p0 = &self.s0[(xl as usize & SMASK) / 8..];
@@ -92,15 +97,15 @@ impl<'a> PwxformCtx<'a> {
                     let s0 = ((p0[k][1] as u64) << 32).wrapping_add(p0[k][0] as u64);
                     let s1 = ((p1[k][1] as u64) << 32).wrapping_add(p1[k][0] as u64);
 
-                    xl = (*xptr.add(j))[k][0];
-                    xh = (*xptr.add(j))[k][1];
+                    xl = xptr[j][k][0];
+                    xh = xptr[j][k][1];
 
                     let mut x = (xh as u64).wrapping_mul(xl as u64);
                     x = x.wrapping_add(s0);
                     x ^= s1;
 
-                    (*xptr.add(j))[k][0] = x as u32;
-                    (*xptr.add(j))[k][1] = (x >> 32) as u32;
+                    xptr[j][k][0] = x as u32;
+                    xptr[j][k][1] = (x >> 32) as u32;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
@@ -120,4 +125,15 @@ impl<'a> PwxformCtx<'a> {
         // 15: w <-- w mod 2^Swidth
         self.w = w & ((1 << SWIDTH) * PWXSIMPLE - 1);
     }
+}
+
+fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
+    const {
+        assert!(
+            size_of::<[u32; 16]>() == size_of::<[[[u32; PWXSIMPLE]; 2]; 4]>(),
+            "PWXSIMPLE is incorrectly sized"
+        );
+    }
+
+    unsafe { &mut *core::ptr::from_mut(b).cast() }
 }

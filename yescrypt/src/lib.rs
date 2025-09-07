@@ -21,7 +21,7 @@
     unused_qualifications
 )]
 // Temporary lint overrides while C code is being translated
-#![allow(clippy::too_many_arguments, unsafe_op_in_unsafe_fn)]
+#![allow(clippy::too_many_arguments)]
 
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
@@ -35,7 +35,6 @@ mod error;
 mod params;
 mod pwxform;
 mod salsa20;
-mod sha256;
 mod smix;
 
 pub use crate::{
@@ -43,12 +42,10 @@ pub use crate::{
     params::{Flags, Params},
 };
 
-use crate::{
-    pwxform::{PwxformCtx, RMIN},
-    sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
-};
+use crate::pwxform::{PwxformCtx, RMIN};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{ops::BitXorAssign, slice};
+use sha2::{Digest, Sha256};
 
 #[derive(Clone)]
 struct Local {
@@ -73,23 +70,21 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         return Err(Error);
     }
 
-    unsafe {
-        yescrypt_kdf_body(
-            &mut local,
-            passwd,
-            salt,
-            params.flags,
-            params.n,
-            params.r,
-            params.p,
-            params.t,
-            params.nrom,
-            out,
-        )
-    }
+    yescrypt_kdf_body(
+        &mut local,
+        passwd,
+        salt,
+        params.flags,
+        params.n,
+        params.r,
+        params.p,
+        params.t,
+        params.nrom,
+        out,
+    )
 }
 
-unsafe fn yescrypt_kdf_body(
+fn yescrypt_kdf_body(
     local: &mut Local,
     passwd: &[u8],
     salt: &[u8],
@@ -101,10 +96,9 @@ unsafe fn yescrypt_kdf_body(
     nrom: u64,
     out: &mut [u8],
 ) -> Result<()> {
-    let mut passwdlen: usize = passwd.len();
-    let mut passwd = passwd.as_ptr();
+    let mut passwd = passwd;
 
-    let mut sha256 = [0u32; 8];
+    let mut sha256 = [0u8; 32];
     let mut dk = [0u8; 32];
 
     match flags & Flags::MODE_MASK {
@@ -190,48 +184,28 @@ unsafe fn yescrypt_kdf_body(
     let mut xy = vec![0u32; 64 * (r as usize)].into_boxed_slice();
 
     if !flags.is_empty() {
-        HMAC_SHA256_Buf(
-            c"yescrypt-prehash".as_ptr() as *const u8,
+        sha256 = hmac_sha256(
             if flags.contains(Flags::PREHASH) {
-                16
+                &b"yescrypt-prehash"[..]
             } else {
-                8
+                &b"yescrypt"[..]
             },
             passwd,
-            passwdlen,
-            sha256.as_mut_ptr() as *mut u8,
         );
-        passwd = sha256.as_mut_ptr() as *mut u8;
-        passwdlen = size_of::<[u32; 8]>();
+        passwd = &sha256;
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    PBKDF2_SHA256(
-        passwd,
-        passwdlen,
-        salt.as_ptr(),
-        salt.len(),
-        1,
-        b.as_mut_ptr().cast(),
-        b_size * 4,
-    );
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, cast_slice_mut(&mut b));
 
     if !flags.is_empty() {
-        sha256.copy_from_slice(&b[..8]);
+        sha256.copy_from_slice(cast_slice(&b[..8]));
+        passwd = &sha256;
     }
 
     if flags.contains(Flags::RW) {
-        smix::smix(
-            &mut b,
-            r as usize,
-            n,
-            p,
-            t,
-            flags,
-            v,
-            &mut xy,
-            slice::from_raw_parts_mut(sha256.as_mut_ptr() as *mut u8, 32),
-        );
+        smix::smix(&mut b, r as usize, n, p, t, flags, v, &mut xy, &mut sha256);
+        passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
         for i in 0..p {
@@ -250,31 +224,12 @@ unsafe fn yescrypt_kdf_body(
         }
     }
 
-    let mut dkp = out.as_mut_ptr();
-
     if !flags.is_empty() && out.len() < 32 {
-        PBKDF2_SHA256(
-            passwd,
-            passwdlen,
-            b.as_ptr().cast(),
-            b_size * 4,
-            1,
-            dk.as_mut_ptr(),
-            32,
-        );
-        dkp = dk.as_mut_ptr();
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    PBKDF2_SHA256(
-        passwd,
-        passwdlen,
-        b.as_ptr().cast(),
-        b_size * 4,
-        1,
-        out.as_mut_ptr(),
-        out.len(),
-    );
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -282,41 +237,25 @@ unsafe fn yescrypt_kdf_body(
     // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
     // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
     if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
+        let dkp = if !flags.is_empty() && out.len() < 32 {
+            &mut dk
+        } else {
+            &mut *out
+        };
+
         // Compute ClientKey
-        HMAC_SHA256_Buf(
-            dkp,
-            32,
-            c"Client Key".as_ptr() as *const u8,
-            10,
-            sha256.as_mut_ptr() as *mut u8,
-        );
+        sha256 = hmac_sha256(&dkp[..32], b"Client Key");
 
         // Compute StoredKey
-        let mut clen: usize = out.len();
-        if clen > 32 {
-            clen = 32;
-        }
-        SHA256_Buf(
-            sha256.as_ptr() as *const u8,
-            size_of::<[u32; 8]>(),
-            dk.as_mut_ptr(),
-        );
-        out.as_mut_ptr().copy_from(dk.as_mut_ptr(), clen);
+        let clen = out.len().clamp(0, 32);
+        dk = Sha256::digest(sha256).into();
+        out[..clen].copy_from_slice(&dk[..clen]);
     }
 
     Ok(())
 }
 
-unsafe fn xor<T>(dst: *mut T, src: *const T, count: usize)
-where
-    T: BitXorAssign + Copy,
-{
-    for i in 0..count {
-        *dst.add(i) ^= *src.add(i);
-    }
-}
-
-fn xor_safe<T>(dst: &mut [T], src: &[T])
+fn xor<T>(dst: &mut [T], src: &[T])
 where
     T: BitXorAssign + Copy,
 {
@@ -324,4 +263,29 @@ where
     for (dst, src) in core::iter::zip(dst, src) {
         *dst ^= *src
     }
+}
+
+fn cast_slice(input: &[u32]) -> &[u8] {
+    let new_len = input
+        .len()
+        .checked_mul(size_of::<u32>() / size_of::<u8>())
+        .unwrap();
+    unsafe { slice::from_raw_parts(input.as_ptr().cast(), new_len) }
+}
+
+fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
+    let new_len = input
+        .len()
+        .checked_mul(size_of::<u32>() / size_of::<u8>())
+        .unwrap();
+    unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
+}
+
+fn hmac_sha256(key: &[u8], in_0: &[u8]) -> [u8; 32] {
+    use hmac::{KeyInit, Mac};
+
+    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key)
+        .expect("key length should always be valid with hmac");
+    hmac.update(in_0);
+    hmac.finalize().into_bytes().into()
 }

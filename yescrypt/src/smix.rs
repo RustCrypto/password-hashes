@@ -3,11 +3,9 @@
 use alloc::vec::Vec;
 
 use crate::{
-    Flags,
+    Flags, cast_slice, hmac_sha256,
     pwxform::{PwxformCtx, SWORDS},
-    salsa20,
-    sha256::HMAC_SHA256_Buf,
-    xor_safe,
+    salsa20, xor,
 };
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
@@ -17,7 +15,7 @@ const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 /// The input B must be 128rp bytes in length; the temporary storage V must be 128rN bytes in
 /// length; the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
-pub(crate) unsafe fn smix(
+pub(crate) fn smix(
     b: &mut [u32],
     r: usize,
     n: u64,
@@ -131,13 +129,8 @@ pub(crate) unsafe fn smix(
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
-                HMAC_SHA256_Buf(
-                    bs[(s - 16)..].as_ptr() as *const u8,
-                    64,
-                    passwd.as_ptr(),
-                    32,
-                    passwd.as_mut_ptr(),
-                );
+                let digest = hmac_sha256(cast_slice(&bs[(s - 16)..s]), &passwd[..32]);
+                passwd[..32].copy_from_slice(&digest);
             }
 
             ctxs.push(PwxformCtx { s0, s1, s2, w });
@@ -191,7 +184,7 @@ pub(crate) unsafe fn smix(
 ///
 /// The input B must be 128r bytes in length; the temporary storage `V` must be 128rN bytes in
 /// length; the temporary storage `XY` must be 256r bytes in length.
-unsafe fn smix1(
+fn smix1(
     b: &mut [u32],
     r: usize,
     n: u64,
@@ -206,8 +199,7 @@ unsafe fn smix1(
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *x.as_mut_ptr().add(k * 16 + i) =
-                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -218,21 +210,20 @@ unsafe fn smix1(
         if flags.contains(Flags::RW) && i > 1 {
             let n = prev_power_of_two(i);
             let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
-            xor_safe(x, &v[j * s..][..s]);
+            xor(x, &v[j * s..][..s]);
         }
 
         // 4: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) =
-                (*x.as_mut_ptr().add(k * 16 + i)).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
 }
@@ -242,7 +233,7 @@ unsafe fn smix1(
 /// The input B must be 128r bytes in length; the temporary storage V must be 128rN bytes in length;
 /// the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
-unsafe fn smix2(
+fn smix2(
     b: &mut [u32],
     r: usize,
     n: u64,
@@ -258,8 +249,7 @@ unsafe fn smix2(
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            *x.as_mut_ptr().add(k * 16 + i) =
-                u32::from_le(*b.as_mut_ptr().add((k * 16) + (i * 5 % 16)));
+            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -269,7 +259,7 @@ unsafe fn smix2(
         let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
-        xor_safe(x, &v[j * s..][..s]);
+        xor(x, &v[j * s..][..s]);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {
@@ -279,22 +269,22 @@ unsafe fn smix2(
         // 8.2: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            *b.as_mut_ptr().add((k * 16) + ((i * 5) % 16)) = (*x.as_ptr().add(k * 16 + i)).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
 }
 
 /// Return the result of parsing B_{2r-1} as a little-endian integer.
-unsafe fn integerify(b: &[u32], r: usize) -> u64 {
-    let x: *const u32 = b.as_ptr().add(((2 * r) - 1) * 16);
-    ((*x.add(13) as u64) << 32).wrapping_add(*x as u64)
+fn integerify(b: &[u32], r: usize) -> u64 {
+    let x = &b[((2 * r) - 1) * 16..];
+    ((x[13] as u64) << 32).wrapping_add(x[0] as u64)
 }
 
 /// Largest power of 2 not greater than argument.

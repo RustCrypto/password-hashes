@@ -1,21 +1,20 @@
 //! Wrapper functions for invoking the `salsa20` crate.
 
-use crate::xor;
 use salsa20::cipher::{
     StreamCipherCore,
     consts::{U1, U4},
     typenum::Unsigned,
 };
 
-pub(crate) unsafe fn salsa20_2(b: *mut u32) {
+pub(crate) fn salsa20_2(b: &mut [u32; 16]) {
     salsa20::<U1>(b);
 }
 
-unsafe fn salsa20<R: Unsigned>(b: *mut u32) {
+fn salsa20<R: Unsigned>(b: &mut [u32; 16]) {
     let mut x = [0u32; 16];
 
     for i in 0..16 {
-        x[i * 5 % 16] = *b.add(i);
+        x[i * 5 % 16] = b[i];
     }
 
     let mut block = [0u8; 64];
@@ -26,26 +25,26 @@ unsafe fn salsa20<R: Unsigned>(b: *mut u32) {
     }
 
     for i in 0..16 {
-        let x = (*b.add(i)).wrapping_add(x[i * 5 % 16]);
-        b.add(i).write(x)
+        b[i] = b[i].wrapping_add(x[i * 5 % 16]);
     }
 }
 
-pub(crate) unsafe fn blockmix_salsa8(b: *mut u32, y: *mut u32, r: usize) {
-    let mut x = [0u32; 16];
-    x.as_mut_ptr().copy_from(b.add((2 * r - 1) * 16), 16);
+pub(crate) fn blockmix_salsa8(b: &mut [u32], y: &mut [u32], r: usize) {
+    let (b, _) = b.as_chunks_mut::<16>();
+    let (y, _) = y.as_chunks_mut::<16>();
+    let mut x = b[2 * r - 1];
 
     for i in 0..(2 * r) {
-        xor(x.as_mut_ptr(), b.add(i * 16), 16);
-        salsa20::<U4>(x.as_mut_ptr());
-        y.add(i * 16).copy_from(x.as_mut_ptr(), 16);
+        crate::xor(&mut x, &b[i]);
+        salsa20::<U4>(&mut x);
+        y[i].copy_from_slice(&x);
     }
 
     for i in 0..r {
-        b.add(i * 16).copy_from(y.add((i * 2) * 16), 16);
+        b[i].copy_from_slice(&y[i * 2]);
     }
 
     for i in 0..r {
-        b.add((i + r) * 16).copy_from(y.add((i * 2 + 1) * 16), 16);
+        b[i + r].copy_from_slice(&y[i * 2 + 1]);
     }
 }
