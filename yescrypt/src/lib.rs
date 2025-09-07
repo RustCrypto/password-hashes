@@ -6,8 +6,8 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 #![warn(
-    //clippy::cast_lossless,
-    //clippy::cast_possible_truncation,
+    // TODO: clippy::cast_lossless,
+    // TODO: clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
@@ -20,8 +20,6 @@
     unused_lifetimes,
     unused_qualifications
 )]
-// Temporary lint overrides while C code is being translated
-#![allow(clippy::too_many_arguments)]
 
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
@@ -133,6 +131,11 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
     )
 }
 
+/// Compute yescrypt and write the result into `out`.
+///
+/// - `flags` may request special modes.
+/// - `t` controls computation time while not affecting peak memory usage.
+#[allow(clippy::too_many_arguments)]
 fn yescrypt_kdf_body(
     local: &mut Local,
     passwd: &[u8],
