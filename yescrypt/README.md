@@ -15,9 +15,28 @@ The implementation contained in this crate has never been independently audited!
 
 USE AT YOUR OWN RISK!
 
+Note that this crate is in an early stage of implementation and may contain bugs or features which
+do not work correctly, potentially resulting in miscomputed outputs which do not match the ones
+produced by the reference implementation.
+
+We suggest before using yescrypt params other than `Params::default` to ensure that password hashes
+produced by this crate match the ones produced by the reference implementation.
+
+## Minimum Supported Rust Version (MSRV) Policy
+
+MSRV increases are not considered breaking changes and can happen in patch releases.
+
+The crate MSRV accounts for all supported targets and crate feature combinations, excluding
+explicitly unstable features.
+
 ## License
 
-Licensed under the BSD 2-clause license. See file [LICENSE] for more information.
+Licensed under either of:
+
+-[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+-[MIT license](https://opensource.org/licenses/MIT)
+
+at your option.
 
 ### Contribution
 
@@ -31,8 +50,8 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/yescrypt
 [docs-image]: https://docs.rs/yescrypt/badge.svg
 [docs-link]: https://docs.rs/yescrypt/
-[license-image]: https://img.shields.io/crates/l/yescrypt?style=flat-square
-[rustc-image]: https://img.shields.io/badge/rustc-1.81+-blue.svg
+[license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.86+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 [build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml/badge.svg
@@ -41,4 +60,3 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (links)
 
 [yescrypt]: https://www.openwall.com/yescrypt/
-[LICENSE]: ./LICENSE

@@ -599,7 +599,7 @@ dependencies = [
 
 [[package]]
 name = "yescrypt"
-version = "0.0.1-alpha"
+version = "0.1.0-pre.0"
 dependencies = [
  "bitflags",
  "hex-literal",
