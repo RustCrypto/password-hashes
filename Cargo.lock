@@ -279,6 +279,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "mcf"
+version = "0.2.0-pre"
+source = "git+https://github.com/RustCrypto/formats#2c1292202175a598cbfb0a218bbd637412c8a304"
+dependencies = [
+ "base64ct",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -595,6 +603,7 @@ dependencies = [
  "bitflags",
  "hex-literal",
  "hmac",
+ "mcf",
  "pbkdf2",
  "salsa20",
  "sha2",
