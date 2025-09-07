@@ -1,6 +1,9 @@
 //! pwxform: parallel wide transformation
 
-use crate::{salsa20, xor};
+use crate::{
+    salsa20,
+    util::{slice_as_chunks_mut, xor},
+};
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -30,7 +33,8 @@ impl<'a> PwxformCtx<'a> {
     /// The input `B` must be 128r bytes in length.
     pub(crate) fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
         // Convert 128-byte blocks to PWXbytes blocks
-        let (b, _b) = b.as_chunks_mut::<PWXWORDS>();
+        // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+        let (b, _b) = slice_as_chunks_mut::<_, PWXWORDS>(b);
         assert_eq!(b.len(), 2 * r);
         assert!(_b.is_empty());
 
