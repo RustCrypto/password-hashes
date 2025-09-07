@@ -98,7 +98,7 @@ fn yescrypt_kdf_body(
 ) -> Result<()> {
     let mut passwd = passwd;
 
-    let mut sha256 = [0u32; 8];
+    let mut sha256 = [0u8; 32];
     let mut dk = [0u8; 32];
 
     match flags & Flags::MODE_MASK {
@@ -184,7 +184,7 @@ fn yescrypt_kdf_body(
     let mut xy = vec![0u32; 64 * (r as usize)].into_boxed_slice();
 
     if !flags.is_empty() {
-        *cast_array_mut(&mut sha256) = hmac_sha256(
+        sha256 = hmac_sha256(
             if flags.contains(Flags::PREHASH) {
                 &b"yescrypt-prehash"[..]
             } else {
@@ -192,15 +192,15 @@ fn yescrypt_kdf_body(
             },
             passwd,
         );
-        passwd = cast_slice(&sha256);
+        passwd = &sha256;
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
     pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, cast_slice_mut(&mut b));
 
     if !flags.is_empty() {
-        sha256.copy_from_slice(&b[..8]);
-        passwd = cast_slice(&sha256);
+        sha256.copy_from_slice(cast_slice(&b[..8]));
+        passwd = &sha256;
     }
 
     if flags.contains(Flags::RW) {
@@ -213,9 +213,9 @@ fn yescrypt_kdf_body(
             flags,
             v,
             &mut xy,
-            cast_slice_mut(&mut sha256),
+            &mut sha256,
         );
-        passwd = cast_slice(&sha256);
+        passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
         for i in 0..p {
@@ -254,14 +254,11 @@ fn yescrypt_kdf_body(
         };
 
         // Compute ClientKey
-        *cast_array_mut(&mut sha256) = hmac_sha256(&dkp[..32], b"Client Key");
+        sha256 = hmac_sha256(&dkp[..32], b"Client Key");
 
         // Compute StoredKey
-        let mut clen: usize = out.len();
-        if clen > 32 {
-            clen = 32;
-        }
-        dk = Sha256::digest(cast_slice(&sha256)).into();
+        let clen = out.len().clamp(0, 32);
+        dk = Sha256::digest(sha256).into();
         out[..clen].copy_from_slice(&dk[..clen]);
     }
 
@@ -292,10 +289,6 @@ fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
         .checked_mul(size_of::<u32>() / size_of::<u8>())
         .unwrap();
     unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
-}
-
-fn cast_array_mut(input: &mut [u32; 8]) -> &mut [u8; 32] {
-    unsafe { core::mem::transmute(input) }
 }
 
 fn hmac_sha256(key: &[u8], in_0: &[u8]) -> [u8; 32] {
