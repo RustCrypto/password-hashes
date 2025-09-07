@@ -1,6 +1,6 @@
 //! pwxform: parallel wide transformation
 
-use crate::{salsa20, xor};
+use crate::{salsa20, xor_safe};
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -29,42 +29,46 @@ impl<'a> PwxformCtx<'a> {
     ///
     /// The input `B` must be 128r bytes in length.
     pub(crate) unsafe fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
-        let b = b.as_mut_ptr();
-        let mut x = [0u32; 16];
-
         // Convert 128-byte blocks to PWXbytes blocks
+        let (b, _b) = b.as_chunks_mut::<PWXWORDS>();
+        assert_eq!(b.len(), 2 * r);
+        assert!(_b.is_empty());
+
         // 1: r_1 <-- 128r / PWXbytes
         let r1 = (128 * r) / PWXBYTES;
 
         // 2: X <-- B'_{r_1 - 1}
-        x.as_mut_ptr()
-            .copy_from(b.add((r1 - 1) * PWXWORDS), PWXWORDS);
+        let mut x = b[r1 - 1];
 
         // 3: for i = 0 to r_1 - 1 do
+        #[allow(clippy::needless_range_loop)]
         for i in 0..r1 {
             // 4: if r_1 > 1
             if r1 > 1 {
                 // 5: X <-- X xor B'_i
-                xor(x.as_mut_ptr(), b.add(i * PWXWORDS), PWXWORDS);
+                xor_safe(&mut x, &b[i]);
             }
 
             // 7: X <-- pwxform(X)
             self.pwxform(&mut x);
 
             // 8: B'_i <-- X
-            b.add(i * PWXWORDS).copy_from(x.as_mut_ptr(), PWXWORDS);
+            b[i] = x;
         }
 
         // 10: i <-- floor((r_1 - 1) * PWXbytes / 64)
         let i = (r1 - 1) * PWXBYTES / 64;
 
         // 11: B_i <-- H(B_i)
-        salsa20::salsa20_2(b.add(i * 16));
+        salsa20::salsa20_2(&mut b[i]);
 
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
-            xor(b.add(i * 16), b.add((i - 1) * 16), 16);
-            salsa20::salsa20_2(b.add(i * 16));
+            let [bim1, bi] = b.get_disjoint_mut([i - 1, i]).unwrap();
+
+            /* 13: B_i <-- H(B_i xor B_{i-1}) */
+            xor_safe(bi, bim1);
+            salsa20::salsa20_2(bi);
         }
     }
 

@@ -219,7 +219,7 @@ unsafe fn smix1(
         // 4: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 
@@ -272,7 +272,7 @@ unsafe fn smix2(
         // 8.2: X <-- H(X)
         match ctx {
             Some(ctx) => ctx.blockmix_pwxform(x, r),
-            None => salsa20::blockmix_salsa8(x.as_mut_ptr(), y.as_mut_ptr(), r),
+            None => salsa20::blockmix_salsa8(x, y, r),
         }
     }
 

@@ -274,15 +274,6 @@ unsafe fn yescrypt_kdf_body(
     Ok(())
 }
 
-unsafe fn xor<T>(dst: *mut T, src: *const T, count: usize)
-where
-    T: BitXorAssign + Copy,
-{
-    for i in 0..count {
-        *dst.add(i) ^= *src.add(i);
-    }
-}
-
 fn xor_safe<T>(dst: &mut [T], src: &[T])
 where
     T: BitXorAssign + Copy,
