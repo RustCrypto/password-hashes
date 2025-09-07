@@ -21,6 +21,33 @@
     unused_qualifications
 )]
 
+//! # Usage
+//! ## Password Hashing
+//! NOTE: the `simple` crate feature must be enabled (on-by-default)
+#![cfg_attr(feature = "simple", doc = "```")]
+#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
+//! # fn main() -> yescrypt::Result<()> {
+//! let password = b"pleaseletmein"; // don't actually use this as a password!
+//! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
+//! let password_hash = yescrypt::yescrypt(password, salt, &Default::default())?;
+//! assert_eq!(&password_hash[..3], "$y$");
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Key Derivation Function (KDF)
+#![cfg_attr(feature = "simple", doc = "```")]
+#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
+//! # fn main() -> yescrypt::Result<()> {
+//! let password = b"pleaseletmein"; // don't actually use this as a password!
+//! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
+//!
+//! let mut output = [0u8; 32]; // can be sized as desired
+//! yescrypt::yescrypt_kdf(password, salt, &Default::default(), &mut output)?;
+//! # Ok(())
+//! # }
+//! ```
+
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
 //
