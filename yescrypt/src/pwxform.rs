@@ -1,7 +1,5 @@
 //! pwxform: parallel wide transformation
 
-use core::mem::transmute;
-
 use crate::{salsa20, xor};
 
 // These are tunable, but they must meet certain constraints.
@@ -130,5 +128,11 @@ impl<'a> PwxformCtx<'a> {
 }
 
 fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
-    unsafe { transmute(b) }
+    const {
+        if size_of::<[u32; 16]>() != size_of::<[[[u32; PWXSIMPLE]; 2]; 4]>() {
+            panic!("PWXSIMPLE is incorrectly sized");
+        }
+    }
+
+    unsafe { &mut *core::ptr::from_mut(b).cast() }
 }

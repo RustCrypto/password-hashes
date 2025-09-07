@@ -204,17 +204,7 @@ fn yescrypt_kdf_body(
     }
 
     if flags.contains(Flags::RW) {
-        smix::smix(
-            &mut b,
-            r as usize,
-            n,
-            p,
-            t,
-            flags,
-            v,
-            &mut xy,
-            &mut sha256,
-        );
+        smix::smix(&mut b, r as usize, n, p, t, flags, v, &mut xy, &mut sha256);
         passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
