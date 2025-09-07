@@ -31,7 +31,9 @@
 
 extern crate alloc;
 
+mod encoding;
 mod error;
+mod flags;
 mod params;
 mod pwxform;
 mod salsa20;
@@ -40,16 +42,63 @@ mod util;
 
 pub use crate::{
     error::{Error, Result},
-    params::{Flags, Params},
+    flags::Flags,
+    params::Params,
 };
 
 use crate::pwxform::{PwxformCtx, RMIN};
 use alloc::{boxed::Box, vec, vec::Vec};
 use sha2::{Digest, Sha256};
 
+#[cfg(feature = "simple")]
+use alloc::string::String;
+
+/// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
+#[cfg(feature = "simple")]
+const YESCRYPT_MCF_ID: &str = "y";
+
 #[derive(Clone)]
 struct Local {
     pub aligned: Box<[u32]>,
+}
+
+/// yescrypt password hashing function.
+///
+/// This function produces an (s)crypt-style password hash string starting with the prefix `$y$`.
+///
+/// If using yescrypt as a key derivation, consider [`yescrypt_kdf`] instead.
+#[cfg(feature = "simple")]
+pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
+    // TODO(tarcieri): tunable hash output size?
+    const HASH_SIZE: usize = 32;
+
+    let mut out = [0u8; HASH_SIZE];
+    yescrypt_kdf(passwd, salt, params, &mut out)?;
+
+    // Begin building the Modular Crypt Format hash.
+    let mut mcf_hash = mcf::PasswordHash::from_id(YESCRYPT_MCF_ID).expect("should be valid");
+
+    // Add params string to the hash
+    let mut params_buf = [0u8; Params::MAX_ENCODED_LEN];
+    let params_str = params.encode(&mut params_buf)?;
+    let field = mcf::Field::new(params_str).map_err(|_| Error)?;
+    mcf_hash.push_field(field);
+
+    let mut buf = [0u8; (HASH_SIZE * 4).div_ceil(3)];
+
+    // Add salt
+    // TODO(tarcieri): use `mcf` crate's Base64 support
+    mcf_hash
+        .push_str(encoding::encode64(salt, &mut buf)?)
+        .map_err(|_| Error)?;
+
+    // Add yescrypt output
+    mcf_hash
+        .push_str(encoding::encode64(&out, &mut buf)?)
+        .map_err(|_| Error)?;
+
+    // Convert to a normal `String` to keep `mcf` out of the public API (for now)
+    Ok(mcf_hash.into())
 }
 
 /// yescrypt Key Derivation Function (KDF)
