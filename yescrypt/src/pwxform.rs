@@ -68,7 +68,9 @@ impl PwxformCtx<'_> {
 
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
-            let [bim1, bi] = b.get_disjoint_mut([i - 1, i]).unwrap();
+            // TODO(tarcieri): use `get_disjoint_mut` when MSRV is 1.86
+            let (bim1, bi) = b[(i - 1)..i].split_at_mut(1);
+            let (bim1, bi) = (&bim1[0], &mut bi[0]);
 
             /* 13: B_i <-- H(B_i xor B_{i-1}) */
             xor(bi, bim1);
