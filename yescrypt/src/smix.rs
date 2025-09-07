@@ -3,9 +3,10 @@
 use alloc::vec::Vec;
 
 use crate::{
-    Flags, cast_slice, hmac_sha256,
+    Flags,
     pwxform::{PwxformCtx, SWORDS},
-    salsa20, xor,
+    salsa20,
+    util::{cast_slice, hmac_sha256, slice_as_chunks_mut, xor},
 };
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
@@ -115,13 +116,16 @@ pub(crate) fn smix(
             let (s1, s0) = s10.split_at_mut((1 << 8) * 4);
 
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
-            let (s2, _) = s2.as_chunks_mut::<2>();
+            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+            let (s2, _) = slice_as_chunks_mut::<_, 2>(s2);
 
             // 20: S1_i <-- S_{i,2^Swidth...2*2^Swidth-1}
-            let (s1, _) = s1.as_chunks_mut::<2>();
+            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+            let (s1, _) = slice_as_chunks_mut::<_, 2>(s1);
 
             // 21: S0_i <-- S_{i,2*2^Swidth...3*2^Swidth-1}
-            let (s0, _) = s0.as_chunks_mut::<2>();
+            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+            let (s0, _) = slice_as_chunks_mut::<_, 2>(s0);
 
             // 22: w_i <-- 0
             let w = 0;

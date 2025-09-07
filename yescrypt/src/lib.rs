@@ -36,6 +36,7 @@ mod params;
 mod pwxform;
 mod salsa20;
 mod smix;
+mod util;
 
 pub use crate::{
     error::{Error, Result},
@@ -44,7 +45,6 @@ pub use crate::{
 
 use crate::pwxform::{PwxformCtx, RMIN};
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::{ops::BitXorAssign, slice};
 use sha2::{Digest, Sha256};
 
 #[derive(Clone)]
@@ -184,7 +184,7 @@ fn yescrypt_kdf_body(
     let mut xy = vec![0u32; 64 * (r as usize)].into_boxed_slice();
 
     if !flags.is_empty() {
-        sha256 = hmac_sha256(
+        sha256 = util::hmac_sha256(
             if flags.contains(Flags::PREHASH) {
                 &b"yescrypt-prehash"[..]
             } else {
@@ -196,10 +196,10 @@ fn yescrypt_kdf_body(
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, cast_slice_mut(&mut b));
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b));
 
     if !flags.is_empty() {
-        sha256.copy_from_slice(cast_slice(&b[..8]));
+        sha256.copy_from_slice(util::cast_slice(&b[..8]));
         passwd = &sha256;
     }
 
@@ -225,11 +225,11 @@ fn yescrypt_kdf_body(
     }
 
     if !flags.is_empty() && out.len() < 32 {
-        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, &mut dk);
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, out);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -244,7 +244,7 @@ fn yescrypt_kdf_body(
         };
 
         // Compute ClientKey
-        sha256 = hmac_sha256(&dkp[..32], b"Client Key");
+        sha256 = util::hmac_sha256(&dkp[..32], b"Client Key");
 
         // Compute StoredKey
         let clen = out.len().clamp(0, 32);
@@ -253,39 +253,4 @@ fn yescrypt_kdf_body(
     }
 
     Ok(())
-}
-
-fn xor<T>(dst: &mut [T], src: &[T])
-where
-    T: BitXorAssign + Copy,
-{
-    assert_eq!(dst.len(), src.len());
-    for (dst, src) in core::iter::zip(dst, src) {
-        *dst ^= *src
-    }
-}
-
-fn cast_slice(input: &[u32]) -> &[u8] {
-    let new_len = input
-        .len()
-        .checked_mul(size_of::<u32>() / size_of::<u8>())
-        .unwrap();
-    unsafe { slice::from_raw_parts(input.as_ptr().cast(), new_len) }
-}
-
-fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
-    let new_len = input
-        .len()
-        .checked_mul(size_of::<u32>() / size_of::<u8>())
-        .unwrap();
-    unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
-}
-
-fn hmac_sha256(key: &[u8], in_0: &[u8]) -> [u8; 32] {
-    use hmac::{KeyInit, Mac};
-
-    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key)
-        .expect("key length should always be valid with hmac");
-    hmac.update(in_0);
-    hmac.finalize().into_bytes().into()
 }

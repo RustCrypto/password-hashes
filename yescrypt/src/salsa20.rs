@@ -1,5 +1,6 @@
 //! Wrapper functions for invoking the `salsa20` crate.
 
+use crate::util::{slice_as_chunks_mut, xor};
 use salsa20::cipher::{
     StreamCipherCore,
     consts::{U1, U4},
@@ -30,12 +31,13 @@ fn salsa20<R: Unsigned>(b: &mut [u32; 16]) {
 }
 
 pub(crate) fn blockmix_salsa8(b: &mut [u32], y: &mut [u32], r: usize) {
-    let (b, _) = b.as_chunks_mut::<16>();
-    let (y, _) = y.as_chunks_mut::<16>();
+    // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+    let (b, _) = slice_as_chunks_mut::<_, 16>(b);
+    let (y, _) = slice_as_chunks_mut::<_, 16>(y);
     let mut x = b[2 * r - 1];
 
     for i in 0..(2 * r) {
-        crate::xor(&mut x, &b[i]);
+        xor(&mut x, &b[i]);
         salsa20::<U4>(&mut x);
         y[i].copy_from_slice(&x);
     }
