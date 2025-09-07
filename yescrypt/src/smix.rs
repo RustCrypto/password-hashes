@@ -3,11 +3,9 @@
 use alloc::vec::Vec;
 
 use crate::{
-    Flags, cast_slice,
+    Flags, cast_slice, hmac_sha256,
     pwxform::{PwxformCtx, SWORDS},
-    salsa20,
-    sha256::HMAC_SHA256_Buf,
-    xor_safe,
+    salsa20, xor,
 };
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
@@ -131,8 +129,7 @@ pub(crate) fn smix(
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
-                let mut digest = [0u8; 32];
-                HMAC_SHA256_Buf(cast_slice(&bs[(s - 16)..s]), &passwd[..32], &mut digest);
+                let digest = hmac_sha256(cast_slice(&bs[(s - 16)..s]), &passwd[..32]);
                 passwd[..32].copy_from_slice(&digest);
             }
 
@@ -213,7 +210,7 @@ fn smix1(
         if flags.contains(Flags::RW) && i > 1 {
             let n = prev_power_of_two(i);
             let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
-            xor_safe(x, &v[j * s..][..s]);
+            xor(x, &v[j * s..][..s]);
         }
 
         // 4: X <-- H(X)
@@ -262,7 +259,7 @@ fn smix2(
         let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
 
         // 8.1: X <-- X xor V_j
-        xor_safe(x, &v[j * s..][..s]);
+        xor(x, &v[j * s..][..s]);
 
         // V_j <-- X
         if flags.contains(Flags::RW) {

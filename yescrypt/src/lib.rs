@@ -21,7 +21,7 @@
     unused_qualifications
 )]
 // Temporary lint overrides while C code is being translated
-#![allow(clippy::too_many_arguments, unsafe_op_in_unsafe_fn)]
+#![allow(clippy::too_many_arguments)]
 
 // Adapted from the yescrypt reference implementation available at:
 // <https://github.com/openwall/yescrypt>
@@ -35,7 +35,6 @@ mod error;
 mod params;
 mod pwxform;
 mod salsa20;
-mod sha256;
 mod smix;
 
 pub use crate::{
@@ -43,12 +42,10 @@ pub use crate::{
     params::{Flags, Params},
 };
 
-use crate::{
-    pwxform::{PwxformCtx, RMIN},
-    sha256::{HMAC_SHA256_Buf, PBKDF2_SHA256, SHA256_Buf},
-};
+use crate::pwxform::{PwxformCtx, RMIN};
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{ops::BitXorAssign, slice};
+use sha2::{Digest, Sha256};
 
 #[derive(Clone)]
 struct Local {
@@ -187,20 +184,19 @@ fn yescrypt_kdf_body(
     let mut xy = vec![0u32; 64 * (r as usize)].into_boxed_slice();
 
     if !flags.is_empty() {
-        HMAC_SHA256_Buf(
+        *cast_array_mut(&mut sha256) = hmac_sha256(
             if flags.contains(Flags::PREHASH) {
                 &b"yescrypt-prehash"[..]
             } else {
                 &b"yescrypt"[..]
             },
             passwd,
-            cast_array_mut(&mut sha256),
         );
         passwd = cast_slice(&sha256);
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    PBKDF2_SHA256(passwd, salt, 1, cast_slice_mut(&mut b));
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, cast_slice_mut(&mut b));
 
     if !flags.is_empty() {
         sha256.copy_from_slice(&b[..8]);
@@ -239,11 +235,11 @@ fn yescrypt_kdf_body(
     }
 
     if !flags.is_empty() && out.len() < 32 {
-        PBKDF2_SHA256(passwd, cast_slice(&b), 1, &mut dk);
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    PBKDF2_SHA256(passwd, cast_slice(&b), 1, out);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, cast_slice(&b), 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -258,21 +254,21 @@ fn yescrypt_kdf_body(
         };
 
         // Compute ClientKey
-        HMAC_SHA256_Buf(&dkp[..32], b"Client Key", cast_array_mut(&mut sha256));
+        *cast_array_mut(&mut sha256) = hmac_sha256(&dkp[..32], b"Client Key");
 
         // Compute StoredKey
         let mut clen: usize = out.len();
         if clen > 32 {
             clen = 32;
         }
-        SHA256_Buf(cast_slice(&sha256), &mut dk);
+        dk = Sha256::digest(cast_slice(&sha256)).into();
         out[..clen].copy_from_slice(&dk[..clen]);
     }
 
     Ok(())
 }
 
-fn xor_safe<T>(dst: &mut [T], src: &[T])
+fn xor<T>(dst: &mut [T], src: &[T])
 where
     T: BitXorAssign + Copy,
 {
@@ -300,4 +296,13 @@ fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
 
 fn cast_array_mut(input: &mut [u32; 8]) -> &mut [u8; 32] {
     unsafe { core::mem::transmute(input) }
+}
+
+fn hmac_sha256(key: &[u8], in_0: &[u8]) -> [u8; 32] {
+    use hmac::{KeyInit, Mac};
+
+    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key)
+        .expect("key length should always be valid with hmac");
+    hmac.update(in_0);
+    hmac.finalize().into_bytes().into()
 }

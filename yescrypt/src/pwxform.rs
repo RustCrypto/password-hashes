@@ -2,7 +2,7 @@
 
 use core::mem::transmute;
 
-use crate::{salsa20, xor_safe};
+use crate::{salsa20, xor};
 
 // These are tunable, but they must meet certain constraints.
 const PWXSIMPLE: usize = 2;
@@ -48,7 +48,7 @@ impl<'a> PwxformCtx<'a> {
             // 4: if r_1 > 1
             if r1 > 1 {
                 // 5: X <-- X xor B'_i
-                xor_safe(&mut x, &b[i]);
+                xor(&mut x, &b[i]);
             }
 
             // 7: X <-- pwxform(X)
@@ -69,7 +69,7 @@ impl<'a> PwxformCtx<'a> {
             let [bim1, bi] = b.get_disjoint_mut([i - 1, i]).unwrap();
 
             /* 13: B_i <-- H(B_i xor B_{i-1}) */
-            xor_safe(bi, bim1);
+            xor(bi, bim1);
             salsa20::salsa20_2(bi);
         }
     }
