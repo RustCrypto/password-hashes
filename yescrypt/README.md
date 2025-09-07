@@ -9,6 +9,12 @@
 
 Pure Rust implementation of the [yescrypt] password-based key derivation function.
 
+## About
+
+yescrypt is a variant of the [scrypt] password-based key derivation function and finalist in the
+[Password Hashing Competition]. It has been adopted by several Linux distributions for the system
+password hashing function, including Fedora, Debian, Ubuntu, and Arch.
+
 ## ⚠️ Security Warning
 
 The implementation contained in this crate has never been independently audited!
@@ -60,3 +66,5 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (links)
 
 [yescrypt]: https://www.openwall.com/yescrypt/
+[scrypt]: https://en.wikipedia.org/wiki/Scrypt
+[Password Hashing Competition]: https://www.password-hashing.net/
