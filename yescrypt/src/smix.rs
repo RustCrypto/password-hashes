@@ -20,7 +20,7 @@ const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 /// greater than 1.
 pub(crate) fn smix(
     b: &mut [u32],
-    r: usize,
+    r: u32,
     n: u64,
     p: u32,
     t: u32,
@@ -29,6 +29,7 @@ pub(crate) fn smix(
     xy: &mut [u32],
     passwd: &mut [u8],
 ) {
+    let r = r as usize;
     let s = 32 * r;
 
     // 1: n <-- N / p
@@ -54,9 +55,7 @@ pub(crate) fn smix(
 
     // 6: Nloop_rw <-- 0
     let mut nloop_rw = 0;
-    if flags.contains(Flags::INIT_SHARED) {
-        nloop_rw = nloop_all;
-    } else if flags.contains(Flags::RW) {
+    if flags.contains(Flags::RW) {
         // 4: Nloop_rw <-- Nloop_all / p
         nloop_rw = nloop_all / (p as u64);
     }

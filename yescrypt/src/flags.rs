@@ -25,20 +25,11 @@ bitflags::bitflags! {
         /// SBox 12k
         const SBOX_12K = 0x080;
 
-        /// Use shared preallocated memory
-        const SHARED_PREALLOCATED = 0x10000;
-
         /// Mode mask value
         const MODE_MASK = 0x3;
 
         /// Read/write flavor mask value
         const RW_FLAVOR_MASK = 0x3fc;
-
-        /// Initialize shared memory
-        const INIT_SHARED = 0x01000000;
-
-        /// Allocate only
-        const ALLOC_ONLY = 0x08000000;
 
         /// Prehash
         const PREHASH = 0x10000000;
