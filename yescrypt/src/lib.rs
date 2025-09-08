@@ -147,6 +147,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
             &mut dk,
         )?;
 
+        // Use derived key as the "password" for the subsequent step
         passwd = &dk;
     }
 
