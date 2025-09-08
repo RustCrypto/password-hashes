@@ -36,8 +36,7 @@
 //! ```
 //!
 //! ## Key Derivation Function (KDF)
-#![cfg_attr(feature = "simple", doc = "```")]
-#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
+//! ```
 //! # fn main() -> yescrypt::Result<()> {
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
@@ -71,7 +70,6 @@ pub use crate::{
     params::Params,
 };
 
-use crate::pwxform::{PwxformCtx, RMIN};
 use alloc::vec;
 use sha2::{Digest, Sha256};
 
@@ -123,10 +121,6 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
-    if params.g != 0 {
-        return Err(Error::Params);
-    }
-
     // Perform conditional pre-hashing
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
@@ -135,84 +129,31 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         && params.n / (params.p as u64) >= 0x100
         && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
     {
-        yescrypt_kdf_body(
-            passwd,
-            salt,
-            params.flags | Flags::PREHASH,
-            params.n >> 6,
-            params.r,
-            params.p,
-            0,
-            params.nrom,
-            &mut dk,
-        )?;
+        let mut prehash_params = *params;
+        prehash_params.flags |= Flags::PREHASH;
+        prehash_params.n >>= 6;
+        prehash_params.t = 0;
+
+        yescrypt_kdf_body(passwd, salt, &prehash_params, &mut dk)?;
 
         // Use derived key as the "password" for the subsequent step
         passwd = &dk;
     }
 
-    yescrypt_kdf_body(
-        passwd,
-        salt,
-        params.flags,
-        params.n,
-        params.r,
-        params.p,
-        params.t,
-        params.nrom,
-        out,
-    )
+    yescrypt_kdf_body(passwd, salt, params, out)
 }
 
 /// Compute yescrypt and write the result into `out`.
 ///
 /// - `flags` may request special modes.
 /// - `t` controls computation time while not affecting peak memory usage.
-#[allow(clippy::too_many_arguments)]
-fn yescrypt_kdf_body(
-    passwd: &[u8],
-    salt: &[u8],
-    flags: Flags,
-    n: u64,
-    r: u32,
-    p: u32,
-    t: u32,
-    nrom: u64,
-    out: &mut [u8],
-) -> Result<()> {
-    let mut passwd = passwd;
-    let mut sha256 = [0u8; 32];
-    let mut dk = [0u8; 32];
+fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
+    let flags: Flags = params.flags;
+    let n: u64 = params.n;
+    let r: u32 = params.r;
+    let p: u32 = params.p;
+    let t: u32 = params.t;
 
-    match flags & Flags::MODE_MASK {
-        // 0 (masking and bitflags play somewhat oddly together)
-        Flags::ROUNDS_3 => {
-            // classic scrypt - can't have anything non-standard
-            if !flags.is_empty() || t != 0 || nrom != 0 {
-                return Err(Error::Params);
-            }
-        }
-        Flags::WORM => {
-            if flags != Flags::WORM || nrom != 0 {
-                return Err(Error::Params);
-            }
-        }
-        Flags::RW => {
-            // TODO(tarcieri): are these checks redundant since we have well-typed flags?
-            if flags != flags & (Flags::MODE_MASK | Flags::RW_FLAVOR_MASK | Flags::PREHASH) {
-                return Err(Error::Params);
-            }
-
-            if (flags & Flags::RW_FLAVOR_MASK)
-                != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
-            {
-                return Err(Error::Params);
-            }
-        }
-        _ => {
-            return Err(Error::Params);
-        }
-    }
     if !((out.len() as u64 <= u32::MAX as u64 * 32)
         && ((r as u64) * (p as u64) < (1 << 30) as u64)
         && !(n & (n - 1) != 0 || n <= 1 || r < 1 || p < 1)
@@ -222,23 +163,12 @@ fn yescrypt_kdf_body(
         return Err(Error::Params);
     }
 
-    if flags.contains(Flags::RW)
-        && (n / (p as u64) <= 1
-            || r < RMIN as u32
-            || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
-            || p as u64 > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
-    {
-        return Err(Error::Params);
-    }
-
-    if nrom != 0 {
-        return Err(Error::Params);
-    }
-
     let mut v = vec![0; 32 * (r as usize) * (n as usize)];
     let mut b = vec![0; 32 * (r as usize) * (p as usize)];
     let mut xy = vec![0; 64 * (r as usize)];
 
+    let mut passwd = passwd;
+    let mut sha256 = [0u8; 32];
     if !flags.is_empty() {
         sha256 = util::hmac_sha256(
             if flags.contains(Flags::PREHASH) {
@@ -280,6 +210,7 @@ fn yescrypt_kdf_body(
         }
     }
 
+    let mut dk = [0u8; 32];
     if !flags.is_empty() && out.len() < 32 {
         pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, &mut dk);
     }

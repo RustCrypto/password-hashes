@@ -58,7 +58,7 @@ fn yescrypt_reference_test() {
             }
         }
 
-        let params = Params::new(flags, 1 << N_log2, r, p);
+        let params = Params::new(flags, 1 << N_log2, r, p).unwrap();
         let salt = &EXAMPLE_SALT[..(16 - (i as usize & 15))];
 
         let actual_hash = yescrypt(EXAMPLE_PASSWD, salt, &params).unwrap();
