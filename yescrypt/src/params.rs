@@ -3,6 +3,7 @@
 use crate::{
     Error, Flags, Result,
     encoding::{decode64_uint32, encode64_uint32},
+    pwxform::{PwxformCtx, RMIN},
 };
 use core::{
     fmt::{self, Display},
@@ -41,20 +42,64 @@ impl Params {
     pub(crate) const MAX_ENCODED_LEN: usize = 8 * 6;
 
     /// Initialize params.
-    pub const fn new(flags: Flags, n: u64, r: u32, p: u32) -> Params {
+    pub fn new(flags: Flags, n: u64, r: u32, p: u32) -> Result<Params> {
         Self::new_with_all_params(flags, n, r, p, 0, 0)
     }
 
     /// Initialize params.
-    pub const fn new_with_all_params(
+    pub fn new_with_all_params(
         flags: Flags,
         n: u64,
         r: u32,
         p: u32,
         t: u32,
         g: u32,
-    ) -> Params {
-        Params {
+    ) -> Result<Params> {
+        // TODO(tarcieri): support non-zero `g`?
+        if g != 0 {
+            return Err(Error::Params);
+        }
+
+        match flags & Flags::MODE_MASK {
+            // 0 (masking and bitflags play somewhat oddly together)
+            Flags::ROUNDS_3 => {
+                // classic scrypt - can't have anything non-standard
+                if !flags.is_empty() || t != 0 {
+                    return Err(Error::Params);
+                }
+            }
+            Flags::WORM => {
+                if flags != Flags::WORM {
+                    return Err(Error::Params);
+                }
+            }
+            Flags::RW => {
+                // TODO(tarcieri): are these checks redundant since we have well-typed flags?
+                if flags != flags & (Flags::MODE_MASK | Flags::RW_FLAVOR_MASK | Flags::PREHASH) {
+                    return Err(Error::Params);
+                }
+
+                if (flags & Flags::RW_FLAVOR_MASK)
+                    != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
+                {
+                    return Err(Error::Params);
+                }
+            }
+            _ => {
+                return Err(Error::Params);
+            }
+        }
+
+        if flags.contains(Flags::RW)
+            && (n / (p as u64) <= 1
+                || r < RMIN as u32
+                || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
+                || p as u64 > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
+        {
+            return Err(Error::Params);
+        }
+
+        Ok(Params {
             flags,
             n,
             r,
@@ -62,7 +107,7 @@ impl Params {
             t,
             g,
             nrom: 0,
-        }
+        })
     }
 
     /// `N`: CPU/memory cost (like `scrypt`).
@@ -176,7 +221,15 @@ impl Default for Params {
     // > latency 10-30 ms and throughput 1000+ per second on a 16-core server)
     fn default() -> Self {
         // flags = YESCRYPT_DEFAULTS, N = 4096, r = 32, p = 1, t = 0, g = 0, NROM = 0
-        Params::new(Flags::default(), 4096, 32, 1)
+        Params {
+            flags: Flags::default(),
+            n: 4096,
+            r: 32,
+            p: 1,
+            t: 0,
+            g: 0,
+            nrom: 0,
+        }
     }
 }
 
@@ -213,15 +266,9 @@ impl FromStr for Params {
         let (r, new_pos) = decode64_uint32(bytes, pos, 1)?;
         pos = new_pos;
 
-        let mut params = Self {
-            flags,
-            n,
-            r,
-            p: 1,
-            t: 0,
-            g: 0,
-            nrom: 0,
-        };
+        let mut p = 1;
+        let mut t = 0;
+        let mut g = 0;
 
         if pos < bytes.len() {
             // "have" bits signaling which optional fields are present
@@ -230,36 +277,35 @@ impl FromStr for Params {
 
             // p
             if (have & 0x01) != 0 {
-                let (p, new_pos) = decode64_uint32(bytes, pos, 2)?;
+                let (_p, new_pos) = decode64_uint32(bytes, pos, 2)?;
                 pos = new_pos;
-                params.p = p;
+                p = _p;
             }
 
             // t
             if (have & 0x02) != 0 {
-                let (t, new_pos) = decode64_uint32(bytes, pos, 1)?;
+                let (_t, new_pos) = decode64_uint32(bytes, pos, 1)?;
                 pos = new_pos;
-                params.t = t;
+                t = _t;
             }
 
             // g
             if (have & 0x04) != 0 {
-                let (g, new_pos) = decode64_uint32(bytes, pos, 1)?;
+                let (_g, new_pos) = decode64_uint32(bytes, pos, 1)?;
                 pos = new_pos;
-                params.g = g;
+                g = _g;
             }
 
             // NROM
             if (have & 0x08) != 0 {
                 let (nrom_log2, _) = decode64_uint32(bytes, pos, 1)?;
-                if nrom_log2 > 63 {
+                if nrom_log2 != 0 {
                     return Err(Error::Params);
                 }
-                params.nrom = 1 << nrom_log2;
             }
         }
 
-        Ok(params)
+        Self::new_with_all_params(flags, n, r, p, t, g)
     }
 }
 
@@ -375,34 +421,12 @@ mod tests {
             }
         );
 
-        // t and g set
-        let p3: Params = "j953/2".parse().unwrap();
-        assert_eq!(
-            p3,
-            Params {
-                flags: Flags::default(),
-                n: 4096,
-                r: 8,
-                p: 1,
-                t: 2,
-                g: 5,
-                nrom: 0,
-            }
-        );
+        // g set
+        // TODO(tarcieri): support non-zero g
+        assert!("j953/2".parse::<Params>().is_err());
 
-        // NROM set (power of two)
-        let p4: Params = "jC559".parse().unwrap();
-        assert_eq!(
-            p4,
-            Params {
-                flags: Flags::default(),
-                n: 32768,
-                r: 8,
-                p: 1,
-                t: 0,
-                g: 0,
-                nrom: 4096,
-            }
-        );
+        // NROM set
+        // TODO(tarcieri): support NROM
+        assert!("jC559".parse::<Params>().is_err());
     }
 }
