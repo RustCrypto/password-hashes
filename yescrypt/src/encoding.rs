@@ -18,6 +18,49 @@ pub const ATOI64: [u8; 128] = {
     tbl
 };
 
+pub(crate) fn decode64<'o>(src: &str, dst: &'o mut [u8]) -> Result<&'o [u8]> {
+    let src = src.as_bytes();
+    let mut pos = 0usize;
+    let mut i = 0usize;
+
+    while i < src.len() {
+        let mut value = 0u32;
+        let mut bits = 0u32;
+
+        while bits < 24 && i < src.len() {
+            let c = match ATOI64.get(src[i] as usize) {
+                Some(&c) if c <= 63 => c,
+                _ => return Err(Error::Encoding),
+            };
+
+            value |= (c as u32) << bits;
+            bits += 6;
+            i += 1;
+        }
+
+        // must have at least one full byte
+        if bits < 12 {
+            return Err(Error::Encoding);
+        }
+
+        while pos < dst.len() {
+            dst[pos] = value as u8;
+            pos += 1;
+            value >>= 8;
+            bits -= 8;
+            if bits < 8 {
+                if value != 0 {
+                    // 2 or 4
+                    return Err(Error::Encoding);
+                }
+                break;
+            }
+        }
+    }
+
+    Ok(&dst[..pos])
+}
+
 pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)> {
     let mut start = 0u32;
     let mut end = 47u32;
@@ -110,7 +153,7 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
     Ok(pos)
 }
 
-pub(crate) fn encode64<'a>(src: &[u8], buf: &'a mut [u8]) -> Result<&'a str> {
+pub(crate) fn encode64<'o>(src: &[u8], out: &'o mut [u8]) -> Result<&'o str> {
     let mut pos = 0;
     let mut i = 0;
 
@@ -122,11 +165,11 @@ pub(crate) fn encode64<'a>(src: &[u8], buf: &'a mut [u8]) -> Result<&'a str> {
             bits += 8;
             i += 1;
         }
-        let dnext = encode64_uint32_fixed(&mut buf[pos..], value, bits)?;
+        let dnext = encode64_uint32_fixed(&mut out[pos..], value, bits)?;
         pos += dnext;
     }
 
-    str::from_utf8(&buf[..pos]).map_err(|_| Error::Encoding)
+    str::from_utf8(&out[..pos]).map_err(|_| Error::Encoding)
 }
 
 fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<usize> {

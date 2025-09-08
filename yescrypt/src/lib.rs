@@ -119,6 +119,51 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     Ok(mcf_hash.into())
 }
 
+/// Verify a password matches the given yescrypt password hash.
+///
+/// Password hash should begin with `$y$` in Modular Crypt Format (MCF).
+pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
+    let hash = mcf::PasswordHashRef::try_from(hash).map_err(|_| Error::Encoding)?;
+
+    // verify id matches `$y`
+    if hash.id() != YESCRYPT_MCF_ID {
+        return Err(Error::Algorithm);
+    }
+
+    let mut fields = hash.fields();
+
+    // decode params
+    let params: Params = fields.next().ok_or(Error::Encoding)?.as_str().parse()?;
+
+    // decode salt
+    // TODO(tarcieri): use `mcf` crate's Base64 support
+    let mut salt_buf = [0u8; 16]; // TODO(tarcieri): support larger salts?
+    let salt_str = fields.next().ok_or(Error::Encoding)?.as_str();
+    let salt = encoding::decode64(salt_str, &mut salt_buf)?;
+
+    // decode expected password hash
+    const MAX_HASH_SIZE: usize = 32; // TODO(tarcieri): support larger outputs?
+    let mut expected_buf = [0u8; MAX_HASH_SIZE];
+    let expected_str = fields.next().ok_or(Error::Encoding)?.as_str();
+    let expected = encoding::decode64(expected_str, &mut expected_buf)?;
+
+    // should be the last field
+    if fields.next().is_some() {
+        return Err(Error::Encoding);
+    }
+
+    let mut actual_buf = [0u8; MAX_HASH_SIZE];
+    let actual = &mut actual_buf[..expected.len()];
+    yescrypt_kdf(passwd, salt, &params, actual)?;
+
+    // TODO(tarcieri): constant-time comparison?
+    if expected != actual {
+        return Err(Error::Password);
+    }
+
+    Ok(())
+}
+
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
     // Perform conditional pre-hashing
