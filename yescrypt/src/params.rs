@@ -4,8 +4,10 @@ use crate::{
     Error, Flags, Result,
     encoding::{decode64_uint32, encode64_uint32},
 };
-use alloc::string::{String, ToString};
-use core::str::{self, FromStr};
+use core::{
+    fmt::{self, Display},
+    str::{self, FromStr},
+};
 
 /// `yescrypt` algorithm parameters.
 ///
@@ -261,10 +263,10 @@ impl FromStr for Params {
     }
 }
 
-impl ToString for Params {
-    fn to_string(&self) -> String {
+impl Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buf = [0u8; Self::MAX_ENCODED_LEN];
-        self.encode(&mut buf).expect("params encode failed").into()
+        f.write_str(self.encode(&mut buf).expect("params encode failed"))
     }
 }
 
