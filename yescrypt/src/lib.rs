@@ -136,13 +136,30 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         return Err(Error);
     }
 
-    if params.flags.contains(Flags::RW)
+    // Perform conditional pre-hashing
+    let mut dk = [0u8; 32];
+    let passwd = if params.flags.contains(Flags::RW)
         && params.p >= 1
-        && (params.n / params.p as u64) >= 0x100
-        && params.n / (params.p as u64) / (params.r as u64) >= 0x20000
+        && params.n / (params.p as u64) >= 0x100
+        && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
     {
-        return Err(Error);
-    }
+        yescrypt_kdf_body(
+            &mut local,
+            passwd,
+            salt,
+            params.flags | Flags::PREHASH,
+            params.n >> 6,
+            params.r,
+            params.p,
+            0,
+            params.nrom,
+            &mut dk,
+        )?;
+
+        &dk
+    } else {
+        passwd
+    };
 
     yescrypt_kdf_body(
         &mut local,

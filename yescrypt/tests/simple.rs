@@ -40,14 +40,6 @@ fn yescrypt_reference_test() {
     for (i, &expected_hash) in EXAMPLE_HASHES.iter().enumerate() {
         let i = i as u32;
 
-        // TODO(tarcieri): debug what's wrong with test case #1 (RustCrypto/password-hashes#680)
-        // flags: Flags(RW | ROUNDS_6 | GATHER_4 | SIMPLE_2 | SBOX_12K),
-        // n: 32768, r: 7, p: 1, t: 0, g: 0, nrom: 0
-        // We compute: `$y$jC4$LdJMENpBABJJ3hIHjB1B$uASRlRN7zZJm0O6PsGMZuTwZiO46DFweFRGnIxEjnl4`
-        if i == 1 {
-            continue;
-        }
-
         // Test case logic adapted from the yescrypt C reference implementation (tests.c)
         let mut N_log2 = if i < 14 { 16 - i } else { 2 };
         let r = if i < 8 { 8 - i } else { 1 + (i & 1) };

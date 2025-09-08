@@ -263,3 +263,21 @@ fn kat24() {
     yescrypt_kdf(b"p", b"s", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
 }
+
+/// Regression test for RustCrypto/password-hashes#680
+#[test]
+fn regression680() {
+    let params = Params::new(Flags::default(), 4096, 32, 1);
+    let salt: &[u8] = &[
+        198, 183, 30, 133, 125, 115, 128, 76, 161, 57, 49, 10, 94, 249, 166, 29,
+    ];
+    let mut output = [0u8; 32];
+    yescrypt_kdf(b"password", salt, &params, &mut output).unwrap();
+    assert_eq!(
+        output,
+        [
+            197, 98, 241, 33, 68, 79, 182, 214, 153, 96, 65, 173, 79, 243, 43, 4, 53, 180, 211,
+            128, 155, 167, 159, 129, 73, 143, 205, 236, 163, 185, 102, 186
+        ]
+    );
+}
