@@ -18,21 +18,21 @@ pub const ATOI64: [u8; 128] = {
     tbl
 };
 
-pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Option<(u32, usize)> {
+pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)> {
     let mut start = 0u32;
     let mut end = 47u32;
     let mut chars = 1u32;
     let mut bits = 0u32;
 
     if pos >= src.len() {
-        return None;
+        return Err(Error::Encoding);
     }
 
-    let mut c = *ATOI64.get(src[pos] as usize)?;
+    let c = match ATOI64.get(src[pos] as usize) {
+        Some(&c) if c <= 63 => c,
+        _ => return Err(Error::Encoding),
+    };
     pos += 1;
-    if c > 63 {
-        return None;
-    }
 
     let mut dst = min;
     while c as u32 > end {
@@ -49,20 +49,20 @@ pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Option<(u
         chars -= 1;
 
         if bits < 6 || pos >= src.len() {
-            return None;
+            return Err(Error::Encoding);
         }
 
-        c = *ATOI64.get(src[pos] as usize)?;
+        let c = match ATOI64.get(src[pos] as usize) {
+            Some(&c) if c <= 63 => c,
+            _ => return Err(Error::Encoding),
+        };
         pos += 1;
-        if c > 63 {
-            return None;
-        }
 
         bits -= 6;
         dst += (c as u32) << bits;
     }
 
-    Some((dst, pos))
+    Ok((dst, pos))
 }
 
 pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<usize> {
@@ -72,7 +72,7 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
     let mut bits = 0u32;
 
     if src < min {
-        return Err(Error);
+        return Err(Error::Params);
     }
 
     src -= min;
@@ -83,7 +83,7 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
             break;
         }
         if start >= 63 {
-            return Err(Error);
+            return Err(Error::Encoding);
         }
         start = end + 1;
         end = start + (62 - end) / 2;
@@ -93,7 +93,7 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
     }
 
     if dst.len() < (chars as usize) {
-        return Err(Error);
+        return Err(Error::Encoding);
     }
 
     let mut pos: usize = 0;
@@ -126,7 +126,7 @@ pub(crate) fn encode64<'a>(src: &[u8], buf: &'a mut [u8]) -> Result<&'a str> {
         pos += dnext;
     }
 
-    str::from_utf8(&buf[..pos]).map_err(|_| Error)
+    str::from_utf8(&buf[..pos]).map_err(|_| Error::Encoding)
 }
 
 fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<usize> {
@@ -135,7 +135,7 @@ fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<u
 
     while bits < srcbits {
         if dst.len() <= pos {
-            return Err(Error);
+            return Err(Error::Encoding);
         }
 
         dst[pos] = ITOA64[(src & 0x3f) as usize];
@@ -145,7 +145,7 @@ fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<u
     }
 
     if src != 0 || dst.len() < pos {
-        return Err(Error);
+        return Err(Error::Encoding);
     }
 
     Ok(pos)

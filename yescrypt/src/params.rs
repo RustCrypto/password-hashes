@@ -94,21 +94,21 @@ impl Params {
         {
             Flags::RW.bits() + (self.flags.bits() >> 2)
         } else {
-            return Err(Error);
+            return Err(Error::Params);
         };
 
         let N_log2 = N2log2(self.n);
         if N_log2 == 0 {
-            return Err(Error);
+            return Err(Error::Params);
         }
 
         let NROM_log2 = N2log2(self.nrom);
         if self.nrom != 0 && NROM_log2 == 0 {
-            return Err(Error);
+            return Err(Error::Params);
         }
 
         if (self.r as u64) * (self.p as u64) >= (1 << 30) {
-            return Err(Error);
+            return Err(Error::Params);
         }
 
         let mut pos = 0;
@@ -165,7 +165,7 @@ impl Params {
             pos += written;
         }
 
-        str::from_utf8(&out[..pos]).map_err(|_| Error)
+        str::from_utf8(&out[..pos]).map_err(|_| Error::Encoding)
     }
 }
 
@@ -189,7 +189,7 @@ impl FromStr for Params {
         let mut pos = 0usize;
 
         // flags
-        let (flavor, new_pos) = decode64_uint32(bytes, pos, 0).ok_or(Error)?;
+        let (flavor, new_pos) = decode64_uint32(bytes, pos, 0)?;
         pos = new_pos;
 
         let flags = if flavor < Flags::RW.bits() {
@@ -197,20 +197,20 @@ impl FromStr for Params {
         } else if flavor <= Flags::RW.bits() + (Flags::RW_FLAVOR_MASK.bits() >> 2) {
             Flags::from_bits(Flags::RW.bits() + ((flavor - Flags::RW.bits()) << 2))
         } else {
-            return Err(Error);
+            return Err(Error::Params);
         }
-        .ok_or(Error)?;
+        .ok_or(Error::Encoding)?;
 
         // Nlog2
-        let (nlog2, new_pos) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+        let (nlog2, new_pos) = decode64_uint32(bytes, pos, 1)?;
         pos = new_pos;
         if nlog2 > 63 {
-            return Err(Error);
+            return Err(Error::Encoding);
         }
         let n = 1 << nlog2;
 
         // r
-        let (r, new_pos) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+        let (r, new_pos) = decode64_uint32(bytes, pos, 1)?;
         pos = new_pos;
 
         let mut params = Self {
@@ -225,35 +225,35 @@ impl FromStr for Params {
 
         if pos < bytes.len() {
             // "have" bits signaling which optional fields are present
-            let (have, new_pos) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+            let (have, new_pos) = decode64_uint32(bytes, pos, 1)?;
             pos = new_pos;
 
             // p
             if (have & 0x01) != 0 {
-                let (p, new_pos) = decode64_uint32(bytes, pos, 2).ok_or(Error)?;
+                let (p, new_pos) = decode64_uint32(bytes, pos, 2)?;
                 pos = new_pos;
                 params.p = p;
             }
 
             // t
             if (have & 0x02) != 0 {
-                let (t, new_pos) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+                let (t, new_pos) = decode64_uint32(bytes, pos, 1)?;
                 pos = new_pos;
                 params.t = t;
             }
 
             // g
             if (have & 0x04) != 0 {
-                let (g, new_pos) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+                let (g, new_pos) = decode64_uint32(bytes, pos, 1)?;
                 pos = new_pos;
                 params.g = g;
             }
 
             // NROM
             if (have & 0x08) != 0 {
-                let (nrom_log2, _) = decode64_uint32(bytes, pos, 1).ok_or(Error)?;
+                let (nrom_log2, _) = decode64_uint32(bytes, pos, 1)?;
                 if nrom_log2 > 63 {
-                    return Err(Error);
+                    return Err(Error::Params);
                 }
                 params.nrom = 1 << nrom_log2;
             }
