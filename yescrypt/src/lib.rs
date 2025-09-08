@@ -101,7 +101,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     // Add params string to the hash
     let mut params_buf = [0u8; Params::MAX_ENCODED_LEN];
     let params_str = params.encode(&mut params_buf)?;
-    let field = mcf::Field::new(params_str).map_err(|_| Error)?;
+    let field = mcf::Field::new(params_str).map_err(|_| Error::Encoding)?;
     mcf_hash.push_field(field);
 
     let mut buf = [0u8; (HASH_SIZE * 4).div_ceil(3)];
@@ -110,12 +110,12 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     // TODO(tarcieri): use `mcf` crate's Base64 support
     mcf_hash
         .push_str(encoding::encode64(salt, &mut buf)?)
-        .map_err(|_| Error)?;
+        .map_err(|_| Error::Encoding)?;
 
     // Add yescrypt output
     mcf_hash
         .push_str(encoding::encode64(&out, &mut buf)?)
-        .map_err(|_| Error)?;
+        .map_err(|_| Error::Encoding)?;
 
     // Convert to a normal `String` to keep `mcf` out of the public API (for now)
     Ok(mcf_hash.into())
@@ -124,7 +124,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
     if params.g != 0 {
-        return Err(Error);
+        return Err(Error::Params);
     }
 
     // Perform conditional pre-hashing
@@ -189,28 +189,28 @@ fn yescrypt_kdf_body(
         Flags::ROUNDS_3 => {
             // classic scrypt - can't have anything non-standard
             if !flags.is_empty() || t != 0 || nrom != 0 {
-                return Err(Error);
+                return Err(Error::Params);
             }
         }
         Flags::WORM => {
             if flags != Flags::WORM || nrom != 0 {
-                return Err(Error);
+                return Err(Error::Params);
             }
         }
         Flags::RW => {
             // TODO(tarcieri): are these checks redundant since we have well-typed flags?
             if flags != flags & (Flags::MODE_MASK | Flags::RW_FLAVOR_MASK | Flags::PREHASH) {
-                return Err(Error);
+                return Err(Error::Params);
             }
 
             if (flags & Flags::RW_FLAVOR_MASK)
                 != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
             {
-                return Err(Error);
+                return Err(Error::Params);
             }
         }
         _ => {
-            return Err(Error);
+            return Err(Error::Params);
         }
     }
     if !((out.len() as u64 <= u32::MAX as u64 * 32)
@@ -219,7 +219,7 @@ fn yescrypt_kdf_body(
         && !(r as u64 > u64::MAX / 128 / (p as u64) || n > u64::MAX / 128 / (r as u64))
         && (n <= u64::MAX / ((t as u64) + 1)))
     {
-        return Err(Error);
+        return Err(Error::Params);
     }
 
     if flags.contains(Flags::RW)
@@ -228,11 +228,11 @@ fn yescrypt_kdf_body(
             || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
             || p as u64 > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
     {
-        return Err(Error);
+        return Err(Error::Params);
     }
 
     if nrom != 0 {
-        return Err(Error);
+        return Err(Error::Params);
     }
 
     let mut v = vec![0; 32 * (r as usize) * (n as usize)];
