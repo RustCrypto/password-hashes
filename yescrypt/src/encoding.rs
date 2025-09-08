@@ -7,6 +7,64 @@ use core::str;
 /// (s)crypt-flavored Base64 alphabet.
 static ITOA64: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+/// Reverse lookup table for (s)crypt-flavored Base64 alphabet.
+pub const ATOI64: [u8; 128] = {
+    let mut tbl = [0xFFu8; 128]; // use 0xFF as a placeholder for invalid chars
+    let mut i = 0;
+    while i < 64 {
+        tbl[ITOA64[i] as usize] = i as u8;
+        i += 1;
+    }
+    tbl
+};
+
+pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Option<(u32, usize)> {
+    let mut start = 0u32;
+    let mut end = 47u32;
+    let mut chars = 1u32;
+    let mut bits = 0u32;
+
+    if pos >= src.len() {
+        return None;
+    }
+
+    let mut c = *ATOI64.get(src[pos] as usize)?;
+    pos += 1;
+    if c > 63 {
+        return None;
+    }
+
+    let mut dst = min;
+    while c as u32 > end {
+        dst += (end + 1 - start) << bits;
+        start = end + 1;
+        end = start + (62 - end) / 2;
+        chars += 1;
+        bits += 6;
+    }
+
+    dst += ((c as u32) - start) << bits;
+
+    while chars > 1 {
+        chars -= 1;
+
+        if bits < 6 || pos >= src.len() {
+            return None;
+        }
+
+        c = *ATOI64.get(src[pos] as usize)?;
+        pos += 1;
+        if c > 63 {
+            return None;
+        }
+
+        bits -= 6;
+        dst += (c as u32) << bits;
+    }
+
+    Some((dst, pos))
+}
+
 pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<usize> {
     let mut start = 0u32;
     let mut end = 47u32;
@@ -52,7 +110,6 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
     Ok(pos)
 }
 
-/// Encode (s)crypt-flavored Base64, using the provided `buf` for storing output.
 pub(crate) fn encode64<'a>(src: &[u8], buf: &'a mut [u8]) -> Result<&'a str> {
     let mut pos = 0;
     let mut i = 0;
