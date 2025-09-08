@@ -72,7 +72,7 @@ pub use crate::{
 };
 
 use crate::pwxform::{PwxformCtx, RMIN};
-use alloc::{boxed::Box, vec, vec::Vec};
+use alloc::vec;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "simple")]
@@ -81,11 +81,6 @@ use alloc::string::String;
 /// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
 #[cfg(feature = "simple")]
 const YESCRYPT_MCF_ID: &str = "y";
-
-#[derive(Clone)]
-struct Local {
-    pub aligned: Box<[u32]>,
-}
 
 /// yescrypt password hashing function.
 ///
@@ -128,23 +123,19 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
-    let mut local = Local {
-        aligned: Vec::new().into_boxed_slice(),
-    };
-
     if params.g != 0 {
         return Err(Error);
     }
 
     // Perform conditional pre-hashing
+    let mut passwd = passwd;
     let mut dk = [0u8; 32];
-    let passwd = if params.flags.contains(Flags::RW)
+    if params.flags.contains(Flags::RW)
         && params.p >= 1
         && params.n / (params.p as u64) >= 0x100
         && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
     {
         yescrypt_kdf_body(
-            &mut local,
             passwd,
             salt,
             params.flags | Flags::PREHASH,
@@ -156,13 +147,10 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
             &mut dk,
         )?;
 
-        &dk
-    } else {
-        passwd
-    };
+        passwd = &dk;
+    }
 
     yescrypt_kdf_body(
-        &mut local,
         passwd,
         salt,
         params.flags,
@@ -181,7 +169,6 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
 /// - `t` controls computation time while not affecting peak memory usage.
 #[allow(clippy::too_many_arguments)]
 fn yescrypt_kdf_body(
-    local: &mut Local,
     passwd: &[u8],
     salt: &[u8],
     flags: Flags,
@@ -193,7 +180,6 @@ fn yescrypt_kdf_body(
     out: &mut [u8],
 ) -> Result<()> {
     let mut passwd = passwd;
-
     let mut sha256 = [0u8; 32];
     let mut dk = [0u8; 32];
 
@@ -211,15 +197,8 @@ fn yescrypt_kdf_body(
             }
         }
         Flags::RW => {
-            if flags
-                != flags
-                    & (Flags::MODE_MASK
-                        | Flags::RW_FLAVOR_MASK
-                        | Flags::SHARED_PREALLOCATED
-                        | Flags::INIT_SHARED
-                        | Flags::ALLOC_ONLY
-                        | Flags::PREHASH)
-            {
+            // TODO(tarcieri): are these checks redundant since we have well-typed flags?
+            if flags != flags & (Flags::MODE_MASK | Flags::RW_FLAVOR_MASK | Flags::PREHASH) {
                 return Err(Error);
             }
 
@@ -255,29 +234,9 @@ fn yescrypt_kdf_body(
         return Err(Error);
     }
 
-    let mut v_owned: Box<[u32]>;
-    let v_size = 32 * (r as usize) * (n as usize);
-    let v = if flags.contains(Flags::INIT_SHARED) {
-        if local.aligned.len() < v_size {
-            // why can't we just reallocate here?
-            if !local.aligned.is_empty() {
-                return Err(Error);
-            }
-
-            local.aligned = vec![0; v_size].into_boxed_slice();
-        }
-        if flags.contains(Flags::ALLOC_ONLY) {
-            return Err(Error);
-        }
-        &mut *local.aligned
-    } else {
-        v_owned = vec![0; v_size].into_boxed_slice();
-        &mut *v_owned
-    };
-
-    let b_size = 32 * (r as usize) * (p as usize);
-    let mut b = vec![0u32; b_size].into_boxed_slice();
-    let mut xy = vec![0u32; 64 * (r as usize)].into_boxed_slice();
+    let mut v = vec![0; 32 * (r as usize) * (n as usize)];
+    let mut b = vec![0; 32 * (r as usize) * (p as usize)];
+    let mut xy = vec![0; 64 * (r as usize)];
 
     if !flags.is_empty() {
         sha256 = util::hmac_sha256(
@@ -300,7 +259,7 @@ fn yescrypt_kdf_body(
     }
 
     if flags.contains(Flags::RW) {
-        smix::smix(&mut b, r as usize, n, p, t, flags, v, &mut xy, &mut sha256);
+        smix::smix(&mut b, r, n, p, t, flags, &mut v, &mut xy, &mut sha256);
         passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
@@ -308,12 +267,12 @@ fn yescrypt_kdf_body(
             // 3: B_i <-- MF(B_i, N)
             smix::smix(
                 &mut b[(32 * (r as usize) * (i as usize))..],
-                r as usize,
+                r,
                 n,
                 1,
                 t,
                 flags,
-                v,
+                &mut v,
                 &mut xy,
                 &mut [],
             );
