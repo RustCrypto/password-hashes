@@ -102,14 +102,7 @@ use rayon::prelude::*;
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
-use {
-    digest::{
-        HashMarker,
-        block_api::BlockSizeUser,
-        typenum::{IsLess, NonZero, True, U256},
-    },
-    hmac::EagerHash,
-};
+use hmac::EagerHash;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -230,9 +223,7 @@ where
 #[cfg(feature = "hmac")]
 pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
-    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
-    <D as EagerHash>::Core: Sync,
-    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
+    D: EagerHash<Core: Sync>,
 {
     crate::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
@@ -254,9 +245,7 @@ where
 #[cfg(feature = "hmac")]
 pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
 where
-    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
-    <D as EagerHash>::Core: Sync,
-    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
+    D: EagerHash<Core: Sync>,
 {
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
