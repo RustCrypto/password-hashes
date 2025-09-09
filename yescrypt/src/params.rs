@@ -13,6 +13,8 @@ use core::{
 
 /// `yescrypt` algorithm parameters.
 ///
+/// [`Params::default`] provides the recommended parameters.
+///
 /// These are various algorithm settings which can control e.g. the amount of resource utilization.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Params {
@@ -41,7 +43,7 @@ pub struct Params {
     /// `0` means no upgrades yet, and is currently the only allowed value.
     pub(crate) g: u32,
 
-    /// special to yescrypt.
+    /// Number of NROM blocks (128r bytes each).
     pub(crate) nrom: u64,
 }
 
@@ -50,11 +52,21 @@ impl Params {
     pub(crate) const MAX_ENCODED_LEN: usize = 8 * 6;
 
     /// Initialize params.
+    ///
+    /// Accepts the following arguments:
+    /// - `mode`: most users will want [`Mode::default`]. See the [`Mode`] type for more info.
+    /// - `n`: CPU/memory cost. See [`Params::n`] for more info.
+    /// - `r`: resource usage. See [`Params::r`] for more info.
+    /// - `p`: parallelization. See [`Params::p`] for more info.
     pub fn new(mode: Mode, n: u64, r: u32, p: u32) -> Result<Params> {
         Self::new_with_all_params(mode, n, r, p, 0, 0)
     }
 
-    /// Initialize params.
+    /// Initialize params including additional `yescrypt`-specific settings.
+    ///
+    /// Accepts all the same arguments as [`Params::new`] with the following additional arguments:
+    /// - `t`: increase computation time while keeping peak memory usage the same. `0` is optimal.
+    /// - `g`: number of cost upgrades performed on the hash so far. `0` is the only allowed value.
     pub fn new_with_all_params(
         mode: Mode,
         n: u64,
@@ -103,6 +115,9 @@ impl Params {
     }
 
     /// `p` parameter: parallelization (like `scrypt`).
+    ///
+    /// Allows use of multithreaded parallelism (not currently implemented, `1` is the recommended
+    /// setting for now).
     pub const fn p(&self) -> u32 {
         self.p
     }

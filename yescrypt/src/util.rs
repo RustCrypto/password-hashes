@@ -1,5 +1,8 @@
 //! Utility functions.
 
+// TODO(tarcieri): find safe replacements for unsafe code if possible
+#![allow(unsafe_code)]
+
 use core::{ops::BitXorAssign, slice};
 use sha2::Sha256;
 

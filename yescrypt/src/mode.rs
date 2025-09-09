@@ -12,17 +12,19 @@ const SBOX_12K: u32 = 0b100000;
 // TODO(tarcieri): support other flavors of yescrypt?
 const RW_FLAVOR: u32 = 2 | ROUNDS_6 | GATHER_4 | SIMPLE_2 | SBOX_12K;
 
-/// yescrypt modes
+/// yescrypt modes: various ways yescrypt can operate.
+///
+/// [`Mode::default`] (`Rw`) is recommended.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(u32)]
 pub enum Mode {
-    /// classic scrypt
+    /// classic scrypt: yescrypt is a superset of scrypt.
     Classic = 0,
 
-    /// write-once/read-many: conservative enhancement of classic scrypt
+    /// write-once/read-many: conservative enhancement of classic scrypt.
     Worm = 1,
 
-    /// yescrypt’s native mode: read-write
+    /// yescrypt’s native mode: read-write (recommended/default).
     #[default]
     Rw = RW_FLAVOR,
 }
