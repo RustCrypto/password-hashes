@@ -151,7 +151,8 @@ impl PwxformCtx<'_> {
     }
 }
 
-fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
+#[allow(unsafe_code)]
+pub(crate) fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
     const {
         assert!(
             size_of::<[u32; 16]>() == size_of::<[[[u32; PWXSIMPLE]; 2]; 4]>(),
