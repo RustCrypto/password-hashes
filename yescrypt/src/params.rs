@@ -20,6 +20,9 @@ pub struct Params {
     pub(crate) flags: Flags,
 
     /// `N`: CPU/memory cost (like `scrypt`).
+    ///
+    /// yescrypt, including in scrypt compatibility mode, is defined only for values of N that are
+    /// powers of 2 (and larger than 1, which matches scrypt’s requirements).
     pub(crate) n: u64,
 
     /// `r`: block size (like `scrypt`).
@@ -28,10 +31,14 @@ pub struct Params {
     /// `p`: parallelism (like `scrypt`).
     pub(crate) p: u32,
 
-    /// special to yescrypt.
+    /// Controls yescrypt’s computation time while keeping its peak memory usage the same.
+    ///
+    /// `t = 0` is optimal for achieving the highest normalized area-time cost for ASIC attackers.
     pub(crate) t: u32,
 
-    /// special to yescrypt.
+    /// The number of cost upgrades performed to the hash so far.
+    ///
+    /// `0` means no upgrades yet, and is currently the only allowed value.
     pub(crate) g: u32,
 
     /// special to yescrypt.

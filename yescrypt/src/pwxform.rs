@@ -1,17 +1,31 @@
-//! pwxform: parallel wide transformation
+//! pwxform stands for "parallel wide transformation", although it can as well be tuned to be as
+//! narrow as one 64-bit lane.
+//!
+//! It operates on 64-bit lanes which are designed to be grouped into wider "simple SIMD" lanes,
+//! which are in turn possibly grouped into an even wider "gather SIMD" vector.
 
 use crate::{
     salsa20,
     util::{slice_as_chunks_mut, xor},
 };
 
-// These are tunable, but they must meet certain constraints.
+/// Number of 64-bit lanes per "simple SIMD" lane (requiring only arithmetic and bitwise operations
+/// on its 64-bit elements). Must be a power of 2.
 const PWXSIMPLE: usize = 2;
+
+/// Number of parallel "simple SIMD" lanes per "gather SIMD" vector (requiring "S-box lookups" of
+/// values as wide as a "simple SIMD" lane from PWXgather typically non-contiguous memory
+/// locations). Must be a power of 2.
 const PWXGATHER: usize = 4;
+
+/// Number of sequential rounds of pwxform’s basic transformation. Must be a power of 2, plus 2
+/// (e.g. 3, 4, 6, 10).
 const PWXROUNDS: usize = 6;
+
+/// Number of S-box index bits, thereby controlling the size of each of pwxform’s two S-boxes
+/// (in "simple SIMD" wide elements).
 const SWIDTH: usize = 8;
 
-// Derived values.  Not tunable on their own.
 const PWXBYTES: usize = PWXGATHER * PWXSIMPLE * 8;
 const PWXWORDS: usize = PWXBYTES / size_of::<u32>();
 const SMASK: usize = ((1 << SWIDTH) - 1) * PWXSIMPLE * 8;
@@ -28,9 +42,13 @@ pub(crate) struct PwxformCtx<'a> {
 }
 
 impl PwxformCtx<'_> {
-    /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`.
+    /// Compute `B = BlockMix_pwxform{salsa20/2, ctx, r}(B)`. Input `B` must be 128 bytes in length.
     ///
-    /// The input `B` must be 128r bytes in length.
+    /// `BlockMix_pwxform` differs from scrypt’s `BlockMix` in that it doesn’t shuffle output
+    /// sub-blocks, uses pwxform in place of Salsa20/8 for as long as sub-blocks processed with
+    /// pwxform fit in the provided block B, and finally uses Salsa20/2 (that is, Salsa20 with only
+    /// one double-round) to post-process the last sub-block output by pwxform (thereby finally
+    /// mixing pwxform’s parallel lanes).
     pub(crate) fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
         // Convert 128-byte blocks to PWXbytes blocks
         // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88

@@ -10,6 +10,12 @@ const MODE_MASK: u32 = 0x3;
 const RW_FLAVOR_MASK: u32 = 0x3fc;
 
 /// Flags for selecting the "flavor" of `yescrypt`.
+///
+/// A bitmask allowing to enable the individual extra features of yescrypt, e.g:
+///
+/// - [`Flags::RW`]: yescrypt’s native mode. Call [`Flags::default`] to fully configure this.
+/// - [`Flags::WORM`]: conservative enhancement of classic scrypt. Mutually exclusive with `RW`.
+/// - [`Flags::EMPTY`]: requests classic scrypt.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Flags(pub(crate) u32);
 
