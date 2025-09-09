@@ -3,6 +3,7 @@
 use crate::{
     Error, Flags, Result,
     encoding::{decode64_uint32, encode64_uint32},
+    flags::Mode,
     pwxform::{PwxformCtx, RMIN},
 };
 use core::{
@@ -60,37 +61,29 @@ impl Params {
             return Err(Error::Params);
         }
 
-        match flags & Flags::MODE_MASK {
-            // 0 (masking and bitflags play somewhat oddly together)
-            Flags::ROUNDS_3 => {
+        match flags.mode()? {
+            Mode::Classic => {
                 // classic scrypt - can't have anything non-standard
                 if !flags.is_empty() || t != 0 {
                     return Err(Error::Params);
                 }
             }
-            Flags::WORM => {
+            Mode::Worm => {
                 if flags != Flags::WORM {
                     return Err(Error::Params);
                 }
             }
-            Flags::RW => {
-                // TODO(tarcieri): are these checks redundant since we have well-typed flags?
-                if flags != flags & (Flags::MODE_MASK | Flags::RW_FLAVOR_MASK | Flags::PREHASH) {
-                    return Err(Error::Params);
-                }
-
-                if (flags & Flags::RW_FLAVOR_MASK)
+            Mode::Rw { flavor_bits } => {
+                if flavor_bits
                     != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
+                        .bits()
                 {
                     return Err(Error::Params);
                 }
             }
-            _ => {
-                return Err(Error::Params);
-            }
         }
 
-        if flags.contains(Flags::RW)
+        if flags.has_rw()
             && (n / (p as u64) <= 1
                 || r < RMIN as u32
                 || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
@@ -132,15 +125,7 @@ impl Params {
     /// Encode params as (s)crypt-flavored Base64.
     #[allow(non_snake_case)]
     pub(crate) fn encode<'o>(&self, out: &'o mut [u8]) -> Result<&'o str> {
-        let flavor = if self.flags.bits() < Flags::RW.bits() {
-            self.flags.bits()
-        } else if (self.flags & Flags::MODE_MASK) == Flags::RW
-            && self.flags.bits() <= (Flags::RW | Flags::RW_FLAVOR_MASK).bits()
-        {
-            Flags::RW.bits() + (self.flags.bits() >> 2)
-        } else {
-            return Err(Error::Params);
-        };
+        let flavor = self.flags.flavor()?;
 
         let N_log2 = N2log2(self.n);
         if N_log2 == 0 {
@@ -244,15 +229,7 @@ impl FromStr for Params {
         // flags
         let (flavor, new_pos) = decode64_uint32(bytes, pos, 0)?;
         pos = new_pos;
-
-        let flags = if flavor < Flags::RW.bits() {
-            Flags::from_bits(flavor)
-        } else if flavor <= Flags::RW.bits() + (Flags::RW_FLAVOR_MASK.bits() >> 2) {
-            Flags::from_bits(Flags::RW.bits() + ((flavor - Flags::RW.bits()) << 2))
-        } else {
-            return Err(Error::Params);
-        }
-        .ok_or(Error::Encoding)?;
+        let flags = Flags::from_flavor(flavor)?;
 
         // Nlog2
         let (nlog2, new_pos) = decode64_uint32(bytes, pos, 1)?;

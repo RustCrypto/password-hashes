@@ -169,7 +169,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
     // Perform conditional pre-hashing
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
-    if params.flags.contains(Flags::RW)
+    if params.flags.has_rw()
         && params.p >= 1
         && params.n / (params.p as u64) >= 0x100
         && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
@@ -216,7 +216,7 @@ fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]
     let mut sha256 = [0u8; 32];
     if !flags.is_empty() {
         sha256 = util::hmac_sha256(
-            if flags.contains(Flags::PREHASH) {
+            if flags.has_prehash() {
                 &b"yescrypt-prehash"[..]
             } else {
                 &b"yescrypt"[..]
@@ -234,7 +234,7 @@ fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]
         passwd = &sha256;
     }
 
-    if flags.contains(Flags::RW) {
+    if flags.has_rw() {
         smix::smix(&mut b, r, n, p, t, flags, &mut v, &mut xy, &mut sha256);
         passwd = &sha256;
     } else {
@@ -268,7 +268,7 @@ fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]
     // SCRAM (RFC 5802), so that an extension of SCRAM (with the steps so
     // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
     // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
-    if !flags.is_empty() && !flags.contains(Flags::PREHASH) {
+    if !flags.is_empty() && !flags.has_prehash() {
         let dkp = if !flags.is_empty() && out.len() < 32 {
             &mut dk
         } else {
