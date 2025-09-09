@@ -15,6 +15,8 @@ yescrypt is a variant of the [scrypt] password-based key derivation function and
 [Password Hashing Competition]. It has been adopted by several Linux distributions for the system
 password hashing function, including Fedora, Debian, Ubuntu, and Arch.
 
+The algorithm is described in [yescrypt - a Password Hashing Competition submission][paper].
+
 ## ⚠️ Security Warning
 
 The implementation contained in this crate has never been independently audited!
@@ -64,3 +66,4 @@ dual licensed as above, without any additional terms or conditions.
 [yescrypt]: https://www.openwall.com/yescrypt/
 [scrypt]: https://en.wikipedia.org/wiki/Scrypt
 [Password Hashing Competition]: https://www.password-hashing.net/
+[paper]: https://www.password-hashing.net/submissions/specs/yescrypt-v2.pdf
