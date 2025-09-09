@@ -179,24 +179,25 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
     {
         let mut prehash_params = *params;
-        prehash_params.flags |= Flags::PREHASH;
         prehash_params.n >>= 6;
         prehash_params.t = 0;
-
-        yescrypt_kdf_body(passwd, salt, &prehash_params, &mut dk)?;
+        yescrypt_kdf_body(passwd, salt, &prehash_params, true, &mut dk)?;
 
         // Use derived key as the "password" for the subsequent step
         passwd = &dk;
     }
 
-    yescrypt_kdf_body(passwd, salt, params, out)
+    yescrypt_kdf_body(passwd, salt, params, false, out)
 }
 
 /// Compute yescrypt and write the result into `out`.
-///
-/// - `flags` may request special modes.
-/// - `t` controls computation time while not affecting peak memory usage.
-fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
+fn yescrypt_kdf_body(
+    passwd: &[u8],
+    salt: &[u8],
+    params: &Params,
+    prehash: bool,
+    out: &mut [u8],
+) -> Result<()> {
     let flags: Flags = params.flags;
     let n: u64 = params.n;
     let r: u32 = params.r;
@@ -220,10 +221,10 @@ fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]
     let mut sha256 = [0u8; 32];
     if !flags.is_empty() {
         sha256 = util::hmac_sha256(
-            if flags.has_prehash() {
-                &b"yescrypt-prehash"[..]
+            if prehash {
+                b"yescrypt-prehash"
             } else {
-                &b"yescrypt"[..]
+                b"yescrypt"
             },
             passwd,
         );
@@ -272,7 +273,7 @@ fn yescrypt_kdf_body(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]
     // SCRAM (RFC 5802), so that an extension of SCRAM (with the steps so
     // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
     // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
-    if !flags.is_empty() && !flags.has_prehash() {
+    if !flags.is_empty() && !prehash {
         let dkp = if !flags.is_empty() && out.len() < 32 {
             &mut dk
         } else {
