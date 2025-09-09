@@ -1,6 +1,6 @@
 //! Error type.
 
-use core::fmt;
+use core::{fmt, num::TryFromIntError};
 
 /// Result type for the `yescrypt` crate with its [`Error`] type.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -16,6 +16,9 @@ pub enum Error {
     /// Encoding error (i.e. Base64)
     Encoding,
 
+    /// Internal error (bug in library)
+    Internal,
+
     /// Invalid params
     Params,
 
@@ -28,13 +31,20 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             #[cfg(feature = "simple")]
-            Error::Algorithm => f.write_str("password hash must begin with `$y$`"),
-            Error::Encoding => f.write_str("yescrypt encoding invalid"),
-            Error::Params => f.write_str("yescrypt params invalid"),
+            Error::Algorithm => write!(f, "password hash must begin with `$y$`"),
+            Error::Encoding => write!(f, "yescrypt encoding invalid"),
+            Error::Internal => write!(f, "internal error"),
+            Error::Params => write!(f, "yescrypt params invalid"),
             #[cfg(feature = "simple")]
-            Error::Password => f.write_str("invalid password"),
+            Error::Password => write!(f, "invalid password"),
         }
     }
 }
 
 impl core::error::Error for Error {}
+
+impl From<TryFromIntError> for Error {
+    fn from(_: TryFromIntError) -> Self {
+        Error::Internal
+    }
+}

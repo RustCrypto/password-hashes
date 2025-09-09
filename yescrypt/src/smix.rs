@@ -2,14 +2,13 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use alloc::vec::Vec;
-
 use crate::{
-    Mode,
+    Error, Mode, Result,
     pwxform::{PwxformCtx, SWORDS},
     salsa20,
     util::{cast_slice, hmac_sha256, slice_as_chunks_mut, xor},
 };
+use alloc::vec::Vec;
 
 const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 
@@ -28,7 +27,7 @@ pub(crate) fn smix(
     v: &mut [u32],
     xy: &mut [u32],
     passwd: &mut [u8],
-) {
+) -> Result<()> {
     let r = r as usize;
     let s = 32 * r;
 
@@ -100,7 +99,7 @@ pub(crate) fn smix(
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if mode.is_rw() {
-            let si = sn.next().unwrap();
+            let si = sn.next().ok_or(Error::Internal)?;
 
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
             smix1(
@@ -111,7 +110,7 @@ pub(crate) fn smix(
                 &mut si[..],
                 xy,
                 &mut None,
-            );
+            )?;
 
             let (s2, s10) = si.split_at_mut((1 << 8) * 4);
             let (s1, s0) = s10.split_at_mut((1 << 8) * 4);
@@ -134,7 +133,7 @@ pub(crate) fn smix(
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
-                let digest = hmac_sha256(cast_slice(&bs[(s - 16)..s]), &passwd[..32]);
+                let digest = hmac_sha256(cast_slice(&bs[(s - 16)..s])?, &passwd[..32])?;
                 passwd[..32].copy_from_slice(&digest);
             }
 
@@ -145,7 +144,7 @@ pub(crate) fn smix(
         };
 
         // 27: SMix1_r(B_i, n, V_{u..v}, flags)
-        smix1(bs, r, np, mode, vp, xy, &mut ctx_i);
+        smix1(bs, r, np, mode, vp, xy, &mut ctx_i)?;
 
         // 28: SMix2_r(B_i, p2floor(n), Nloop_rw, V_{u..v}, flags)
         smix2(
@@ -157,7 +156,7 @@ pub(crate) fn smix(
             vp,
             xy,
             &mut ctx_i,
-        );
+        )?;
 
         vchunk += nchunk;
     }
@@ -185,8 +184,10 @@ pub(crate) fn smix(
             v,
             xy,
             &mut ctx_i,
-        );
+        )?;
     }
+
+    Ok(())
 }
 
 /// Compute first loop of `B = SMix_r(B, N)`.
@@ -201,7 +202,7 @@ fn smix1(
     v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
-) {
+) -> Result<()> {
     let s = 32 * r;
     let (x, y) = xy.split_at_mut(s);
 
@@ -218,7 +219,7 @@ fn smix1(
         v[i as usize * s..][..s].copy_from_slice(x);
         if mode.is_rw() && i > 1 {
             let n = prev_power_of_two(i);
-            let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
+            let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n))?;
             xor(x, &v[j * s..][..s]);
         }
 
@@ -235,6 +236,8 @@ fn smix1(
             b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
+
+    Ok(())
 }
 
 /// Compute second loop of `B = SMix_r(B, N)`.
@@ -251,7 +254,7 @@ fn smix2(
     v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
-) {
+) -> Result<()> {
     let s = 32 * r;
     let (x, y) = xy.split_at_mut(s);
 
@@ -265,7 +268,7 @@ fn smix2(
     // 6: for i = 0 to N - 1 do
     for _ in 0..nloop {
         // 7: j <-- Integerify(X) mod N
-        let j = usize::try_from(integerify(x, r) & (n - 1)).unwrap();
+        let j = usize::try_from(integerify(x, r) & (n - 1))?;
 
         // 8.1: X <-- X xor V_j
         xor(x, &v[j * s..][..s]);
@@ -288,6 +291,8 @@ fn smix2(
             b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
         }
     }
+
+    Ok(())
 }
 
 /// Return the result of parsing B_{2r-1} as a little-endian integer.

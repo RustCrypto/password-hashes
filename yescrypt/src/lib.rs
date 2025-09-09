@@ -16,6 +16,7 @@
     clippy::implicit_saturating_sub,
     clippy::panic,
     clippy::panic_in_result_fn,
+    clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,
     unused_lifetimes,
@@ -220,28 +221,26 @@ fn yescrypt_kdf_body(
 
     let mut passwd = passwd;
     let mut sha256 = [0u8; 32];
+    let key: &[u8] = if prehash {
+        b"yescrypt-prehash"
+    } else {
+        b"yescrypt"
+    };
     if !mode.is_classic() {
-        sha256 = util::hmac_sha256(
-            if prehash {
-                b"yescrypt-prehash"
-            } else {
-                b"yescrypt"
-            },
-            passwd,
-        );
+        sha256 = util::hmac_sha256(key, passwd)?;
         passwd = &sha256;
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b));
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b)?);
 
     if !mode.is_classic() {
-        sha256.copy_from_slice(util::cast_slice(&b[..8]));
+        sha256.copy_from_slice(util::cast_slice(&b[..8])?);
         passwd = &sha256;
     }
 
     if mode.is_rw() {
-        smix::smix(&mut b, r, n, p, t, mode, &mut v, &mut xy, &mut sha256);
+        smix::smix(&mut b, r, n, p, t, mode, &mut v, &mut xy, &mut sha256)?;
         passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
@@ -257,17 +256,17 @@ fn yescrypt_kdf_body(
                 &mut v,
                 &mut xy,
                 &mut [],
-            );
+            )?;
         }
     }
 
     let mut dk = [0u8; 32];
     if !mode.is_classic() && out.len() < 32 {
-        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, &mut dk);
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, out);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -282,7 +281,7 @@ fn yescrypt_kdf_body(
         };
 
         // Compute ClientKey
-        sha256 = util::hmac_sha256(&dkp[..32], b"Client Key");
+        sha256 = util::hmac_sha256(&dkp[..32], b"Client Key")?;
 
         // Compute StoredKey
         let clen = out.len().clamp(0, 32);
