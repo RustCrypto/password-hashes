@@ -3,7 +3,7 @@
 #![cfg(feature = "simple")]
 #![allow(non_snake_case)]
 
-use yescrypt::{Flags, Params, yescrypt, yescrypt_verify};
+use yescrypt::{Error, Flags, Params, yescrypt, yescrypt_verify};
 
 const YESCRYPT_P: u32 = 11;
 
@@ -74,7 +74,7 @@ fn verify_reference_strings() {
             panic!("failed to verify password hash: {hash}");
         }
 
-        if yescrypt_verify(b"bogus", hash).is_ok() {
+        if yescrypt_verify(b"bogus", hash) != Err(Error::Password) {
             panic!("verification unexpectedly succeeded for password hash: {hash}");
         }
     }
