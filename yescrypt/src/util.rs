@@ -3,6 +3,7 @@
 // TODO(tarcieri): find safe replacements for unsafe code if possible
 #![allow(unsafe_code)]
 
+use crate::{Error, Result};
 use core::{ops::BitXorAssign, slice};
 use sha2::Sha256;
 
@@ -16,33 +17,32 @@ where
     }
 }
 
-pub(crate) fn cast_slice(input: &[u32]) -> &[u8] {
+pub(crate) fn cast_slice(input: &[u32]) -> Result<&[u8]> {
     let new_len = input
         .len()
         .checked_mul(size_of::<u32>() / size_of::<u8>())
-        .unwrap();
+        .ok_or(Error::Internal)?;
 
     // SAFETY: `new_len` accounts for the size difference between the two types
-    unsafe { slice::from_raw_parts(input.as_ptr().cast(), new_len) }
+    Ok(unsafe { slice::from_raw_parts(input.as_ptr().cast(), new_len) })
 }
 
-pub(crate) fn cast_slice_mut(input: &mut [u32]) -> &mut [u8] {
+pub(crate) fn cast_slice_mut(input: &mut [u32]) -> Result<&mut [u8]> {
     let new_len = input
         .len()
         .checked_mul(size_of::<u32>() / size_of::<u8>())
-        .unwrap();
+        .ok_or(Error::Internal)?;
 
     // SAFETY: `new_len` accounts for the size difference between the two types
-    unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) }
+    Ok(unsafe { slice::from_raw_parts_mut(input.as_mut_ptr().cast(), new_len) })
 }
 
-pub(crate) fn hmac_sha256(key: &[u8], in_0: &[u8]) -> [u8; 32] {
+pub(crate) fn hmac_sha256(key: &[u8], in_0: &[u8]) -> Result<[u8; 32]> {
     use hmac::{KeyInit, Mac};
 
-    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key)
-        .expect("key length should always be valid with hmac");
+    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key).map_err(|_| Error::Internal)?;
     hmac.update(in_0);
-    hmac.finalize().into_bytes().into()
+    Ok(hmac.finalize().into_bytes().into())
 }
 
 // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
