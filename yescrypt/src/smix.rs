@@ -32,7 +32,7 @@ pub(crate) fn smix(
     let s = 32 * r;
 
     // 1: n <-- N / p
-    let mut nchunk = n / (p as u64);
+    let mut nchunk = n / u64::from(p);
 
     // 2: Nloop_all <-- fNloop(n, t, flags)
     let mut nloop_all = nchunk;
@@ -43,20 +43,20 @@ pub(crate) fn smix(
             }
             nloop_all = nloop_all.div_ceil(3); // 1/3, round up
         } else {
-            nloop_all *= t as u64 - 1;
+            nloop_all *= u64::from(t) - 1;
         }
     } else if t != 0 {
         if t == 1 {
             nloop_all += nloop_all.div_ceil(2) // 1.5, round up
         }
-        nloop_all *= t as u64;
+        nloop_all *= u64::from(t);
     }
 
     // 6: Nloop_rw <-- 0
     let mut nloop_rw = 0;
     if mode.is_rw() {
         // 4: Nloop_rw <-- Nloop_all / p
-        nloop_rw = nloop_all / (p as u64);
+        nloop_rw = nloop_all / u64::from(p);
     }
 
     // 8: n <-- n - (n mod 2)
@@ -298,7 +298,7 @@ fn smix2(
 /// Return the result of parsing B_{2r-1} as a little-endian integer.
 fn integerify(b: &[u32], r: usize) -> u64 {
     let x = &b[((2 * r) - 1) * 16..];
-    ((x[13] as u64) << 32).wrapping_add(x[0] as u64)
+    (u64::from(x[13]) << 32).wrapping_add(u64::from(x[0]))
 }
 
 /// Largest power of 2 not greater than argument.
