@@ -3,7 +3,7 @@
 #![cfg(feature = "simple")]
 #![allow(non_snake_case)]
 
-use yescrypt::{Error, Flags, Params, yescrypt, yescrypt_verify};
+use yescrypt::{Error, Mode, Params, yescrypt, yescrypt_verify};
 
 const YESCRYPT_P: u32 = 11;
 
@@ -44,14 +44,14 @@ fn compute_reference_strings() {
         let mut N_log2 = if i < 14 { 16 - i } else { 2 };
         let r = if i < 8 { 8 - i } else { 1 + (i & 1) };
         let mut p = if i & 1 == 1 { 1 } else { YESCRYPT_P };
-        let mut flags = Flags::default();
+        let mut flags = Mode::default();
 
         if p.saturating_sub(i / 2) > 1 {
             p -= i / 2;
         }
 
         if i & 2 != 0 {
-            flags = Flags::WORM;
+            flags = Mode::Worm;
         } else {
             while (1 << N_log2) / p <= 3 {
                 N_log2 += 1;

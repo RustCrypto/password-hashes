@@ -5,7 +5,7 @@
 use alloc::vec::Vec;
 
 use crate::{
-    Flags,
+    Mode,
     pwxform::{PwxformCtx, SWORDS},
     salsa20,
     util::{cast_slice, hmac_sha256, slice_as_chunks_mut, xor},
@@ -24,7 +24,7 @@ pub(crate) fn smix(
     n: u64,
     p: u32,
     t: u32,
-    flags: Flags,
+    mode: Mode,
     v: &mut [u32],
     xy: &mut [u32],
     passwd: &mut [u8],
@@ -37,7 +37,7 @@ pub(crate) fn smix(
 
     // 2: Nloop_all <-- fNloop(n, t, flags)
     let mut nloop_all = nchunk;
-    if flags.has_rw() {
+    if mode.is_rw() {
         if t <= 1 {
             if t != 0 {
                 nloop_all *= 2; // 2/3
@@ -55,7 +55,7 @@ pub(crate) fn smix(
 
     // 6: Nloop_rw <-- 0
     let mut nloop_rw = 0;
-    if flags.has_rw() {
+    if mode.is_rw() {
         // 4: Nloop_rw <-- Nloop_all / p
         nloop_rw = nloop_all / (p as u64);
     }
@@ -73,7 +73,7 @@ pub(crate) fn smix(
     let mut vchunk = 0;
 
     // S_n = [S_i for i in 0..p]
-    let mut sn = if flags.has_rw() {
+    let mut sn = if mode.is_rw() {
         alloc::vec![[0u32; SWORDS]; p as usize]
     } else {
         Vec::new()
@@ -99,7 +99,7 @@ pub(crate) fn smix(
         let vp = &mut v[vchunk as usize * s..];
 
         // 17: if YESCRYPT_RW flag is set
-        let mut ctx_i = if flags.has_rw() {
+        let mut ctx_i = if mode.is_rw() {
             let si = sn.next().unwrap();
 
             // 18: SMix1_1(B_i, Sbytes / 128, S_i, no flags)
@@ -107,7 +107,7 @@ pub(crate) fn smix(
                 bs,
                 1,
                 SBYTES / 128,
-                Flags::EMPTY,
+                Mode::Classic,
                 &mut si[..],
                 xy,
                 &mut None,
@@ -145,7 +145,7 @@ pub(crate) fn smix(
         };
 
         // 27: SMix1_r(B_i, n, V_{u..v}, flags)
-        smix1(bs, r, np, flags, vp, xy, &mut ctx_i);
+        smix1(bs, r, np, mode, vp, xy, &mut ctx_i);
 
         // 28: SMix2_r(B_i, p2floor(n), Nloop_rw, V_{u..v}, flags)
         smix2(
@@ -153,7 +153,7 @@ pub(crate) fn smix(
             r,
             prev_power_of_two(np),
             nloop_rw,
-            flags,
+            mode,
             vp,
             xy,
             &mut ctx_i,
@@ -165,7 +165,7 @@ pub(crate) fn smix(
     // 30: for i = 0 to p - 1 do
     #[allow(clippy::needless_range_loop)]
     for i in 0..p as usize {
-        let mut ctx_i = if flags.has_rw() {
+        let mut ctx_i = if mode.is_rw() {
             Some(&mut ctxs[i])
         } else {
             None
@@ -177,7 +177,11 @@ pub(crate) fn smix(
             r,
             n,
             nloop_all - nloop_rw,
-            flags.clear(Flags::RW),
+            if mode.is_worm() {
+                Mode::Worm
+            } else {
+                Mode::Classic
+            },
             v,
             xy,
             &mut ctx_i,
@@ -193,7 +197,7 @@ fn smix1(
     b: &mut [u32],
     r: usize,
     n: u64,
-    flags: Flags,
+    mode: Mode,
     v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
@@ -212,7 +216,7 @@ fn smix1(
     for i in 0..n {
         // 3: V_i <-- X
         v[i as usize * s..][..s].copy_from_slice(x);
-        if flags.has_rw() && i > 1 {
+        if mode.is_rw() && i > 1 {
             let n = prev_power_of_two(i);
             let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n)).unwrap();
             xor(x, &v[j * s..][..s]);
@@ -243,7 +247,7 @@ fn smix2(
     r: usize,
     n: u64,
     nloop: u64,
-    flags: Flags,
+    mode: Mode,
     v: &mut [u32],
     xy: &mut [u32],
     ctx: &mut Option<&mut PwxformCtx<'_>>,
@@ -267,7 +271,7 @@ fn smix2(
         xor(x, &v[j * s..][..s]);
 
         // V_j <-- X
-        if flags.has_rw() {
+        if mode.is_rw() {
             v[j as usize * s..][..s].copy_from_slice(x);
         }
 

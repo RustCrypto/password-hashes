@@ -60,7 +60,7 @@ extern crate alloc;
 
 mod encoding;
 mod error;
-mod flags;
+mod mode;
 mod params;
 mod pwxform;
 mod salsa20;
@@ -69,7 +69,7 @@ mod util;
 
 pub use crate::{
     error::{Error, Result},
-    flags::Flags,
+    mode::Mode,
     params::Params,
 };
 
@@ -173,7 +173,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
     // Perform conditional pre-hashing
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
-    if params.flags.has_rw()
+    if params.mode.is_rw()
         && params.p >= 1
         && params.n / (params.p as u64) >= 0x100
         && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
@@ -198,11 +198,11 @@ fn yescrypt_kdf_body(
     prehash: bool,
     out: &mut [u8],
 ) -> Result<()> {
-    let flags: Flags = params.flags;
-    let n: u64 = params.n;
-    let r: u32 = params.r;
-    let p: u32 = params.p;
-    let t: u32 = params.t;
+    let mode = params.mode;
+    let n = params.n;
+    let r = params.r;
+    let p = params.p;
+    let t = params.t;
 
     if !((out.len() as u64 <= u32::MAX as u64 * 32)
         && ((r as u64) * (p as u64) < (1 << 30) as u64)
@@ -219,7 +219,7 @@ fn yescrypt_kdf_body(
 
     let mut passwd = passwd;
     let mut sha256 = [0u8; 32];
-    if !flags.is_empty() {
+    if !mode.is_classic() {
         sha256 = util::hmac_sha256(
             if prehash {
                 b"yescrypt-prehash"
@@ -234,13 +234,13 @@ fn yescrypt_kdf_body(
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
     pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b));
 
-    if !flags.is_empty() {
+    if !mode.is_classic() {
         sha256.copy_from_slice(util::cast_slice(&b[..8]));
         passwd = &sha256;
     }
 
-    if flags.has_rw() {
-        smix::smix(&mut b, r, n, p, t, flags, &mut v, &mut xy, &mut sha256);
+    if mode.is_rw() {
+        smix::smix(&mut b, r, n, p, t, mode, &mut v, &mut xy, &mut sha256);
         passwd = &sha256;
     } else {
         // 2: for i = 0 to p - 1 do
@@ -252,7 +252,7 @@ fn yescrypt_kdf_body(
                 n,
                 1,
                 t,
-                flags,
+                mode,
                 &mut v,
                 &mut xy,
                 &mut [],
@@ -261,7 +261,7 @@ fn yescrypt_kdf_body(
     }
 
     let mut dk = [0u8; 32];
-    if !flags.is_empty() && out.len() < 32 {
+    if !mode.is_classic() && out.len() < 32 {
         pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b), 1, &mut dk);
     }
 
@@ -273,8 +273,8 @@ fn yescrypt_kdf_body(
     // SCRAM (RFC 5802), so that an extension of SCRAM (with the steps so
     // far in place of SCRAM's use of PBKDF2 and with SHA-256 in place of
     // SCRAM's use of SHA-1) would be usable with yescrypt hashes.
-    if !flags.is_empty() && !prehash {
-        let dkp = if !flags.is_empty() && out.len() < 32 {
+    if !mode.is_classic() && !prehash {
+        let dkp = if !mode.is_classic() && out.len() < 32 {
             &mut dk
         } else {
             &mut *out

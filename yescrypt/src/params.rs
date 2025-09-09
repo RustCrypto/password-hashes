@@ -1,9 +1,9 @@
 //! Algorithm parameters.
 
 use crate::{
-    Error, Flags, Result,
+    Error, Result,
     encoding::{decode64_uint32, encode64_uint32},
-    flags::Mode,
+    mode::Mode,
     pwxform::{PwxformCtx, RMIN},
 };
 use core::{
@@ -16,8 +16,8 @@ use core::{
 /// These are various algorithm settings which can control e.g. the amount of resource utilization.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Params {
-    /// Flags which provide fine-grained behavior control.
-    pub(crate) flags: Flags,
+    /// yescrypt mode of operation: classic scrypt, write-once/read-many, or read-write.
+    pub(crate) mode: Mode,
 
     /// `N`: CPU/memory cost (like `scrypt`).
     ///
@@ -50,13 +50,13 @@ impl Params {
     pub(crate) const MAX_ENCODED_LEN: usize = 8 * 6;
 
     /// Initialize params.
-    pub fn new(flags: Flags, n: u64, r: u32, p: u32) -> Result<Params> {
-        Self::new_with_all_params(flags, n, r, p, 0, 0)
+    pub fn new(mode: Mode, n: u64, r: u32, p: u32) -> Result<Params> {
+        Self::new_with_all_params(mode, n, r, p, 0, 0)
     }
 
     /// Initialize params.
     pub fn new_with_all_params(
-        flags: Flags,
+        mode: Mode,
         n: u64,
         r: u32,
         p: u32,
@@ -68,29 +68,7 @@ impl Params {
             return Err(Error::Params);
         }
 
-        match flags.mode()? {
-            Mode::Classic => {
-                // classic scrypt - can't have anything non-standard
-                if !flags.is_empty() || t != 0 {
-                    return Err(Error::Params);
-                }
-            }
-            Mode::Worm => {
-                if flags != Flags::WORM {
-                    return Err(Error::Params);
-                }
-            }
-            Mode::Rw { flavor_bits } => {
-                if flavor_bits
-                    != (Flags::ROUNDS_6 | Flags::GATHER_4 | Flags::SIMPLE_2 | Flags::SBOX_12K)
-                        .bits()
-                {
-                    return Err(Error::Params);
-                }
-            }
-        }
-
-        if flags.has_rw()
+        if mode.is_rw()
             && (n / (p as u64) <= 1
                 || r < RMIN as u32
                 || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
@@ -100,7 +78,7 @@ impl Params {
         }
 
         Ok(Params {
-            flags,
+            mode,
             n,
             r,
             p,
@@ -132,7 +110,7 @@ impl Params {
     /// Encode params as (s)crypt-flavored Base64.
     #[allow(non_snake_case)]
     pub(crate) fn encode<'o>(&self, out: &'o mut [u8]) -> Result<&'o str> {
-        let flavor = self.flags.flavor()?;
+        let flavor = u32::from(self.mode);
 
         let N_log2 = N2log2(self.n);
         if N_log2 == 0 {
@@ -214,7 +192,7 @@ impl Default for Params {
     fn default() -> Self {
         // flags = YESCRYPT_DEFAULTS, N = 4096, r = 32, p = 1, t = 0, g = 0, NROM = 0
         Params {
-            flags: Flags::default(),
+            mode: Mode::default(),
             n: 4096,
             r: 32,
             p: 1,
@@ -236,7 +214,7 @@ impl FromStr for Params {
         // flags
         let (flavor, new_pos) = decode64_uint32(bytes, pos, 0)?;
         pos = new_pos;
-        let flags = Flags::from_flavor(flavor)?;
+        let mode = Mode::try_from(flavor)?;
 
         // Nlog2
         let (nlog2, new_pos) = decode64_uint32(bytes, pos, 1)?;
@@ -282,14 +260,14 @@ impl FromStr for Params {
 
             // NROM
             if (have & 0x08) != 0 {
-                let (nrom_log2, _) = decode64_uint32(bytes, pos, 1)?;
-                if nrom_log2 != 0 {
+                let (nrom, _) = decode64_uint32(bytes, pos, 1)?;
+                if nrom != 0 {
                     return Err(Error::Params);
                 }
             }
         }
 
-        Self::new_with_all_params(flags, n, r, p, t, g)
+        Self::new_with_all_params(mode, n, r, p, t, g)
     }
 }
 
@@ -321,13 +299,13 @@ fn N2log2(N: u64) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Flags, Params};
+    use crate::{Mode, Params};
     use alloc::string::ToString;
 
     #[test]
     fn encoder() {
         let p1 = Params {
-            flags: Flags::default(),
+            mode: Mode::default(),
             n: 4096,
             r: 32,
             p: 1,
@@ -339,7 +317,7 @@ mod tests {
 
         // p != 1
         let p2 = Params {
-            flags: Flags::default(),
+            mode: Mode::default(),
             n: 4096,
             r: 8,
             p: 4,
@@ -351,7 +329,7 @@ mod tests {
 
         // t and g set
         let p3 = Params {
-            flags: Flags::default(),
+            mode: Mode::default(),
             n: 4096,
             r: 8,
             p: 1,
@@ -363,7 +341,7 @@ mod tests {
 
         // NROM set (power of two)
         let p4 = Params {
-            flags: Flags::default(),
+            mode: Mode::default(),
             n: 32768,
             r: 8,
             p: 1,
@@ -380,7 +358,7 @@ mod tests {
         assert_eq!(
             p1,
             Params {
-                flags: Flags::default(),
+                mode: Mode::default(),
                 n: 4096,
                 r: 32,
                 p: 1,
@@ -395,7 +373,7 @@ mod tests {
         assert_eq!(
             p2,
             Params {
-                flags: Flags::default(),
+                mode: Mode::default(),
                 n: 4096,
                 r: 8,
                 p: 4,
