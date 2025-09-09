@@ -14,25 +14,25 @@ const RW_FLAVOR_MASK: u32 = 0x3fc;
 pub struct Flags(pub(crate) u32);
 
 impl Flags {
-    /// Empty flags (represents `scrypt` classic)
+    /// Empty flags (represents `scrypt` classic mode)
     pub const EMPTY: Self = Self(0);
 
-    /// Write once read many
+    /// Mode: write once, read many
     pub const WORM: Self = Self(0x001);
 
-    /// Read/write
+    /// Mode: read/write
     pub const RW: Self = Self(0x002);
 
-    /// 6 rounds
+    /// Flavor: 6 rounds
     pub const ROUNDS_6: Self = Self(0x004);
 
-    /// Gather 4
+    /// Flavor: gather 4
     pub const GATHER_4: Self = Self(0x010);
 
-    /// Simple 2
+    /// Flavor: simple 2
     pub const SIMPLE_2: Self = Self(0x020);
 
-    /// SBox 12k
+    /// Flavor: SBox 12k
     pub const SBOX_12K: Self = Self(0x080);
 
     /// Prehash
