@@ -41,10 +41,6 @@ impl Flags {
     /// Flavor: SBox 12k
     pub const SBOX_12K: Self = Self(0x080);
 
-    /// Prehash
-    // TODO(tarcieri): move this out-of-band from `Flags`? Or actually make it `pub`?
-    pub(crate) const PREHASH: Self = Self(0x10000000);
-
     /// All possible flags.
     // Notably this only includes flags in the public API
     const ALL_FLAGS: Self = Self(
@@ -74,11 +70,6 @@ impl Flags {
     /// Are any flags set?
     pub const fn is_empty(self) -> bool {
         self.0 == 0
-    }
-
-    /// Is the prehash bit set?
-    pub(crate) fn has_prehash(self) -> bool {
-        self.0 & Flags::PREHASH.0 != 0
     }
 
     /// Is the read-write bit set?
