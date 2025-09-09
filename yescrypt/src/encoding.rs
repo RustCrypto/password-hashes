@@ -36,7 +36,7 @@ pub(crate) fn decode64<'o>(src: &str, dst: &'o mut [u8]) -> Result<&'o [u8]> {
                 _ => return Err(Error::Encoding),
             };
 
-            value |= (c as u32) << bits;
+            value |= u32::from(c) << bits;
             bits += 6;
             i += 1;
         }
@@ -81,7 +81,7 @@ pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u
     pos += 1;
 
     let mut dst = min;
-    while c as u32 > end {
+    while u32::from(c) > end {
         dst += (end + 1 - start) << bits;
         start = end + 1;
         end = start + (62 - end) / 2;
@@ -89,7 +89,7 @@ pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u
         bits += 6;
     }
 
-    dst += ((c as u32) - start) << bits;
+    dst += (u32::from(c) - start) << bits;
 
     while chars > 1 {
         chars -= 1;
@@ -105,7 +105,7 @@ pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u
         pos += 1;
 
         bits -= 6;
-        dst += (c as u32) << bits;
+        dst += u32::from(c) << bits;
     }
 
     Ok((dst, pos))
@@ -142,7 +142,7 @@ pub(crate) fn encode64<'o>(src: &[u8], out: &'o mut [u8]) -> Result<&'o str> {
         let mut value = 0u32;
         let mut bits = 0u32;
         while bits < 24 && i < src.len() {
-            value |= (src[i] as u32) << bits;
+            value |= u32::from(src[i]) << bits;
             bits += 8;
             i += 1;
         }

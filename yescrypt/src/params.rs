@@ -81,10 +81,10 @@ impl Params {
         }
 
         if mode.is_rw()
-            && (n / (p as u64) <= 1
+            && (n / u64::from(p) <= 1
                 || r < RMIN as u32
-                || p as u64 > u64::MAX / (3 * (1 << 8) * 2 * 8)
-                || p as u64 > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
+                || u64::from(p) > u64::MAX / (3 * (1 << 8) * 2 * 8)
+                || u64::from(p) > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
         {
             return Err(Error::Params);
         }
@@ -137,7 +137,7 @@ impl Params {
             return Err(Error::Params);
         }
 
-        if (self.r as u64) * (self.p as u64) >= (1 << 30) {
+        if u64::from(self.r) * u64::from(self.p) >= (1 << 30) {
             return Err(Error::Params);
         }
 

@@ -118,13 +118,13 @@ impl PwxformCtx<'_> {
                 // 5: for k = 0 to PWXsimple - 1 do
                 for k in 0..PWXSIMPLE {
                     // 6: B_{j,k} <-- (hi(B_{j,k}) * lo(B_{j,k}) + S0_{p0,k}) xor S1_{p1,k}
-                    let s0 = ((p0[k][1] as u64) << 32).wrapping_add(p0[k][0] as u64);
-                    let s1 = ((p1[k][1] as u64) << 32).wrapping_add(p1[k][0] as u64);
+                    let s0 = (u64::from(p0[k][1]) << 32).wrapping_add(u64::from(p0[k][0]));
+                    let s1 = (u64::from(p1[k][1]) << 32).wrapping_add(u64::from(p1[k][0]));
 
                     xl = xptr[j][k][0];
                     xh = xptr[j][k][1];
 
-                    let mut x = (xh as u64).wrapping_mul(xl as u64);
+                    let mut x = u64::from(xh).wrapping_mul(u64::from(xl));
                     x = x.wrapping_add(s0);
                     x ^= s1;
 

@@ -7,7 +7,7 @@
 )]
 #![deny(unsafe_code)]
 #![warn(
-    // TODO: clippy::cast_lossless,
+    clippy::cast_lossless,
     // TODO: clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
@@ -177,8 +177,8 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
     let mut dk = [0u8; 32];
     if params.mode.is_rw()
         && params.p >= 1
-        && params.n / (params.p as u64) >= 0x100
-        && params.n / (params.p as u64) * (params.r as u64) >= 0x20000
+        && params.n / u64::from(params.p) >= 0x100
+        && params.n / u64::from(params.p) * u64::from(params.r) >= 0x20000
     {
         let mut prehash_params = *params;
         prehash_params.n >>= 6;
@@ -206,11 +206,11 @@ fn yescrypt_kdf_body(
     let p = params.p;
     let t = params.t;
 
-    if !((out.len() as u64 <= u32::MAX as u64 * 32)
-        && ((r as u64) * (p as u64) < (1 << 30) as u64)
+    if !((out.len() as u64 <= u64::from(u32::MAX) * 32)
+        && (u64::from(r) * u64::from(p) < (1 << 30) as u64)
         && !(n & (n - 1) != 0 || n <= 1 || r < 1 || p < 1)
-        && !(r as u64 > u64::MAX / 128 / (p as u64) || n > u64::MAX / 128 / (r as u64))
-        && (n <= u64::MAX / ((t as u64) + 1)))
+        && !(u64::from(r) > u64::MAX / 128 / u64::from(p) || n > u64::MAX / 128 / u64::from(r))
+        && (n <= u64::MAX / (u64::from(t) + 1)))
     {
         return Err(Error::Params);
     }
