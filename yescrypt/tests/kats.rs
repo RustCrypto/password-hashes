@@ -10,7 +10,7 @@ fn kat0() {
         "77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442"
         "fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906"
     );
-    let params = Params::new(Flags::empty(), 16, 1, 1).unwrap();
+    let params = Params::new(Flags::EMPTY, 16, 1, 1).unwrap();
     let mut actual = [0u8; 64];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -19,7 +19,7 @@ fn kat0() {
 #[test]
 fn kat1() {
     const EXPECTED: [u8; 8] = hex!("77d6576238657b20");
-    let params = Params::new(Flags::empty(), 16, 1, 1).unwrap();
+    let params = Params::new(Flags::EMPTY, 16, 1, 1).unwrap();
     let mut actual = [0u8; 8];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
@@ -31,7 +31,7 @@ fn kat2() {
         "efad0c23314cb572bc3cfb1543da42f8a8b073004c866b64ab5055a4f09fa5f5"
         "71142ebfe7e05a3b92c432f31dea95ad5f9c854b6456462f4bd0f732b7cdc549"
     );
-    let params = Params::new(Flags::empty(), 4, 1, 1).unwrap();
+    let params = Params::new(Flags::EMPTY, 4, 1, 1).unwrap();
     let mut actual = [0u8; 64];
     yescrypt_kdf(b"", b"", &params, &mut actual).unwrap();
     assert_eq!(EXPECTED.as_slice(), actual.as_slice());
