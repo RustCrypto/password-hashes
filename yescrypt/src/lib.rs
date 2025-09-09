@@ -30,7 +30,10 @@
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
 //! let password_hash = yescrypt::yescrypt(password, salt, &Default::default())?;
-//! assert_eq!(&password_hash[..3], "$y$");
+//! assert!(password_hash.starts_with("$y$"));
+//!
+//! // verify password is correct for the given hash
+//! yescrypt::yescrypt_verify(password, &password_hash)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -122,6 +125,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 /// Verify a password matches the given yescrypt password hash.
 ///
 /// Password hash should begin with `$y$` in Modular Crypt Format (MCF).
+#[cfg(feature = "simple")]
 pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
     let hash = mcf::PasswordHashRef::try_from(hash).map_err(|_| Error::Encoding)?;
 

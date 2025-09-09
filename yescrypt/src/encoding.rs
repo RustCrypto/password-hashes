@@ -2,6 +2,8 @@
 // TODO(tarcieri): use `base64ct` instead?
 
 use crate::{Error, Result};
+
+#[cfg(feature = "simple")]
 use core::str;
 
 /// (s)crypt-flavored Base64 alphabet.
@@ -18,6 +20,7 @@ pub const ATOI64: [u8; 128] = {
     tbl
 };
 
+#[cfg(feature = "simple")]
 pub(crate) fn decode64<'o>(src: &str, dst: &'o mut [u8]) -> Result<&'o [u8]> {
     let src = src.as_bytes();
     let mut pos = 0usize;
@@ -108,6 +111,48 @@ pub(crate) fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u
     Ok((dst, pos))
 }
 
+#[cfg(feature = "simple")]
+pub(crate) fn encode64<'o>(src: &[u8], out: &'o mut [u8]) -> Result<&'o str> {
+    fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<usize> {
+        let mut bits: u32 = 0;
+        let mut pos = 0;
+
+        while bits < srcbits {
+            if dst.len() <= pos {
+                return Err(Error::Encoding);
+            }
+
+            dst[pos] = ITOA64[(src & 0x3f) as usize];
+            pos += 1;
+            src >>= 6;
+            bits += 6;
+        }
+
+        if src != 0 || dst.len() < pos {
+            return Err(Error::Encoding);
+        }
+
+        Ok(pos)
+    }
+
+    let mut pos = 0;
+    let mut i = 0;
+
+    while i < src.len() {
+        let mut value = 0u32;
+        let mut bits = 0u32;
+        while bits < 24 && i < src.len() {
+            value |= (src[i] as u32) << bits;
+            bits += 8;
+            i += 1;
+        }
+        let dnext = encode64_uint32_fixed(&mut out[pos..], value, bits)?;
+        pos += dnext;
+    }
+
+    str::from_utf8(&out[..pos]).map_err(|_| Error::Encoding)
+}
+
 pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<usize> {
     let mut start = 0u32;
     let mut end = 47u32;
@@ -148,47 +193,6 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
         bits = bits.wrapping_sub(6);
         dst[pos] = ITOA64[((src >> bits) & 0x3f) as usize];
         pos += 1;
-    }
-
-    Ok(pos)
-}
-
-pub(crate) fn encode64<'o>(src: &[u8], out: &'o mut [u8]) -> Result<&'o str> {
-    let mut pos = 0;
-    let mut i = 0;
-
-    while i < src.len() {
-        let mut value = 0u32;
-        let mut bits = 0u32;
-        while bits < 24 && i < src.len() {
-            value |= (src[i] as u32) << bits;
-            bits += 8;
-            i += 1;
-        }
-        let dnext = encode64_uint32_fixed(&mut out[pos..], value, bits)?;
-        pos += dnext;
-    }
-
-    str::from_utf8(&out[..pos]).map_err(|_| Error::Encoding)
-}
-
-fn encode64_uint32_fixed(dst: &mut [u8], mut src: u32, srcbits: u32) -> Result<usize> {
-    let mut bits: u32 = 0;
-    let mut pos = 0;
-
-    while bits < srcbits {
-        if dst.len() <= pos {
-            return Err(Error::Encoding);
-        }
-
-        dst[pos] = ITOA64[(src & 0x3f) as usize];
-        pos += 1;
-        src >>= 6;
-        bits += 6;
-    }
-
-    if src != 0 || dst.len() < pos {
-        return Err(Error::Encoding);
     }
 
     Ok(pos)
