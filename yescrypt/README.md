@@ -22,11 +22,7 @@ The implementation contained in this crate has never been independently audited!
 USE AT YOUR OWN RISK!
 
 Note that this crate is in an early stage of implementation and may contain bugs or features which
-do not work correctly, potentially resulting in miscomputed outputs which do not match the ones
-produced by the reference implementation.
-
-We suggest before using yescrypt params other than `Params::default` to ensure that password hashes
-produced by this crate match the ones produced by the reference implementation.
+do not work correctly.
 
 ## Minimum Supported Rust Version (MSRV) Policy
 
