@@ -36,6 +36,7 @@ impl Flags {
     pub const SBOX_12K: Self = Self(0x080);
 
     /// Prehash
+    // TODO(tarcieri): move this out-of-band from `Flags`? Or actually make it `pub`?
     pub(crate) const PREHASH: Self = Self(0x10000000);
 
     /// All possible flags.
