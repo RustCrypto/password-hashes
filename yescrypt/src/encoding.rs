@@ -12,9 +12,9 @@ static ITOA64: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopq
 /// Reverse lookup table for (s)crypt-flavored Base64 alphabet.
 pub const ATOI64: [u8; 128] = {
     let mut tbl = [0xFFu8; 128]; // use 0xFF as a placeholder for invalid chars
-    let mut i = 0;
+    let mut i = 0u8;
     while i < 64 {
-        tbl[ITOA64[i] as usize] = i as u8;
+        tbl[ITOA64[i as usize] as usize] = i;
         i += 1;
     }
     tbl
@@ -47,7 +47,7 @@ pub(crate) fn decode64<'o>(src: &str, dst: &'o mut [u8]) -> Result<&'o [u8]> {
         }
 
         while pos < dst.len() {
-            dst[pos] = value as u8;
+            dst[pos] = (value & 0xFF) as u8;
             pos += 1;
             value >>= 8;
             bits -= 8;

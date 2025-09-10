@@ -8,7 +8,7 @@
 #![deny(unsafe_code)]
 #![warn(
     clippy::cast_lossless,
-    // TODO: clippy::cast_possible_truncation,
+    clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
@@ -172,9 +172,10 @@ pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
 
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
-    // Perform conditional pre-hashing
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
+
+    // Conditionally perform pre-hashing
     if params.mode.is_rw()
         && params.p >= 1
         && params.n / u64::from(params.p) >= 0x100
@@ -185,7 +186,7 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         prehash_params.t = 0;
         yescrypt_kdf_body(passwd, salt, &prehash_params, true, &mut dk)?;
 
-        // Use derived key as the "password" for the subsequent step
+        // Use derived key as the "password" for the subsequent step when pre-hashing
         passwd = &dk;
     }
 
@@ -215,7 +216,7 @@ fn yescrypt_kdf_body(
         return Err(Error::Params);
     }
 
-    let mut v = vec![0; 32 * (r as usize) * (n as usize)];
+    let mut v = vec![0; 32 * (r as usize) * usize::try_from(n)?];
     let mut b = vec![0; 32 * (r as usize) * (p as usize)];
     let mut xy = vec![0; 64 * (r as usize)];
 

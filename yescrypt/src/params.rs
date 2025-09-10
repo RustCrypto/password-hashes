@@ -82,7 +82,7 @@ impl Params {
 
         if mode.is_rw()
             && (n / u64::from(p) <= 1
-                || r < RMIN as u32
+                || r < RMIN
                 || u64::from(p) > u64::MAX / (3 * (1 << 8) * 2 * 8)
                 || u64::from(p) > u64::MAX / (size_of::<PwxformCtx<'_>>() as u64))
         {
