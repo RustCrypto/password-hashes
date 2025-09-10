@@ -23,7 +23,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "balloon-hash"
-version = "0.5.0-pre.1"
+version = "0.5.0-rc.0"
 dependencies = [
  "crypto-bigint",
  "digest",
