@@ -69,7 +69,6 @@ pub(crate) fn smix(
     // 10: Nloop_rw <-- Nloop_rw + (Nloop_rw mod 2)
     nloop_rw += 1;
     nloop_rw &= !1; // round up to even
-    let mut vchunk = 0;
 
     // S_n = [S_i for i in 0..p]
     let mut sn = if mode.is_rw() {
@@ -79,6 +78,8 @@ pub(crate) fn smix(
     };
     let mut ctxs = Vec::with_capacity(sn.len());
     let mut sn = sn.iter_mut();
+
+    let mut vchunk = 0;
 
     // 11: for i = 0 to p - 1 do
     // 12: u <-- in
@@ -95,7 +96,7 @@ pub(crate) fn smix(
         };
 
         let bs = &mut b[(i * s)..];
-        let vp = &mut v[vchunk as usize * s..];
+        let vp = &mut v[(usize::try_from(vchunk)? * s)..];
 
         // 17: if YESCRYPT_RW flag is set
         let mut ctx_i = if mode.is_rw() {
@@ -216,7 +217,7 @@ fn smix1(
     // 2: for i = 0 to N - 1 do
     for i in 0..n {
         // 3: V_i <-- X
-        v[i as usize * s..][..s].copy_from_slice(x);
+        v[(usize::try_from(i)? * s)..][..s].copy_from_slice(x);
         if mode.is_rw() && i > 1 {
             let n = prev_power_of_two(i);
             let j = usize::try_from((integerify(x, r) & (n - 1)) + (i - n))?;

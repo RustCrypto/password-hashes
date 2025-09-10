@@ -8,6 +8,7 @@ use crate::{
     salsa20,
     util::{slice_as_chunks_mut, xor},
 };
+use core::mem;
 
 /// Number of 64-bit lanes per "simple SIMD" lane (requiring only arithmetic and bitwise operations
 /// on its 64-bit elements). Must be a power of 2.
@@ -31,7 +32,9 @@ const PWXWORDS: usize = PWXBYTES / size_of::<u32>();
 const SMASK: usize = ((1 << SWIDTH) - 1) * PWXSIMPLE * 8;
 pub(crate) const SBYTES: usize = 3 * (1 << SWIDTH) * PWXSIMPLE * 8;
 pub(crate) const SWORDS: usize = SBYTES / size_of::<u32>();
-pub(crate) const RMIN: usize = PWXBYTES.div_ceil(128);
+
+#[allow(clippy::cast_possible_truncation)]
+pub(crate) const RMIN: u32 = PWXBYTES.div_ceil(128) as u32;
 
 /// Parallel wide transformation (pwxform) context.
 pub(crate) struct PwxformCtx<'a> {
@@ -128,14 +131,16 @@ impl PwxformCtx<'_> {
                     x = x.wrapping_add(s0);
                     x ^= s1;
 
-                    xptr[j][k][0] = x as u32;
-                    xptr[j][k][1] = (x >> 32) as u32;
+                    let x_lo = (x & 0xFFFF_FFFF) as u32;
+                    let x_hi = ((x >> 32) & 0xFFFF_FFFF) as u32;
+                    xptr[j][k][0] = x_lo;
+                    xptr[j][k][1] = x_hi;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
                         // 9: S2_w <-- B_j
-                        self.s2[w][0] = x as u32;
-                        self.s2[w][1] = (x >> 32) as u32;
+                        self.s2[w][0] = x_lo;
+                        self.s2[w][1] = x_hi;
                         w += 1;
                     }
                 }
@@ -143,8 +148,8 @@ impl PwxformCtx<'_> {
         }
 
         // 14: (S0, S1, S2) <-- (S2, S0, S1)
-        core::mem::swap(&mut self.s0, &mut self.s2);
-        core::mem::swap(&mut self.s1, &mut self.s2);
+        mem::swap(&mut self.s0, &mut self.s2);
+        mem::swap(&mut self.s1, &mut self.s2);
 
         // 15: w <-- w mod 2^Swidth
         self.w = w & ((1 << SWIDTH) * PWXSIMPLE - 1);
