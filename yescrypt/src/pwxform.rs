@@ -101,7 +101,8 @@ impl PwxformCtx<'_> {
 
     /// Transform the provided block using the provided S-boxes.
     fn pwxform(&mut self, b: &mut [u32; 16]) {
-        let xptr = reshape_block(b);
+        // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+        let b = slice_as_chunks_mut::<_, 2>(slice_as_chunks_mut::<_, PWXSIMPLE>(b).0).0;
         let mut w = self.w;
 
         // 1: for i = 0 to PWXrounds - 1 do
@@ -109,8 +110,8 @@ impl PwxformCtx<'_> {
             // 2: for j = 0 to PWXgather - 1 do
             #[allow(clippy::needless_range_loop)]
             for j in 0..PWXGATHER {
-                let mut xl: u32 = xptr[j][0][0];
-                let mut xh: u32 = xptr[j][0][1];
+                let mut xl: u32 = b[j][0][0];
+                let mut xh: u32 = b[j][0][1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
                 let p0 = &self.s0[(xl as usize & SMASK) / 8..];
@@ -124,8 +125,8 @@ impl PwxformCtx<'_> {
                     let s0 = (u64::from(p0[k][1]) << 32).wrapping_add(u64::from(p0[k][0]));
                     let s1 = (u64::from(p1[k][1]) << 32).wrapping_add(u64::from(p1[k][0]));
 
-                    xl = xptr[j][k][0];
-                    xh = xptr[j][k][1];
+                    xl = b[j][k][0];
+                    xh = b[j][k][1];
 
                     let mut x = u64::from(xh).wrapping_mul(u64::from(xl));
                     x = x.wrapping_add(s0);
@@ -133,8 +134,8 @@ impl PwxformCtx<'_> {
 
                     let x_lo = (x & 0xFFFF_FFFF) as u32;
                     let x_hi = ((x >> 32) & 0xFFFF_FFFF) as u32;
-                    xptr[j][k][0] = x_lo;
-                    xptr[j][k][1] = x_hi;
+                    b[j][k][0] = x_lo;
+                    b[j][k][1] = x_hi;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
@@ -154,16 +155,4 @@ impl PwxformCtx<'_> {
         // 15: w <-- w mod 2^Swidth
         self.w = w & ((1 << SWIDTH) * PWXSIMPLE - 1);
     }
-}
-
-#[allow(unsafe_code)]
-pub(crate) fn reshape_block(b: &mut [u32; 16]) -> &mut [[[u32; PWXSIMPLE]; 2]; 4] {
-    const {
-        assert!(
-            size_of::<[u32; 16]>() == size_of::<[[[u32; PWXSIMPLE]; 2]; 4]>(),
-            "PWXSIMPLE is incorrectly sized"
-        );
-    }
-
-    unsafe { &mut *core::ptr::from_mut(b).cast() }
 }
