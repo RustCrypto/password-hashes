@@ -1,21 +1,22 @@
-use salsa20::cipher::typenum::Unsigned;
+//! Wrapper functions for invoking the `salsa20` crate.
 
-use crate::{
-    common::{blkcpy, blkxor},
-    uint32_t,
+use crate::util::{slice_as_chunks_mut, xor};
+use salsa20::cipher::{
+    StreamCipherCore,
+    consts::{U1, U4},
+    typenum::Unsigned,
 };
 
-pub(crate) unsafe fn salsa20_2(mut B: *mut uint32_t) {
-    salsa20::<salsa20::cipher::consts::U1>(B);
+pub(crate) fn salsa20_2(b: &mut [u32; 16]) {
+    salsa20::<U1>(b);
 }
 
-unsafe fn salsa20<R: Unsigned>(mut B: *mut uint32_t) {
-    let mut x: [uint32_t; 16] = [0; 16];
-    for i in 0..16 {
-        x[i * 5 % 16] = *B.offset(i as isize);
-    }
+fn salsa20<R: Unsigned>(b: &mut [u32; 16]) {
+    let mut x = [0u32; 16];
 
-    use salsa20::cipher::StreamCipherCore;
+    for i in 0..16 {
+        x[i * 5 % 16] = b[i];
+    }
 
     let mut block = [0u8; 64];
     salsa20::SalsaCore::<R>::from_raw_state(x).write_keystream_block((&mut block).into());
@@ -25,23 +26,27 @@ unsafe fn salsa20<R: Unsigned>(mut B: *mut uint32_t) {
     }
 
     for i in 0..16 {
-        let x = (*B.offset(i as isize)).wrapping_add(x[i * 5 % 16]);
-        B.offset(i as isize).write(x)
+        b[i] = b[i].wrapping_add(x[i * 5 % 16]);
     }
 }
 
-pub(crate) unsafe fn blockmix_salsa8(mut B: *mut uint32_t, mut Y: *mut uint32_t, mut r: usize) {
-    let mut X: [uint32_t; 16] = [0; 16];
-    blkcpy(X.as_mut_ptr(), &mut *B.add((2 * r - 1) * 16), 16);
+pub(crate) fn blockmix_salsa8(b: &mut [u32], y: &mut [u32], r: usize) {
+    // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
+    let (b, _) = slice_as_chunks_mut::<_, 16>(b);
+    let (y, _) = slice_as_chunks_mut::<_, 16>(y);
+    let mut x = b[2 * r - 1];
+
     for i in 0..(2 * r) {
-        blkxor(X.as_mut_ptr(), &mut *B.add(i * 16), 16);
-        salsa20::<salsa20::cipher::consts::U4>(X.as_mut_ptr());
-        blkcpy(&mut *Y.add(i * 16), X.as_mut_ptr(), 16);
+        xor(&mut x, &b[i]);
+        salsa20::<U4>(&mut x);
+        y[i].copy_from_slice(&x);
     }
+
     for i in 0..r {
-        blkcpy(&mut *B.add(i * 16), &mut *Y.add((i * 2) * 16), 16);
+        b[i].copy_from_slice(&y[i * 2]);
     }
+
     for i in 0..r {
-        blkcpy(&mut *B.add((i + r) * 16), &mut *Y.add((i * 2 + 1) * 16), 16);
+        b[i + r].copy_from_slice(&y[i * 2 + 1]);
     }
 }

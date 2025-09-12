@@ -3,11 +3,18 @@
 //!
 //! # Examples
 //!
-//! PBKDF2 is defined in terms of a keyed pseudo-random function (PRF). Most
-//! commonly HMAC is used as this PRF. In such cases you can use [`pbkdf2_hmac`]
-//! and [`pbkdf2_hmac_array`] functions. The former accepts a byte slice which
-//! gets filled with generated key, while the latter returns an array with
-//! generated key of requested length.
+//! PBKDF2 is defined in terms of a keyed pseudo-random function (PRF).
+//! The most commonly used PRF for this purpose is HMAC. In such cases
+//! you can use [`pbkdf2_hmac`] and [`pbkdf2_hmac_array`] functions.
+//! The former accepts a byte slice which gets filled with generated key,
+//! while the latter returns an array with generated key of requested length.
+//!
+//! Note that it is not recommended to generate keys using PBKDF2 that exceed
+//! the output size of the PRF (equal to the hash size in the case of HMAC).
+//! If you need to generate a large amount of cryptographic material,
+//! consider using a separate [key derivation function][KDF].
+//!
+//! [KDF]: https://github.com/RustCrypto/KDFs
 //!
 //! ```
 //! # #[cfg(feature = "hmac")] {
@@ -96,20 +103,10 @@ pub use hmac;
 #[cfg(feature = "simple")]
 pub use crate::simple::{Algorithm, Params, Pbkdf2};
 
-#[cfg(feature = "parallel")]
-use rayon::prelude::*;
-
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
-use {
-    digest::{
-        HashMarker,
-        block_api::BlockSizeUser,
-        typenum::{IsLess, NonZero, True, U256},
-    },
-    hmac::EagerHash,
-};
+use hmac::EagerHash;
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -169,21 +166,10 @@ where
     PRF: KeyInit + Update + FixedOutput + Clone + Sync,
 {
     let n = PRF::OutputSize::to_usize();
-    // note: HMAC can be initialized with keys of any size,
-    // so this panic never happens with it
     let prf = PRF::new_from_slice(password)?;
 
-    #[cfg(not(feature = "parallel"))]
-    {
-        for (i, chunk) in res.chunks_mut(n).enumerate() {
-            pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
-        }
-    }
-    #[cfg(feature = "parallel")]
-    {
-        res.par_chunks_mut(n).enumerate().for_each(|(i, chunk)| {
-            pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
-        });
+    for (i, chunk) in res.chunks_mut(n).enumerate() {
+        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
     }
 
     Ok(())
@@ -230,9 +216,7 @@ where
 #[cfg(feature = "hmac")]
 pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
-    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
-    <D as EagerHash>::Core: Sync,
-    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
+    D: EagerHash<Core: Sync>,
 {
     crate::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
@@ -254,9 +238,7 @@ where
 #[cfg(feature = "hmac")]
 pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
 where
-    D: EagerHash + HashMarker + Update + FixedOutput + Default + Clone,
-    <D as EagerHash>::Core: Sync,
-    <D as BlockSizeUser>::BlockSize: IsLess<U256, Output = True> + NonZero,
+    D: EagerHash<Core: Sync>,
 {
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);

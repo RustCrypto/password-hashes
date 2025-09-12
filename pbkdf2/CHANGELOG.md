@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.13.0 (UNRELEASED)
+### Removed
+- The `parallel` crate feature  ([#702])
+
+[#702]: https://github.com/RustCrypto/password-hashes/pull/702
+
 ## 0.12.2 (2023-07-08)
 ### Fixed
 - Use `RECOMMENDED_ROUNDS` in `Default` impl for `Params` ([#442])
