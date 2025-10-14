@@ -197,3 +197,36 @@ pub(crate) fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<
 
     Ok(pos)
 }
+
+#[cfg(feature = "simple")]
+#[cfg(test)]
+mod tests {
+    use super::{decode64, encode64};
+    use hex_literal::hex;
+
+    const TEST_VECTORS: &[(&[u8], &str)] = &[
+        (b"", ""),
+        (&hex!("00"), ".."),
+        (&hex!("0102"), "/6."),
+        (&hex!("010203040506"), "/6k.2IU/"),
+        (&hex!("02030405060708090A0BAABBFF00"), "0A./3Mk/6YU09cuiz1."),
+    ];
+
+    #[test]
+    fn decode() {
+        for &(bin, base64) in TEST_VECTORS {
+            let mut buf = [0u8; 64];
+            let decoded = decode64(base64, &mut buf).unwrap();
+            assert_eq!(decoded, bin);
+        }
+    }
+
+    #[test]
+    fn encode() {
+        for &(bin, base64) in TEST_VECTORS {
+            let mut buf = [0u8; 64];
+            let encoded = encode64(bin, &mut buf).unwrap();
+            assert_eq!(encoded, base64);
+        }
+    }
+}
