@@ -79,11 +79,15 @@ use alloc::vec;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "simple")]
-use alloc::string::String;
+use {alloc::string::String, mcf::Base64};
 
 /// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
 #[cfg(feature = "simple")]
 const YESCRYPT_MCF_ID: &str = "y";
+
+/// Base64 variant used by yescrypt.
+#[cfg(feature = "simple")]
+const YESCRYPT_BASE64: Base64 = Base64::ShaCrypt;
 
 /// yescrypt password hashing function.
 ///
@@ -107,18 +111,11 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     let field = mcf::Field::new(params_str).map_err(|_| Error::Encoding)?;
     mcf_hash.push_field(field);
 
-    let mut buf = [0u8; (HASH_SIZE * 4).div_ceil(3)];
-
     // Add salt
-    // TODO(tarcieri): use `mcf` crate's Base64 support
-    mcf_hash
-        .push_str(encoding::encode64(salt, &mut buf)?)
-        .map_err(|_| Error::Encoding)?;
+    mcf_hash.push_base64(salt, YESCRYPT_BASE64);
 
     // Add yescrypt output
-    mcf_hash
-        .push_str(encoding::encode64(&out, &mut buf)?)
-        .map_err(|_| Error::Encoding)?;
+    mcf_hash.push_base64(&out, YESCRYPT_BASE64);
 
     // Convert to a normal `String` to keep `mcf` out of the public API (for now)
     Ok(mcf_hash.into())
@@ -142,25 +139,26 @@ pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
     let params: Params = fields.next().ok_or(Error::Encoding)?.as_str().parse()?;
 
     // decode salt
-    // TODO(tarcieri): use `mcf` crate's Base64 support
-    let mut salt_buf = [0u8; 16]; // TODO(tarcieri): support larger salts?
-    let salt_str = fields.next().ok_or(Error::Encoding)?.as_str();
-    let salt = encoding::decode64(salt_str, &mut salt_buf)?;
+    let salt = fields
+        .next()
+        .ok_or(Error::Encoding)?
+        .decode_base64(YESCRYPT_BASE64)
+        .map_err(|_| Error::Encoding)?;
 
     // decode expected password hash
-    const MAX_HASH_SIZE: usize = 32; // TODO(tarcieri): support larger outputs?
-    let mut expected_buf = [0u8; MAX_HASH_SIZE];
-    let expected_str = fields.next().ok_or(Error::Encoding)?.as_str();
-    let expected = encoding::decode64(expected_str, &mut expected_buf)?;
+    let expected = fields
+        .next()
+        .ok_or(Error::Encoding)?
+        .decode_base64(YESCRYPT_BASE64)
+        .map_err(|_| Error::Encoding)?;
 
     // should be the last field
     if fields.next().is_some() {
         return Err(Error::Encoding);
     }
 
-    let mut actual_buf = [0u8; MAX_HASH_SIZE];
-    let actual = &mut actual_buf[..expected.len()];
-    yescrypt_kdf(passwd, salt, &params, actual)?;
+    let mut actual = vec![0u8; expected.len()];
+    yescrypt_kdf(passwd, &salt, &params, &mut actual)?;
 
     // TODO(tarcieri): constant-time comparison?
     if expected != actual {
