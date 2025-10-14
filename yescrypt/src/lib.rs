@@ -60,7 +60,6 @@
 
 extern crate alloc;
 
-mod encoding;
 mod error;
 mod mode;
 mod params;
