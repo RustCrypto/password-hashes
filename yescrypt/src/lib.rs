@@ -31,7 +31,8 @@
 //! # fn main() -> yescrypt::Result<()> {
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
-//! let password_hash = yescrypt::yescrypt(password, salt, &Default::default())?;
+//! let params = yescrypt::Params::default(); // use recommended settings
+//! let password_hash = yescrypt::yescrypt(password, salt, &params)?;
 //! assert!(password_hash.starts_with("$y$"));
 //!
 //! // verify password is correct for the given hash
@@ -45,9 +46,10 @@
 //! # fn main() -> yescrypt::Result<()> {
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
+//! let params = yescrypt::Params::default(); // use recommended settings
 //!
 //! let mut output = [0u8; 32]; // can be sized as desired
-//! yescrypt::yescrypt_kdf(password, salt, &Default::default(), &mut output)?;
+//! yescrypt::yescrypt_kdf(password, salt, &params, &mut output)?;
 //! # Ok(())
 //! # }
 //! ```
