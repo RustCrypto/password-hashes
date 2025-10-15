@@ -26,8 +26,7 @@ base64ct = "1.7.1"
 
 [features]
 default = ["simple"]
-simple = ["rand", "std", "subtle"]
-std = []
+simple = ["rand", "subtle"]
 
 [package.metadata.docs.rs]
 all-features = true

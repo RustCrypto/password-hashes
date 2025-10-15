@@ -40,9 +40,6 @@
 #[macro_use]
 extern crate alloc;
 
-#[cfg(feature = "std")]
-extern crate std;
-
 mod b64;
 mod defs;
 mod errors;

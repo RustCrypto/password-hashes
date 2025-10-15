@@ -84,8 +84,6 @@ mod tests {
         let e = super::encode_sha256(&original);
         let d = super::decode_sha256(&e).unwrap();
 
-        std::println!("o {:?}", &original);
-        std::println!("d {:?}", &d);
         for i in 0..d.len() {
             assert_eq!(&original[i], &d[i]);
         }
