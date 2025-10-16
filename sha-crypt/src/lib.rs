@@ -56,12 +56,10 @@ use sha2::{Digest, Sha256, Sha512};
 
 #[cfg(feature = "simple")]
 use {
-    crate::{
-        defs::{SALT_MAX_LEN, TAB},
-        errors::CheckError,
-    },
+    crate::{defs::SALT_MAX_LEN, errors::CheckError},
     alloc::string::ToString,
-    rand::{Rng, distr::Distribution},
+    base64ct::{Base64ShaCrypt, Encoding},
+    rand_core::{OsRng, RngCore, TryRngCore},
 };
 
 #[cfg(feature = "simple")]
@@ -317,13 +315,7 @@ pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> 
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
-    let rng = rand::rng();
-
-    let salt: String = rng
-        .sample_iter(&ShaCryptDistribution)
-        .take(SALT_MAX_LEN)
-        .collect();
-
+    let salt = random_salt();
     let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params);
 
     let mut result = String::new();
@@ -352,13 +344,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
 /// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
 #[cfg(feature = "simple")]
 pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
-    let rng = rand::rng();
-
-    let salt: String = rng
-        .sample_iter(&ShaCryptDistribution)
-        .take(SALT_MAX_LEN)
-        .collect();
-
+    let salt = random_salt();
     let out = sha256_crypt(password.as_bytes(), salt.as_bytes(), params);
 
     let mut result = String::new();
@@ -528,21 +514,13 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
     }
 }
 
+/// Generate a random salt that is 16-bytes long.
 #[cfg(feature = "simple")]
-#[derive(Debug)]
-struct ShaCryptDistribution;
-
-#[cfg(feature = "simple")]
-impl Distribution<char> for ShaCryptDistribution {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
-        const RANGE: u32 = 26 + 26 + 10 + 2; // 2 == "./"
-        loop {
-            let var = rng.next_u32() >> (32 - 6);
-            if var < RANGE {
-                return TAB[var as usize] as char;
-            }
-        }
-    }
+fn random_salt() -> String {
+    // Create buffer containing raw bytes to encode as Base64
+    let mut buf = [0u8; (SALT_MAX_LEN * 3).div_ceil(4)];
+    OsRng.unwrap_err().fill_bytes(&mut buf);
+    Base64ShaCrypt::encode_string(&buf)
 }
 
 fn produce_byte_seq(len: usize, fill_from: &[u8]) -> Vec<u8> {
