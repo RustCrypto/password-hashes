@@ -14,10 +14,6 @@ pub const PW_SIZE_SHA512: usize = 86;
 #[cfg(feature = "simple")]
 pub const SALT_MAX_LEN: usize = 16;
 
-/// Encoding table.
-#[cfg(feature = "simple")]
-pub static TAB: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
 /// Inverse encoding map for SHA512.
 #[rustfmt::skip]
 pub const MAP_SHA512: [u8; 64] = [

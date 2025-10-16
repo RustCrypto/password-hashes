@@ -18,15 +18,15 @@ rust-version = "1.85"
 
 [dependencies]
 sha2 = { version = "0.11.0-rc.2", default-features = false }
+base64ct = { version = "1.7.1", default-features = false }
 
 # optional dependencies
-rand = { version = "0.9", optional = true }
+rand_core = { version = "0.9", optional = true, default-features = false, features = ["os_rng"] }
 subtle = { version = "2", optional = true, default-features = false }
-base64ct = "1.7.1"
 
 [features]
 default = ["simple"]
-simple = ["rand", "subtle"]
+simple = ["base64ct/alloc", "dep:rand_core", "dep:subtle"]
 
 [package.metadata.docs.rs]
 all-features = true
