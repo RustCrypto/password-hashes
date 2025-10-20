@@ -109,8 +109,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     // Add params string to the hash
     let mut params_buf = [0u8; Params::MAX_ENCODED_LEN];
     let params_str = params.encode(&mut params_buf)?;
-    let field = mcf::Field::new(params_str).map_err(|_| Error::Encoding)?;
-    mcf_hash.push_field(field);
+    mcf_hash.push_str(params_str).map_err(|_| Error::Encoding)?;
 
     // Add salt
     mcf_hash.push_base64(salt, YESCRYPT_BASE64);
@@ -127,7 +126,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 /// Password hash should begin with `$y$` in Modular Crypt Format (MCF).
 #[cfg(feature = "simple")]
 pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
-    let hash = mcf::PasswordHashRef::try_from(hash).map_err(|_| Error::Encoding)?;
+    let hash = mcf::PasswordHashRef::new(hash).map_err(|_| Error::Encoding)?;
 
     // verify id matches `$y`
     if hash.id() != YESCRYPT_MCF_ID {
