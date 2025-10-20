@@ -21,12 +21,13 @@ sha2 = { version = "0.11.0-rc.2", default-features = false }
 base64ct = { version = "1.7.1", default-features = false }
 
 # optional dependencies
+mcf = { version = "0.2", optional = true, default-features = false, features = ["alloc", "base64"] }
 rand_core = { version = "0.9", optional = true, default-features = false, features = ["os_rng"] }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
 default = ["simple"]
-simple = ["base64ct/alloc", "dep:rand_core", "dep:subtle"]
+simple = ["base64ct/alloc", "dep:mcf", "dep:rand_core", "dep:subtle"]
 
 [package.metadata.docs.rs]
 all-features = true
