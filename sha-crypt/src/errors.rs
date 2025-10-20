@@ -44,11 +44,17 @@ impl fmt::Display for CryptError {
     }
 }
 
+/// Errors which occur when verifying passwords.
 #[cfg(feature = "simple")]
 #[derive(Debug)]
 pub enum CheckError {
+    /// Format is invalid.
     InvalidFormat(String),
+
+    /// Cryptographic error.
     Crypt(CryptError),
+
+    /// Password hash doesn't match (invalid password).
     HashMismatch,
 }
 
