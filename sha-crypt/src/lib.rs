@@ -52,16 +52,18 @@ pub use crate::{
 };
 
 use alloc::{string::String, vec::Vec};
+use base64ct::{Base64ShaCrypt, Encoding};
 use sha2::{Digest, Sha256, Sha512};
 
 #[cfg(feature = "simple")]
 pub use crate::errors::{CheckError, DecodeError};
 
+use crate::consts::{MAP_SHA256, MAP_SHA512};
+
 #[cfg(feature = "simple")]
 use {
     crate::consts::SALT_MAX_LEN,
     alloc::string::ToString,
-    base64ct::{Base64ShaCrypt, Encoding},
     rand_core::{OsRng, RngCore, TryRngCore},
 };
 
@@ -283,7 +285,13 @@ pub fn sha256_crypt(
 /// - `Err(errors::CryptError)` otherwise
 pub fn sha512_crypt_b64(password: &[u8], salt: &[u8], params: &Sha512Params) -> String {
     let output = sha512_crypt(password, salt, params);
-    String::from_utf8(b64::encode_sha512(&output).to_vec()).unwrap()
+
+    let mut transposed = [0u8; BLOCK_SIZE_SHA512];
+    for (i, &ti) in MAP_SHA512.iter().enumerate() {
+        transposed[i] = output[ti as usize];
+    }
+
+    Base64ShaCrypt::encode_string(&transposed)
 }
 
 /// Same as sha256_crypt except base64 representation will be returned.
@@ -299,7 +307,13 @@ pub fn sha512_crypt_b64(password: &[u8], salt: &[u8], params: &Sha512Params) -> 
 /// - `Err(errors::CryptError)` otherwise
 pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> String {
     let output = sha256_crypt(password, salt, params);
-    String::from_utf8(b64::encode_sha256(&output).to_vec()).unwrap()
+
+    let mut transposed = [0u8; BLOCK_SIZE_SHA256];
+    for (i, &ti) in MAP_SHA256.iter().enumerate() {
+        transposed[i] = output[ti as usize];
+    }
+
+    Base64ShaCrypt::encode_string(&transposed)
 }
 
 /// Simple interface for generating a SHA512 password hash.
@@ -316,7 +330,7 @@ pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> 
 #[cfg(feature = "simple")]
 pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
     let salt = random_salt();
-    let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params);
+    let out = sha512_crypt_b64(password.as_bytes(), salt.as_bytes(), params);
 
     let mut mcf_hash = mcf::PasswordHash::from_id(SHA512_MCF_ID).expect("should have valid ID");
 
@@ -327,9 +341,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
     }
 
     mcf_hash.push_str(&salt).expect("should have valid salt");
-
-    let s = String::from_utf8(b64::encode_sha512(&out).to_vec()).unwrap();
-    mcf_hash.push_str(&s).expect("should have valid hash");
+    mcf_hash.push_str(&out).expect("should have valid hash");
 
     mcf_hash.into()
 }
@@ -348,7 +360,7 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
 #[cfg(feature = "simple")]
 pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
     let salt = random_salt();
-    let out = sha256_crypt(password.as_bytes(), salt.as_bytes(), params);
+    let out = sha256_crypt_b64(password.as_bytes(), salt.as_bytes(), params);
 
     let mut mcf_hash = mcf::PasswordHash::from_id(SHA256_MCF_ID).expect("should have valid ID");
 
@@ -359,9 +371,7 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
     }
 
     mcf_hash.push_str(&salt).expect("should have valid salt");
-
-    let s = String::from_utf8(b64::encode_sha256(&out).to_vec()).unwrap();
-    mcf_hash.push_str(&s).expect("should have valid hash");
+    mcf_hash.push_str(&out).expect("should have valid hash");
 
     mcf_hash.into()
 }

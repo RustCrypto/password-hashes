@@ -5,10 +5,8 @@ pub const BLOCK_SIZE_SHA256: usize = 32;
 pub const BLOCK_SIZE_SHA512: usize = 64;
 
 /// PWD part length of the password string of SHA256
+#[cfg(feature = "simple")]
 pub const PW_SIZE_SHA256: usize = 43;
-
-/// PWD part length of the password string of SHA512
-pub const PW_SIZE_SHA512: usize = 86;
 
 /// Maximum length of a salt
 #[cfg(feature = "simple")]
