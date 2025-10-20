@@ -55,8 +55,11 @@ use alloc::{string::String, vec::Vec};
 use sha2::{Digest, Sha256, Sha512};
 
 #[cfg(feature = "simple")]
+pub use crate::errors::{CheckError, DecodeError};
+
+#[cfg(feature = "simple")]
 use {
-    crate::{defs::SALT_MAX_LEN, errors::CheckError},
+    crate::defs::SALT_MAX_LEN,
     alloc::string::ToString,
     base64ct::{Base64ShaCrypt, Encoding},
     rand_core::{OsRng, RngCore, TryRngCore},
