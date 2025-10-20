@@ -1,6 +1,6 @@
 //! Base64 encoding support
 
-use crate::defs::{
+use crate::consts::{
     BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, MAP_SHA256, MAP_SHA512, PW_SIZE_SHA256, PW_SIZE_SHA512,
 };
 use base64ct::{Base64ShaCrypt, Encoding};

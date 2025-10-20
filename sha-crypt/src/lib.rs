@@ -41,12 +41,12 @@
 extern crate alloc;
 
 mod b64;
-mod defs;
+mod consts;
 mod errors;
 mod params;
 
 pub use crate::{
-    defs::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512},
+    consts::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512},
     errors::CryptError,
     params::{ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN, Sha256Params, Sha512Params},
 };
@@ -59,7 +59,7 @@ pub use crate::errors::{CheckError, DecodeError};
 
 #[cfg(feature = "simple")]
 use {
-    crate::defs::SALT_MAX_LEN,
+    crate::consts::SALT_MAX_LEN,
     alloc::string::ToString,
     base64ct::{Base64ShaCrypt, Encoding},
     rand_core::{OsRng, RngCore, TryRngCore},
