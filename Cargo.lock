@@ -428,6 +428,7 @@ name = "sha-crypt"
 version = "0.6.0-pre.1"
 dependencies = [
  "base64ct",
+ "mcf",
  "rand_core",
  "sha2",
  "subtle",

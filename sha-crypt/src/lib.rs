@@ -66,14 +66,11 @@ use {
 };
 
 #[cfg(feature = "simple")]
-static SHA256_SALT_PREFIX: &str = "$5$";
+static SHA256_MCF_ID: &str = "5";
 #[cfg(feature = "simple")]
-static SHA256_ROUNDS_PREFIX: &str = "rounds=";
-
+static SHA512_MCF_ID: &str = "6";
 #[cfg(feature = "simple")]
-static SHA512_SALT_PREFIX: &str = "$6$";
-#[cfg(feature = "simple")]
-static SHA512_ROUNDS_PREFIX: &str = "rounds=";
+static ROUNDS_PARAM: &str = "rounds=";
 
 /// The SHA512 crypt function returned as byte vector
 ///
@@ -321,17 +318,20 @@ pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
     let salt = random_salt();
     let out = sha512_crypt(password.as_bytes(), salt.as_bytes(), params);
 
-    let mut result = String::new();
-    result.push_str(SHA512_SALT_PREFIX);
+    let mut mcf_hash = mcf::PasswordHash::from_id(SHA512_MCF_ID).expect("should have valid ID");
+
     if params.rounds != ROUNDS_DEFAULT {
-        result.push_str(&format!("{}{}", SHA512_ROUNDS_PREFIX, params.rounds));
-        result.push('$');
+        mcf_hash
+            .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
+            .expect("should be valid field");
     }
-    result.push_str(&salt);
-    result.push('$');
+
+    mcf_hash.push_str(&salt).expect("should have valid salt");
+
     let s = String::from_utf8(b64::encode_sha512(&out).to_vec()).unwrap();
-    result.push_str(&s);
-    result
+    mcf_hash.push_str(&s).expect("should have valid hash");
+
+    mcf_hash.into()
 }
 
 /// Simple interface for generating a SHA256 password hash.
@@ -350,17 +350,20 @@ pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
     let salt = random_salt();
     let out = sha256_crypt(password.as_bytes(), salt.as_bytes(), params);
 
-    let mut result = String::new();
-    result.push_str(SHA256_SALT_PREFIX);
+    let mut mcf_hash = mcf::PasswordHash::from_id(SHA256_MCF_ID).expect("should have valid ID");
+
     if params.rounds != ROUNDS_DEFAULT {
-        result.push_str(&format!("{}{}", SHA256_ROUNDS_PREFIX, params.rounds));
-        result.push('$');
+        mcf_hash
+            .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
+            .expect("should be valid field");
     }
-    result.push_str(&salt);
-    result.push('$');
+
+    mcf_hash.push_str(&salt).expect("should have valid salt");
+
     let s = String::from_utf8(b64::encode_sha256(&out).to_vec()).unwrap();
-    result.push_str(&s);
-    result
+    mcf_hash.push_str(&s).expect("should have valid hash");
+
+    mcf_hash.into()
 }
 
 /// Checks that given password matches provided hash.
@@ -388,23 +391,21 @@ pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     if iter.next() != Some("6") {
         return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA512 identifier: '{SHA512_SALT_PREFIX}'",
+            "does not contain SHA512 identifier: '${SHA512_MCF_ID}$'",
         )));
     }
 
     let mut next = iter.next().ok_or_else(|| {
         CheckError::InvalidFormat("Does not contain a rounds or salt nor hash string".to_string())
     })?;
-    let rounds = if next.starts_with(SHA512_ROUNDS_PREFIX) {
+    let rounds = if next.starts_with(ROUNDS_PARAM) {
         let rounds = next;
         next = iter.next().ok_or_else(|| {
             CheckError::InvalidFormat("Does not contain a salt nor hash string".to_string())
         })?;
 
-        rounds[SHA512_ROUNDS_PREFIX.len()..].parse().map_err(|_| {
-            CheckError::InvalidFormat(format!(
-                "{SHA512_ROUNDS_PREFIX} specifier need to be a number",
-            ))
+        rounds[ROUNDS_PARAM.len()..].parse().map_err(|_| {
+            CheckError::InvalidFormat(format!("{ROUNDS_PARAM} specifier need to be a number",))
         })?
     } else {
         ROUNDS_DEFAULT
@@ -465,23 +466,21 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 
     if iter.next() != Some("5") {
         return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA256 identifier: '{SHA256_SALT_PREFIX}'",
+            "does not contain SHA256 identifier: '${SHA256_MCF_ID}$'",
         )));
     }
 
     let mut next = iter.next().ok_or_else(|| {
         CheckError::InvalidFormat("Does not contain a rounds or salt nor hash string".to_string())
     })?;
-    let rounds = if next.starts_with(SHA256_ROUNDS_PREFIX) {
+    let rounds = if next.starts_with(ROUNDS_PARAM) {
         let rounds = next;
         next = iter.next().ok_or_else(|| {
             CheckError::InvalidFormat("Does not contain a salt nor hash string".to_string())
         })?;
 
-        rounds[SHA256_ROUNDS_PREFIX.len()..].parse().map_err(|_| {
-            CheckError::InvalidFormat(format!(
-                "{SHA256_ROUNDS_PREFIX} specifier need to be a number",
-            ))
+        rounds[ROUNDS_PARAM.len()..].parse().map_err(|_| {
+            CheckError::InvalidFormat(format!("{ROUNDS_PARAM} specifier need to be a number",))
         })?
     } else {
         ROUNDS_DEFAULT
