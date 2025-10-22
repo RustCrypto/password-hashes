@@ -58,6 +58,20 @@ pub enum CheckError {
     HashMismatch,
 }
 
+#[cfg(feature = "simple")]
+impl core::error::Error for CheckError {}
+
+#[cfg(feature = "simple")]
+impl fmt::Display for CheckError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidFormat(e) => write!(f, "invalid format: {e}"),
+            Self::Crypt(e) => write!(f, "cryptographic error: {e}"),
+            Self::HashMismatch => write!(f, "hash mismatch"),
+        }
+    }
+}
+
 /// Decoding errors.
 #[cfg(feature = "simple")]
 #[derive(Debug)]
