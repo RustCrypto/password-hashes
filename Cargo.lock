@@ -417,6 +417,7 @@ dependencies = [
 name = "scrypt"
 version = "0.12.0-rc.2"
 dependencies = [
+ "cfg-if",
  "password-hash",
  "pbkdf2",
  "salsa20",
