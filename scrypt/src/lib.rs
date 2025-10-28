@@ -112,13 +112,32 @@ pub fn scrypt(
     let mut b = vec![0u8; pr128];
     pbkdf2_hmac::<Sha256>(password, salt, 1, &mut b);
 
-    let mut v = vec![0u8; nr128];
-    let mut t = vec![0u8; r128];
-
-    for chunk in &mut b.chunks_mut(r128) {
-        romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
-    }
+    #[cfg(not(feature = "rayon"))]
+    romix_sequential(nr128, r128, n, &mut b);
+    #[cfg(feature = "rayon")]
+    romix_parallel(nr128, r128, n, &mut b);
 
     pbkdf2_hmac::<Sha256>(password, &b, 1, output);
     Ok(())
+}
+
+#[cfg(not(feature = "rayon"))]
+fn romix_sequential(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
+    let mut v = vec![0u8; nr128];
+    let mut t = vec![0u8; r128];
+
+    b.chunks_mut(r128).for_each(|chunk| {
+        romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
+    });
+}
+
+#[cfg(feature = "rayon")]
+fn romix_parallel(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
+    use rayon::{iter::ParallelIterator as _, slice::ParallelSliceMut as _};
+
+    b.par_chunks_mut(r128).for_each(|chunk| {
+        let mut v = vec![0u8; nr128];
+        let mut t = vec![0u8; r128];
+        romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
+    });
 }
