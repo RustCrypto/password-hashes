@@ -2,7 +2,6 @@
 
 use crate::{
     Error, Result,
-    encoding::{decode64_uint32, encode64_uint32},
     mode::Mode,
     pwxform::{PwxformCtx, RMIN},
 };
@@ -310,6 +309,112 @@ fn N2log2(N: u64) -> u32 {
     }
 
     N_log2
+}
+
+/// s(ha)crypt-flavored Base64 alphabet.
+static ITOA64: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+/// Reverse lookup table for s(ha)crypt-flavored Base64 alphabet.
+static ATOI64: [u8; 128] = {
+    let mut tbl = [0xFFu8; 128]; // use 0xFF as a placeholder for invalid chars
+    let mut i = 0u8;
+    while i < 64 {
+        tbl[ITOA64[i as usize] as usize] = i;
+        i += 1;
+    }
+    tbl
+};
+
+fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)> {
+    let mut start = 0u32;
+    let mut end = 47u32;
+    let mut chars = 1u32;
+    let mut bits = 0u32;
+
+    if pos >= src.len() {
+        return Err(Error::Encoding);
+    }
+
+    let c = match ATOI64.get(src[pos] as usize) {
+        Some(&c) if c <= 63 => c,
+        _ => return Err(Error::Encoding),
+    };
+    pos += 1;
+
+    let mut dst = min;
+    while u32::from(c) > end {
+        dst += (end + 1 - start) << bits;
+        start = end + 1;
+        end = start + (62 - end) / 2;
+        chars += 1;
+        bits += 6;
+    }
+
+    dst += (u32::from(c) - start) << bits;
+
+    while chars > 1 {
+        chars -= 1;
+
+        if bits < 6 || pos >= src.len() {
+            return Err(Error::Encoding);
+        }
+
+        let c = match ATOI64.get(src[pos] as usize) {
+            Some(&c) if c <= 63 => c,
+            _ => return Err(Error::Encoding),
+        };
+        pos += 1;
+
+        bits -= 6;
+        dst += u32::from(c) << bits;
+    }
+
+    Ok((dst, pos))
+}
+
+fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<usize> {
+    let mut start = 0u32;
+    let mut end = 47u32;
+    let mut chars = 1u32;
+    let mut bits = 0u32;
+
+    if src < min {
+        return Err(Error::Params);
+    }
+
+    src -= min;
+
+    loop {
+        let count = (end + 1 - start) << bits;
+        if src < count {
+            break;
+        }
+        if start >= 63 {
+            return Err(Error::Encoding);
+        }
+        start = end + 1;
+        end = start + (62 - end) / 2;
+        src -= count;
+        chars += 1;
+        bits += 6;
+    }
+
+    if dst.len() < (chars as usize) {
+        return Err(Error::Encoding);
+    }
+
+    let mut pos: usize = 0;
+    dst[pos] = ITOA64[(start + (src >> bits)) as usize];
+    pos += 1;
+
+    while chars > 1 {
+        chars -= 1;
+        bits = bits.wrapping_sub(6);
+        dst[pos] = ITOA64[((src >> bits) & 0x3f) as usize];
+        pos += 1;
+    }
+
+    Ok(pos)
 }
 
 #[cfg(test)]

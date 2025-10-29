@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -31,7 +31,8 @@
 //! # fn main() -> yescrypt::Result<()> {
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
-//! let password_hash = yescrypt::yescrypt(password, salt, &Default::default())?;
+//! let params = yescrypt::Params::default(); // use recommended settings
+//! let password_hash = yescrypt::yescrypt(password, salt, &params)?;
 //! assert!(password_hash.starts_with("$y$"));
 //!
 //! // verify password is correct for the given hash
@@ -45,9 +46,10 @@
 //! # fn main() -> yescrypt::Result<()> {
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
+//! let params = yescrypt::Params::default(); // use recommended settings
 //!
 //! let mut output = [0u8; 32]; // can be sized as desired
-//! yescrypt::yescrypt_kdf(password, salt, &Default::default(), &mut output)?;
+//! yescrypt::yescrypt_kdf(password, salt, &params, &mut output)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -60,7 +62,6 @@
 
 extern crate alloc;
 
-mod encoding;
 mod error;
 mod mode;
 mod params;
@@ -79,11 +80,15 @@ use alloc::vec;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "simple")]
-use alloc::string::String;
+use {alloc::string::String, mcf::Base64};
 
 /// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
 #[cfg(feature = "simple")]
 const YESCRYPT_MCF_ID: &str = "y";
+
+/// Base64 variant used by yescrypt.
+#[cfg(feature = "simple")]
+const YESCRYPT_BASE64: Base64 = Base64::ShaCrypt;
 
 /// yescrypt password hashing function.
 ///
@@ -104,21 +109,13 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
     // Add params string to the hash
     let mut params_buf = [0u8; Params::MAX_ENCODED_LEN];
     let params_str = params.encode(&mut params_buf)?;
-    let field = mcf::Field::new(params_str).map_err(|_| Error::Encoding)?;
-    mcf_hash.push_field(field);
-
-    let mut buf = [0u8; (HASH_SIZE * 4).div_ceil(3)];
+    mcf_hash.push_str(params_str).map_err(|_| Error::Encoding)?;
 
     // Add salt
-    // TODO(tarcieri): use `mcf` crate's Base64 support
-    mcf_hash
-        .push_str(encoding::encode64(salt, &mut buf)?)
-        .map_err(|_| Error::Encoding)?;
+    mcf_hash.push_base64(salt, YESCRYPT_BASE64);
 
     // Add yescrypt output
-    mcf_hash
-        .push_str(encoding::encode64(&out, &mut buf)?)
-        .map_err(|_| Error::Encoding)?;
+    mcf_hash.push_base64(&out, YESCRYPT_BASE64);
 
     // Convert to a normal `String` to keep `mcf` out of the public API (for now)
     Ok(mcf_hash.into())
@@ -129,7 +126,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
 /// Password hash should begin with `$y$` in Modular Crypt Format (MCF).
 #[cfg(feature = "simple")]
 pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
-    let hash = mcf::PasswordHashRef::try_from(hash).map_err(|_| Error::Encoding)?;
+    let hash = mcf::PasswordHashRef::new(hash).map_err(|_| Error::Encoding)?;
 
     // verify id matches `$y`
     if hash.id() != YESCRYPT_MCF_ID {
@@ -142,25 +139,26 @@ pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
     let params: Params = fields.next().ok_or(Error::Encoding)?.as_str().parse()?;
 
     // decode salt
-    // TODO(tarcieri): use `mcf` crate's Base64 support
-    let mut salt_buf = [0u8; 16]; // TODO(tarcieri): support larger salts?
-    let salt_str = fields.next().ok_or(Error::Encoding)?.as_str();
-    let salt = encoding::decode64(salt_str, &mut salt_buf)?;
+    let salt = fields
+        .next()
+        .ok_or(Error::Encoding)?
+        .decode_base64(YESCRYPT_BASE64)
+        .map_err(|_| Error::Encoding)?;
 
     // decode expected password hash
-    const MAX_HASH_SIZE: usize = 32; // TODO(tarcieri): support larger outputs?
-    let mut expected_buf = [0u8; MAX_HASH_SIZE];
-    let expected_str = fields.next().ok_or(Error::Encoding)?.as_str();
-    let expected = encoding::decode64(expected_str, &mut expected_buf)?;
+    let expected = fields
+        .next()
+        .ok_or(Error::Encoding)?
+        .decode_base64(YESCRYPT_BASE64)
+        .map_err(|_| Error::Encoding)?;
 
     // should be the last field
     if fields.next().is_some() {
         return Err(Error::Encoding);
     }
 
-    let mut actual_buf = [0u8; MAX_HASH_SIZE];
-    let actual = &mut actual_buf[..expected.len()];
-    yescrypt_kdf(passwd, salt, &params, actual)?;
+    let mut actual = vec![0u8; expected.len()];
+    yescrypt_kdf(passwd, &salt, &params, &mut actual)?;
 
     // TODO(tarcieri): constant-time comparison?
     if expected != actual {

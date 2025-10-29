@@ -162,8 +162,10 @@ fn test_sha512_simple_check_roundtrip() {
     let params = Sha512Params::new(5_000).expect("Rounds error");
 
     let hash = sha512_simple(pw, &params);
+    dbg!(&hash);
 
     let c_r = sha512_check(pw, &hash);
+    dbg!(&c_r);
     assert!(c_r.is_ok());
 }
 

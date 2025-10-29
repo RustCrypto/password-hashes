@@ -1,6 +1,6 @@
 [package]
 name = "yescrypt"
-version = "0.1.0-pre.3"
+version = "0.1.0-pre.4"
 description = "Pure Rust implementation of the yescrypt password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -20,7 +20,7 @@ salsa20 = { version = "0.11.0-rc.1", default-features = false }
 sha2 = { version = "0.11.0-rc.2", default-features = false }
 
 # optional dependencies
-mcf = { version = "0.2", optional = true, default-features = false, features = ["alloc"] }
+mcf = { version = "0.2", optional = true, default-features = false, features = ["alloc", "base64"] }
 
 [dev-dependencies]
 hex-literal = "1"
