@@ -11,7 +11,6 @@ use crate::{
 };
 use alloc::string::{String, ToString};
 use base64ct::{Base64ShaCrypt, Encoding};
-use rand_core::{OsRng, RngCore, TryRngCore};
 
 const SHA256_MCF_ID: &str = "5";
 const SHA512_MCF_ID: &str = "6";
@@ -227,7 +226,7 @@ pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError
 fn random_salt() -> String {
     // Create buffer containing raw bytes to encode as Base64
     let mut buf = [0u8; (SALT_MAX_LEN * 3).div_ceil(4)];
-    OsRng.unwrap_err().fill_bytes(&mut buf);
+    getrandom::fill(&mut buf).expect("RNG failure");
     Base64ShaCrypt::encode_string(&buf)
 }
 

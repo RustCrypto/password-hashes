@@ -39,16 +39,12 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{
-//!         // `OsRng` requires enabled `std` crate feature
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-//!     },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 //!     Argon2
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
+//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
 //! // Argon2 with default params (Argon2id v19)
 //! let argon2 = Argon2::default();
@@ -77,16 +73,12 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{
-//!         // `OsRng` requires enabled `std` crate feature
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-//!     },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString },
 //!     Algorithm, Argon2, Params, Version
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
+//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
 //! // Argon2 with default params (Argon2id v19) and pepper
 //! let argon2 = Argon2::new_with_secret(

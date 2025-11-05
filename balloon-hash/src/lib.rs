@@ -28,21 +28,17 @@
 //!
 //! The following example demonstrates the high-level password hashing API:
 //!
-//! ```
+#![cfg_attr(feature = "getrandom", doc = "```")]
+#![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "password-hash", feature = "std"))]
-//! # {
 //! use balloon_hash::{
-//!     password_hash::{
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-//!     },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 //!     Balloon
 //! };
 //! use sha2::Sha256;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::try_from_rng(&mut OsRng)?;
+//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `balloon-hash` enabled
 //!
 //! // Balloon with default params
 //! let balloon = Balloon::<Sha256>::default();
@@ -53,7 +49,6 @@
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(balloon.verify_password(password, &parsed_hash).is_ok());
-//! # }
 //! # Ok(())
 //! # }
 //! ```

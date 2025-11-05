@@ -14,25 +14,27 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-digest = { version = "0.11.0-rc.1", default-features = false }
-crypto-bigint = { version = "0.7.0-rc.4", default-features = false, features = ["hybrid-array"] }
-rand_core = { version = "0.9", default-features = false }
+digest = { version = "0.11.0-rc.4", default-features = false }
+crypto-bigint = { version = "0.7.0-rc.9", default-features = false, features = ["hybrid-array"] }
+rand_core = { version = "0.10.0-rc-2", default-features = false }
 
 # optional dependencies
-password-hash = { version = "0.6.0-rc.0", default-features = false, optional = true }
+password-hash = { version = "0.6.0-rc.2", default-features = false, optional = true }
 rayon = { version = "1.7", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 hex-literal = "1"
-sha2 = "0.11.0-rc.2"
+sha2 = "0.11.0-rc.3"
 
 [features]
 default = ["alloc", "password-hash", "rand"]
 alloc = ["password-hash/alloc"]
+std = ["alloc", "getrandom"]
+
+getrandom = ["password-hash/getrandom"]
 parallel = ["rayon", "std"]
 rand = ["password-hash/rand_core"]
-std = ["alloc", "password-hash/os_rng", "rand_core/std"]
 zeroize = ["dep:zeroize"]
 
 [package.metadata.docs.rs]
