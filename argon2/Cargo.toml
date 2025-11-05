@@ -35,8 +35,9 @@ password-hash = { version = "0.6.0-rc.1", features = ["rand_core"] }
 [features]
 default = ["alloc", "password-hash", "rand"]
 alloc = ["password-hash?/alloc"]
-std = ["alloc", "password-hash?/os_rng", "base64ct/std"]
+std = ["alloc", "base64ct/std"]
 
+getrandom = ["simple", "password-hash/getrandom"]
 parallel = ["dep:rayon"]
 rand = ["password-hash?/rand_core"]
 simple = ["password-hash"]

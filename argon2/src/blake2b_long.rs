@@ -4,7 +4,7 @@ use crate::{Error, Result};
 
 use blake2::{
     Blake2b512, Blake2bVar,
-    digest::{self, Digest, VariableOutput},
+    digest::{self, Digest},
 };
 
 use core::convert::TryFrom;

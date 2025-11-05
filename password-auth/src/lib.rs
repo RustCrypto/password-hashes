@@ -27,7 +27,6 @@ pub use crate::errors::{ParseError, VerifyError};
 
 use alloc::string::{String, ToString};
 use password_hash::{ParamsString, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use rand_core::OsRng;
 
 #[cfg(not(any(feature = "argon2", feature = "pbkdf2", feature = "scrypt")))]
 compile_error!(
@@ -46,7 +45,7 @@ use scrypt::Scrypt;
 /// Uses the best available password hashing algorithm given the enabled
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
-    let salt = SaltString::try_from_rng(&mut OsRng).expect("Rng error");
+    let salt = SaltString::generate();
     generate_phc_hash(password.as_ref(), &salt)
         .map(|hash| hash.to_string())
         .expect("password hashing error")

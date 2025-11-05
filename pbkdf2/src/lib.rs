@@ -55,20 +55,16 @@
 //!
 //! The following example demonstrates the high-level password hashing API:
 //!
-//! ```
+#![cfg_attr(feature = "simple", doc = "```")]
+#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
-//! # #[cfg(feature = "simple")]
-//! # {
 //! use pbkdf2::{
-//!     password_hash::{
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-//!     },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 //!     Pbkdf2
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::try_from_rng(&mut OsRng).unwrap();
+//! let salt = SaltString::generate();
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
 //! let password_hash = Pbkdf2.hash_password(password, &salt)?.to_string();
@@ -76,7 +72,6 @@
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(Pbkdf2.verify_password(password, &parsed_hash).is_ok());
-//! # }
 //! # Ok(())
 //! # }
 //! ```
