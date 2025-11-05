@@ -63,7 +63,7 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
 
     // Calculate the last block with VarBlake2b.
     let mut hasher = Blake2bVarCore::new(out.len())
-        .expect("The output is guaranteed to be smaller than 64 bytes");
+        .expect("`out.len()` is guaranteed to be smaller or equal to 64");
     let mut buf = LazyBuffer::new(&last_output);
     let mut full_out = Default::default();
     hasher.finalize_variable_core(&mut buf, &mut full_out);
