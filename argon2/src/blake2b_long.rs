@@ -47,28 +47,21 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     let mut last_output = digest.finalize();
 
     // Then we write the first 32 bytes of this hash to the output
-    out[..half_hash_len].copy_from_slice(&last_output[..half_hash_len]);
+    let (first_chunk, mut out) = out.split_at_mut(half_hash_len);
+    first_chunk.copy_from_slice(&last_output[..half_hash_len]);
 
     // Next, we write a number of 32 byte blocks to the output.
     // Each block is the first 32 bytes of the hash of the last block.
     // The very last block of the output is excluded, and has a variable
     // length in range [1, 32].
-    let mut counter = 0;
-    let out_len = out.len();
-    for chunk in out[half_hash_len..]
-        .chunks_exact_mut(half_hash_len)
-        .take_while(|_| {
-            counter += half_hash_len;
-            out_len - counter > 64
-        })
-    {
+    while out.len() > 64 {
+        let (chunk, tail) = out.split_at_mut(half_hash_len);
+        out = tail;
         last_output = Blake2b512::digest(last_output);
         chunk.copy_from_slice(&last_output[..half_hash_len]);
     }
 
     // Calculate the last block with VarBlake2b.
-    let out = &mut out[counter..];
-
     let mut hasher = Blake2bVarCore::new(out.len())
         .expect("The output is guaranteed to be smaller than 64 bytes");
     let mut buf = LazyBuffer::new(&last_output);
