@@ -3,11 +3,13 @@
 use crate::{Error, Result};
 
 use blake2::{
-    Blake2b512, Blake2bVar,
-    digest::{self, Digest},
+    Blake2b512, Blake2bVarCore,
+    digest::{
+        Digest,
+        block_api::{UpdateCore, VariableOutputCore},
+        block_buffer::LazyBuffer,
+    },
 };
-
-use core::convert::TryFrom;
 
 pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     if out.is_empty() {
@@ -20,18 +22,17 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
 
     // Use blake2b directly if the output is small enough.
     if out.len() <= Blake2b512::output_size() {
-        let mut digest = Blake2bVar::new(out.len()).map_err(|_| Error::OutputTooLong)?;
-
-        // Conflicting method name from `Digest` and `Update` traits
-        digest::Update::update(&mut digest, &len_bytes);
+        let mut hasher = Blake2bVarCore::new(out.len()).unwrap();
+        let mut buf = LazyBuffer::new(&len_bytes);
 
         for input in inputs {
-            digest::Update::update(&mut digest, input);
+            buf.digest_blocks(input, |blocks| hasher.update_blocks(blocks));
         }
 
-        digest
-            .finalize_variable(out)
-            .map_err(|_| Error::OutputTooLong)?;
+        let mut full_out = Default::default();
+        hasher.finalize_variable_core(&mut buf, &mut full_out);
+        let out_src = &full_out[..out.len()];
+        out.copy_from_slice(out_src);
 
         return Ok(());
     }
@@ -67,13 +68,14 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     }
 
     // Calculate the last block with VarBlake2b.
-    let last_block_size = out.len() - counter;
-    let mut digest = Blake2bVar::new(last_block_size).map_err(|_| Error::OutputTooLong)?;
+    let out = &mut out[counter..];
 
-    digest::Update::update(&mut digest, &last_output);
-    digest
-        .finalize_variable(&mut out[counter..])
-        .expect("invalid Blake2bVar out length");
+    let mut hasher = Blake2bVarCore::new(out.len()).map_err(|_| Error::OutputTooLong)?;
+    let mut buf = LazyBuffer::new(&last_output);
+    let mut full_out = Default::default();
+    hasher.finalize_variable_core(&mut buf, &mut full_out);
+    let out_src = &full_out[..out.len()];
+    out.copy_from_slice(out_src);
 
     Ok(())
 }
