@@ -1,6 +1,6 @@
 [package]
 name = "bcrypt-pbkdf"
-version = "0.11.0-rc.1"
+version = "0.11.0-rc.2"
 description = "bcrypt-pbkdf password-based key derivation function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -15,7 +15,7 @@ rust-version = "1.85"
 
 [dependencies]
 blowfish = { version = "0.10.0-rc.2", features = ["bcrypt"] }
-pbkdf2 = { version = "0.13.0-rc.1", default-features = false, path = "../pbkdf2" }
+pbkdf2 = { version = "0.13.0-rc.2", default-features = false, path = "../pbkdf2" }
 sha2 = { version = "0.11.0-rc.3", default-features = false }
 
 # optional features
