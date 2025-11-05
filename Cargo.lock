@@ -71,7 +71,8 @@ dependencies = [
 [[package]]
 name = "blake2"
 version = "0.11.0-rc.3"
-source = "git+https://github.com/RustCrypto/hashes?branch=blake2%2Frestore-blake-var#23e8c1296de00e3abfe39bf614fb1d56df90de0d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "679065eb2b85a078ace42411e657bef3a6afe93a40d1b9cb04e39ca303cc3f36"
 dependencies = [
  "digest",
 ]
