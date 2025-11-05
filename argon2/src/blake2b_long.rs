@@ -21,8 +21,7 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
         .map_err(|_| Error::OutputTooLong)?;
 
     // Use blake2b directly if the output is small enough.
-    if out.len() <= Blake2b512::output_size() {
-        let mut hasher = Blake2bVarCore::new(out.len()).map_err(|_| Error::OutputTooLong)?;
+    if let Ok(mut hasher) = Blake2bVarCore::new(out.len()) {
         let mut buf = LazyBuffer::new(&len_bytes);
 
         for input in inputs {
