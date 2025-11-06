@@ -1,6 +1,6 @@
 [package]
 name = "argon2"
-version = "0.6.0-rc.1"
+version = "0.6.0-rc.2"
 description = """
 Pure Rust implementation of the Argon2 password hashing function with support
 for the Argon2d, Argon2i, and Argon2id algorithmic variants
@@ -18,11 +18,11 @@ rust-version = "1.85"
 
 [dependencies]
 base64ct = "1.7"
-blake2 = { version = "0.11.0-rc.2", default-features = false }
+blake2 = { version = "0.11.0-rc.3", default-features = false }
 
 # optional dependencies
 rayon = { version = "1.7", optional = true }
-password-hash = { version = "0.6.0-rc.1", optional = true }
+password-hash = { version = "0.6.0-rc.2", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
@@ -30,7 +30,7 @@ cpufeatures = "0.2.17"
 
 [dev-dependencies]
 hex-literal = "1"
-password-hash = { version = "0.6.0-rc.1", features = ["rand_core"] }
+password-hash = { version = "0.6.0-rc.2", features = ["rand_core"] }
 
 [features]
 default = ["alloc", "password-hash", "rand"]
