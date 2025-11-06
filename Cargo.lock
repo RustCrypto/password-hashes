@@ -556,6 +556,7 @@ dependencies = [
  "pbkdf2",
  "salsa20",
  "sha2",
+ "subtle",
 ]
 
 [[package]]
