@@ -548,7 +548,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "yescrypt"
-version = "0.1.0-pre.4"
+version = "0.1.0-rc.0"
 dependencies = [
  "hex-literal",
  "hmac",
