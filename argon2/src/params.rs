@@ -114,16 +114,6 @@ impl Params {
             return Err(Error::MemoryTooLittle);
         }
 
-        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
-
-        if m_cost < p_cost * 8 {
-            return Err(Error::MemoryTooLittle);
-        }
-
-        if t_cost < Params::MIN_T_COST {
-            return Err(Error::TimeTooSmall);
-        }
-
         // Note: we don't need to check `MAX_T_COST`, since it's `u32::MAX`
 
         if p_cost < Params::MIN_P_COST {
@@ -132,6 +122,16 @@ impl Params {
 
         if p_cost > Params::MAX_P_COST {
             return Err(Error::ThreadsTooMany);
+        }
+
+        // Note: we don't need to check `MAX_M_COST`, since it's `u32::MAX`
+
+        if m_cost < p_cost * 8 {
+            return Err(Error::MemoryTooLittle);
+        }
+
+        if t_cost < Params::MIN_T_COST {
+            return Err(Error::TimeTooSmall);
         }
 
         if let Some(len) = output_len {
