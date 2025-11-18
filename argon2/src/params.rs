@@ -183,7 +183,7 @@ impl Params {
     /// the PHC hash string format (i.e. it is totally ignored from a
     /// cryptographical standpoint).
     ///
-    /// On top of that, this field is not longer part of the Argon2 standard
+    /// On top of that, this field is no longer part of the Argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
     pub fn keyid(&self) -> &[u8] {
@@ -194,7 +194,7 @@ impl Params {
     ///
     /// Defaults to an empty byte slice.
     ///
-    /// This field is not longer part of the argon2 standard
+    /// This field is no longer part of the argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
     pub fn data(&self) -> &[u8] {
