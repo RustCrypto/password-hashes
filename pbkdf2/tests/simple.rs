@@ -5,10 +5,7 @@
 #![cfg(feature = "simple")]
 
 use hex_literal::hex;
-use pbkdf2::{
-    Algorithm, Params, Pbkdf2,
-    password_hash::{PasswordHasher, Salt},
-};
+use pbkdf2::{Algorithm, Params, Pbkdf2, password_hash::CustomizedPasswordHasher};
 
 const PASSWORD: &str = "password";
 const SALT_B64: &str = "c2FsdA"; // "salt"
@@ -21,7 +18,7 @@ fn hash_with_default_algorithm() {
     //   S = "salt" (4 octets)
     //   c = 4096
     //   dkLen = 32
-    let salt = Salt::from_b64(SALT_B64).unwrap();
+    let salt = SALT_B64;
 
     let params = Params {
         rounds: 4096,

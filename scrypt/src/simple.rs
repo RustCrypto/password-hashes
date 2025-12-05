@@ -2,10 +2,16 @@
 
 use crate::{Params, scrypt};
 use core::cmp::Ordering;
-use password_hash::{Decimal, Error, Ident, Output, PasswordHash, PasswordHasher, Result, Salt};
+use password_hash::{
+    CustomizedPasswordHasher, Error, PasswordHash, PasswordHasher, Result, Version,
+    phc::{Ident, Output, Salt},
+};
+
+/// Algorithm name
+const ALG_NAME: &str = "scrypt";
 
 /// Algorithm identifier
-pub const ALG_ID: Ident = Ident::new_unwrap("scrypt");
+pub const ALG_ID: Ident = Ident::new_unwrap(ALG_NAME);
 
 /// scrypt type for use with [`PasswordHasher`].
 ///
@@ -13,19 +19,20 @@ pub const ALG_ID: Ident = Ident::new_unwrap("scrypt");
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Scrypt;
 
-impl PasswordHasher for Scrypt {
+impl CustomizedPasswordHasher for Scrypt {
     type Params = Params;
 
     fn hash_password_customized<'a>(
         &self,
         password: &[u8],
-        alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
+        alg_id: Option<&str>,
+        version: Option<Version>,
         params: Params,
-        salt: impl Into<Salt<'a>>,
+        salt: &'a str,
     ) -> Result<PasswordHash<'a>> {
-        if !matches!(alg_id, Some(ALG_ID) | None) {
-            return Err(Error::Algorithm);
+        match alg_id {
+            Some(ALG_NAME) | None => (),
+            Some(_) => return Err(Error::Algorithm),
         }
 
         // Versions unsupported
@@ -33,7 +40,7 @@ impl PasswordHasher for Scrypt {
             return Err(Error::Version);
         }
 
-        let salt = salt.into();
+        let salt = Salt::from_b64(salt)?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.decode_b64(&mut salt_arr)?;
         let len = params.len.unwrap_or(Params::RECOMMENDED_LEN);
@@ -60,5 +67,11 @@ impl PasswordHasher for Scrypt {
             salt: Some(salt),
             hash: Some(output),
         })
+    }
+}
+
+impl PasswordHasher for Scrypt {
+    fn hash_password<'a>(&self, password: &[u8], salt: &'a str) -> Result<PasswordHash<'a>> {
+        self.hash_password_customized(password, None, None, Params::default(), salt)
     }
 }

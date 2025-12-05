@@ -7,7 +7,7 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use password_hash::Ident;
+use password_hash::phc::Ident;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
@@ -94,8 +94,8 @@ impl Display for Algorithm {
 impl FromStr for Algorithm {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Algorithm> {
-        match s {
+    fn from_str(name: &str) -> Result<Algorithm> {
+        match name {
             "argon2d" => Ok(Algorithm::Argon2d),
             "argon2i" => Ok(Algorithm::Argon2i),
             "argon2id" => Ok(Algorithm::Argon2id),
@@ -112,15 +112,10 @@ impl From<Algorithm> for Ident<'static> {
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
+impl TryFrom<&str> for Algorithm {
     type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> password_hash::Result<Algorithm> {
-        match ident {
-            ARGON2D_IDENT => Ok(Algorithm::Argon2d),
-            ARGON2I_IDENT => Ok(Algorithm::Argon2i),
-            ARGON2ID_IDENT => Ok(Algorithm::Argon2id),
-            _ => Err(password_hash::Error::Algorithm),
-        }
+    fn try_from(name: &str) -> password_hash::Result<Algorithm> {
+        name.parse().map_err(|_| password_hash::Error::Algorithm)
     }
 }

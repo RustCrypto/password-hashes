@@ -39,7 +39,7 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
 //!     Argon2
 //! };
 //!
@@ -50,7 +50,7 @@
 //! let argon2 = Argon2::default();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
+//! let password_hash = argon2.hash_password(password, salt.as_ref())?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -73,7 +73,7 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
 //!     Algorithm, Argon2, Params, Version
 //! };
 //!
@@ -90,7 +90,7 @@
 //! .unwrap();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
+//! let password_hash = argon2.hash_password(password, salt.as_ref())?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -162,7 +162,9 @@ pub use crate::{
 #[cfg(feature = "password-hash")]
 pub use {
     crate::algorithm::{ARGON2D_IDENT, ARGON2I_IDENT, ARGON2ID_IDENT},
-    password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier},
+    password_hash::{
+        self, CustomizedPasswordHasher, PasswordHash, PasswordHasher, PasswordVerifier,
+    },
 };
 
 use crate::blake2b_long::blake2b_long;
@@ -171,7 +173,7 @@ use core::fmt;
 use memory::Memory;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use password_hash::{Decimal, Ident, ParamsString, Salt};
+use password_hash::phc::{Output, ParamsString, Salt};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -618,43 +620,16 @@ impl<'key> Argon2<'key> {
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl PasswordHasher for Argon2<'_> {
+impl CustomizedPasswordHasher for Argon2<'_> {
     type Params = Params;
-
-    fn hash_password<'a>(
-        &self,
-        password: &[u8],
-        salt: impl Into<Salt<'a>>,
-    ) -> password_hash::Result<PasswordHash<'a>> {
-        let salt = salt.into();
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
-
-        let output_len = self
-            .params
-            .output_len()
-            .unwrap_or(Params::DEFAULT_OUTPUT_LEN);
-
-        let output = password_hash::Output::init_with(output_len, |out| {
-            Ok(self.hash_password_into(password, salt_bytes, out)?)
-        })?;
-
-        Ok(PasswordHash {
-            algorithm: self.algorithm.ident(),
-            version: Some(self.version.into()),
-            params: ParamsString::try_from(&self.params)?,
-            salt: Some(salt),
-            hash: Some(output),
-        })
-    }
 
     fn hash_password_customized<'a>(
         &self,
         password: &[u8],
-        alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
+        alg_id: Option<&'a str>,
+        version: Option<u32>,
         params: Params,
-        salt: impl Into<Salt<'a>>,
+        salt: &'a str,
     ) -> password_hash::Result<PasswordHash<'a>> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
@@ -666,8 +641,6 @@ impl PasswordHasher for Argon2<'_> {
             .transpose()?
             .unwrap_or_default();
 
-        let salt = salt.into();
-
         Self {
             secret: self.secret,
             algorithm,
@@ -677,6 +650,36 @@ impl PasswordHasher for Argon2<'_> {
             cpu_feat_avx2: self.cpu_feat_avx2,
         }
         .hash_password(password, salt)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+impl PasswordHasher for Argon2<'_> {
+    fn hash_password<'a>(
+        &self,
+        password: &[u8],
+        salt: &'a str,
+    ) -> password_hash::Result<PasswordHash<'a>> {
+        let salt = Salt::from_b64(salt)?;
+        let mut salt_arr = [0u8; 64];
+        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+
+        let output_len = self
+            .params
+            .output_len()
+            .unwrap_or(Params::DEFAULT_OUTPUT_LEN);
+
+        let output = Output::init_with(output_len, |out| {
+            Ok(self.hash_password_into(password, salt_bytes, out)?)
+        })?;
+
+        Ok(PasswordHash {
+            algorithm: self.algorithm.ident(),
+            version: Some(self.version.into()),
+            params: ParamsString::try_from(&self.params)?,
+            salt: Some(salt),
+            hash: Some(output),
+        })
     }
 }
 
@@ -695,7 +698,7 @@ impl From<&Params> for Argon2<'_> {
 #[cfg(all(test, feature = "alloc", feature = "password-hash"))]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use crate::{Algorithm, Argon2, Params, PasswordHasher, Salt, Version};
+    use crate::{Algorithm, Argon2, CustomizedPasswordHasher, Params, PasswordHasher, Version};
 
     /// Example password only: don't use this as a real password!!!
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
@@ -708,7 +711,7 @@ mod tests {
         let argon2 = Argon2::default();
 
         // Too short after decoding
-        let salt = Salt::from_b64("somesalt").unwrap();
+        let salt = "somesalt";
 
         let res =
             argon2.hash_password_customized(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
@@ -730,8 +733,9 @@ mod tests {
 
         let params = Params::new(m_cost, t_cost, p_cost, None).unwrap();
         let hasher = Argon2::new(Algorithm::default(), version, params);
-        let salt = Salt::from_b64(EXAMPLE_SALT).unwrap();
-        let hash = hasher.hash_password(EXAMPLE_PASSWORD, salt).unwrap();
+        let hash = hasher
+            .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+            .unwrap();
 
         assert_eq!(hash.version.unwrap(), version.into());
 
