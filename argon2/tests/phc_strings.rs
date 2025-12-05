@@ -9,8 +9,8 @@ use argon2::{
     PasswordVerifier, Version,
 };
 use password_hash::{
-    SaltString,
     errors::{Error, InvalidValue},
+    phc::SaltString,
 };
 
 /// Valid password
@@ -217,7 +217,7 @@ fn check_hash_encoding_parameters_order() {
     let password = b"password";
     let salt_string = SaltString::encode_b64(&salt).unwrap();
     let password_hash = ctx
-        .hash_password(password, &salt_string)
+        .hash_password(password, salt_string.as_ref())
         .unwrap()
         .to_string();
 

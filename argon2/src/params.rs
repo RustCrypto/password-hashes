@@ -5,7 +5,7 @@ use base64ct::{Base64Unpadded as B64, Encoding};
 use core::str::FromStr;
 
 #[cfg(feature = "password-hash")]
-use password_hash::{ParamsString, PasswordHash};
+use password_hash::{PasswordHash, phc::ParamsString};
 
 /// Argon2 password hash parameters.
 ///

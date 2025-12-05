@@ -7,7 +7,7 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use password_hash::Ident;
+use password_hash::phc::Ident;
 
 /// Balloon primitive type: variants of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord, Default)]
@@ -87,11 +87,11 @@ impl From<Algorithm> for Ident<'static> {
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
+impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> password_hash::Result<Algorithm> {
-        match ident {
+    fn try_from(name: &'a str) -> password_hash::Result<Algorithm> {
+        match name.try_into()? {
             Self::BALLOON_IDENT => Ok(Algorithm::Balloon),
             Self::BALLOON_M_IDENT => Ok(Algorithm::BalloonM),
             _ => Err(password_hash::Error::Algorithm),

@@ -32,7 +32,7 @@
 #![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use balloon_hash::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
 //!     Balloon
 //! };
 //! use sha2::Sha256;
@@ -44,7 +44,7 @@
 //! let balloon = Balloon::<Sha256>::default();
 //!
 //! // Hash password to PHC string ($balloon$v=1$...)
-//! let password_hash = balloon.hash_password(password, &salt)?.to_string();
+//! let password_hash = balloon.hash_password(password, salt.as_str())?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
@@ -73,7 +73,10 @@ pub use crate::{
 };
 
 #[cfg(feature = "password-hash")]
-pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
+pub use password_hash::{
+    self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier, Version,
+    phc::{Output, PasswordHash},
+};
 
 use core::marker::PhantomData;
 use crypto_bigint::ArrayDecoding;
@@ -82,10 +85,10 @@ use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-pub use password_hash::Salt;
+pub use password_hash::phc::Salt;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use password_hash::{Decimal, Ident, ParamsString};
+use password_hash::phc::ParamsString;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -209,38 +212,20 @@ where
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl<D: Digest + FixedOutputReset> PasswordHasher for Balloon<'_, D>
+impl<D> CustomizedPasswordHasher for Balloon<'_, D>
 where
+    D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
     type Params = Params;
 
-    fn hash_password<'a>(
-        &self,
-        password: &[u8],
-        salt: impl Into<Salt<'a>>,
-    ) -> password_hash::Result<PasswordHash<'a>> {
-        let salt = salt.into();
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
-        let output = password_hash::Output::new(&self.hash(password, salt_bytes)?)?;
-
-        Ok(PasswordHash {
-            algorithm: self.algorithm.ident(),
-            version: Some(1),
-            params: ParamsString::try_from(&self.params)?,
-            salt: Some(salt),
-            hash: Some(output),
-        })
-    }
-
     fn hash_password_customized<'a>(
         &self,
         password: &[u8],
-        alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
+        alg_id: Option<&str>,
+        version: Option<Version>,
         params: Params,
-        salt: impl Into<Salt<'a>>,
+        salt: &'a str,
     ) -> password_hash::Result<PasswordHash<'a>> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
@@ -253,9 +238,33 @@ where
             }
         }
 
-        let salt = salt.into();
-
         Self::new(algorithm, params, self.secret).hash_password(password, salt)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+impl<D> PasswordHasher for Balloon<'_, D>
+where
+    D: Digest + FixedOutputReset,
+    Array<u8, D::OutputSize>: ArrayDecoding,
+{
+    fn hash_password<'a>(
+        &self,
+        password: &[u8],
+        salt: &'a str,
+    ) -> password_hash::Result<PasswordHash<'a>> {
+        let salt = Salt::from_b64(salt)?;
+        let mut salt_arr = [0u8; 64];
+        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+        let output = Output::new(&self.hash(password, salt_bytes)?)?;
+
+        Ok(PasswordHash {
+            algorithm: self.algorithm.ident(),
+            version: Some(1),
+            params: ParamsString::try_from(&self.params)?,
+            salt: Some(salt),
+            hash: Some(output),
+        })
     }
 }
 

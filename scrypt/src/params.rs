@@ -3,7 +3,11 @@ use core::mem::size_of;
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
-use password_hash::{Error, ParamsString, PasswordHash, errors::InvalidValue};
+use password_hash::{
+    Error,
+    errors::InvalidValue,
+    phc::{Output, ParamsString, PasswordHash},
+};
 
 #[cfg(all(feature = "simple", doc))]
 use password_hash::PasswordHasher;
@@ -30,6 +34,20 @@ impl Params {
 
     /// Recommended Scrypt parameter `Key length`.
     pub const RECOMMENDED_LEN: usize = 32;
+
+    /// Recommended values according to the [OWASP cheat sheet].
+    /// - `log_n = 17` (`n = 131072`)
+    /// - `r = 8`
+    /// - `p = 1`
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
+    pub const RECOMMENDED: Self = Self {
+        log_n: Self::RECOMMENDED_LOG_N,
+        r: Self::RECOMMENDED_R,
+        p: Self::RECOMMENDED_P,
+        #[cfg(feature = "password-hash")]
+        len: None,
+    };
 
     /// Create a new instance of [`Params`].
     ///
@@ -104,7 +122,7 @@ impl Params {
         p: u32,
         len: usize,
     ) -> Result<Params, InvalidParams> {
-        if !(password_hash::Output::MIN_LENGTH..=password_hash::Output::MAX_LENGTH).contains(&len) {
+        if !(Output::MIN_LENGTH..=Output::MAX_LENGTH).contains(&len) {
             return Err(InvalidParams);
         }
 
@@ -113,18 +131,10 @@ impl Params {
         Ok(ret)
     }
 
-    /// Recommended values according to the [OWASP cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt)
-    /// - `log_n = 17` (`n = 131072`)
-    /// - `r = 8`
-    /// - `p = 1`
+    /// Deprecated: recommended values according to the OWASP cheat sheet.
+    #[deprecated(since = "0.12.0", note = "use Params::RECOMMENDED instead")]
     pub const fn recommended() -> Params {
-        Params {
-            log_n: Self::RECOMMENDED_LOG_N,
-            r: Self::RECOMMENDED_R,
-            p: Self::RECOMMENDED_P,
-            #[cfg(feature = "password-hash")]
-            len: None,
-        }
+        Self::RECOMMENDED
     }
 
     /// log₂ of the Scrypt parameter `N`, the work factor.
@@ -159,7 +169,7 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Params {
-        Params::recommended()
+        Params::RECOMMENDED
     }
 }
 

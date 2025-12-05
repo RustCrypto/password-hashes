@@ -3,8 +3,9 @@
 use crate::pbkdf2_hmac;
 use core::{cmp::Ordering, fmt, str::FromStr};
 use password_hash::{
-    Decimal, Error, Ident, Output, ParamsString, PasswordHash, PasswordHasher, Result, Salt,
+    CustomizedPasswordHasher, Error, PasswordHasher, Result,
     errors::InvalidValue,
+    phc::{Ident, Output, ParamsString, PasswordHash, Salt},
 };
 use sha2::{Sha256, Sha512};
 
@@ -15,25 +16,28 @@ use sha1::Sha1;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Pbkdf2;
 
-impl PasswordHasher for Pbkdf2 {
+impl CustomizedPasswordHasher for Pbkdf2 {
     type Params = Params;
 
     fn hash_password_customized<'a>(
         &self,
         password: &[u8],
-        alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
+        alg_id: Option<&str>,
+        version: Option<password_hash::Version>,
         params: Params,
-        salt: impl Into<Salt<'a>>,
+        salt: &'a str,
     ) -> Result<PasswordHash<'a>> {
-        let algorithm = Algorithm::try_from(alg_id.unwrap_or(Algorithm::default().ident()))?;
+        let algorithm = alg_id
+            .map(Algorithm::try_from)
+            .transpose()?
+            .unwrap_or_default();
 
         // Versions unsupported
         if version.is_some() {
             return Err(Error::Version);
         }
 
-        let salt = salt.into();
+        let salt = Salt::from_b64(salt)?;
         let mut salt_arr = [0u8; 64];
         let salt_bytes = salt.decode_b64(&mut salt_arr)?;
 
@@ -56,6 +60,12 @@ impl PasswordHasher for Pbkdf2 {
             salt: Some(salt),
             hash: Some(output),
         })
+    }
+}
+
+impl PasswordHasher for Pbkdf2 {
+    fn hash_password<'a>(&self, password: &[u8], salt: &'a str) -> Result<PasswordHash<'a>> {
+        self.hash_password_customized(password, None, None, Params::default(), salt)
     }
 }
 
@@ -136,7 +146,7 @@ impl FromStr for Algorithm {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Algorithm> {
-        Ident::try_from(s)?.try_into()
+        s.try_into()
     }
 }
 
@@ -146,11 +156,11 @@ impl From<Algorithm> for Ident<'static> {
     }
 }
 
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
+impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = Error;
 
-    fn try_from(ident: Ident<'a>) -> Result<Algorithm> {
-        match ident {
+    fn try_from(name: &'a str) -> Result<Algorithm> {
+        match name.try_into()? {
             #[cfg(feature = "sha1")]
             Self::PBKDF2_SHA1_IDENT => Ok(Algorithm::Pbkdf2Sha1),
             Self::PBKDF2_SHA256_IDENT => Ok(Algorithm::Pbkdf2Sha256),
@@ -179,14 +189,19 @@ impl Params {
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED_ROUNDS: usize = 600_000;
+
+    /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    pub const RECOMMENDED: Self = Params {
+        rounds: Self::RECOMMENDED_ROUNDS as u32,
+        output_length: 32,
+    };
 }
 
 impl Default for Params {
     fn default() -> Params {
-        Params {
-            rounds: Self::RECOMMENDED_ROUNDS as u32,
-            output_length: 32,
-        }
+        Params::RECOMMENDED
     }
 }
 

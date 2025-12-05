@@ -26,7 +26,10 @@ mod errors;
 pub use crate::errors::{ParseError, VerifyError};
 
 use alloc::string::{String, ToString};
-use password_hash::{ParamsString, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
+use password_hash::{
+    PasswordHasher, PasswordVerifier,
+    phc::{ParamsString, PasswordHash, SaltString},
+};
 
 #[cfg(not(any(feature = "argon2", feature = "pbkdf2", feature = "scrypt")))]
 compile_error!(
@@ -46,7 +49,7 @@ use scrypt::Scrypt;
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
     let salt = SaltString::generate();
-    generate_phc_hash(password.as_ref(), &salt)
+    generate_phc_hash(password.as_ref(), salt.as_ref())
         .map(|hash| hash.to_string())
         .expect("password hashing error")
 }
@@ -55,7 +58,7 @@ pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
 #[allow(unreachable_code)]
 fn generate_phc_hash<'a>(
     password: &[u8],
-    salt: &'a SaltString,
+    salt: &'a str,
 ) -> password_hash::Result<PasswordHash<'a>> {
     //
     // Algorithms below are in order of preference
