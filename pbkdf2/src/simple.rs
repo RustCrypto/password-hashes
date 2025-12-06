@@ -58,7 +58,7 @@ impl CustomizedPasswordHasher for Pbkdf2 {
         })?;
 
         Ok(PasswordHash {
-            algorithm: algorithm.ident(),
+            algorithm: *algorithm.ident(),
             version: None,
             params: params.try_into()?,
             salt: Some(salt),
@@ -105,13 +105,13 @@ impl Default for Algorithm {
 impl Algorithm {
     /// PBKDF2 (SHA-1) algorithm identifier
     #[cfg(feature = "sha1")]
-    pub const PBKDF2_SHA1_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2");
+    pub const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap("pbkdf2");
 
     /// PBKDF2 (SHA-256) algorithm identifier
-    pub const PBKDF2_SHA256_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2-sha256");
+    pub const PBKDF2_SHA256_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha256");
 
     /// PBKDF2 (SHA-512) algorithm identifier
-    pub const PBKDF2_SHA512_IDENT: Ident<'static> = Ident::new_unwrap("pbkdf2-sha512");
+    pub const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha512");
 
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
@@ -119,12 +119,12 @@ impl Algorithm {
     }
 
     /// Get the [`Ident`] that corresponds to this PBKDF2 [`Algorithm`].
-    pub fn ident(&self) -> Ident<'static> {
+    pub fn ident(&self) -> &'static Ident {
         match self {
             #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => Self::PBKDF2_SHA1_IDENT,
-            Algorithm::Pbkdf2Sha256 => Self::PBKDF2_SHA256_IDENT,
-            Algorithm::Pbkdf2Sha512 => Self::PBKDF2_SHA512_IDENT,
+            Algorithm::Pbkdf2Sha1 => &Self::PBKDF2_SHA1_IDENT,
+            Algorithm::Pbkdf2Sha256 => &Self::PBKDF2_SHA256_IDENT,
+            Algorithm::Pbkdf2Sha512 => &Self::PBKDF2_SHA512_IDENT,
         }
     }
 
@@ -154,9 +154,9 @@ impl FromStr for Algorithm {
     }
 }
 
-impl From<Algorithm> for Ident<'static> {
-    fn from(alg: Algorithm) -> Ident<'static> {
-        alg.ident()
+impl From<Algorithm> for Ident {
+    fn from(alg: Algorithm) -> Ident {
+        *alg.ident()
     }
 }
 

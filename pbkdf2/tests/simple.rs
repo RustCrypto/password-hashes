@@ -29,7 +29,7 @@ fn hash_with_default_algorithm() {
         .hash_password_customized(PASSWORD.as_bytes(), None, None, params, salt)
         .unwrap();
 
-    assert_eq!(hash.algorithm, Algorithm::Pbkdf2Sha256.ident());
+    assert_eq!(hash.algorithm, *Algorithm::Pbkdf2Sha256.ident());
     assert_eq!(hash.salt.unwrap().as_str(), SALT_B64);
     assert_eq!(Params::try_from(&hash).unwrap(), params);
 

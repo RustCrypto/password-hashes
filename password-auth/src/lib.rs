@@ -120,7 +120,7 @@ pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
         || hash.params != default_params_string::<scrypt::Params>());
 
     #[cfg(feature = "pbkdf2")]
-    return Ok(hash.algorithm != pbkdf2::Algorithm::default().ident()
+    return Ok(hash.algorithm != *pbkdf2::Algorithm::default().ident()
         || hash.params != default_params_string::<pbkdf2::Params>());
 
     Ok(true)
