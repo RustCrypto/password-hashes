@@ -5,7 +5,10 @@ use base64ct::{Base64Unpadded as B64, Encoding};
 use core::str::FromStr;
 
 #[cfg(feature = "password-hash")]
-use password_hash::{PasswordHash, phc::ParamsString};
+use {
+    core::fmt::{self, Display},
+    password_hash::{PasswordHash, phc::ParamsString},
+};
 
 /// Argon2 password hash parameters.
 ///
@@ -346,13 +349,29 @@ param_buf!(
 );
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+impl Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl FromStr for Params {
+    type Err = password_hash::Error;
+
+    fn from_str(s: &str) -> password_hash::Result<Self> {
+        Self::try_from(&ParamsString::from_str(s)?)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl TryFrom<&ParamsString> for Params {
     type Error = password_hash::Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+    fn try_from(params: &ParamsString) -> password_hash::Result<Self> {
         let mut builder = ParamsBuilder::new();
 
-        for (ident, value) in hash.params.iter() {
+        for (ident, value) in params.iter() {
             match ident.as_str() {
                 "m" => {
                     builder.m_cost(value.decimal()?);
@@ -373,11 +392,22 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
             }
         }
 
+        Ok(builder.build()?)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = password_hash::Error;
+
+    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+        let mut params = Self::try_from(&hash.params)?;
+
         if let Some(output) = &hash.hash {
-            builder.output_len(output.len());
+            params.output_len = Some(output.len());
         }
 
-        Ok(builder.build()?)
+        Ok(params)
     }
 }
 

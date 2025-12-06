@@ -2,11 +2,16 @@
 
 use crate::{Error, Result};
 use core::num::NonZeroU32;
-
 #[cfg(feature = "password-hash")]
-use password_hash::{
-    errors::InvalidValue,
-    phc::{ParamsString, PasswordHash},
+use {
+    core::{
+        fmt::{self, Display},
+        str::FromStr,
+    },
+    password_hash::{
+        errors::InvalidValue,
+        phc::{ParamsString, PasswordHash},
+    },
 };
 
 /// Balloon password hash parameters.
@@ -56,13 +61,29 @@ impl Default for Params {
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+impl Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl FromStr for Params {
+    type Err = password_hash::Error;
+
+    fn from_str(s: &str) -> password_hash::Result<Self> {
+        Self::try_from(&ParamsString::from_str(s)?)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl TryFrom<&ParamsString> for Params {
     type Error = password_hash::Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+    fn try_from(params_string: &ParamsString) -> password_hash::Result<Self> {
         let mut params = Self::default();
 
-        for (ident, value) in hash.params.iter() {
+        for (ident, value) in params_string.iter() {
             match ident.as_str() {
                 "s" => {
                     params.s_cost = NonZeroU32::new(value.decimal()?)
@@ -81,6 +102,15 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
         }
 
         Ok(params)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = password_hash::Error;
+
+    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+        Self::try_from(&hash.params)
     }
 }
 

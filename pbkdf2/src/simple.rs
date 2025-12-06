@@ -1,7 +1,11 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::pbkdf2_hmac;
-use core::{cmp::Ordering, fmt, str::FromStr};
+use core::{
+    cmp::Ordering,
+    fmt::{self, Display, Formatter},
+    str::FromStr,
+};
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, Result,
     errors::InvalidValue,
@@ -205,42 +209,59 @@ impl Default for Params {
     }
 }
 
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
-    type Error = Error;
+impl Display for Params {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    }
+}
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self> {
+impl FromStr for Params {
+    type Err = password_hash::Error;
+
+    fn from_str(s: &str) -> password_hash::Result<Self> {
+        Self::try_from(&ParamsString::from_str(s)?)
+    }
+}
+
+impl TryFrom<&ParamsString> for Params {
+    type Error = password_hash::Error;
+
+    fn try_from(params_string: &ParamsString) -> password_hash::Result<Self> {
         let mut params = Params::default();
-        let mut output_length = None;
 
-        if hash.version.is_some() {
-            return Err(Error::Version);
-        }
-
-        for (ident, value) in hash.params.iter() {
+        for (ident, value) in params_string.iter() {
             match ident.as_str() {
                 "i" => params.rounds = value.decimal()?,
                 "l" => {
-                    output_length = Some(
-                        value
-                            .decimal()?
-                            .try_into()
-                            .map_err(|_| InvalidValue::Malformed.param_error())?,
-                    )
+                    params.output_length = value
+                        .decimal()?
+                        .try_into()
+                        .map_err(|_| InvalidValue::Malformed.param_error())?
                 }
                 _ => return Err(Error::ParamNameInvalid),
             }
         }
 
-        if let Some(len) = output_length {
-            if let Some(hash) = &hash.hash {
-                match hash.len().cmp(&len) {
-                    Ordering::Less => return Err(InvalidValue::TooShort.param_error()),
-                    Ordering::Greater => return Err(InvalidValue::TooLong.param_error()),
-                    Ordering::Equal => (),
-                }
-            }
+        Ok(params)
+    }
+}
 
-            params.output_length = len;
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = Error;
+
+    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self> {
+        if hash.version.is_some() {
+            return Err(Error::Version);
+        }
+
+        let params = Self::try_from(&hash.params)?;
+
+        if let Some(hash) = &hash.hash {
+            match hash.len().cmp(&params.output_length) {
+                Ordering::Less => return Err(InvalidValue::TooShort.param_error()),
+                Ordering::Greater => return Err(InvalidValue::TooLong.param_error()),
+                Ordering::Equal => (),
+            }
         }
 
         Ok(params)
@@ -250,7 +271,15 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
 impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
-    fn try_from(input: Params) -> Result<ParamsString> {
+    fn try_from(params: Params) -> Result<ParamsString> {
+        Self::try_from(&params)
+    }
+}
+
+impl TryFrom<&Params> for ParamsString {
+    type Error = Error;
+
+    fn try_from(input: &Params) -> Result<ParamsString> {
         let mut output = ParamsString::new();
         output.add_decimal("i", input.rounds)?;
         output.add_decimal("l", input.output_length as u32)?;

@@ -1,12 +1,16 @@
-use core::mem::size_of;
-
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
-use password_hash::{
-    Error,
-    errors::InvalidValue,
-    phc::{Output, ParamsString, PasswordHash},
+use {
+    core::{
+        fmt::{self, Display},
+        str::FromStr,
+    },
+    password_hash::{
+        Error,
+        errors::InvalidValue,
+        phc::{Output, ParamsString, PasswordHash},
+    },
 };
 
 #[cfg(all(feature = "simple", doc))]
@@ -174,19 +178,31 @@ impl Default for Params {
 }
 
 #[cfg(feature = "simple")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
-    type Error = password_hash::Error;
+impl Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    }
+}
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self, password_hash::Error> {
+#[cfg(feature = "simple")]
+impl FromStr for Params {
+    type Err = Error;
+
+    fn from_str(s: &str) -> password_hash::Result<Self> {
+        Self::try_from(&ParamsString::from_str(s)?)
+    }
+}
+
+#[cfg(feature = "password-hash")]
+impl TryFrom<&ParamsString> for Params {
+    type Error = Error;
+
+    fn try_from(params: &ParamsString) -> password_hash::Result<Self> {
         let mut log_n = Self::RECOMMENDED_LOG_N;
         let mut r = Self::RECOMMENDED_R;
         let mut p = Self::RECOMMENDED_P;
 
-        if hash.version.is_some() {
-            return Err(Error::Version);
-        }
-
-        for (ident, value) in hash.params.iter() {
+        for (ident, value) in params.iter() {
             match ident.as_str() {
                 "ln" => {
                     log_n = value
@@ -196,25 +212,49 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                 }
                 "r" => r = value.decimal()?,
                 "p" => p = value.decimal()?,
-                _ => return Err(password_hash::Error::ParamNameInvalid),
+                _ => return Err(Error::ParamNameInvalid),
             }
         }
 
-        let len = hash
-            .hash
-            .map(|out| out.len())
-            .unwrap_or(Self::RECOMMENDED_LEN);
+        Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())
+    }
+}
 
-        Params::new_with_output_len(log_n, r, p, len)
-            .map_err(|_| InvalidValue::Malformed.param_error())
+#[cfg(feature = "simple")]
+impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+    type Error = Error;
+
+    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+        if hash.version.is_some() {
+            return Err(Error::Version);
+        }
+
+        let mut params = Params::try_from(&hash.params)?;
+
+        params.len = Some(
+            hash.hash
+                .map(|out| out.len())
+                .unwrap_or(Self::RECOMMENDED_LEN),
+        );
+
+        Ok(params)
     }
 }
 
 #[cfg(feature = "simple")]
 impl TryFrom<Params> for ParamsString {
-    type Error = password_hash::Error;
+    type Error = Error;
 
-    fn try_from(input: Params) -> Result<ParamsString, password_hash::Error> {
+    fn try_from(params: Params) -> Result<ParamsString, Error> {
+        Self::try_from(&params)
+    }
+}
+
+#[cfg(feature = "simple")]
+impl TryFrom<&Params> for ParamsString {
+    type Error = Error;
+
+    fn try_from(input: &Params) -> Result<ParamsString, Error> {
         let mut output = ParamsString::new();
         output.add_decimal("ln", input.log_n as u32)?;
         output.add_decimal("r", input.r)?;
