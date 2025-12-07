@@ -221,10 +221,10 @@ impl TryFrom<&ParamsString> for Params {
 }
 
 #[cfg(feature = "simple")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+impl TryFrom<&PasswordHash> for Params {
     type Error = Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+    fn try_from(hash: &PasswordHash) -> password_hash::Result<Self> {
         if hash.version.is_some() {
             return Err(Error::Version);
         }

@@ -8,10 +8,7 @@ use argon2::{
     Algorithm, Argon2, AssociatedData, KeyId, ParamsBuilder, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
-use password_hash::{
-    errors::{Error, InvalidValue},
-    phc::SaltString,
-};
+use password_hash::errors::{Error, InvalidValue};
 
 /// Valid password
 pub const VALID_PASSWORD: &[u8] = b"password";
@@ -213,13 +210,9 @@ fn check_hash_encoding_parameters_order() {
 
     let ctx = Argon2::new(Algorithm::Argon2d, Version::V0x10, params);
 
-    let salt = vec![0; 8];
     let password = b"password";
-    let salt_string = SaltString::encode_b64(&salt).unwrap();
-    let password_hash = ctx
-        .hash_password(password, salt_string.as_ref())
-        .unwrap()
-        .to_string();
+    let salt = [0u8; 8];
+    let password_hash = ctx.hash_password(password, &salt).unwrap().to_string();
 
     // The parameters shall appear in the m,t,p,keyid,data order
     assert_eq!(

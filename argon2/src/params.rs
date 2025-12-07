@@ -397,10 +397,10 @@ impl TryFrom<&ParamsString> for Params {
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+impl TryFrom<&PasswordHash> for Params {
     type Error = password_hash::Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> password_hash::Result<Self> {
+    fn try_from(hash: &PasswordHash) -> password_hash::Result<Self> {
         let mut params = Self::try_from(&hash.params)?;
 
         if let Some(output) = &hash.hash {

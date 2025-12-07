@@ -22,14 +22,14 @@ pub struct Scrypt;
 impl CustomizedPasswordHasher for Scrypt {
     type Params = Params;
 
-    fn hash_password_customized<'a>(
+    fn hash_password_customized(
         &self,
         password: &[u8],
+        salt: &[u8],
         alg_id: Option<&str>,
         version: Option<Version>,
         params: Params,
-        salt: &'a str,
-    ) -> Result<PasswordHash<'a>> {
+    ) -> Result<PasswordHash> {
         match alg_id {
             Some(ALG_NAME) | None => (),
             Some(_) => return Err(Error::Algorithm),
@@ -40,20 +40,18 @@ impl CustomizedPasswordHasher for Scrypt {
             return Err(Error::Version);
         }
 
-        let salt = Salt::from_b64(salt)?;
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+        let salt = Salt::new(salt)?;
         let len = params.len.unwrap_or(Params::RECOMMENDED_LEN);
 
         let output = Output::init_with(len, |out| {
-            scrypt(password, salt_bytes, &params, out).map_err(|_| {
+            scrypt(password, &salt, &params, out).map_err(|_| {
                 let provided = if out.is_empty() {
                     Ordering::Less
                 } else {
                     Ordering::Greater
                 };
 
-                password_hash::Error::OutputSize {
+                Error::OutputSize {
                     provided,
                     expected: 0, // TODO(tarcieri): calculate for `Ordering::Greater` case
                 }
@@ -71,7 +69,7 @@ impl CustomizedPasswordHasher for Scrypt {
 }
 
 impl PasswordHasher for Scrypt {
-    fn hash_password<'a>(&self, password: &[u8], salt: &'a str) -> Result<PasswordHash<'a>> {
-        self.hash_password_customized(password, None, None, Params::default(), salt)
+    fn hash_password(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
+        self.hash_password_customized(password, salt, None, None, Params::default())
     }
 }
