@@ -20,7 +20,7 @@ use sha1::Sha1;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Pbkdf2;
 
-impl CustomizedPasswordHasher for Pbkdf2 {
+impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
     type Params = Params;
 
     fn hash_password_customized(
@@ -65,7 +65,7 @@ impl CustomizedPasswordHasher for Pbkdf2 {
     }
 }
 
-impl PasswordHasher for Pbkdf2 {
+impl PasswordHasher<PasswordHash> for Pbkdf2 {
     fn hash_password(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, Params::default())
     }

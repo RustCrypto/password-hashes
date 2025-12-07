@@ -620,7 +620,7 @@ impl<'key> Argon2<'key> {
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl CustomizedPasswordHasher for Argon2<'_> {
+impl CustomizedPasswordHasher<PasswordHash> for Argon2<'_> {
     type Params = Params;
 
     fn hash_password_customized(
@@ -654,7 +654,7 @@ impl CustomizedPasswordHasher for Argon2<'_> {
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl PasswordHasher for Argon2<'_> {
+impl PasswordHasher<PasswordHash> for Argon2<'_> {
     fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
         let salt = Salt::new(salt)?;
 

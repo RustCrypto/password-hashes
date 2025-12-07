@@ -212,7 +212,7 @@ where
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl<D> CustomizedPasswordHasher for Balloon<'_, D>
+impl<D> CustomizedPasswordHasher<PasswordHash> for Balloon<'_, D>
 where
     D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
@@ -243,7 +243,7 @@ where
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl<D> PasswordHasher for Balloon<'_, D>
+impl<D> PasswordHasher<PasswordHash> for Balloon<'_, D>
 where
     D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,

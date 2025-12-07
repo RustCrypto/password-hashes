@@ -80,7 +80,7 @@ fn generate_phc_hash(password: &[u8], salt: &[u8]) -> password_hash::Result<Pass
 pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), VerifyError> {
     let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
 
-    let algs: &[&dyn PasswordVerifier] = &[
+    let algs: &[&dyn PasswordVerifier<PasswordHash>] = &[
         #[cfg(feature = "argon2")]
         &Argon2::default(),
         #[cfg(feature = "pbkdf2")]
