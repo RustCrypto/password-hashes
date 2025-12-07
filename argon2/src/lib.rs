@@ -73,7 +73,10 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
+//!     password_hash::{
+//!         phc::{PasswordHash, Salt},
+//!         PasswordHasher, PasswordVerifier,
+//!     },
 //!     Algorithm, Argon2, Params, Version
 //! };
 //!
@@ -163,7 +166,7 @@ pub use crate::{
 pub use {
     crate::algorithm::{ARGON2D_IDENT, ARGON2I_IDENT, ARGON2ID_IDENT},
     password_hash::{
-        self, CustomizedPasswordHasher, PasswordHash, PasswordHasher, PasswordVerifier,
+        self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier, phc::PasswordHash,
     },
 };
 

@@ -22,7 +22,7 @@ pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
-    #[cfg(feature = "password-hash")]
+    #[cfg(feature = "simple")]
     pub(crate) len: Option<usize>,
 }
 
@@ -49,7 +49,7 @@ impl Params {
         log_n: Self::RECOMMENDED_LOG_N,
         r: Self::RECOMMENDED_R,
         p: Self::RECOMMENDED_P,
-        #[cfg(feature = "password-hash")]
+        #[cfg(feature = "simple")]
         len: None,
     };
 
@@ -105,7 +105,7 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            #[cfg(feature = "password-hash")]
+            #[cfg(feature = "simple")]
             len: None,
         })
     }
@@ -119,7 +119,7 @@ impl Params {
     /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
     /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
     /// because they are intended for use with password hash strings.
-    #[cfg(feature = "password-hash")]
+    #[cfg(feature = "simple")]
     pub fn new_with_output_len(
         log_n: u8,
         r: u32,
@@ -193,7 +193,7 @@ impl FromStr for Params {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "simple")]
 impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 

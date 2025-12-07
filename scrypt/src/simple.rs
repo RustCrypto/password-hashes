@@ -3,8 +3,8 @@
 use crate::{Params, scrypt};
 use core::cmp::Ordering;
 use password_hash::{
-    CustomizedPasswordHasher, Error, PasswordHash, PasswordHasher, Result, Version,
-    phc::{Ident, Output, Salt},
+    CustomizedPasswordHasher, Error, PasswordHasher, Result, Version,
+    phc::{Ident, Output, PasswordHash, Salt},
 };
 
 /// Algorithm name
