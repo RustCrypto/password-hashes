@@ -7,7 +7,7 @@ use core::str::FromStr;
 #[cfg(feature = "password-hash")]
 use {
     core::fmt::{self, Display},
-    password_hash::{PasswordHash, phc::ParamsString},
+    password_hash::phc::{ParamsString, PasswordHash},
 };
 
 /// Argon2 password hash parameters.

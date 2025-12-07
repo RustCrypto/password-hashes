@@ -19,7 +19,7 @@ crypto-bigint = { version = "0.7.0-rc.9", default-features = false, features = [
 rand_core = { version = "0.10.0-rc-2", default-features = false }
 
 # optional dependencies
-password-hash = { version = "0.6.0-rc.2", default-features = false, optional = true }
+password-hash = { version = "0.6.0-rc.3", optional = true, default-features = false, features = ["phc"] }
 rayon = { version = "1.7", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
