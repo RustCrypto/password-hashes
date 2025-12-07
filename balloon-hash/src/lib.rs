@@ -32,19 +32,19 @@
 #![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use balloon_hash::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Balloon
 //! };
 //! use sha2::Sha256;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `balloon-hash` enabled
+//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `balloon-hash` enabled
 //!
 //! // Balloon with default params
 //! let balloon = Balloon::<Sha256>::default();
 //!
 //! // Hash password to PHC string ($balloon$v=1$...)
-//! let password_hash = balloon.hash_password(password, salt.as_str())?.to_string();
+//! let password_hash = balloon.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
@@ -219,14 +219,14 @@ where
 {
     type Params = Params;
 
-    fn hash_password_customized<'a>(
+    fn hash_password_customized(
         &self,
         password: &[u8],
+        salt: &[u8],
         alg_id: Option<&str>,
         version: Option<Version>,
         params: Params,
-        salt: &'a str,
-    ) -> password_hash::Result<PasswordHash<'a>> {
+    ) -> password_hash::Result<PasswordHash> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
@@ -248,15 +248,9 @@ where
     D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
-    fn hash_password<'a>(
-        &self,
-        password: &[u8],
-        salt: &'a str,
-    ) -> password_hash::Result<PasswordHash<'a>> {
-        let salt = Salt::from_b64(salt)?;
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
-        let output = Output::new(&self.hash(password, salt_bytes)?)?;
+    fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+        let salt = Salt::new(salt)?;
+        let output = Output::new(&self.hash(password, &salt)?)?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),

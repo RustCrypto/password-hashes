@@ -23,14 +23,14 @@ pub struct Pbkdf2;
 impl CustomizedPasswordHasher for Pbkdf2 {
     type Params = Params;
 
-    fn hash_password_customized<'a>(
+    fn hash_password_customized(
         &self,
         password: &[u8],
+        salt: &[u8],
         alg_id: Option<&str>,
         version: Option<password_hash::Version>,
         params: Params,
-        salt: &'a str,
-    ) -> Result<PasswordHash<'a>> {
+    ) -> Result<PasswordHash> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
@@ -41,9 +41,7 @@ impl CustomizedPasswordHasher for Pbkdf2 {
             return Err(Error::Version);
         }
 
-        let salt = Salt::from_b64(salt)?;
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+        let salt = Salt::new(salt)?;
 
         let output = Output::init_with(params.output_length, |out| {
             let f = match algorithm {
@@ -53,7 +51,7 @@ impl CustomizedPasswordHasher for Pbkdf2 {
                 Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
             };
 
-            f(password, salt_bytes, params.rounds, out);
+            f(password, &salt, params.rounds, out);
             Ok(())
         })?;
 
@@ -68,8 +66,8 @@ impl CustomizedPasswordHasher for Pbkdf2 {
 }
 
 impl PasswordHasher for Pbkdf2 {
-    fn hash_password<'a>(&self, password: &[u8], salt: &'a str) -> Result<PasswordHash<'a>> {
-        self.hash_password_customized(password, None, None, Params::default(), salt)
+    fn hash_password(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
+        self.hash_password_customized(password, salt, None, None, Params::default())
     }
 }
 
@@ -246,10 +244,10 @@ impl TryFrom<&ParamsString> for Params {
     }
 }
 
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
+impl TryFrom<&PasswordHash> for Params {
     type Error = Error;
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self> {
+    fn try_from(hash: &PasswordHash) -> Result<Self> {
         if hash.version.is_some() {
             return Err(Error::Version);
         }

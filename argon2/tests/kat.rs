@@ -14,7 +14,6 @@ use argon2::{
     PasswordVerifier, Version,
 };
 use hex_literal::hex;
-use password_hash::phc::SaltString;
 
 /// Params used by the KATs.
 fn example_params() -> Params {
@@ -367,11 +366,7 @@ fn hashtest(
     assert_eq!(out, expected_raw_hash);
 
     // Test hash encoding
-    let salt_string = SaltString::encode_b64(salt).unwrap();
-    let phc_hash = ctx
-        .hash_password(pwd, salt_string.as_ref())
-        .unwrap()
-        .to_string();
+    let phc_hash = ctx.hash_password(pwd, salt).unwrap().to_string();
     assert_eq!(phc_hash, expected_phc_hash);
 
     let hash = PasswordHash::new(alternative_phc_hash).unwrap();

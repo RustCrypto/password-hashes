@@ -39,18 +39,18 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Argon2
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
+//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
 //! // Argon2 with default params (Argon2id v19)
 //! let argon2 = Argon2::default();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, salt.as_ref())?.to_string();
+//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -73,12 +73,12 @@
 )]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::SaltString},
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Algorithm, Argon2, Params, Version
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
+//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
 //! // Argon2 with default params (Argon2id v19) and pepper
 //! let argon2 = Argon2::new_with_secret(
@@ -90,7 +90,7 @@
 //! .unwrap();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, salt.as_ref())?.to_string();
+//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -623,14 +623,14 @@ impl<'key> Argon2<'key> {
 impl CustomizedPasswordHasher for Argon2<'_> {
     type Params = Params;
 
-    fn hash_password_customized<'a>(
+    fn hash_password_customized(
         &self,
         password: &[u8],
-        alg_id: Option<&'a str>,
+        salt: &[u8],
+        alg_id: Option<&str>,
         version: Option<u32>,
         params: Params,
-        salt: &'a str,
-    ) -> password_hash::Result<PasswordHash<'a>> {
+    ) -> password_hash::Result<PasswordHash> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
@@ -655,14 +655,8 @@ impl CustomizedPasswordHasher for Argon2<'_> {
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 impl PasswordHasher for Argon2<'_> {
-    fn hash_password<'a>(
-        &self,
-        password: &[u8],
-        salt: &'a str,
-    ) -> password_hash::Result<PasswordHash<'a>> {
-        let salt = Salt::from_b64(salt)?;
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
+    fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+        let salt = Salt::new(salt)?;
 
         let output_len = self
             .params
@@ -670,7 +664,7 @@ impl PasswordHasher for Argon2<'_> {
             .unwrap_or(Params::DEFAULT_OUTPUT_LEN);
 
         let output = Output::init_with(output_len, |out| {
-            Ok(self.hash_password_into(password, salt_bytes, out)?)
+            Ok(self.hash_password_into(password, &salt, out)?)
         })?;
 
         Ok(PasswordHash {
@@ -704,17 +698,18 @@ mod tests {
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
 
     /// Example salt value. Don't use a static salt value!!!
-    const EXAMPLE_SALT: &str = "examplesaltvalue";
+    const EXAMPLE_SALT: &[u8] = b"example-salt";
 
     #[test]
     fn decoded_salt_too_short() {
         let argon2 = Argon2::default();
 
-        // Too short after decoding
-        let salt = "somesalt";
+        // Too short: minimum size 8-bytes
+        let salt = b"weesalt";
 
         let res =
-            argon2.hash_password_customized(EXAMPLE_PASSWORD, None, None, Params::default(), salt);
+            argon2.hash_password_customized(EXAMPLE_PASSWORD, salt, None, None, Params::default());
+
         assert_eq!(
             res,
             Err(password_hash::Error::SaltInvalid(
