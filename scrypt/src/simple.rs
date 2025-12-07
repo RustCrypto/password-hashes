@@ -19,7 +19,7 @@ pub const ALG_ID: Ident = Ident::new_unwrap(ALG_NAME);
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Scrypt;
 
-impl CustomizedPasswordHasher for Scrypt {
+impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
     type Params = Params;
 
     fn hash_password_customized(
@@ -68,7 +68,7 @@ impl CustomizedPasswordHasher for Scrypt {
     }
 }
 
-impl PasswordHasher for Scrypt {
+impl PasswordHasher<PasswordHash> for Scrypt {
     fn hash_password(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, Params::default())
     }
