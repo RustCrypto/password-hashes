@@ -1,4 +1,3 @@
 /target/
-/.readme/target/
-/benches/target/
+**/target/
 **/Cargo.lock

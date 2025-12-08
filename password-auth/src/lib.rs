@@ -26,8 +26,10 @@ mod errors;
 pub use crate::errors::{ParseError, VerifyError};
 
 use alloc::string::{String, ToString};
-use password_hash::{ParamsString, PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use rand_core::OsRng;
+use password_hash::{
+    PasswordHasher, PasswordVerifier,
+    phc::{ParamsString, PasswordHash, Salt},
+};
 
 #[cfg(not(any(feature = "argon2", feature = "pbkdf2", feature = "scrypt")))]
 compile_error!(
@@ -46,7 +48,7 @@ use scrypt::Scrypt;
 /// Uses the best available password hashing algorithm given the enabled
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
-    let salt = SaltString::try_from_rng(&mut OsRng).expect("Rng error");
+    let salt = Salt::generate();
     generate_phc_hash(password.as_ref(), &salt)
         .map(|hash| hash.to_string())
         .expect("password hashing error")
@@ -54,10 +56,7 @@ pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
 
 /// Generate a PHC hash using the preferred algorithm.
 #[allow(unreachable_code)]
-fn generate_phc_hash<'a>(
-    password: &[u8],
-    salt: &'a SaltString,
-) -> password_hash::Result<PasswordHash<'a>> {
+fn generate_phc_hash(password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
     //
     // Algorithms below are in order of preference
     //
@@ -81,7 +80,7 @@ fn generate_phc_hash<'a>(
 pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), VerifyError> {
     let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
 
-    let algs: &[&dyn PasswordVerifier] = &[
+    let algs: &[&dyn PasswordVerifier<PasswordHash>] = &[
         #[cfg(feature = "argon2")]
         &Argon2::default(),
         #[cfg(feature = "pbkdf2")]
@@ -118,7 +117,7 @@ pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
         || hash.params != default_params_string::<scrypt::Params>());
 
     #[cfg(feature = "pbkdf2")]
-    return Ok(hash.algorithm != pbkdf2::Algorithm::default().ident()
+    return Ok(hash.algorithm != *pbkdf2::Algorithm::default().ident()
         || hash.params != default_params_string::<pbkdf2::Params>());
 
     Ok(true)
@@ -161,11 +160,15 @@ mod tests {
 
     #[cfg(feature = "pbkdf2")]
     mod pdkdf2 {
-        use super::{EXAMPLE_PASSWORD, verify_password};
+        use super::verify_password;
 
-        /// PBKDF2 hash for the string "password".
-        const EXAMPLE_HASH: &str =
-            "$pbkdf2-sha256$i=4096,l=32$c2FsdA$xeR41ZKIyEGqUw22hFxMjZYok6ABzk4RpJY4c6qYE0o";
+        /// PBKDF2 password test vector from the `pbkdf2` crate
+        const EXAMPLE_PASSWORD: &[u8] = b"passwordPASSWORDpassword";
+
+        /// PBKDF2 hash test vector from the `pbkdf2` crate
+        const EXAMPLE_HASH: &str = "$pbkdf2-sha256$i=4096,l=40\
+            $c2FsdFNBTFRzYWx0U0FMVHNhbHRTQUxUc2FsdFNBTFRzYWx0\
+            $NIyJ28vTKy8y2BS4EW6EzysXNH68GAAYHE4qH7jdU+HGNVGMfaxH6Q";
 
         #[test]
         fn verify() {

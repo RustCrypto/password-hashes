@@ -2,7 +2,7 @@ use scrypt::{Params, scrypt};
 
 #[cfg(feature = "simple")]
 use {
-    password_hash::{PasswordHash, PasswordVerifier},
+    password_hash::{PasswordVerifier, phc::PasswordHash},
     scrypt::Scrypt,
 };
 

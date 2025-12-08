@@ -7,7 +7,7 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use password_hash::Ident;
+use password_hash::phc::Ident;
 
 /// Balloon primitive type: variants of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord, Default)]
@@ -26,11 +26,11 @@ pub enum Algorithm {
 impl Algorithm {
     /// Balloon algorithm identifier
     #[cfg(feature = "password-hash")]
-    pub const BALLOON_IDENT: Ident<'static> = Ident::new_unwrap("balloon");
+    pub const BALLOON_IDENT: Ident = Ident::new_unwrap("balloon");
 
     /// BalloonM algorithm identifier
     #[cfg(feature = "password-hash")]
-    pub const BALLOON_M_IDENT: Ident<'static> = Ident::new_unwrap("balloon-m");
+    pub const BALLOON_M_IDENT: Ident = Ident::new_unwrap("balloon-m");
 
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
@@ -47,7 +47,7 @@ impl Algorithm {
 
     /// Get the [`Ident`] that corresponds to this Balloon [`Algorithm`].
     #[cfg(feature = "password-hash")]
-    pub fn ident(&self) -> Ident<'static> {
+    pub fn ident(&self) -> Ident {
         match self {
             Algorithm::Balloon => Self::BALLOON_IDENT,
             Algorithm::BalloonM => Self::BALLOON_M_IDENT,
@@ -80,18 +80,18 @@ impl FromStr for Algorithm {
 }
 
 #[cfg(feature = "password-hash")]
-impl From<Algorithm> for Ident<'static> {
-    fn from(alg: Algorithm) -> Ident<'static> {
+impl From<Algorithm> for Ident {
+    fn from(alg: Algorithm) -> Ident {
         alg.ident()
     }
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
+impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> password_hash::Result<Algorithm> {
-        match ident {
+    fn try_from(name: &'a str) -> password_hash::Result<Algorithm> {
+        match name.try_into()? {
             Self::BALLOON_IDENT => Ok(Algorithm::Balloon),
             Self::BALLOON_M_IDENT => Ok(Algorithm::BalloonM),
             _ => Err(password_hash::Error::Algorithm),

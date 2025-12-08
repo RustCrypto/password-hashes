@@ -7,19 +7,19 @@ use core::{
 };
 
 #[cfg(feature = "password-hash")]
-use password_hash::Ident;
+use password_hash::phc::Ident;
 
 /// Argon2d algorithm identifier
 #[cfg(feature = "password-hash")]
-pub const ARGON2D_IDENT: Ident<'_> = Ident::new_unwrap("argon2d");
+pub const ARGON2D_IDENT: Ident = Ident::new_unwrap("argon2d");
 
 /// Argon2i algorithm identifier
 #[cfg(feature = "password-hash")]
-pub const ARGON2I_IDENT: Ident<'_> = Ident::new_unwrap("argon2i");
+pub const ARGON2I_IDENT: Ident = Ident::new_unwrap("argon2i");
 
 /// Argon2id algorithm identifier
 #[cfg(feature = "password-hash")]
-pub const ARGON2ID_IDENT: Ident<'_> = Ident::new_unwrap("argon2id");
+pub const ARGON2ID_IDENT: Ident = Ident::new_unwrap("argon2id");
 
 /// Argon2 primitive type: variants of the algorithm.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Default, Ord)]
@@ -65,7 +65,7 @@ impl Algorithm {
 
     /// Get the [`Ident`] that corresponds to this Argon2 [`Algorithm`].
     #[cfg(feature = "password-hash")]
-    pub const fn ident(&self) -> Ident<'static> {
+    pub const fn ident(&self) -> Ident {
         match self {
             Algorithm::Argon2d => ARGON2D_IDENT,
             Algorithm::Argon2i => ARGON2I_IDENT,
@@ -94,8 +94,8 @@ impl Display for Algorithm {
 impl FromStr for Algorithm {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Algorithm> {
-        match s {
+    fn from_str(name: &str) -> Result<Algorithm> {
+        match name {
             "argon2d" => Ok(Algorithm::Argon2d),
             "argon2i" => Ok(Algorithm::Argon2i),
             "argon2id" => Ok(Algorithm::Argon2id),
@@ -105,22 +105,17 @@ impl FromStr for Algorithm {
 }
 
 #[cfg(feature = "password-hash")]
-impl From<Algorithm> for Ident<'static> {
-    fn from(alg: Algorithm) -> Ident<'static> {
+impl From<Algorithm> for Ident {
+    fn from(alg: Algorithm) -> Ident {
         alg.ident()
     }
 }
 
 #[cfg(feature = "password-hash")]
-impl<'a> TryFrom<Ident<'a>> for Algorithm {
+impl TryFrom<&str> for Algorithm {
     type Error = password_hash::Error;
 
-    fn try_from(ident: Ident<'a>) -> password_hash::Result<Algorithm> {
-        match ident {
-            ARGON2D_IDENT => Ok(Algorithm::Argon2d),
-            ARGON2I_IDENT => Ok(Algorithm::Argon2i),
-            ARGON2ID_IDENT => Ok(Algorithm::Argon2id),
-            _ => Err(password_hash::Error::Algorithm),
-        }
+    fn try_from(name: &str) -> password_hash::Result<Algorithm> {
+        name.parse().map_err(|_| password_hash::Error::Algorithm)
     }
 }

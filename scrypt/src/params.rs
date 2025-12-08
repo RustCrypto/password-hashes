@@ -1,9 +1,17 @@
-use core::mem::size_of;
-
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "simple")]
-use password_hash::{Error, ParamsString, PasswordHash, errors::InvalidValue};
+use {
+    core::{
+        fmt::{self, Display},
+        str::FromStr,
+    },
+    password_hash::{
+        Error,
+        errors::InvalidValue,
+        phc::{Output, ParamsString, PasswordHash},
+    },
+};
 
 #[cfg(all(feature = "simple", doc))]
 use password_hash::PasswordHasher;
@@ -14,7 +22,7 @@ pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
-    #[cfg(feature = "password-hash")]
+    #[cfg(feature = "simple")]
     pub(crate) len: Option<usize>,
 }
 
@@ -30,6 +38,20 @@ impl Params {
 
     /// Recommended Scrypt parameter `Key length`.
     pub const RECOMMENDED_LEN: usize = 32;
+
+    /// Recommended values according to the [OWASP cheat sheet].
+    /// - `log_n = 17` (`n = 131072`)
+    /// - `r = 8`
+    /// - `p = 1`
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt
+    pub const RECOMMENDED: Self = Self {
+        log_n: Self::RECOMMENDED_LOG_N,
+        r: Self::RECOMMENDED_R,
+        p: Self::RECOMMENDED_P,
+        #[cfg(feature = "simple")]
+        len: None,
+    };
 
     /// Create a new instance of [`Params`].
     ///
@@ -83,7 +105,7 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            #[cfg(feature = "password-hash")]
+            #[cfg(feature = "simple")]
             len: None,
         })
     }
@@ -97,14 +119,14 @@ impl Params {
     /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
     /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
     /// because they are intended for use with password hash strings.
-    #[cfg(feature = "password-hash")]
+    #[cfg(feature = "simple")]
     pub fn new_with_output_len(
         log_n: u8,
         r: u32,
         p: u32,
         len: usize,
     ) -> Result<Params, InvalidParams> {
-        if !(password_hash::Output::MIN_LENGTH..=password_hash::Output::MAX_LENGTH).contains(&len) {
+        if !(Output::MIN_LENGTH..=Output::MAX_LENGTH).contains(&len) {
             return Err(InvalidParams);
         }
 
@@ -113,18 +135,10 @@ impl Params {
         Ok(ret)
     }
 
-    /// Recommended values according to the [OWASP cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#scrypt)
-    /// - `log_n = 17` (`n = 131072`)
-    /// - `r = 8`
-    /// - `p = 1`
+    /// Deprecated: recommended values according to the OWASP cheat sheet.
+    #[deprecated(since = "0.12.0", note = "use Params::RECOMMENDED instead")]
     pub const fn recommended() -> Params {
-        Params {
-            log_n: Self::RECOMMENDED_LOG_N,
-            r: Self::RECOMMENDED_R,
-            p: Self::RECOMMENDED_P,
-            #[cfg(feature = "password-hash")]
-            len: None,
-        }
+        Self::RECOMMENDED
     }
 
     /// log₂ of the Scrypt parameter `N`, the work factor.
@@ -159,24 +173,36 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Params {
-        Params::recommended()
+        Params::RECOMMENDED
     }
 }
 
 #[cfg(feature = "simple")]
-impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
-    type Error = password_hash::Error;
+impl Display for Params {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    }
+}
 
-    fn try_from(hash: &'a PasswordHash<'a>) -> Result<Self, password_hash::Error> {
+#[cfg(feature = "simple")]
+impl FromStr for Params {
+    type Err = Error;
+
+    fn from_str(s: &str) -> password_hash::Result<Self> {
+        Self::try_from(&ParamsString::from_str(s)?)
+    }
+}
+
+#[cfg(feature = "simple")]
+impl TryFrom<&ParamsString> for Params {
+    type Error = Error;
+
+    fn try_from(params: &ParamsString) -> password_hash::Result<Self> {
         let mut log_n = Self::RECOMMENDED_LOG_N;
         let mut r = Self::RECOMMENDED_R;
         let mut p = Self::RECOMMENDED_P;
 
-        if hash.version.is_some() {
-            return Err(Error::Version);
-        }
-
-        for (ident, value) in hash.params.iter() {
+        for (ident, value) in params.iter() {
             match ident.as_str() {
                 "ln" => {
                     log_n = value
@@ -186,25 +212,49 @@ impl<'a> TryFrom<&'a PasswordHash<'a>> for Params {
                 }
                 "r" => r = value.decimal()?,
                 "p" => p = value.decimal()?,
-                _ => return Err(password_hash::Error::ParamNameInvalid),
+                _ => return Err(Error::ParamNameInvalid),
             }
         }
 
-        let len = hash
-            .hash
-            .map(|out| out.len())
-            .unwrap_or(Self::RECOMMENDED_LEN);
+        Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())
+    }
+}
 
-        Params::new_with_output_len(log_n, r, p, len)
-            .map_err(|_| InvalidValue::Malformed.param_error())
+#[cfg(feature = "simple")]
+impl TryFrom<&PasswordHash> for Params {
+    type Error = Error;
+
+    fn try_from(hash: &PasswordHash) -> password_hash::Result<Self> {
+        if hash.version.is_some() {
+            return Err(Error::Version);
+        }
+
+        let mut params = Params::try_from(&hash.params)?;
+
+        params.len = Some(
+            hash.hash
+                .map(|out| out.len())
+                .unwrap_or(Self::RECOMMENDED_LEN),
+        );
+
+        Ok(params)
     }
 }
 
 #[cfg(feature = "simple")]
 impl TryFrom<Params> for ParamsString {
-    type Error = password_hash::Error;
+    type Error = Error;
 
-    fn try_from(input: Params) -> Result<ParamsString, password_hash::Error> {
+    fn try_from(params: Params) -> Result<ParamsString, Error> {
+        Self::try_from(&params)
+    }
+}
+
+#[cfg(feature = "simple")]
+impl TryFrom<&Params> for ParamsString {
+    type Error = Error;
+
+    fn try_from(input: &Params) -> Result<ParamsString, Error> {
         let mut output = ParamsString::new();
         output.add_decimal("ln", input.log_n as u32)?;
         output.add_decimal("r", input.r)?;

@@ -160,8 +160,7 @@ pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
     let mut actual = vec![0u8; expected.len()];
     yescrypt_kdf(passwd, &salt, &params, &mut actual)?;
 
-    // TODO(tarcieri): constant-time comparison?
-    if expected != actual {
+    if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
         return Err(Error::Password);
     }
 

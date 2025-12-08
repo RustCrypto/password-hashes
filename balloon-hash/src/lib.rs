@@ -28,21 +28,17 @@
 //!
 //! The following example demonstrates the high-level password hashing API:
 //!
-//! ```
+#![cfg_attr(feature = "getrandom", doc = "```")]
+#![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "password-hash", feature = "std"))]
-//! # {
 //! use balloon_hash::{
-//!     password_hash::{
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
-//!     },
+//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Balloon
 //! };
 //! use sha2::Sha256;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::try_from_rng(&mut OsRng)?;
+//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `balloon-hash` enabled
 //!
 //! // Balloon with default params
 //! let balloon = Balloon::<Sha256>::default();
@@ -53,7 +49,6 @@
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(balloon.verify_password(password, &parsed_hash).is_ok());
-//! # }
 //! # Ok(())
 //! # }
 //! ```
@@ -78,7 +73,10 @@ pub use crate::{
 };
 
 #[cfg(feature = "password-hash")]
-pub use password_hash::{self, PasswordHash, PasswordHasher, PasswordVerifier};
+pub use password_hash::{
+    self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier, Version,
+    phc::{Output, PasswordHash},
+};
 
 use core::marker::PhantomData;
 use crypto_bigint::ArrayDecoding;
@@ -87,10 +85,10 @@ use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-pub use password_hash::Salt;
+pub use password_hash::phc::Salt;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-use password_hash::{Decimal, Ident, ParamsString};
+use password_hash::phc::ParamsString;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -214,39 +212,21 @@ where
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
-impl<D: Digest + FixedOutputReset> PasswordHasher for Balloon<'_, D>
+impl<D> CustomizedPasswordHasher<PasswordHash> for Balloon<'_, D>
 where
+    D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
     type Params = Params;
 
-    fn hash_password<'a>(
+    fn hash_password_customized(
         &self,
         password: &[u8],
-        salt: impl Into<Salt<'a>>,
-    ) -> password_hash::Result<PasswordHash<'a>> {
-        let salt = salt.into();
-        let mut salt_arr = [0u8; 64];
-        let salt_bytes = salt.decode_b64(&mut salt_arr)?;
-        let output = password_hash::Output::new(&self.hash(password, salt_bytes)?)?;
-
-        Ok(PasswordHash {
-            algorithm: self.algorithm.ident(),
-            version: Some(1),
-            params: ParamsString::try_from(&self.params)?,
-            salt: Some(salt),
-            hash: Some(output),
-        })
-    }
-
-    fn hash_password_customized<'a>(
-        &self,
-        password: &[u8],
-        alg_id: Option<Ident<'a>>,
-        version: Option<Decimal>,
+        salt: &[u8],
+        alg_id: Option<&str>,
+        version: Option<Version>,
         params: Params,
-        salt: impl Into<Salt<'a>>,
-    ) -> password_hash::Result<PasswordHash<'a>> {
+    ) -> password_hash::Result<PasswordHash> {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
@@ -258,9 +238,27 @@ where
             }
         }
 
-        let salt = salt.into();
-
         Self::new(algorithm, params, self.secret).hash_password(password, salt)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+impl<D> PasswordHasher<PasswordHash> for Balloon<'_, D>
+where
+    D: Digest + FixedOutputReset,
+    Array<u8, D::OutputSize>: ArrayDecoding,
+{
+    fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+        let salt = Salt::new(salt)?;
+        let output = Output::new(&self.hash(password, &salt)?)?;
+
+        Ok(PasswordHash {
+            algorithm: self.algorithm.ident(),
+            version: Some(1),
+            params: ParamsString::try_from(&self.params)?,
+            salt: Some(salt),
+            hash: Some(output),
+        })
     }
 }
 

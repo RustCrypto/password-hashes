@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     if: false # disabled while using pre-releases
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
