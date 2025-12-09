@@ -91,9 +91,9 @@ impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = password_hash::Error;
 
     fn try_from(name: &'a str) -> password_hash::Result<Algorithm> {
-        match name.try_into()? {
-            Self::BALLOON_IDENT => Ok(Algorithm::Balloon),
-            Self::BALLOON_M_IDENT => Ok(Algorithm::BalloonM),
+        match name.try_into() {
+            Ok(Self::BALLOON_IDENT) => Ok(Algorithm::Balloon),
+            Ok(Self::BALLOON_M_IDENT) => Ok(Algorithm::BalloonM),
             _ => Err(password_hash::Error::Algorithm),
         }
     }

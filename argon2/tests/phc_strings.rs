@@ -8,7 +8,7 @@ use argon2::{
     Algorithm, Argon2, AssociatedData, KeyId, ParamsBuilder, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
-use password_hash::errors::{Error, InvalidValue};
+use password_hash::Error;
 
 /// Valid password
 pub const VALID_PASSWORD: &[u8] = b"password";
@@ -90,61 +90,60 @@ testcase_bad_encoding!(
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_m_not_a_number,
-    Error::ParamValueInvalid(InvalidValue::InvalidChar('d')),
+    Error::ParamInvalid { name: "m" },
     "$argon2i$m=dummy,t=2,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_m_too_small,
-    Error::ParamValueInvalid(InvalidValue::TooShort),
+    Error::ParamInvalid { name: "m" },
     "$argon2i$m=0,t=2,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_m_too_big,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamInvalid { name: "m" },
     "$argon2i$m=4294967296,t=2,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 
 testcase_bad_encoding!(
     argon2i_invalid_encoding_t_not_a_number,
-    Error::ParamValueInvalid(InvalidValue::InvalidChar('d')),
+    Error::ParamInvalid { name: "t" },
     "$argon2i$m=65536,t=dummy,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_t_too_small,
-    Error::ParamValueInvalid(InvalidValue::TooShort),
+    Error::ParamInvalid { name: "t" },
     "$argon2i$m=65536,t=0,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_t_too_big,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamInvalid { name: "t" },
     "$argon2i$m=65536,t=4294967296,p=1$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 
 testcase_bad_encoding!(
     argon2i_invalid_encoding_p_not_a_number,
-    Error::ParamValueInvalid(InvalidValue::InvalidChar('d')),
+    Error::ParamInvalid { name: "p" },
     "$argon2i$m=65536,t=2,p=dummy$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_p_too_small,
-    Error::ParamValueInvalid(InvalidValue::TooShort),
+    Error::ParamInvalid { name: "p" },
     "$argon2i$m=65536,t=2,p=0$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
-// TODO: Wrong error is returned, this should be changed in the `password-hash` crate
 ignored_testcase_bad_encoding!(
     argon2i_invalid_encoding_p_too_big,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamInvalid { name: "p" },
     "$argon2i$m=65536,t=2,p=256$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 
 testcase_bad_encoding!(
     argon2i_invalid_encoding_keyid_not_b64,
-    Error::B64Encoding(base64ct::Error::InvalidEncoding),
+    Error::ParamInvalid { name: "keyid" },
     "$argon2i$m=65536,t=2,p=1,keyid=dummy$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 testcase_bad_encoding!(
     argon2i_invalid_encoding_data_not_b64,
-    Error::B64Encoding(base64ct::Error::InvalidEncoding),
+    Error::ParamInvalid { name: "data" },
     "$argon2i$m=65536,t=2,p=1,data=dummy$c29tZXNhbHQ$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ"
 );
 
@@ -179,19 +178,19 @@ fn check_decoding_supports_default_parameters() {
 // TODO: Wrong error is returned, this should be changed in the `password-hash` crate
 ignored_testcase_bad_encoding!(
     argon2i_invalid_encoding_missing_m,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamsInvalid,
     "$argon2d$v=16$t=2,p=3$8PDw8PDw8PA$Xv5daH0zPuKO3c9tMBG/WOIUsDrPqq815/xyQTukNxY"
 );
 // TODO: Wrong error is returned, this should be changed in the `password-hash` crate
 ignored_testcase_bad_encoding!(
     argon2i_invalid_encoding_missing_t,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamsInvalid,
     "$argon2d$v=16$m=32,p=3$8PDw8PDw8PA$Xv5daH0zPuKO3c9tMBG/WOIUsDrPqq815/xyQTukNxY"
 );
 // TODO: Wrong error is returned, this should be changed in the `password-hash` crate
 ignored_testcase_bad_encoding!(
     argon2i_invalid_encoding_missing_p,
-    Error::ParamValueInvalid(InvalidValue::InvalidFormat),
+    Error::ParamsInvalid,
     "$argon2d$v=16$m=32,t=2$8PDw8PDw8PA$Xv5daH0zPuKO3c9tMBG/WOIUsDrPqq815/xyQTukNxY"
 );
 

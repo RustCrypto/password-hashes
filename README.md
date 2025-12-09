@@ -25,6 +25,7 @@ The following code example shows how to verify a password when stored using one
 of many possible password hashing algorithms implemented in this repository.
 
 ```rust
+# fn main() -> Result<(), Box<dyn core::error::Error>> {
 use password_hash::{phc, PasswordVerifier};
 
 use argon2::Argon2;
@@ -35,12 +36,20 @@ use scrypt::Scrypt;
 let hash_string = "$argon2i$v=19$m=65536,t=1,p=1$c29tZXNhbHQAAAAAAAAAAA$+r0d29hqEB0yasKr55ZgICsQGSkl0v0kgwhd+U3wyRo";
 let input_password = "password";
 
-let password_hash = phc::PasswordHash::new(&hash_string).expect("invalid password hash");
+let password_hash = phc::PasswordHash::new(&hash_string)?;
 
 // Trait objects for algorithms to support
 let algs: &[&dyn PasswordVerifier<phc::PasswordHash>] = &[&Argon2::default(), &Pbkdf2, &Scrypt];
 
-password_hash.verify_password(algs, input_password).expect("invalid password");
+for alg in algs {
+    if alg.verify_password(input_password.as_ref(), &password_hash).is_ok() {
+        return Ok(());
+    }
+}
+
+// If we get here, the password is invalid
+# Err(Box::new(password_hash::Error::PasswordInvalid))
+# }
 ```
 
 ## Minimum Supported Rust Version (MSRV) Policy

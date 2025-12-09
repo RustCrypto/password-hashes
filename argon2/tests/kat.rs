@@ -583,7 +583,7 @@ fn reference_argon2i_v0x10_mismatching_hash() {
     .unwrap();
     assert_eq!(
         Argon2::default().verify_password(b"password", &hash),
-        Err(password_hash::errors::Error::Password)
+        Err(password_hash::Error::PasswordInvalid)
     );
 }
 
@@ -716,7 +716,7 @@ fn reference_argon2i_v0x13_mismatching_hash() {
     .unwrap();
     assert_eq!(
         Argon2::default().verify_password(b"password", &hash),
-        Err(password_hash::errors::Error::Password)
+        Err(password_hash::Error::PasswordInvalid)
     );
 }
 

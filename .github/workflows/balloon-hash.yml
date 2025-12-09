@@ -36,7 +36,6 @@ jobs:
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features password-hash
-      - run: cargo build --target ${{ matrix.target }} --release
 
   minimal-versions:
     if: false # disabled while using pre-releases

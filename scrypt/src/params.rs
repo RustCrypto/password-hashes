@@ -6,11 +6,8 @@ use {
         fmt::{self, Display},
         str::FromStr,
     },
-    password_hash::{
-        Error,
-        errors::InvalidValue,
-        phc::{Output, ParamsString, PasswordHash},
-    },
+    password_hash::Error,
+    phc::{Decimal, Output, ParamsString, PasswordHash},
 };
 
 #[cfg(all(feature = "simple", doc))]
@@ -189,7 +186,8 @@ impl FromStr for Params {
     type Err = Error;
 
     fn from_str(s: &str) -> password_hash::Result<Self> {
-        Self::try_from(&ParamsString::from_str(s)?)
+        let params_string = ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
+        Self::try_from(&params_string)
     }
 }
 
@@ -206,17 +204,26 @@ impl TryFrom<&ParamsString> for Params {
             match ident.as_str() {
                 "ln" => {
                     log_n = value
-                        .decimal()?
-                        .try_into()
-                        .map_err(|_| InvalidValue::Malformed.param_error())?
+                        .decimal()
+                        .ok()
+                        .and_then(|dec| dec.try_into().ok())
+                        .ok_or(Error::ParamInvalid { name: "ln" })?;
                 }
-                "r" => r = value.decimal()?,
-                "p" => p = value.decimal()?,
-                _ => return Err(Error::ParamNameInvalid),
+                "r" => {
+                    r = value
+                        .decimal()
+                        .map_err(|_| Error::ParamInvalid { name: "r" })?;
+                }
+                "p" => {
+                    p = value
+                        .decimal()
+                        .map_err(|_| Error::ParamInvalid { name: "p" })?;
+                }
+                _ => return Err(Error::ParamsInvalid),
             }
         }
 
-        Params::new(log_n, r, p).map_err(|_| InvalidValue::Malformed.param_error())
+        Params::new(log_n, r, p).map_err(|_| Error::ParamsInvalid)
     }
 }
 
@@ -256,9 +263,17 @@ impl TryFrom<&Params> for ParamsString {
 
     fn try_from(input: &Params) -> Result<ParamsString, Error> {
         let mut output = ParamsString::new();
-        output.add_decimal("ln", input.log_n as u32)?;
-        output.add_decimal("r", input.r)?;
-        output.add_decimal("p", input.p)?;
+
+        for (name, value) in [
+            ("ln", input.log_n as Decimal),
+            ("r", input.r),
+            ("p", input.p),
+        ] {
+            output
+                .add_decimal(name, value)
+                .map_err(|_| Error::ParamInvalid { name })?;
+        }
+
         Ok(output)
     }
 }
