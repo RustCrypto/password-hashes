@@ -32,7 +32,6 @@ belt-hash = "0.2.0-rc.3"
 
 [features]
 default = ["hmac"]
-std = []
 getrandom = ["simple", "password-hash/getrandom"]
 simple = ["getrandom", "hmac", "password-hash", "sha2"]
 
