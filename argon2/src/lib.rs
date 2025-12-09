@@ -659,16 +659,20 @@ impl CustomizedPasswordHasher<PasswordHash> for Argon2<'_> {
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 impl PasswordHasher<PasswordHash> for Argon2<'_> {
     fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
-        let salt = Salt::new(salt)?;
+        let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
 
         let output_len = self
             .params
             .output_len()
             .unwrap_or(Params::DEFAULT_OUTPUT_LEN);
 
-        let output = Output::init_with(output_len, |out| {
-            Ok(self.hash_password_into(password, &salt, out)?)
-        })?;
+        let mut buffer = [0u8; Output::MAX_LENGTH];
+        let out = buffer
+            .get_mut(..output_len)
+            .ok_or(password_hash::Error::OutputSize)?;
+
+        self.hash_password_into(password, &salt, out)?;
+        let output = Output::new(out).map_err(|_| password_hash::Error::OutputSize)?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),
@@ -713,12 +717,7 @@ mod tests {
         let res =
             argon2.hash_password_customized(EXAMPLE_PASSWORD, salt, None, None, Params::default());
 
-        assert_eq!(
-            res,
-            Err(password_hash::Error::SaltInvalid(
-                password_hash::errors::InvalidValue::TooShort
-            ))
-        );
+        assert_eq!(res, Err(password_hash::Error::SaltInvalid));
     }
 
     #[test]

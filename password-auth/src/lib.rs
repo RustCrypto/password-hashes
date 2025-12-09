@@ -89,8 +89,13 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Ver
         &Scrypt,
     ];
 
-    hash.verify_password(algs, password)
-        .map_err(|_| VerifyError::PasswordInvalid)
+    for &alg in algs {
+        if alg.verify_password(password.as_ref(), &hash).is_ok() {
+            return Ok(());
+        }
+    }
+
+    Err(VerifyError::PasswordInvalid)
 }
 
 /// Determine if the given password hash is using the recommended algorithm and

@@ -22,7 +22,8 @@ blake2 = { version = "0.11.0-rc.3", default-features = false }
 
 # optional dependencies
 rayon = { version = "1.7", optional = true }
-password-hash = { version = "0.6.0-rc.3", optional = true }
+password-hash = { version = "0.6.0-rc.3", optional = true, features = ["phc"] }
+phc = { version = "0.3.0-pre", optional = true, features = ["rand_core"] }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
@@ -30,17 +31,15 @@ cpufeatures = "0.2.17"
 
 [dev-dependencies]
 hex-literal = "1"
-password-hash = { version = "0.6.0-rc.3", features = ["rand_core"] }
 
 [features]
-default = ["alloc", "password-hash", "rand"]
+default = ["alloc", "getrandom", "simple"]
 alloc = ["password-hash?/alloc"]
 std = ["alloc", "base64ct/std"]
 
-getrandom = ["simple", "password-hash/getrandom"]
+getrandom = ["simple", "phc/getrandom"]
 parallel = ["dep:rayon"]
-rand = ["password-hash?/rand_core"]
-simple = ["password-hash"]
+simple = ["password-hash", "phc"]
 zeroize = ["dep:zeroize"]
 
 [lints.rust.unexpected_cfgs]

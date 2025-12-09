@@ -4,15 +4,14 @@ use alloc::string::ToString;
 use core::fmt;
 
 /// Password hash parse errors.
-// This type has no public constructor and deliberately keeps
-// `password_hash::Error` out of the public API so it can evolve
-// independently (e.g. get to 1.0 faster)
+// This type has no public constructor and deliberately keeps `phc::Error` out of the public API
+// so we can upgrade the `phc` version without it being a breaking change
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct ParseError(password_hash::Error);
+pub struct ParseError(phc::Error);
 
 impl ParseError {
     /// Create a new parse error.
-    pub(crate) fn new(err: password_hash::Error) -> Self {
+    pub(crate) fn new(err: phc::Error) -> Self {
         Self(err)
     }
 }

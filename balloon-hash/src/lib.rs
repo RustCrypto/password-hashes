@@ -249,8 +249,9 @@ where
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
     fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
-        let salt = Salt::new(salt)?;
-        let output = Output::new(&self.hash(password, &salt)?)?;
+        let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
+        let hash = self.hash(password, &salt)?;
+        let output = Output::new(&hash).map_err(|_| password_hash::Error::OutputSize)?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),

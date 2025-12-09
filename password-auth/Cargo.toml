@@ -18,7 +18,8 @@ rust-version = "1.85"
 
 [dependencies]
 getrandom = { version = "0.3", default-features = false }
-password-hash = { version = "0.6.0-rc.3", features = ["alloc", "getrandom"] }
+password-hash = { version = "0.6.0-rc.3", features = ["alloc", "phc"] }
+phc = { version = "0.3.0-pre", features = ["getrandom"] }
 
 # optional dependencies
 argon2 = { version = "0.6.0-rc.0", optional = true, default-features = false, features = ["alloc", "simple"], path = "../argon2" }

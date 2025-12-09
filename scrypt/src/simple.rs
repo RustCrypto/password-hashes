@@ -1,7 +1,6 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::{Params, scrypt};
-use core::cmp::Ordering;
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, Result, Version,
     phc::{Ident, Output, PasswordHash, Salt},
@@ -40,23 +39,13 @@ impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
             return Err(Error::Version);
         }
 
-        let salt = Salt::new(salt)?;
+        let salt = Salt::new(salt).map_err(|_| Error::SaltInvalid)?;
         let len = params.len.unwrap_or(Params::RECOMMENDED_LEN);
 
-        let output = Output::init_with(len, |out| {
-            scrypt(password, &salt, &params, out).map_err(|_| {
-                let provided = if out.is_empty() {
-                    Ordering::Less
-                } else {
-                    Ordering::Greater
-                };
-
-                Error::OutputSize {
-                    provided,
-                    expected: 0, // TODO(tarcieri): calculate for `Ordering::Greater` case
-                }
-            })
-        })?;
+        let mut buffer = [0u8; Output::MAX_LENGTH];
+        let out = buffer.get_mut(..len).ok_or(Error::OutputSize)?;
+        scrypt(password, &salt, &params, out).map_err(|_| Error::OutputSize)?;
+        let output = Output::new(out).map_err(|_| Error::OutputSize)?;
 
         Ok(PasswordHash {
             algorithm: ALG_ID,

@@ -2,9 +2,6 @@
 
 use core::fmt;
 
-#[cfg(feature = "password-hash")]
-use password_hash::errors::InvalidValue;
-
 /// Result with balloon's [`Error`] type.
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -51,14 +48,11 @@ impl From<Error> for password_hash::Error {
     fn from(err: Error) -> password_hash::Error {
         match err {
             Error::AlgorithmInvalid => password_hash::Error::Algorithm,
-            Error::MemoryTooLittle => InvalidValue::TooShort.param_error(),
-            Error::ThreadsTooFew => InvalidValue::TooShort.param_error(),
-            Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
-            Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
-            Error::OutputSize { actual, expected } => password_hash::Error::OutputSize {
-                provided: actual.cmp(&expected),
-                expected,
-            },
+            Error::MemoryTooLittle
+            | Error::ThreadsTooFew
+            | Error::ThreadsTooMany
+            | Error::TimeTooSmall => password_hash::Error::ParamsInvalid,
+            Error::OutputSize { .. } => password_hash::Error::OutputSize,
         }
     }
 }

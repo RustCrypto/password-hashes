@@ -360,7 +360,9 @@ impl FromStr for Params {
     type Err = password_hash::Error;
 
     fn from_str(s: &str) -> password_hash::Result<Self> {
-        Self::try_from(&ParamsString::from_str(s)?)
+        let params_string =
+            ParamsString::from_str(s).map_err(|_| password_hash::Error::ParamsInvalid)?;
+        Self::try_from(&params_string)
     }
 }
 
@@ -374,21 +376,43 @@ impl TryFrom<&ParamsString> for Params {
         for (ident, value) in params.iter() {
             match ident.as_str() {
                 "m" => {
-                    builder.m_cost(value.decimal()?);
+                    builder.m_cost(
+                        value
+                            .decimal()
+                            .map_err(|_| password_hash::Error::ParamInvalid { name: "m" })?,
+                    );
                 }
                 "t" => {
-                    builder.t_cost(value.decimal()?);
+                    builder.t_cost(
+                        value
+                            .decimal()
+                            .map_err(|_| password_hash::Error::ParamInvalid { name: "t" })?,
+                    );
                 }
                 "p" => {
-                    builder.p_cost(value.decimal()?);
+                    builder.p_cost(
+                        value
+                            .decimal()
+                            .map_err(|_| password_hash::Error::ParamInvalid { name: "p" })?,
+                    );
                 }
                 "keyid" => {
-                    builder.keyid(value.as_str().parse()?);
+                    builder.keyid(
+                        value
+                            .as_str()
+                            .parse()
+                            .map_err(|_| password_hash::Error::ParamInvalid { name: "keyid" })?,
+                    );
                 }
                 "data" => {
-                    builder.data(value.as_str().parse()?);
+                    builder.data(
+                        value
+                            .as_str()
+                            .parse()
+                            .map_err(|_| password_hash::Error::ParamInvalid { name: "data" })?,
+                    );
                 }
-                _ => return Err(password_hash::Error::ParamNameInvalid),
+                _ => return Err(password_hash::Error::ParamsInvalid),
             }
         }
 
@@ -426,16 +450,27 @@ impl TryFrom<&Params> for ParamsString {
 
     fn try_from(params: &Params) -> password_hash::Result<ParamsString> {
         let mut output = ParamsString::new();
-        output.add_decimal("m", params.m_cost)?;
-        output.add_decimal("t", params.t_cost)?;
-        output.add_decimal("p", params.p_cost)?;
+
+        for (name, value) in [
+            ("m", params.m_cost),
+            ("t", params.t_cost),
+            ("p", params.p_cost),
+        ] {
+            output
+                .add_decimal(name, value)
+                .map_err(|_| password_hash::Error::ParamInvalid { name })?;
+        }
 
         if !params.keyid.is_empty() {
-            output.add_b64_bytes("keyid", params.keyid.as_bytes())?;
+            output
+                .add_b64_bytes("keyid", params.keyid.as_bytes())
+                .map_err(|_| password_hash::Error::ParamInvalid { name: "keyid" })?;
         }
 
         if !params.data.is_empty() {
-            output.add_b64_bytes("data", params.data.as_bytes())?;
+            output
+                .add_b64_bytes("data", params.data.as_bytes())
+                .map_err(|_| password_hash::Error::ParamInvalid { name: "keyid" })?;
         }
 
         Ok(output)

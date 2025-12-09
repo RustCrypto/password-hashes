@@ -2,16 +2,14 @@
 
 use crate::{Error, Result};
 use core::num::NonZeroU32;
+
 #[cfg(feature = "password-hash")]
 use {
     core::{
         fmt::{self, Display},
         str::FromStr,
     },
-    password_hash::{
-        errors::InvalidValue,
-        phc::{ParamsString, PasswordHash},
-    },
+    phc::{ParamsString, PasswordHash},
 };
 
 /// Balloon password hash parameters.
@@ -72,7 +70,10 @@ impl FromStr for Params {
     type Err = password_hash::Error;
 
     fn from_str(s: &str) -> password_hash::Result<Self> {
-        Self::try_from(&ParamsString::from_str(s)?)
+        let params_string =
+            ParamsString::from_str(s).map_err(|_| password_hash::Error::ParamsInvalid)?;
+
+        Self::try_from(&params_string)
     }
 }
 
@@ -84,20 +85,19 @@ impl TryFrom<&ParamsString> for Params {
         let mut params = Self::default();
 
         for (ident, value) in params_string.iter() {
+            let dec = value.decimal().ok().and_then(NonZeroU32::new);
+
             match ident.as_str() {
                 "s" => {
-                    params.s_cost = NonZeroU32::new(value.decimal()?)
-                        .ok_or_else(|| InvalidValue::TooShort.param_error())?;
+                    params.s_cost = dec.ok_or(password_hash::Error::ParamInvalid { name: "s" })?;
                 }
                 "t" => {
-                    params.t_cost = NonZeroU32::new(value.decimal()?)
-                        .ok_or_else(|| InvalidValue::TooShort.param_error())?;
+                    params.t_cost = dec.ok_or(password_hash::Error::ParamInvalid { name: "t" })?;
                 }
                 "p" => {
-                    params.p_cost = NonZeroU32::new(value.decimal()?)
-                        .ok_or_else(|| InvalidValue::TooShort.param_error())?;
+                    params.p_cost = dec.ok_or(password_hash::Error::ParamInvalid { name: "p" })?;
                 }
-                _ => return Err(password_hash::Error::ParamNameInvalid),
+                _ => return Err(password_hash::Error::ParamsInvalid),
             }
         }
 
@@ -129,9 +129,16 @@ impl TryFrom<&Params> for ParamsString {
 
     fn try_from(params: &Params) -> password_hash::Result<ParamsString> {
         let mut output = ParamsString::new();
-        output.add_decimal("s", params.s_cost.get())?;
-        output.add_decimal("t", params.t_cost.get())?;
-        output.add_decimal("p", params.p_cost.get())?;
+
+        for (name, value) in [
+            ("s", params.s_cost),
+            ("t", params.t_cost),
+            ("p", params.p_cost),
+        ] {
+            output
+                .add_decimal(name, value.get())
+                .map_err(|_| password_hash::Error::ParamInvalid { name })?;
+        }
 
         Ok(output)
     }

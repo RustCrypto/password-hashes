@@ -2,9 +2,6 @@
 
 use core::fmt;
 
-#[cfg(feature = "password-hash")]
-use {crate::Params, core::cmp::Ordering, password_hash::errors::InvalidValue};
-
 /// Result with argon2's [`Error`] type.
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -97,29 +94,23 @@ impl From<base64ct::Error> for Error {
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> password_hash::Error {
         match err {
-            Error::AdTooLong => InvalidValue::TooLong.param_error(),
+            Error::AdTooLong => password_hash::Error::ParamInvalid { name: "data" },
             Error::AlgorithmInvalid => password_hash::Error::Algorithm,
-            Error::B64Encoding(inner) => password_hash::Error::B64Encoding(inner),
-            Error::KeyIdTooLong => InvalidValue::TooLong.param_error(),
-            Error::MemoryTooLittle => InvalidValue::TooShort.param_error(),
-            Error::MemoryTooMuch => InvalidValue::TooLong.param_error(),
-            Error::PwdTooLong => password_hash::Error::Password,
-            Error::OutputTooShort => password_hash::Error::OutputSize {
-                provided: Ordering::Less,
-                expected: Params::MIN_OUTPUT_LEN,
-            },
-            Error::OutputTooLong => password_hash::Error::OutputSize {
-                provided: Ordering::Greater,
-                expected: Params::MAX_OUTPUT_LEN,
-            },
-            Error::SaltTooShort => InvalidValue::TooShort.salt_error(),
-            Error::SaltTooLong => InvalidValue::TooLong.salt_error(),
-            Error::SecretTooLong => InvalidValue::TooLong.param_error(),
-            Error::ThreadsTooFew => InvalidValue::TooShort.param_error(),
-            Error::ThreadsTooMany => InvalidValue::TooLong.param_error(),
-            Error::TimeTooSmall => InvalidValue::TooShort.param_error(),
-            Error::VersionInvalid => password_hash::Error::Version,
+            Error::B64Encoding(_) => password_hash::Error::EncodingInvalid,
+            Error::KeyIdTooLong => password_hash::Error::ParamInvalid { name: "keyid" },
+            Error::MemoryTooLittle | Error::MemoryTooMuch => {
+                password_hash::Error::ParamInvalid { name: "m" }
+            }
             Error::OutOfMemory => password_hash::Error::OutOfMemory,
+            Error::OutputTooShort | Error::OutputTooLong => password_hash::Error::OutputSize,
+            Error::PwdTooLong => password_hash::Error::PasswordInvalid,
+            Error::SaltTooShort | Error::SaltTooLong => password_hash::Error::SaltInvalid,
+            Error::SecretTooLong => password_hash::Error::ParamsInvalid,
+            Error::ThreadsTooFew | Error::ThreadsTooMany => {
+                password_hash::Error::ParamInvalid { name: "p" }
+            }
+            Error::TimeTooSmall => password_hash::Error::ParamInvalid { name: "t" },
+            Error::VersionInvalid => password_hash::Error::Version,
         }
     }
 }

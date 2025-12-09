@@ -2,15 +2,11 @@
 
 use crate::pbkdf2_hmac;
 use core::{
-    cmp::Ordering,
     fmt::{self, Display, Formatter},
     str::FromStr,
 };
-use password_hash::{
-    CustomizedPasswordHasher, Error, PasswordHasher, Result,
-    errors::InvalidValue,
-    phc::{Ident, Output, ParamsString, PasswordHash, Salt},
-};
+use password_hash::{CustomizedPasswordHasher, Error, PasswordHasher, Result};
+use phc::{Decimal, Ident, Output, ParamsString, PasswordHash, Salt};
 use sha2::{Sha256, Sha512};
 
 #[cfg(feature = "sha1")]
@@ -41,19 +37,22 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             return Err(Error::Version);
         }
 
-        let salt = Salt::new(salt)?;
+        let salt = Salt::new(salt).map_err(|_| Error::SaltInvalid)?;
 
-        let output = Output::init_with(params.output_length, |out| {
-            let f = match algorithm {
-                #[cfg(feature = "sha1")]
-                Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
-                Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
-                Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
-            };
+        let mut buffer = [0u8; Output::MAX_LENGTH];
+        let out = buffer
+            .get_mut(..params.output_length)
+            .ok_or(Error::OutputSize)?;
 
-            f(password, &salt, params.rounds, out);
-            Ok(())
-        })?;
+        let f = match algorithm {
+            #[cfg(feature = "sha1")]
+            Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
+            Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
+            Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
+        };
+
+        f(password, &salt, params.rounds, out);
+        let output = Output::new(out).map_err(|_| Error::OutputSize)?;
 
         Ok(PasswordHash {
             algorithm: *algorithm.ident(),
@@ -162,11 +161,11 @@ impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = Error;
 
     fn try_from(name: &'a str) -> Result<Algorithm> {
-        match name.try_into()? {
+        match name.try_into() {
             #[cfg(feature = "sha1")]
-            Self::PBKDF2_SHA1_IDENT => Ok(Algorithm::Pbkdf2Sha1),
-            Self::PBKDF2_SHA256_IDENT => Ok(Algorithm::Pbkdf2Sha256),
-            Self::PBKDF2_SHA512_IDENT => Ok(Algorithm::Pbkdf2Sha512),
+            Ok(Self::PBKDF2_SHA1_IDENT) => Ok(Algorithm::Pbkdf2Sha1),
+            Ok(Self::PBKDF2_SHA256_IDENT) => Ok(Algorithm::Pbkdf2Sha256),
+            Ok(Self::PBKDF2_SHA512_IDENT) => Ok(Algorithm::Pbkdf2Sha512),
             _ => Err(Error::Algorithm),
         }
     }
@@ -214,29 +213,35 @@ impl Display for Params {
 }
 
 impl FromStr for Params {
-    type Err = password_hash::Error;
+    type Err = Error;
 
-    fn from_str(s: &str) -> password_hash::Result<Self> {
-        Self::try_from(&ParamsString::from_str(s)?)
+    fn from_str(s: &str) -> Result<Self> {
+        let params_string = ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
+        Self::try_from(&params_string)
     }
 }
 
 impl TryFrom<&ParamsString> for Params {
-    type Error = password_hash::Error;
+    type Error = Error;
 
-    fn try_from(params_string: &ParamsString) -> password_hash::Result<Self> {
+    fn try_from(params_string: &ParamsString) -> Result<Self> {
         let mut params = Params::default();
 
         for (ident, value) in params_string.iter() {
             match ident.as_str() {
-                "i" => params.rounds = value.decimal()?,
+                "i" => {
+                    params.rounds = value
+                        .decimal()
+                        .map_err(|_| Error::ParamInvalid { name: "i" })?
+                }
                 "l" => {
                     params.output_length = value
-                        .decimal()?
-                        .try_into()
-                        .map_err(|_| InvalidValue::Malformed.param_error())?
+                        .decimal()
+                        .ok()
+                        .and_then(|dec| dec.try_into().ok())
+                        .ok_or(Error::ParamInvalid { name: "l" })?;
                 }
-                _ => return Err(Error::ParamNameInvalid),
+                _ => return Err(Error::ParamsInvalid),
             }
         }
 
@@ -255,10 +260,8 @@ impl TryFrom<&PasswordHash> for Params {
         let params = Self::try_from(&hash.params)?;
 
         if let Some(hash) = &hash.hash {
-            match hash.len().cmp(&params.output_length) {
-                Ordering::Less => return Err(InvalidValue::TooShort.param_error()),
-                Ordering::Greater => return Err(InvalidValue::TooLong.param_error()),
-                Ordering::Equal => (),
+            if hash.len() != params.output_length {
+                return Err(Error::OutputSize);
             }
         }
 
@@ -279,8 +282,13 @@ impl TryFrom<&Params> for ParamsString {
 
     fn try_from(input: &Params) -> Result<ParamsString> {
         let mut output = ParamsString::new();
-        output.add_decimal("i", input.rounds)?;
-        output.add_decimal("l", input.output_length as u32)?;
+
+        for (name, value) in [("i", input.rounds), ("l", input.output_length as Decimal)] {
+            output
+                .add_decimal(name, value)
+                .map_err(|_| Error::ParamInvalid { name })?;
+        }
+
         Ok(output)
     }
 }
