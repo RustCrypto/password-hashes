@@ -28,15 +28,16 @@
 //! NOTE: the `simple` crate feature must be enabled (on-by-default)
 #![cfg_attr(feature = "simple", doc = "```")]
 #![cfg_attr(not(feature = "simple"), doc = "```ignore")]
-//! # fn main() -> yescrypt::Result<()> {
+//! # fn main() -> yescrypt::password_hash::Result<()> {
+//! use yescrypt::{Yescrypt, PasswordHasher, PasswordVerifier};
+//!
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
 //! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
-//! let params = yescrypt::Params::default(); // use recommended settings
-//! let password_hash = yescrypt::yescrypt(password, salt, &params)?;
-//! assert!(password_hash.starts_with("$y$"));
+//! let password_hash = Yescrypt.hash_password(password, salt)?;
+//! assert!(password_hash.as_str().starts_with("$y$"));
 //!
 //! // verify password is correct for the given hash
-//! yescrypt::yescrypt_verify(password, &password_hash)?;
+//! Yescrypt.verify_password(password, &password_hash)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -67,6 +68,8 @@ mod mode;
 mod params;
 mod pwxform;
 mod salsa20;
+#[cfg(feature = "simple")]
+mod simple;
 mod smix;
 mod util;
 
@@ -76,96 +79,15 @@ pub use crate::{
     params::Params,
 };
 
+#[cfg(feature = "simple")]
+pub use {
+    mcf::{PasswordHash, PasswordHashRef},
+    password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
+    simple::Yescrypt,
+};
+
 use alloc::vec;
 use sha2::{Digest, Sha256};
-
-#[cfg(feature = "simple")]
-use {alloc::string::String, mcf::Base64};
-
-/// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
-#[cfg(feature = "simple")]
-const YESCRYPT_MCF_ID: &str = "y";
-
-/// Base64 variant used by yescrypt.
-#[cfg(feature = "simple")]
-const YESCRYPT_BASE64: Base64 = Base64::ShaCrypt;
-
-/// yescrypt password hashing function.
-///
-/// This function produces an (s)crypt-style password hash string starting with the prefix `$y$`.
-///
-/// If using yescrypt as a key derivation, consider [`yescrypt_kdf`] instead.
-#[cfg(feature = "simple")]
-pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params) -> Result<String> {
-    // TODO(tarcieri): tunable hash output size?
-    const HASH_SIZE: usize = 32;
-
-    let mut out = [0u8; HASH_SIZE];
-    yescrypt_kdf(passwd, salt, params, &mut out)?;
-
-    // Begin building the Modular Crypt Format hash.
-    let mut mcf_hash = mcf::PasswordHash::from_id(YESCRYPT_MCF_ID).expect("should be valid");
-
-    // Add params string to the hash
-    let mut params_buf = [0u8; Params::MAX_ENCODED_LEN];
-    let params_str = params.encode(&mut params_buf)?;
-    mcf_hash.push_str(params_str).map_err(|_| Error::Encoding)?;
-
-    // Add salt
-    mcf_hash.push_base64(salt, YESCRYPT_BASE64);
-
-    // Add yescrypt output
-    mcf_hash.push_base64(&out, YESCRYPT_BASE64);
-
-    // Convert to a normal `String` to keep `mcf` out of the public API (for now)
-    Ok(mcf_hash.into())
-}
-
-/// Verify a password matches the given yescrypt password hash.
-///
-/// Password hash should begin with `$y$` in Modular Crypt Format (MCF).
-#[cfg(feature = "simple")]
-pub fn yescrypt_verify(passwd: &[u8], hash: &str) -> Result<()> {
-    let hash = mcf::PasswordHashRef::new(hash).map_err(|_| Error::Encoding)?;
-
-    // verify id matches `$y`
-    if hash.id() != YESCRYPT_MCF_ID {
-        return Err(Error::Algorithm);
-    }
-
-    let mut fields = hash.fields();
-
-    // decode params
-    let params: Params = fields.next().ok_or(Error::Encoding)?.as_str().parse()?;
-
-    // decode salt
-    let salt = fields
-        .next()
-        .ok_or(Error::Encoding)?
-        .decode_base64(YESCRYPT_BASE64)
-        .map_err(|_| Error::Encoding)?;
-
-    // decode expected password hash
-    let expected = fields
-        .next()
-        .ok_or(Error::Encoding)?
-        .decode_base64(YESCRYPT_BASE64)
-        .map_err(|_| Error::Encoding)?;
-
-    // should be the last field
-    if fields.next().is_some() {
-        return Err(Error::Encoding);
-    }
-
-    let mut actual = vec![0u8; expected.len()];
-    yescrypt_kdf(passwd, &salt, &params, &mut actual)?;
-
-    if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
-        return Err(Error::Password);
-    }
-
-    Ok(())
-}
 
 /// yescrypt Key Derivation Function (KDF)
 pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
