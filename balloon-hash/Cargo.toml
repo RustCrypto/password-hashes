@@ -1,6 +1,6 @@
 [package]
 name = "balloon-hash"
-version = "0.5.0-rc.1"
+version = "0.5.0-rc.2"
 description = "Pure Rust implementation of the Balloon password hashing function"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -16,7 +16,6 @@ rust-version = "1.85"
 [dependencies]
 digest = { version = "0.11.0-rc.4", default-features = false }
 crypto-bigint = { version = "0.7.0-rc.9", default-features = false, features = ["hybrid-array"] }
-rand_core = { version = "0.10.0-rc-2", default-features = false }
 
 # optional dependencies
 password-hash = { version = "0.6.0-rc.4", optional = true, default-features = false, features = ["phc"] }
