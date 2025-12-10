@@ -1,6 +1,6 @@
 [package]
 name = "password-auth"
-version = "1.1.0-pre.2"
+version = "1.1.0-pre.3"
 description = """
 Password authentication library with a focus on simplicity and ease-of-use,
 including support for Argon2, PBKDF2, and scrypt password hashing algorithms
@@ -22,9 +22,9 @@ password-hash = { version = "0.6.0-rc.4", features = ["alloc", "phc"] }
 phc = { version = "0.6.0-rc.0", features = ["getrandom"] }
 
 # optional dependencies
-argon2 = { version = "0.6.0-rc.0", optional = true, default-features = false, features = ["alloc", "simple"], path = "../argon2" }
-pbkdf2 = { version = "0.13.0-rc.0", optional = true, default-features = false, features = ["simple"], path = "../pbkdf2" }
-scrypt = { version = "0.12.0-rc.0", optional = true, default-features = false, features = ["simple"], path = "../scrypt" }
+argon2 = { version = "0.6.0-rc.4", optional = true, default-features = false, features = ["alloc", "simple"] }
+pbkdf2 = { version = "0.13.0-rc.4", optional = true, default-features = false, features = ["simple"] }
+scrypt = { version = "0.12.0-rc.5", optional = true, default-features = false, features = ["simple"] }
 
 [features]
 default = ["argon2", "std"]
