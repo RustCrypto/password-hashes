@@ -3,7 +3,10 @@
 #![cfg(feature = "simple")]
 #![allow(non_snake_case)]
 
-use yescrypt::{Error, Mode, Params, yescrypt, yescrypt_verify};
+use yescrypt::{
+    CustomizedPasswordHasher, Mode, Params, PasswordHashRef, PasswordVerifier, Yescrypt,
+    password_hash::Error,
+};
 
 const YESCRYPT_P: u32 = 11;
 
@@ -61,8 +64,11 @@ fn compute_reference_strings() {
         let params = Params::new(flags, 1 << N_log2, r, p).unwrap();
         let salt = &EXAMPLE_SALT[..(16 - (i as usize & 15))];
 
-        let actual_hash = yescrypt(EXAMPLE_PASSWD, salt, &params).unwrap();
-        assert_eq!(expected_hash, &actual_hash);
+        let actual_hash = Yescrypt
+            .hash_password_with_params(EXAMPLE_PASSWD, salt, params)
+            .unwrap();
+
+        assert_eq!(expected_hash, actual_hash.as_str());
     }
 }
 
@@ -70,11 +76,13 @@ fn compute_reference_strings() {
 #[test]
 fn verify_reference_strings() {
     for &hash in EXAMPLE_HASHES {
-        if yescrypt_verify(EXAMPLE_PASSWD, hash).is_err() {
+        let hash = PasswordHashRef::new(hash).unwrap();
+
+        if Yescrypt.verify_password(EXAMPLE_PASSWD, hash).is_err() {
             panic!("failed to verify password hash: {hash}");
         }
 
-        if yescrypt_verify(b"bogus", hash) != Err(Error::Password) {
+        if Yescrypt.verify_password(b"bogus", hash) != Err(Error::PasswordInvalid) {
             panic!("verification unexpectedly succeeded for password hash: {hash}");
         }
     }
