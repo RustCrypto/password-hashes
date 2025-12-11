@@ -50,7 +50,7 @@
 //! let params = yescrypt::Params::default(); // use recommended settings
 //!
 //! let mut output = [0u8; 32]; // can be sized as desired
-//! yescrypt::yescrypt_kdf(password, salt, &params, &mut output)?;
+//! yescrypt::yescrypt(password, salt, &params, &mut output)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -89,8 +89,13 @@ pub use {
 use alloc::vec;
 use sha2::{Digest, Sha256};
 
-/// yescrypt Key Derivation Function (KDF)
-pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
+/// yescrypt Key Derivation Function (KDF).
+///
+/// This is the low-level interface useful for producing cryptographic keys directly.
+///
+/// If you are looking for a higher-level interface which can express and store password hashes as
+/// strings, please check out the [`Yescrypt`] type.
+pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
 
@@ -103,17 +108,17 @@ pub fn yescrypt_kdf(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8])
         let mut prehash_params = *params;
         prehash_params.n >>= 6;
         prehash_params.t = 0;
-        yescrypt_kdf_body(passwd, salt, &prehash_params, true, &mut dk)?;
+        yescrypt_body(passwd, salt, &prehash_params, true, &mut dk)?;
 
         // Use derived key as the "password" for the subsequent step when pre-hashing
         passwd = &dk;
     }
 
-    yescrypt_kdf_body(passwd, salt, params, false, out)
+    yescrypt_body(passwd, salt, params, false, out)
 }
 
 /// Compute yescrypt and write the result into `out`.
-fn yescrypt_kdf_body(
+fn yescrypt_body(
     passwd: &[u8],
     salt: &[u8],
     params: &Params,
