@@ -15,6 +15,8 @@
 #![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
 #![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use scrypt::{
 //!     password_hash::{
 //!         PasswordHasher, PasswordVerifier, phc::{PasswordHash, Salt}
@@ -23,10 +25,9 @@
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = Salt::generate();
 //!
 //! // Hash password to PHC string ($scrypt$...)
-//! let password_hash = Scrypt.hash_password(password, &salt)?.to_string();
+//! let password_hash = Scrypt.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;

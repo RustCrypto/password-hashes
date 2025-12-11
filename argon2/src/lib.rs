@@ -35,19 +35,20 @@
 #![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
 #![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use argon2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
+//!     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 //!     Argon2
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
-//! // Argon2 with default params (Argon2id v19)
+//! // Argon2 with default params (Argon2id v19), generating a random salt
 //! let argon2 = Argon2::default();
 //!
 //! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
+//! let password_hash = argon2.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -66,16 +67,14 @@
 #![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
 #![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use argon2::{
-//!     password_hash::{
-//!         phc::{PasswordHash, Salt},
-//!         PasswordHasher, PasswordVerifier,
-//!     },
+//!     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 //!     Algorithm, Argon2, Params, Version
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `argon2` enabled
 //!
 //! // Argon2 with default params (Argon2id v19) and pepper
 //! let argon2 = Argon2::new_with_secret(
@@ -83,11 +82,10 @@
 //!     Algorithm::default(),
 //!     Version::default(),
 //!     Params::default()
-//! )
-//! .unwrap();
+//! )?;
 //!
-//! // Hash password to PHC string ($argon2id$v=19$...)
-//! let password_hash = argon2.hash_password(password, &salt)?.to_string();
+//! // Hash password to PHC string ($argon2id$v=19$...), generating a random salt
+//! let password_hash = argon2.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string.
 //! //
@@ -640,13 +638,17 @@ impl CustomizedPasswordHasher<PasswordHash> for Argon2<'_> {
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             cpu_feat_avx2: self.cpu_feat_avx2,
         }
-        .hash_password(password, salt)
+        .hash_password_with_salt(password, salt)
     }
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 impl PasswordHasher<PasswordHash> for Argon2<'_> {
-    fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+    fn hash_password_with_salt(
+        &self,
+        password: &[u8],
+        salt: &[u8],
+    ) -> password_hash::Result<PasswordHash> {
         let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
 
         let output_len = self
@@ -719,7 +721,7 @@ mod tests {
         let params = Params::new(m_cost, t_cost, p_cost, None).unwrap();
         let hasher = Argon2::new(Algorithm::default(), version, params);
         let hash = hasher
-            .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+            .hash_password_with_salt(EXAMPLE_PASSWORD, EXAMPLE_SALT)
             .unwrap();
 
         assert_eq!(hash.version.unwrap(), version.into());

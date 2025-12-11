@@ -33,7 +33,7 @@ belt-hash = "0.2.0-rc.3"
 
 [features]
 default = ["hmac"]
-getrandom = ["simple", "phc/getrandom"]
+getrandom = ["simple", "password-hash/getrandom"]
 simple = ["hmac", "dep:password-hash", "dep:phc", "sha2"]
 
 [package.metadata.docs.rs]

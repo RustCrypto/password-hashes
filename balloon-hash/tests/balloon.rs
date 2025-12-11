@@ -92,7 +92,7 @@ fn hash_simple_retains_configured_params() {
     let params = Params::new(s_cost, t_cost, p_cost).unwrap();
     let hasher = Balloon::<Sha256>::new(Algorithm::default(), params, None);
     let hash = hasher
-        .hash_password(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+        .hash_password_with_salt(EXAMPLE_PASSWORD, EXAMPLE_SALT)
         .unwrap();
 
     assert_eq!(hash.version.unwrap(), 1);

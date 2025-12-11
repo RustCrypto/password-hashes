@@ -211,7 +211,10 @@ fn check_hash_encoding_parameters_order() {
 
     let password = b"password";
     let salt = [0u8; 8];
-    let password_hash = ctx.hash_password(password, &salt).unwrap().to_string();
+    let password_hash = ctx
+        .hash_password_with_salt(password, &salt)
+        .unwrap()
+        .to_string();
 
     // The parameters shall appear in the m,t,p,keyid,data order
     assert_eq!(

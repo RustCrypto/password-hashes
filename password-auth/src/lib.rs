@@ -61,13 +61,13 @@ fn generate_phc_hash(password: &[u8], salt: &[u8]) -> password_hash::Result<Pass
     // Algorithms below are in order of preference
     //
     #[cfg(feature = "argon2")]
-    return Argon2::default().hash_password(password, salt);
+    return Argon2::default().hash_password_with_salt(password, salt);
 
     #[cfg(feature = "scrypt")]
-    return Scrypt.hash_password(password, salt);
+    return Scrypt.hash_password_with_salt(password, salt);
 
     #[cfg(feature = "pbkdf2")]
-    return Pbkdf2.hash_password(password, salt);
+    return Pbkdf2.hash_password_with_salt(password, salt);
 }
 
 /// Verify the provided password against the provided password hash.
