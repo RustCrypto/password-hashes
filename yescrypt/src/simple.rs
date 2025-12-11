@@ -1,6 +1,6 @@
 //! Implementation of the `password-hash` crate API.
 
-use crate::{Params, yescrypt_kdf};
+use crate::{Params, yescrypt};
 use alloc::vec;
 use mcf::{Base64, PasswordHash, PasswordHashRef};
 use password_hash::{
@@ -14,7 +14,13 @@ const YESCRYPT_MCF_ID: &str = "y";
 /// Base64 variant used by yescrypt.
 const YESCRYPT_BASE64: Base64 = Base64::ShaCrypt;
 
-/// yescrypt type for use with [`PasswordHasher`].
+/// yescrypt password hashing type which can produce and verify strings in Modular Crypt Format
+/// (MCF) which begin with `$y$`
+///
+/// This is a ZST which impls traits from the [`password-hash`][`password_hash`] crate, notably
+/// the [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
+///
+/// See the toplevel documentation for a code example.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Yescrypt;
 
@@ -42,7 +48,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Yescrypt {
         }
 
         let mut out = [0u8; HASH_SIZE];
-        yescrypt_kdf(password, salt, &params, &mut out)?;
+        yescrypt(password, salt, &params, &mut out)?;
 
         // Begin building the Modular Crypt Format hash.
         let mut mcf_hash = PasswordHash::from_id(YESCRYPT_MCF_ID).expect("should be valid");
@@ -110,7 +116,7 @@ impl PasswordVerifier<PasswordHashRef> for Yescrypt {
         }
 
         let mut actual = vec![0u8; expected.len()];
-        yescrypt_kdf(password, &salt, &params, &mut actual)?;
+        yescrypt(password, &salt, &params, &mut actual)?;
 
         if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
             return Err(Error::PasswordInvalid);
