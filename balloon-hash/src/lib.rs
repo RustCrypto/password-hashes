@@ -30,7 +30,7 @@
 //!
 #![cfg_attr(feature = "getrandom", doc = "```")]
 #![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use balloon_hash::{
 //!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Balloon

@@ -25,6 +25,9 @@ phc = { version = "0.6.0-rc.0", optional = true, features = ["rand_core"] }
 
 [features]
 default = ["simple", "rayon"]
+alloc = ["password-hash?/alloc"]
+
+getrandom = ["simple", "phc/getrandom"]
 rayon = ["dep:rayon"]
 simple = ["dep:password-hash", "dep:phc"]
 

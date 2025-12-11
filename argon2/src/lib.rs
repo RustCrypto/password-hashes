@@ -32,12 +32,9 @@
 //! password-based authentication. Do not use this API to derive cryptographic
 //! keys: see the "key derivation" usage example below.
 //!
-#![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
-#![cfg_attr(
-    not(all(feature = "password-hash", feature = "std")),
-    doc = "```ignore"
-)]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+#![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
+#![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use argon2::{
 //!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
 //!     Argon2
@@ -66,12 +63,9 @@
 //!
 //! [pepper]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#peppering
 //!
-#![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
-#![cfg_attr(
-    not(all(feature = "password-hash", feature = "std")),
-    doc = "```ignore"
-)]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+#![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
+#![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use argon2::{
 //!     password_hash::{
 //!         phc::{PasswordHash, Salt},
@@ -118,12 +112,9 @@
 //! This API is useful for transforming a password into cryptographic keys for
 //! e.g. password-based encryption.
 //!
-#![cfg_attr(all(feature = "password-hash", feature = "std"), doc = "```")]
-#![cfg_attr(
-    not(all(feature = "password-hash", feature = "std")),
-    doc = "```ignore"
-)]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+#![cfg_attr(feature = "alloc", doc = "```")]
+#![cfg_attr(not(feature = "alloc"), doc = "```ignore")]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use argon2::Argon2;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
