@@ -35,7 +35,6 @@ hex-literal = "1"
 [features]
 default = ["alloc", "getrandom", "simple"]
 alloc = ["password-hash?/alloc"]
-std = ["alloc", "base64ct/std"]
 
 getrandom = ["simple", "phc/getrandom"]
 parallel = ["dep:rayon"]
