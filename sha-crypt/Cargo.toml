@@ -22,7 +22,7 @@ base64ct = { version = "1.8", default-features = false, features = ["alloc"] }
 
 # optional dependencies
 getrandom = { version = "0.3", optional = true, default-features = false }
-mcf = { version = "=0.6.0-pre", optional = true, default-features = false, features = ["alloc", "base64"] }
+mcf = { version = "0.6.0-rc.0", optional = true, default-features = false, features = ["alloc", "base64"] }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
