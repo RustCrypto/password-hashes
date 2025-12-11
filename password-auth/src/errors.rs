@@ -30,6 +30,12 @@ impl fmt::Display for ParseError {
     }
 }
 
+impl core::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        Some(&self.0)
+    }
+}
+
 /// Password verification errors.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VerifyError {
@@ -55,8 +61,11 @@ impl From<ParseError> for VerifyError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseError {}
-
-#[cfg(feature = "std")]
-impl std::error::Error for VerifyError {}
+impl core::error::Error for VerifyError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::Parse(err) => Some(err),
+            _ => None,
+        }
+    }
+}

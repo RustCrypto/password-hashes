@@ -12,20 +12,18 @@
 //!
 //! # Usage (simple with default params)
 //!
-//! ```
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! # #[cfg(all(feature = "simple", feature = "std"))]
-//! # {
+#![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
+#![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
+//! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! use scrypt::{
 //!     password_hash::{
-//!         rand_core::OsRng,
-//!         PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+//!         PasswordHasher, PasswordVerifier, phc::{PasswordHash, Salt}
 //!     },
 //!     Scrypt
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = SaltString::generate(&mut OsRng);
+//! let salt = Salt::generate();
 //!
 //! // Hash password to PHC string ($scrypt$...)
 //! let password_hash = Scrypt.hash_password(password, &salt)?.to_string();
@@ -33,7 +31,6 @@
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
 //! assert!(Scrypt.verify_password(password, &parsed_hash).is_ok());
-//! # }
 //! # Ok(())
 //! # }
 //! ```
