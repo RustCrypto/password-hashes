@@ -134,9 +134,6 @@ compile_error!("this crate builds on 32-bit and 64-bit platforms only");
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(feature = "std")]
-extern crate std;
-
 mod algorithm;
 mod blake2b_long;
 mod block;
