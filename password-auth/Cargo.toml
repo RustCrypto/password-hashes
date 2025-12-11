@@ -18,7 +18,7 @@ rust-version = "1.85"
 
 [dependencies]
 getrandom = { version = "0.3", default-features = false }
-password-hash = { version = "0.6.0-rc.4", features = ["alloc", "phc"] }
+password-hash = { version = "0.6.0-rc.5", features = ["alloc", "phc"] }
 phc = { version = "0.6.0-rc.0", features = ["getrandom"] }
 
 # optional dependencies

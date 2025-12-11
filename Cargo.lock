@@ -270,8 +270,9 @@ checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
 
 [[package]]
 name = "mcf"
-version = "0.6.0-pre"
-source = "git+https://github.com/RustCrypto/formats#6863922a04b2fce8668a1459295febe0d35bfcad"
+version = "0.6.0-rc.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97fe7b16e9a78dd25fb4a09d26f04fe0f8bd5a8a7574c27cbec331f9cf802e79"
 dependencies = [
  "base64ct",
 ]
@@ -305,8 +306,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.6.0-rc.4"
-source = "git+https://github.com/RustCrypto/traits#c45480e68908f7f1b37624cd89be10b35ef63a59"
+version = "0.6.0-rc.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87dec027112bafe3cc8a4dd8072c688dbd62dec3cd4e76897f2ce809a7008aee"
 dependencies = [
  "getrandom",
  "phc",
