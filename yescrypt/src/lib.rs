@@ -25,15 +25,15 @@
 
 //! # Usage
 //! ## Password Hashing
-//! NOTE: the `simple` crate feature must be enabled (on-by-default)
-#![cfg_attr(feature = "simple", doc = "```")]
-#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
+#![cfg_attr(feature = "getrandom", doc = "```")]
+#![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
 //! # fn main() -> yescrypt::password_hash::Result<()> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use yescrypt::{Yescrypt, PasswordHasher, PasswordVerifier};
 //!
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
-//! let salt = b"WZaPV7LSUEKMo34."; // unique per password, ideally 16-bytes and random
-//! let password_hash = Yescrypt.hash_password(password, salt)?;
+//! let password_hash = Yescrypt.hash_password(password)?;
 //! assert!(password_hash.as_str().starts_with("$y$"));
 //!
 //! // verify password is correct for the given hash

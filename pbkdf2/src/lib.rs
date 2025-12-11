@@ -58,16 +58,17 @@
 #![cfg_attr(feature = "simple", doc = "```")]
 #![cfg_attr(not(feature = "simple"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use pbkdf2::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
+//!     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 //!     Pbkdf2
 //! };
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = Salt::generate();
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
-//! let password_hash = Pbkdf2.hash_password(password, &salt)?.to_string();
+//! let password_hash = Pbkdf2.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;

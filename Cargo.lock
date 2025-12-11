@@ -306,8 +306,9 @@ dependencies = [
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.4"
-source = "git+https://github.com/RustCrypto/traits#c1a92e9ac52f9201e1a3503b2ecd63007027b157"
+source = "git+https://github.com/RustCrypto/traits#c45480e68908f7f1b37624cd89be10b35ef63a59"
 dependencies = [
+ "getrandom",
  "phc",
 ]
 

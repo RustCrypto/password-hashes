@@ -58,7 +58,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
 }
 
 impl PasswordHasher<PasswordHash> for Scrypt {
-    fn hash_password(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
+    fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, Params::default())
     }
 }

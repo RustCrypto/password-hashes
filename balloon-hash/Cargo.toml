@@ -31,7 +31,7 @@ sha2 = "0.11.0-rc.3"
 default = ["alloc", "getrandom", "password-hash"]
 alloc = ["password-hash/alloc"]
 
-getrandom = ["phc/getrandom"]
+getrandom = ["password-hash/getrandom"]
 parallel = ["dep:rayon"]
 password-hash = ["dep:password-hash", "dep:phc"]
 zeroize = ["dep:zeroize"]

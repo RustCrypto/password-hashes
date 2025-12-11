@@ -366,7 +366,7 @@ fn hashtest(
     assert_eq!(out, expected_raw_hash);
 
     // Test hash encoding
-    let phc_hash = ctx.hash_password(pwd, salt).unwrap().to_string();
+    let phc_hash = ctx.hash_password_with_salt(pwd, salt).unwrap().to_string();
     assert_eq!(phc_hash, expected_phc_hash);
 
     let hash = PasswordHash::new(alternative_phc_hash).unwrap();

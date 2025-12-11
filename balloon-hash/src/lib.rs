@@ -9,42 +9,26 @@
 
 //! # Usage (simple with default params)
 //!
-//! Note: this example requires the `rand_core` crate with the `std` feature
-//! enabled for `rand_core::OsRng` (embedded platforms can substitute their
-//! own RNG)
-//!
-//! Add the following to your crate's `Cargo.toml` to import it:
-//!
-//! ```toml
-//! [dependencies]
-//! balloon-hash = "0.2"
-//! rand_core = { version = "0.6", features = ["std"] }
-//! sha2 = "0.9"
-//! ```
-//!
-//! The `zeroize` crate feature will zeroize allocated memory created when
-//! using the [`Balloon::hash`] function. It will do nothing when the `alloc`
-//! crate feature is not active.
-//!
 //! The following example demonstrates the high-level password hashing API:
 //!
-#![cfg_attr(feature = "getrandom", doc = "```")]
-#![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
+#![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
+#![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use balloon_hash::{
-//!     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, phc::Salt},
+//!     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 //!     Balloon
 //! };
 //! use sha2::Sha256;
 //!
 //! let password = b"hunter42"; // Bad password; don't actually use!
-//! let salt = Salt::generate(); // Note: needs the `getrandom` feature of `balloon-hash` enabled
 //!
 //! // Balloon with default params
 //! let balloon = Balloon::<Sha256>::default();
 //!
 //! // Hash password to PHC string ($balloon$v=1$...)
-//! let password_hash = balloon.hash_password(password, &salt)?.to_string();
+//! let password_hash = balloon.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
@@ -235,7 +219,7 @@ where
             }
         }
 
-        Self::new(algorithm, params, self.secret).hash_password(password, salt)
+        Self::new(algorithm, params, self.secret).hash_password_with_salt(password, salt)
     }
 }
 
@@ -245,7 +229,11 @@ where
     D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
-    fn hash_password(&self, password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+    fn hash_password_with_salt(
+        &self,
+        password: &[u8],
+        salt: &[u8],
+    ) -> password_hash::Result<PasswordHash> {
         let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
         let hash = self.hash(password, &salt)?;
         let output = Output::new(&hash).map_err(|_| password_hash::Error::OutputSize)?;

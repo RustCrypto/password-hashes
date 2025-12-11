@@ -28,7 +28,8 @@ password-hash = { version = "0.6.0-rc.4", optional = true, default-features = fa
 hex-literal = "1"
 
 [features]
-default = ["simple"]
+default = ["getrandom"]
+getrandom = ["simple", "password-hash/getrandom"]
 simple = ["dep:mcf", "dep:password-hash"]
 
 [package.metadata.docs.rs]

@@ -36,7 +36,7 @@ hex-literal = "1"
 default = ["alloc", "getrandom", "simple"]
 alloc = ["password-hash?/alloc"]
 
-getrandom = ["simple", "phc/getrandom"]
+getrandom = ["simple", "password-hash/getrandom"]
 parallel = ["dep:rayon"]
 simple = ["password-hash", "phc"]
 zeroize = ["dep:zeroize"]
