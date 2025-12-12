@@ -8,8 +8,11 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Error type.
 #[derive(Debug)]
 pub enum Error {
-    /// Should be within range defs::ROUNDS_MIN < defs::ROUNDS_MIN
-    RoundsError,
+    /// Parameters are invalid (e.g. parse error)
+    ParamsInvalid,
+
+    /// `rounds=` be within range [`Params::ROUNDS_MIN`]..=[`Params::ROUNDS_MIN`]
+    RoundsInvalid,
 }
 
 impl core::error::Error for Error {}
@@ -17,7 +20,8 @@ impl core::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::RoundsError => write!(f, "rounds error"),
+            Error::ParamsInvalid => write!(f, "parameters are invalid"),
+            Error::RoundsInvalid => write!(f, "rounds error"),
         }
     }
 }
@@ -26,7 +30,8 @@ impl fmt::Display for Error {
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::RoundsError => password_hash::Error::ParamInvalid { name: "rounds" },
+            Error::RoundsInvalid => password_hash::Error::ParamInvalid { name: "rounds" },
+            Error::ParamsInvalid => password_hash::Error::ParamsInvalid,
         }
     }
 }

@@ -31,27 +31,31 @@
 #[macro_use]
 extern crate alloc;
 
-mod consts;
 mod errors;
 mod params;
 #[cfg(feature = "simple")]
 mod simple;
 
 pub use crate::{
-    consts::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512},
     errors::{Error, Result},
     params::Params,
 };
 
 #[cfg(feature = "simple")]
 pub use {
-    crate::simple::{SHA256_CRYPT, SHA512_CRYPT, ShaCrypt},
+    crate::simple::{SHA256_CRYPT, SHA512_CRYPT, ShaCrypt, ShaCryptCore},
     mcf::{self, PasswordHash},
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
 };
 
 use alloc::vec::Vec;
 use sha2::{Digest, Sha256, Sha512};
+
+/// Block size for SHA256
+pub const BLOCK_SIZE_SHA256: usize = 32;
+
+/// Block size for SHA512
+pub const BLOCK_SIZE_SHA512: usize = 64;
 
 /// The SHA-256 crypt function returned as byte vector
 ///
