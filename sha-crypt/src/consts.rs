@@ -4,15 +4,8 @@ pub const BLOCK_SIZE_SHA256: usize = 32;
 /// Block size for SHA512
 pub const BLOCK_SIZE_SHA512: usize = 64;
 
-/// PWD part length of the password string of SHA256
-#[cfg(feature = "simple")]
-pub const PW_SIZE_SHA256: usize = 43;
-
-/// Maximum length of a salt
-#[cfg(feature = "simple")]
-pub const SALT_MAX_LEN: usize = 16;
-
 /// Inverse encoding map for SHA512.
+#[cfg(feature = "simple")]
 #[rustfmt::skip]
 pub const MAP_SHA512: [u8; 64] = [
     42, 21, 0,
@@ -40,6 +33,7 @@ pub const MAP_SHA512: [u8; 64] = [
 ];
 
 /// Inverse encoding map for SHA256.
+#[cfg(feature = "simple")]
 #[rustfmt::skip]
 pub const MAP_SHA256: [u8; 32] = [
     20, 10, 0,

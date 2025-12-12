@@ -1,253 +1,258 @@
-//! "Simple" API which uses the Modular Crypt Format (MCF).
-
-#![cfg(feature = "simple")]
+//! Implementation of the `password-hash` crate API.
 
 use crate::{
-    CheckError, DecodeError, ROUNDS_DEFAULT, Sha256Params, Sha512Params,
-    consts::{
-        BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, MAP_SHA256, MAP_SHA512, PW_SIZE_SHA256, SALT_MAX_LEN,
-    },
-    sha256_crypt, sha256_crypt_b64, sha512_crypt, sha512_crypt_b64,
+    BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, ROUNDS_DEFAULT, Sha256Params, Sha512Params,
+    consts::{MAP_SHA256, MAP_SHA512},
+    sha256_crypt, sha512_crypt,
 };
-use alloc::string::{String, ToString};
 use base64ct::{Base64ShaCrypt, Encoding};
+use core::marker::PhantomData;
+use mcf::{Base64, PasswordHash, PasswordHashRef};
+use password_hash::{
+    CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
+};
+use sha2::{Digest, Sha256, Sha512};
 
 const SHA256_MCF_ID: &str = "5";
 const SHA512_MCF_ID: &str = "6";
 const ROUNDS_PARAM: &str = "rounds=";
 
-/// Simple interface for generating a SHA512 password hash.
-///
-/// The salt will be chosen randomly. The output format will conform to [1].
-///
-///  `$<ID>$<SALT>$<HASH>`
-///
-/// # Returns
-/// - `Ok(String)` containing the full SHA512 password hash format on success
-/// - `Err(CryptError)` if something went wrong.
-///
-/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-pub fn sha512_simple(password: &str, params: &Sha512Params) -> String {
-    let salt = random_salt();
-    let out = sha512_crypt_b64(password.as_bytes(), salt.as_bytes(), params);
+/// sha-crypt type for use with [`PasswordHasher`].
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct ShaCrypt<D: Digest> {
+    phantom: PhantomData<D>,
+}
 
-    let mut mcf_hash = mcf::PasswordHash::from_id(SHA512_MCF_ID).expect("should have valid ID");
+/// SHA-crypt initialized using SHA-256
+pub const SHA256_CRYPT: ShaCrypt<Sha256> = ShaCrypt {
+    phantom: PhantomData,
+};
 
-    if params.rounds != ROUNDS_DEFAULT {
+/// SHA-crypt initialized using SHA-512
+pub const SHA512_CRYPT: ShaCrypt<Sha512> = ShaCrypt {
+    phantom: PhantomData,
+};
+
+impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
+    type Params = Sha256Params;
+
+    fn hash_password_customized(
+        &self,
+        password: &[u8],
+        salt: &[u8],
+        alg_id: Option<&str>,
+        version: Option<Version>,
+        params: Sha256Params,
+    ) -> Result<PasswordHash> {
+        match alg_id {
+            Some(SHA256_MCF_ID) | None => (),
+            _ => return Err(Error::Algorithm),
+        }
+
+        if version.is_some() {
+            return Err(Error::Version);
+        }
+
+        // We compute the function over the Base64-encoded salt
+        let salt = Base64ShaCrypt::encode_string(salt);
+        let out = sha256_crypt_transposed(password, salt.as_bytes(), &params);
+
+        let mut mcf_hash = PasswordHash::from_id(SHA256_MCF_ID).expect("should have valid ID");
+
+        if params.rounds != ROUNDS_DEFAULT {
+            mcf_hash
+                .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
+                .expect("should be valid field");
+        }
+
         mcf_hash
-            .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
-            .expect("should be valid field");
+            .push_str(&salt)
+            .map_err(|_| Error::EncodingInvalid)?;
+        mcf_hash.push_base64(&out, Base64::ShaCrypt);
+        Ok(mcf_hash)
     }
-
-    mcf_hash.push_str(&salt).expect("should have valid salt");
-    mcf_hash.push_str(&out).expect("should have valid hash");
-
-    mcf_hash.into()
 }
 
-/// Simple interface for generating a SHA256 password hash.
-///
-/// The salt will be chosen randomly. The output format will conform to [1].
-///
-///  `$<ID>$<SALT>$<HASH>`
-///
-/// # Returns
-/// - `Ok(String)` containing the full SHA256 password hash format on success
-/// - `Err(CryptError)` if something went wrong.
-///
-/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-pub fn sha256_simple(password: &str, params: &Sha256Params) -> String {
-    let salt = random_salt();
-    let out = sha256_crypt_b64(password.as_bytes(), salt.as_bytes(), params);
+impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
+    type Params = Sha512Params;
 
-    let mut mcf_hash = mcf::PasswordHash::from_id(SHA256_MCF_ID).expect("should have valid ID");
+    fn hash_password_customized(
+        &self,
+        password: &[u8],
+        salt: &[u8],
+        alg_id: Option<&str>,
+        version: Option<Version>,
+        params: Sha512Params,
+    ) -> Result<PasswordHash> {
+        match alg_id {
+            Some(SHA512_MCF_ID) | None => (),
+            _ => return Err(Error::Algorithm),
+        }
 
-    if params.rounds != ROUNDS_DEFAULT {
+        if version.is_some() {
+            return Err(Error::Version);
+        }
+
+        // We compute the function over the Base64-encoded salt
+        let salt = Base64ShaCrypt::encode_string(salt);
+        let out = sha512_crypt_transposed(password, salt.as_bytes(), &params);
+
+        let mut mcf_hash = PasswordHash::from_id(SHA512_MCF_ID).expect("should have valid ID");
+
+        if params.rounds != ROUNDS_DEFAULT {
+            mcf_hash
+                .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
+                .expect("should be valid field");
+        }
+
         mcf_hash
-            .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
-            .expect("should be valid field");
+            .push_str(&salt)
+            .map_err(|_| Error::EncodingInvalid)?;
+        mcf_hash.push_base64(&out, Base64::ShaCrypt);
+        Ok(mcf_hash)
     }
-
-    mcf_hash.push_str(&salt).expect("should have valid salt");
-    mcf_hash.push_str(&out).expect("should have valid hash");
-
-    mcf_hash.into()
 }
 
-/// Checks that given password matches provided hash.
-///
-/// # Arguments
-/// - `password` - expected password
-/// - `hashed_value` - the hashed value which should be used for checking,
-///   should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
-///
-/// # Return
-/// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
-/// format or password mismatch.
-///
-/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-pub fn sha512_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
-    let mut iter = hashed_value.split('$');
-
-    // Check that there are no characters before the first "$"
-    if iter.next() != Some("") {
-        return Err(CheckError::InvalidFormat(
-            "Should start with '$".to_string(),
-        ));
+impl PasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
+    fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
+        self.hash_password_customized(password, salt, None, None, Sha256Params::default())
     }
+}
 
-    if iter.next() != Some("6") {
-        return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA512 identifier: '${SHA512_MCF_ID}$'",
-        )));
+impl PasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
+    fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
+        self.hash_password_customized(password, salt, None, None, Sha512Params::default())
     }
+}
 
-    let mut next = iter.next().ok_or_else(|| {
-        CheckError::InvalidFormat("Does not contain a rounds or salt nor hash string".to_string())
-    })?;
-    let rounds = if next.starts_with(ROUNDS_PARAM) {
-        let rounds = next;
-        next = iter.next().ok_or_else(|| {
-            CheckError::InvalidFormat("Does not contain a salt nor hash string".to_string())
-        })?;
-
-        rounds[ROUNDS_PARAM.len()..].parse().map_err(|_| {
-            CheckError::InvalidFormat(format!("{ROUNDS_PARAM} specifier need to be a number",))
-        })?
-    } else {
-        ROUNDS_DEFAULT
-    };
-
-    let salt = next;
-
-    let hash = iter
-        .next()
-        .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
-
-    // Make sure there is no trailing data after the final "$"
-    if iter.next().is_some() {
-        return Err(CheckError::InvalidFormat(
-            "Trailing characters present".to_string(),
-        ));
+impl PasswordVerifier<PasswordHash> for ShaCrypt<Sha256> {
+    fn verify_password(&self, password: &[u8], hash: &PasswordHash) -> Result<()> {
+        self.verify_password(password, hash.as_password_hash_ref())
     }
+}
 
-    let params = match Sha512Params::new(rounds) {
-        Ok(p) => p,
-        Err(e) => return Err(CheckError::Crypt(e)),
-    };
+impl PasswordVerifier<PasswordHash> for ShaCrypt<Sha512> {
+    fn verify_password(&self, password: &[u8], hash: &PasswordHash) -> Result<()> {
+        self.verify_password(password, hash.as_password_hash_ref())
+    }
+}
 
-    let output = sha512_crypt(password.as_bytes(), salt.as_bytes(), &params);
+impl PasswordVerifier<PasswordHashRef> for ShaCrypt<Sha256> {
+    fn verify_password(&self, password: &[u8], hash: &PasswordHashRef) -> Result<()> {
+        // verify id matches `$6`
+        if hash.id() != SHA256_MCF_ID {
+            return Err(Error::Algorithm);
+        }
 
-    let hash = decode_sha512(hash.as_bytes())?;
+        let mut fields = hash.fields();
+        let mut next = fields.next().ok_or(Error::EncodingInvalid)?;
 
-    use subtle::ConstantTimeEq;
-    if output.ct_eq(&hash).into() {
+        let mut params = Sha256Params::default();
+
+        // decode params
+        // TODO(tarcieri): `mcf::Field` helper methods for parsing params?
+        if let Some(rounds_str) = next.as_str().strip_prefix(ROUNDS_PARAM) {
+            let rounds = rounds_str.parse().map_err(|_| Error::EncodingInvalid)?;
+            params = Sha256Params::new(rounds)?;
+            next = fields.next().ok_or(Error::EncodingInvalid)?;
+        }
+
+        let salt = next.as_str().as_bytes();
+
+        // decode expected password hash
+        let expected = fields
+            .next()
+            .ok_or(Error::EncodingInvalid)?
+            .decode_base64(Base64::ShaCrypt)
+            .map_err(|_| Error::EncodingInvalid)?;
+
+        // should be the last field
+        if fields.next().is_some() {
+            return Err(Error::EncodingInvalid);
+        }
+
+        let actual = sha256_crypt_transposed(password, salt, &params);
+
+        if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
+            return Err(Error::PasswordInvalid);
+        }
+
         Ok(())
-    } else {
-        Err(CheckError::HashMismatch)
     }
 }
 
-/// Checks that given password matches provided hash.
-///
-/// # Arguments
-/// - `password` - expected password
-/// - `hashed_value` - the hashed value which should be used for checking,
-///   should be of format mentioned in [1]: `$6$<SALT>$<PWD>`
-///
-/// # Return
-/// `OK(())` if password matches otherwise Err(CheckError) in case of invalid
-/// format or password mismatch.
-///
-/// [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-pub fn sha256_check(password: &str, hashed_value: &str) -> Result<(), CheckError> {
-    let mut iter = hashed_value.split('$');
+impl PasswordVerifier<PasswordHashRef> for ShaCrypt<Sha512> {
+    fn verify_password(&self, password: &[u8], hash: &PasswordHashRef) -> Result<()> {
+        // verify id matches `$6`
+        if hash.id() != SHA512_MCF_ID {
+            return Err(Error::Algorithm);
+        }
 
-    // Check that there are no characters before the first "$"
-    if iter.next() != Some("") {
-        return Err(CheckError::InvalidFormat(
-            "Should start with '$".to_string(),
-        ));
-    }
+        let mut fields = hash.fields();
+        let mut next = fields.next().ok_or(Error::EncodingInvalid)?;
 
-    if iter.next() != Some("5") {
-        return Err(CheckError::InvalidFormat(format!(
-            "does not contain SHA256 identifier: '${SHA256_MCF_ID}$'",
-        )));
-    }
+        let mut params = Sha512Params::default();
 
-    let mut next = iter.next().ok_or_else(|| {
-        CheckError::InvalidFormat("Does not contain a rounds or salt nor hash string".to_string())
-    })?;
-    let rounds = if next.starts_with(ROUNDS_PARAM) {
-        let rounds = next;
-        next = iter.next().ok_or_else(|| {
-            CheckError::InvalidFormat("Does not contain a salt nor hash string".to_string())
-        })?;
+        // decode params
+        // TODO(tarcieri): `mcf::Field` helper methods for parsing params?
+        if let Some(rounds_str) = next.as_str().strip_prefix(ROUNDS_PARAM) {
+            let rounds = rounds_str.parse().map_err(|_| Error::EncodingInvalid)?;
+            params = Sha512Params::new(rounds)?;
+            next = fields.next().ok_or(Error::EncodingInvalid)?;
+        }
 
-        rounds[ROUNDS_PARAM.len()..].parse().map_err(|_| {
-            CheckError::InvalidFormat(format!("{ROUNDS_PARAM} specifier need to be a number",))
-        })?
-    } else {
-        ROUNDS_DEFAULT
-    };
+        let salt = next.as_str().as_bytes();
 
-    let salt = next;
+        // decode expected password hash
+        let expected = fields
+            .next()
+            .ok_or(Error::EncodingInvalid)?
+            .decode_base64(Base64::ShaCrypt)
+            .map_err(|_| Error::EncodingInvalid)?;
 
-    let hash = iter
-        .next()
-        .ok_or_else(|| CheckError::InvalidFormat("Does not contain a hash string".to_string()))?;
+        // should be the last field
+        if fields.next().is_some() {
+            return Err(Error::EncodingInvalid);
+        }
 
-    // Make sure there is no trailing data after the final "$"
-    if iter.next().is_some() {
-        return Err(CheckError::InvalidFormat(
-            "Trailing characters present".to_string(),
-        ));
-    }
+        let actual = sha512_crypt_transposed(password, salt, &params);
 
-    let params = match Sha256Params::new(rounds) {
-        Ok(p) => p,
-        Err(e) => return Err(CheckError::Crypt(e)),
-    };
+        if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
+            return Err(Error::PasswordInvalid);
+        }
 
-    let output = sha256_crypt(password.as_bytes(), salt.as_bytes(), &params);
-
-    let hash = decode_sha256(hash.as_bytes())?;
-
-    use subtle::ConstantTimeEq;
-    if output.ct_eq(&hash).into() {
         Ok(())
-    } else {
-        Err(CheckError::HashMismatch)
     }
 }
 
-/// Generate a random salt that is 16-bytes long.
-fn random_salt() -> String {
-    // Create buffer containing raw bytes to encode as Base64
-    let mut buf = [0u8; (SALT_MAX_LEN * 3).div_ceil(4)];
-    getrandom::fill(&mut buf).expect("RNG failure");
-    Base64ShaCrypt::encode_string(&buf)
-}
-
-fn decode_sha512(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA512], DecodeError> {
-    const BUF_SIZE: usize = 86;
-    let mut buf = [0u8; BUF_SIZE];
-    Base64ShaCrypt::decode(source, &mut buf).map_err(|_| DecodeError)?;
-    let mut transposed = [0u8; BLOCK_SIZE_SHA512];
-    for (i, &ti) in MAP_SHA512.iter().enumerate() {
-        transposed[ti as usize] = buf[i];
-    }
-    Ok(transposed)
-}
-
-fn decode_sha256(source: &[u8]) -> Result<[u8; BLOCK_SIZE_SHA256], DecodeError> {
-    let mut buf = [0u8; PW_SIZE_SHA256];
-    Base64ShaCrypt::decode(source, &mut buf).unwrap();
+/// Invokes sha256_crypt then runs the result through the SHA-256-specific transposition table.
+fn sha256_crypt_transposed(
+    password: &[u8],
+    salt: &[u8],
+    params: &Sha256Params,
+) -> [u8; BLOCK_SIZE_SHA256] {
+    let output = sha256_crypt(password, salt, params);
 
     let mut transposed = [0u8; BLOCK_SIZE_SHA256];
     for (i, &ti) in MAP_SHA256.iter().enumerate() {
-        transposed[ti as usize] = buf[i];
+        transposed[i] = output[ti as usize];
     }
-    Ok(transposed)
+
+    transposed
+}
+
+/// Invokes sha512_crypt then runs the result through the SHA-512-specific transposition table.
+fn sha512_crypt_transposed(
+    password: &[u8],
+    salt: &[u8],
+    params: &Sha512Params,
+) -> [u8; BLOCK_SIZE_SHA512] {
+    let output = sha512_crypt(password, salt, params);
+
+    let mut transposed = [0u8; BLOCK_SIZE_SHA512];
+    for (i, &ti) in MAP_SHA512.iter().enumerate() {
+        transposed[i] = output[ti as usize];
+    }
+
+    transposed
 }
