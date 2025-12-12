@@ -2,6 +2,9 @@
 
 use core::fmt;
 
+/// Result type for the `sha-crypt` crate with its [`Error`] type.
+pub type Result<T> = core::result::Result<T, Error>;
+
 /// Error type.
 #[derive(Debug)]
 pub enum Error {

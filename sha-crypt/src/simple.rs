@@ -1,7 +1,7 @@
 //! Implementation of the `password-hash` crate API.
 
 use crate::{
-    BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, ROUNDS_DEFAULT, Sha256Params, Sha512Params,
+    BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, Params,
     consts::{MAP_SHA256, MAP_SHA512},
     sha256_crypt, sha512_crypt,
 };
@@ -34,7 +34,7 @@ pub const SHA512_CRYPT: ShaCrypt<Sha512> = ShaCrypt {
 };
 
 impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
-    type Params = Sha256Params;
+    type Params = Params;
 
     fn hash_password_customized(
         &self,
@@ -42,7 +42,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
         salt: &[u8],
         alg_id: Option<&str>,
         version: Option<Version>,
-        params: Sha256Params,
+        params: Params,
     ) -> Result<PasswordHash> {
         match alg_id {
             Some(SHA256_MCF_ID) | None => (),
@@ -59,7 +59,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
 
         let mut mcf_hash = PasswordHash::from_id(SHA256_MCF_ID).expect("should have valid ID");
 
-        if params.rounds != ROUNDS_DEFAULT {
+        if params.rounds != Params::ROUNDS_DEFAULT {
             mcf_hash
                 .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
                 .expect("should be valid field");
@@ -74,7 +74,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
 }
 
 impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
-    type Params = Sha512Params;
+    type Params = Params;
 
     fn hash_password_customized(
         &self,
@@ -82,7 +82,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
         salt: &[u8],
         alg_id: Option<&str>,
         version: Option<Version>,
-        params: Sha512Params,
+        params: Params,
     ) -> Result<PasswordHash> {
         match alg_id {
             Some(SHA512_MCF_ID) | None => (),
@@ -99,7 +99,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
 
         let mut mcf_hash = PasswordHash::from_id(SHA512_MCF_ID).expect("should have valid ID");
 
-        if params.rounds != ROUNDS_DEFAULT {
+        if params.rounds != Params::ROUNDS_DEFAULT {
             mcf_hash
                 .push_str(&format!("{}{}", ROUNDS_PARAM, params.rounds))
                 .expect("should be valid field");
@@ -115,13 +115,13 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
 
 impl PasswordHasher<PasswordHash> for ShaCrypt<Sha256> {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Sha256Params::default())
+        self.hash_password_customized(password, salt, None, None, Params::default())
     }
 }
 
 impl PasswordHasher<PasswordHash> for ShaCrypt<Sha512> {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Sha512Params::default())
+        self.hash_password_customized(password, salt, None, None, Params::default())
     }
 }
 
@@ -147,13 +147,13 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt<Sha256> {
         let mut fields = hash.fields();
         let mut next = fields.next().ok_or(Error::EncodingInvalid)?;
 
-        let mut params = Sha256Params::default();
+        let mut params = Params::default();
 
         // decode params
         // TODO(tarcieri): `mcf::Field` helper methods for parsing params?
         if let Some(rounds_str) = next.as_str().strip_prefix(ROUNDS_PARAM) {
             let rounds = rounds_str.parse().map_err(|_| Error::EncodingInvalid)?;
-            params = Sha256Params::new(rounds)?;
+            params = Params::new(rounds)?;
             next = fields.next().ok_or(Error::EncodingInvalid)?;
         }
 
@@ -191,13 +191,13 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt<Sha512> {
         let mut fields = hash.fields();
         let mut next = fields.next().ok_or(Error::EncodingInvalid)?;
 
-        let mut params = Sha512Params::default();
+        let mut params = Params::default();
 
         // decode params
         // TODO(tarcieri): `mcf::Field` helper methods for parsing params?
         if let Some(rounds_str) = next.as_str().strip_prefix(ROUNDS_PARAM) {
             let rounds = rounds_str.parse().map_err(|_| Error::EncodingInvalid)?;
-            params = Sha512Params::new(rounds)?;
+            params = Params::new(rounds)?;
             next = fields.next().ok_or(Error::EncodingInvalid)?;
         }
 
@@ -229,7 +229,7 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt<Sha512> {
 fn sha256_crypt_transposed(
     password: &[u8],
     salt: &[u8],
-    params: &Sha256Params,
+    params: &Params,
 ) -> [u8; BLOCK_SIZE_SHA256] {
     let output = sha256_crypt(password, salt, params);
 
@@ -245,7 +245,7 @@ fn sha256_crypt_transposed(
 fn sha512_crypt_transposed(
     password: &[u8],
     salt: &[u8],
-    params: &Sha512Params,
+    params: &Params,
 ) -> [u8; BLOCK_SIZE_SHA512] {
     let output = sha512_crypt(password, salt, params);
 

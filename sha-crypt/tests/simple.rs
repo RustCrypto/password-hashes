@@ -3,7 +3,7 @@
 use base64ct::{Base64ShaCrypt, Encoding};
 use mcf::PasswordHash;
 use sha_crypt::{
-    SHA256_CRYPT, SHA512_CRYPT, Sha256Params, Sha512Params,
+    Params, SHA256_CRYPT, SHA512_CRYPT,
     password_hash::{CustomizedPasswordHasher, Error, PasswordVerifier},
 };
 
@@ -93,7 +93,7 @@ fn hash_sha256_crypt() {
 
     for t in TEST_VECTORS {
         if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
-            let params = Sha256Params::new(t.rounds).unwrap();
+            let params = Params::new(t.rounds).unwrap();
             let result = SHA256_CRYPT
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
                 .unwrap();
@@ -112,7 +112,7 @@ fn hash_sha512_crypt() {
 
     for t in TEST_VECTORS {
         if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
-            let params = Sha512Params::new(t.rounds).unwrap();
+            let params = Params::new(t.rounds).unwrap();
             let result = SHA512_CRYPT
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
                 .unwrap();
