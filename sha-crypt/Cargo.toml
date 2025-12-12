@@ -21,13 +21,14 @@ sha2 = { version = "0.11.0-rc.3", default-features = false }
 base64ct = { version = "1.8", default-features = false, features = ["alloc"] }
 
 # optional dependencies
-getrandom = { version = "0.3", optional = true, default-features = false }
 mcf = { version = "0.6.0-rc.0", optional = true, default-features = false, features = ["alloc", "base64"] }
+password-hash = { version = "0.6.0-rc.4", optional = true, default-features = false }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
 default = ["simple"]
-simple = ["dep:getrandom", "dep:mcf", "dep:subtle"]
+getrandom = ["password-hash/getrandom", "simple"]
+simple = ["dep:mcf", "dep:password-hash", "dep:subtle"]
 
 [package.metadata.docs.rs]
 all-features = true

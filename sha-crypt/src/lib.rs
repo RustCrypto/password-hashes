@@ -1,33 +1,5 @@
-//! Pure Rust implementation of the [`SHA-crypt` password hash based on SHA-512][1],
-//! a legacy password hashing scheme supported by the [POSIX crypt C library][2].
-//!
-//! Password hashes using this algorithm start with `$6$` when encoded using the
-//! [PHC string format][3].
-//!
-//! # Usage
-//!
-//! ```
-//! # #[cfg(feature = "simple")]
-//! # {
-//! use sha_crypt::{Sha512Params, sha512_simple, sha512_check};
-//!
-//! // First setup the Sha512Params arguments with:
-//! // rounds = 10_000
-//! let params = Sha512Params::new(10_000).expect("RandomError!");
-//!
-//! // Hash the password for storage
-//! let hashed_password = sha512_simple("Not so secure password", &params);
-//!
-//! // Verifying a stored password
-//! assert!(sha512_check("Not so secure password", &hashed_password).is_ok());
-//! # }
-//! ```
-//!
-//! [1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-//! [2]: https://en.wikipedia.org/wiki/Crypt_(C)
-//! [3]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
-
 #![no_std]
+#![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -36,6 +8,25 @@
 #![deny(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
+//! # Usage
+//!
+#![cfg_attr(feature = "getrandom", doc = "```")]
+#![cfg_attr(not(feature = "getrandom"), doc = "```ignore")]
+//! # fn main() -> password_hash::Result<()> {
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
+//! use sha_crypt::{SHA512_CRYPT, PasswordHasher, PasswordVerifier};
+//!
+//! let password = b"pleaseletmein"; // don't actually use this as a password!
+//! let password_hash = SHA512_CRYPT.hash_password(password)?;
+//! assert!(password_hash.as_str().starts_with("$6$"));
+//!
+//! // verify password is correct for the given hash
+//! SHA512_CRYPT.verify_password(password, &password_hash)?;
+//! # Ok(())
+//! # }
+//! ```
+
 // TODO(tarcieri): heapless support
 #[macro_use]
 extern crate alloc;
@@ -43,25 +34,24 @@ extern crate alloc;
 mod consts;
 mod errors;
 mod params;
+#[cfg(feature = "simple")]
 mod simple;
 
 pub use crate::{
     consts::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512},
-    errors::CryptError,
+    errors::Error,
     params::{ROUNDS_DEFAULT, ROUNDS_MAX, ROUNDS_MIN, Sha256Params, Sha512Params},
 };
 
 #[cfg(feature = "simple")]
-pub use crate::simple::{sha256_check, sha256_simple, sha512_check, sha512_simple};
+pub use {
+    crate::simple::{SHA256_CRYPT, SHA512_CRYPT, ShaCrypt},
+    mcf::{self, PasswordHash},
+    password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
+};
 
-use alloc::{string::String, vec::Vec};
-use base64ct::{Base64ShaCrypt, Encoding};
+use alloc::vec::Vec;
 use sha2::{Digest, Sha256, Sha512};
-
-#[cfg(feature = "simple")]
-pub use crate::errors::{CheckError, DecodeError};
-
-use crate::consts::{MAP_SHA256, MAP_SHA512};
 
 /// The SHA512 crypt function returned as byte vector
 ///
@@ -259,50 +249,6 @@ pub fn sha256_crypt(
     }
 
     digest_c
-}
-
-/// Same as sha512_crypt except base64 representation will be returned.
-///
-/// # Arguments
-/// - `password` - The password to process as a byte vector
-/// - `salt` - The salt value to use as a byte vector
-/// - `params` - The Sha512Params to use
-///   **WARNING: Make sure to compare this value in constant time!**
-///
-/// # Returns
-/// - `Ok(())` if calculation was successful
-/// - `Err(errors::CryptError)` otherwise
-pub fn sha512_crypt_b64(password: &[u8], salt: &[u8], params: &Sha512Params) -> String {
-    let output = sha512_crypt(password, salt, params);
-
-    let mut transposed = [0u8; BLOCK_SIZE_SHA512];
-    for (i, &ti) in MAP_SHA512.iter().enumerate() {
-        transposed[i] = output[ti as usize];
-    }
-
-    Base64ShaCrypt::encode_string(&transposed)
-}
-
-/// Same as sha256_crypt except base64 representation will be returned.
-///
-/// # Arguments
-/// - `password` - The password to process as a byte vector
-/// - `salt` - The salt value to use as a byte vector
-/// - `params` - The Sha256Params to use
-///   **WARNING: Make sure to compare this value in constant time!**
-///
-/// # Returns
-/// - `Ok(())` if calculation was successful
-/// - `Err(errors::CryptError)` otherwise
-pub fn sha256_crypt_b64(password: &[u8], salt: &[u8], params: &Sha256Params) -> String {
-    let output = sha256_crypt(password, salt, params);
-
-    let mut transposed = [0u8; BLOCK_SIZE_SHA256];
-    for (i, &ti) in MAP_SHA256.iter().enumerate() {
-        transposed[i] = output[ti as usize];
-    }
-
-    Base64ShaCrypt::encode_string(&transposed)
 }
 
 fn produce_byte_seq(len: usize, fill_from: &[u8]) -> Vec<u8> {
