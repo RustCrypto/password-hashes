@@ -7,6 +7,8 @@ use core::{
     str::FromStr,
 };
 
+const ROUNDS_PARAM: &str = "rounds=";
+
 /// Algorithm parameters.
 #[derive(Debug, Clone)]
 pub struct Params {
@@ -28,7 +30,7 @@ impl Params {
     pub fn new(rounds: u32) -> Result<Params> {
         match rounds {
             Self::ROUNDS_MIN..=Self::ROUNDS_MAX => Ok(Params { rounds }),
-            _ => Err(Error::RoundsError),
+            _ => Err(Error::RoundsInvalid),
         }
     }
 }
@@ -50,8 +52,16 @@ impl Display for Params {
 impl FromStr for Params {
     type Err = Error;
 
-    fn from_str(_s: &str) -> Result<Self> {
-        todo!()
+    fn from_str(s: &str) -> Result<Self> {
+        if s.is_empty() {
+            return Ok(Self::default());
+        }
+
+        if let Some(rounds_str) = s.strip_prefix(ROUNDS_PARAM) {
+            Self::new(rounds_str.parse().map_err(|_| Error::RoundsInvalid)?)
+        } else {
+            Err(Error::ParamsInvalid)
+        }
     }
 }
 
