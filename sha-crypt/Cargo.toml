@@ -26,9 +26,10 @@ password-hash = { version = "0.6.0-rc.4", optional = true, default-features = fa
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
-default = ["simple"]
-getrandom = ["password-hash/getrandom", "simple"]
-simple = ["dep:mcf", "dep:password-hash", "dep:subtle"]
+default = ["password-hash"]
+getrandom = ["password-hash/getrandom", "password-hash"]
+rand_core = ["password-hash/rand_core"]
+password-hash = ["dep:mcf", "dep:password-hash", "dep:subtle"]
 
 [package.metadata.docs.rs]
 all-features = true

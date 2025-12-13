@@ -29,8 +29,9 @@ hex-literal = "1"
 
 [features]
 default = ["getrandom"]
-getrandom = ["simple", "password-hash/getrandom"]
-simple = ["dep:mcf", "dep:password-hash"]
+getrandom = ["password-hash", "password-hash/getrandom"]
+rand_core = ["password-hash/rand_core"]
+password-hash = ["dep:mcf", "dep:password-hash"]
 
 [package.metadata.docs.rs]
 all-features = true

@@ -74,7 +74,7 @@ fn test_vectors() {
 
 #[cfg(all(feature = "password-hash", feature = "alloc"))]
 #[test]
-fn hash_simple_retains_configured_params() {
+fn password_hash_retains_configured_params() {
     use balloon_hash::PasswordHasher;
     use sha2::Sha256;
 

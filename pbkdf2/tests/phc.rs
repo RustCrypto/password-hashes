@@ -1,8 +1,9 @@
-//! Tests for `password-hash` crate integration.
+//! Tests for `password-hash` crate integration with Password Hashing Competition (PHC) string
+//! format as the password hash serialization.
 //!
-//! PBKDF2-SHA256 vectors adapted from: https://stackoverflow.com/a/5136918
+//! PHC PBKDF2-SHA256 vectors adapted from: https://stackoverflow.com/a/5136918
 
-#![cfg(feature = "simple")]
+#![cfg(feature = "password-hash")]
 
 use hex_literal::hex;
 use pbkdf2::{Algorithm, Params, Pbkdf2, password_hash::CustomizedPasswordHasher};

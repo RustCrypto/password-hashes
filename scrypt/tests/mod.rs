@@ -1,6 +1,6 @@
 use scrypt::{Params, scrypt};
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 use {
     password_hash::{PasswordVerifier, phc::PasswordHash},
     scrypt::Scrypt,
@@ -83,21 +83,21 @@ fn test_scrypt() {
 
 /// Test vector from passlib:
 /// <https://passlib.readthedocs.io/en/stable/lib/passlib.hash.scrypt.html>
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 const EXAMPLE_PASSWORD_HASH: &str =
     "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 #[test]
-fn simple_verify_password() {
+fn password_hash_verify_password() {
     let password = "password";
     let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
     assert_eq!(Scrypt.verify_password(password.as_bytes(), &hash), Ok(()));
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 #[test]
-fn simple_reject_incorrect_password() {
+fn password_hash_reject_incorrect_password() {
     let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
     assert!(Scrypt.verify_password(b"invalid", &hash).is_err());
 }

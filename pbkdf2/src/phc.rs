@@ -5,8 +5,10 @@ use core::{
     fmt::{self, Display, Formatter},
     str::FromStr,
 };
-use password_hash::{CustomizedPasswordHasher, Error, PasswordHasher, Result};
-use phc::{Decimal, Ident, Output, ParamsString, PasswordHash, Salt};
+use password_hash::{
+    CustomizedPasswordHasher, Error, PasswordHasher, Result,
+    phc::{Decimal, Ident, Output, ParamsString, PasswordHash, Salt},
+};
 use sha2::{Sha256, Sha512};
 
 #[cfg(feature = "sha1")]

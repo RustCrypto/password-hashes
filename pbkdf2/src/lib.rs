@@ -48,14 +48,14 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pbkdf2 = { version = "0.12", features = ["simple"] }
+//! pbkdf2 = { version = "0.12", features = ["password-hash"] }
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
 //! The following example demonstrates the high-level password hashing API:
 //!
-#![cfg_attr(feature = "simple", doc = "```")]
-#![cfg_attr(not(feature = "simple"), doc = "```ignore")]
+#![cfg_attr(feature = "password-hash", doc = "```")]
+#![cfg_attr(not(feature = "password-hash"), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! // NOTE: example requires `getrandom` feature is enabled
 //!
@@ -83,20 +83,20 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 extern crate alloc;
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 pub use password_hash;
 
-#[cfg(feature = "simple")]
-mod simple;
+#[cfg(feature = "password-hash")]
+mod phc;
 
 #[cfg(feature = "hmac")]
 pub use hmac;
 
-#[cfg(feature = "simple")]
-pub use crate::simple::{Algorithm, Params, Pbkdf2};
+#[cfg(feature = "password-hash")]
+pub use crate::phc::{Algorithm, Params, Pbkdf2};
 
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 

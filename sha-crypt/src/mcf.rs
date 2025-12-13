@@ -1,9 +1,11 @@
 //! Implementation of the `password-hash` crate API.
 
+pub use mcf::{PasswordHash, PasswordHashRef};
+
 use crate::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, Params, sha256_crypt, sha512_crypt};
 use base64ct::{Base64ShaCrypt, Encoding};
 use core::{marker::PhantomData, str::FromStr};
-use mcf::{Base64, PasswordHash, PasswordHashRef};
+use mcf::Base64;
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
 };

@@ -11,7 +11,6 @@ dependencies = [
  "cpufeatures",
  "hex-literal",
  "password-hash",
- "phc",
  "rayon",
  "zeroize",
 ]
@@ -30,7 +29,6 @@ dependencies = [
  "digest",
  "hex-literal",
  "password-hash",
- "phc",
  "rayon",
  "sha2",
  "zeroize",
@@ -300,18 +298,17 @@ dependencies = [
  "getrandom",
  "password-hash",
  "pbkdf2",
- "phc",
  "scrypt",
 ]
 
 [[package]]
 name = "password-hash"
 version = "0.6.0-rc.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87dec027112bafe3cc8a4dd8072c688dbd62dec3cd4e76897f2ce809a7008aee"
+source = "git+https://github.com/RustCrypto/traits#19aa016b72368f2635dfa712e9621f95e184df2a"
 dependencies = [
  "getrandom",
  "phc",
+ "rand_core",
 ]
 
 [[package]]
@@ -323,7 +320,6 @@ dependencies = [
  "hex-literal",
  "hmac",
  "password-hash",
- "phc",
  "sha1",
  "sha2",
  "streebog",
@@ -423,7 +419,6 @@ version = "0.12.0-rc.5"
 dependencies = [
  "password-hash",
  "pbkdf2",
- "phc",
  "rayon",
  "salsa20",
  "sha2",
