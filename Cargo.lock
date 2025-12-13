@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "argon2"
-version = "0.6.0-rc.4"
+version = "0.6.0-rc.5"
 dependencies = [
  "base64ct",
  "blake2",
@@ -23,7 +23,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "balloon-hash"
-version = "0.5.0-rc.2"
+version = "0.5.0-rc.3"
 dependencies = [
  "crypto-bigint",
  "digest",
@@ -292,7 +292,7 @@ checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
 name = "password-auth"
-version = "1.1.0-pre.3"
+version = "1.1.0-rc.0"
 dependencies = [
  "argon2",
  "getrandom",
@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.13.0-rc.4"
+version = "0.13.0-rc.5"
 dependencies = [
  "belt-hash",
  "digest",
@@ -416,7 +416,7 @@ dependencies = [
 
 [[package]]
 name = "scrypt"
-version = "0.12.0-rc.5"
+version = "0.12.0-rc.6"
 dependencies = [
  "password-hash",
  "pbkdf2",
@@ -427,7 +427,7 @@ dependencies = [
 
 [[package]]
 name = "sha-crypt"
-version = "0.6.0-pre.1"
+version = "0.6.0-rc.0"
 dependencies = [
  "base64ct",
  "mcf",
@@ -558,7 +558,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "yescrypt"
-version = "0.1.0-rc.0"
+version = "0.1.0-rc.1"
 dependencies = [
  "hex-literal",
  "hmac",
