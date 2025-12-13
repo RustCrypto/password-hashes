@@ -19,7 +19,6 @@ crypto-bigint = { version = "0.7.0-rc.9", default-features = false, features = [
 
 # optional dependencies
 password-hash = { version = "0.6.0-rc.5", optional = true, default-features = false, features = ["phc"] }
-phc = { version = "0.6.0-rc.0", optional = true, features = ["rand_core"] }
 rayon = { version = "1.7", optional = true }
 zeroize = { version = "1", default-features = false, optional = true }
 
@@ -33,7 +32,8 @@ alloc = ["password-hash/alloc"]
 
 getrandom = ["password-hash/getrandom"]
 parallel = ["dep:rayon"]
-password-hash = ["dep:password-hash", "dep:phc"]
+password-hash = ["dep:password-hash"]
+rand_core = ["password-hash/rand_core"]
 zeroize = ["dep:zeroize"]
 
 [package.metadata.docs.rs]

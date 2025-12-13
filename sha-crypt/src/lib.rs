@@ -33,18 +33,20 @@ extern crate alloc;
 
 mod errors;
 mod params;
-#[cfg(feature = "simple")]
-mod simple;
+
+#[cfg(feature = "password-hash")]
+mod mcf;
 
 pub use crate::{
     errors::{Error, Result},
     params::Params,
 };
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 pub use {
-    crate::simple::{SHA256_CRYPT, SHA512_CRYPT, ShaCrypt, ShaCryptCore},
-    mcf::{self, PasswordHash},
+    crate::mcf::{
+        PasswordHash, PasswordHashRef, SHA256_CRYPT, SHA512_CRYPT, ShaCrypt, ShaCryptCore,
+    },
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
 };
 

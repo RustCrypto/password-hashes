@@ -28,7 +28,7 @@ pub use crate::errors::{ParseError, VerifyError};
 use alloc::string::{String, ToString};
 use password_hash::{
     PasswordHasher, PasswordVerifier,
-    phc::{ParamsString, PasswordHash, Salt},
+    phc::{ParamsString, PasswordHash},
 };
 
 #[cfg(not(any(feature = "argon2", feature = "pbkdf2", feature = "scrypt")))]
@@ -48,26 +48,26 @@ use scrypt::Scrypt;
 /// Uses the best available password hashing algorithm given the enabled
 /// crate features (typically Argon2 unless explicitly disabled).
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
-    let salt = Salt::generate();
-    generate_phc_hash(password.as_ref(), &salt)
-        .map(|hash| hash.to_string())
+    generate_phc_hash(password.as_ref())
+        .as_ref()
+        .map(ToString::to_string)
         .expect("password hashing error")
 }
 
 /// Generate a PHC hash using the preferred algorithm.
 #[allow(unreachable_code)]
-fn generate_phc_hash(password: &[u8], salt: &[u8]) -> password_hash::Result<PasswordHash> {
+fn generate_phc_hash(password: &[u8]) -> password_hash::Result<PasswordHash> {
     //
     // Algorithms below are in order of preference
     //
     #[cfg(feature = "argon2")]
-    return Argon2::default().hash_password_with_salt(password, salt);
+    return Argon2::default().hash_password(password);
 
     #[cfg(feature = "scrypt")]
-    return Scrypt.hash_password_with_salt(password, salt);
+    return Scrypt.hash_password(password);
 
     #[cfg(feature = "pbkdf2")]
-    return Pbkdf2.hash_password_with_salt(password, salt);
+    return Pbkdf2.hash_password(password);
 }
 
 /// Verify the provided password against the provided password hash.

@@ -1,4 +1,4 @@
-#![cfg(feature = "simple")]
+#![cfg(feature = "password-hash")]
 
 use base64ct::{Base64ShaCrypt, Encoding};
 use mcf::PasswordHash;
@@ -195,7 +195,7 @@ fn verify_sha512_crypt() {
     );
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 #[test]
 fn test_sha256_wrong_id() {
     let passwd = b"foobar";
@@ -206,7 +206,7 @@ fn test_sha256_wrong_id() {
     assert_eq!(res, Err(Error::Algorithm));
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 #[test]
 fn test_sha512_wrong_id() {
     let passwd = b"foobar";

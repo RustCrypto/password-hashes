@@ -58,16 +58,16 @@ pub mod errors;
 mod params;
 mod romix;
 
-#[cfg(feature = "simple")]
-mod simple;
+#[cfg(feature = "password-hash")]
+mod phc;
 
 pub use crate::params::Params;
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 pub use password_hash;
 
-#[cfg(feature = "simple")]
-pub use crate::simple::{ALG_ID, Scrypt};
+#[cfg(feature = "password-hash")]
+pub use crate::phc::{ALG_ID, Scrypt};
 
 /// The scrypt key derivation function.
 ///

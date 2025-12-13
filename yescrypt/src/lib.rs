@@ -68,10 +68,11 @@ mod mode;
 mod params;
 mod pwxform;
 mod salsa20;
-#[cfg(feature = "simple")]
-mod simple;
 mod smix;
 mod util;
+
+#[cfg(feature = "password-hash")]
+mod mcf;
 
 pub use crate::{
     error::{Error, Result},
@@ -79,11 +80,10 @@ pub use crate::{
     params::Params,
 };
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 pub use {
-    mcf::{PasswordHash, PasswordHashRef},
+    crate::mcf::{PasswordHash, PasswordHashRef, Yescrypt},
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
-    simple::Yescrypt,
 };
 
 use alloc::vec;

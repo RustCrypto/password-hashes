@@ -711,7 +711,7 @@ mod tests {
     }
 
     #[test]
-    fn hash_simple_retains_configured_params() {
+    fn password_hash_retains_configured_params() {
         // Non-default but valid parameters
         let t_cost = 4;
         let m_cost = 2048;

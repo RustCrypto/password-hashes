@@ -18,13 +18,12 @@ rust-version = "1.85"
 
 [dependencies]
 getrandom = { version = "0.3", default-features = false }
-password-hash = { version = "0.6.0-rc.5", features = ["alloc", "phc"] }
-phc = { version = "0.6.0-rc.0", features = ["getrandom"] }
+password-hash = { version = "0.6.0-rc.5", features = ["alloc", "getrandom", "phc"] }
 
 # optional dependencies
-argon2 = { version = "0.6.0-rc.4", optional = true, default-features = false, features = ["alloc", "simple"] }
-pbkdf2 = { version = "0.13.0-rc.4", optional = true, default-features = false, features = ["simple"] }
-scrypt = { version = "0.12.0-rc.5", optional = true, default-features = false, features = ["simple"] }
+argon2 = { version = "0.6.0-rc.4", optional = true, default-features = false, features = ["alloc", "password-hash"] }
+pbkdf2 = { version = "0.13.0-rc.4", optional = true, default-features = false, features = ["password-hash"] }
+scrypt = { version = "0.12.0-rc.5", optional = true, default-features = false, features = ["password-hash"] }
 
 [features]
 default = ["argon2", "std"]

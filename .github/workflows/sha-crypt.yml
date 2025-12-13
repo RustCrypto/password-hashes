@@ -35,7 +35,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --no-default-features
-      - run: cargo build --target ${{ matrix.target }} --no-default-features --features simple
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features password-hash
 
   minimal-versions:
     if: false # disabled while using pre-releases

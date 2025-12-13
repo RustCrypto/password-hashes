@@ -9,7 +9,7 @@ use {
         fmt::{self, Display},
         str::FromStr,
     },
-    phc::{ParamsString, PasswordHash},
+    password_hash::phc::{ParamsString, PasswordHash},
 };
 
 /// Balloon password hash parameters.

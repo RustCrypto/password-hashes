@@ -21,15 +21,15 @@ rayon = { version = "1.11", optional = true }
 
 # optional dependencies
 password-hash = { version = "0.6.0-rc.5", optional = true, default-features = false, features = ["phc"] }
-phc = { version = "0.6.0-rc.0", optional = true, features = ["rand_core"] }
 
 [features]
-default = ["simple", "rayon"]
+default = ["password-hash", "rayon"]
 alloc = ["password-hash?/alloc"]
 
-getrandom = ["simple", "password-hash/getrandom"]
+getrandom = ["password-hash", "password-hash/getrandom"]
+password-hash = ["dep:password-hash"]
+rand_core = ["password-hash/rand_core"]
 rayon = ["dep:rayon"]
-simple = ["dep:password-hash", "dep:phc"]
 
 [package.metadata.docs.rs]
 all-features = true

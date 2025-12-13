@@ -1,6 +1,6 @@
 //! Tests for encoding password hash strings in Modular Crypt Format (MCF).
 
-#![cfg(feature = "simple")]
+#![cfg(feature = "password-hash")]
 #![allow(non_snake_case)]
 
 use yescrypt::{

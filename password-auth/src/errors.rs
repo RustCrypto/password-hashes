@@ -2,6 +2,7 @@
 
 use alloc::string::ToString;
 use core::fmt;
+use password_hash::phc;
 
 /// Password hash parse errors.
 // This type has no public constructor and deliberately keeps `phc::Error` out of the public API

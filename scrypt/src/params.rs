@@ -1,16 +1,18 @@
 use crate::errors::InvalidParams;
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 use {
     core::{
         fmt::{self, Display},
         str::FromStr,
     },
-    password_hash::Error,
-    phc::{Decimal, Output, ParamsString, PasswordHash},
+    password_hash::{
+        Error,
+        phc::{Decimal, Output, ParamsString, PasswordHash},
+    },
 };
 
-#[cfg(all(feature = "simple", doc))]
+#[cfg(all(feature = "password-hash", doc))]
 use password_hash::PasswordHasher;
 
 /// The Scrypt parameter values.
@@ -19,7 +21,7 @@ pub struct Params {
     pub(crate) log_n: u8,
     pub(crate) r: u32,
     pub(crate) p: u32,
-    #[cfg(feature = "simple")]
+    #[cfg(feature = "password-hash")]
     pub(crate) len: Option<usize>,
 }
 
@@ -46,7 +48,7 @@ impl Params {
         log_n: Self::RECOMMENDED_LOG_N,
         r: Self::RECOMMENDED_R,
         p: Self::RECOMMENDED_P,
-        #[cfg(feature = "simple")]
+        #[cfg(feature = "password-hash")]
         len: None,
     };
 
@@ -102,7 +104,7 @@ impl Params {
             log_n,
             r: r as u32,
             p: p as u32,
-            #[cfg(feature = "simple")]
+            #[cfg(feature = "password-hash")]
             len: None,
         })
     }
@@ -116,7 +118,7 @@ impl Params {
     /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
     /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
     /// because they are intended for use with password hash strings.
-    #[cfg(feature = "simple")]
+    #[cfg(feature = "password-hash")]
     pub fn new_with_output_len(
         log_n: u8,
         r: u32,
@@ -174,14 +176,14 @@ impl Default for Params {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl Display for Params {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl FromStr for Params {
     type Err = Error;
 
@@ -191,7 +193,7 @@ impl FromStr for Params {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
@@ -227,7 +229,7 @@ impl TryFrom<&ParamsString> for Params {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl TryFrom<&PasswordHash> for Params {
     type Error = Error;
 
@@ -248,7 +250,7 @@ impl TryFrom<&PasswordHash> for Params {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
@@ -257,7 +259,7 @@ impl TryFrom<Params> for ParamsString {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl TryFrom<&Params> for ParamsString {
     type Error = Error;
 

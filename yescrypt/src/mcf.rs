@@ -1,14 +1,16 @@
 //! Implementation of the `password-hash` crate API.
 
+pub use mcf::{PasswordHash, PasswordHashRef};
+
 use crate::{Params, yescrypt};
 use alloc::vec;
-use mcf::{Base64, PasswordHash, PasswordHashRef};
+use mcf::Base64;
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
 };
 
 /// Identifier for yescrypt when encoding to the Modular Crypt Format, i.e. `$y$`
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 const YESCRYPT_MCF_ID: &str = "y";
 
 /// Base64 variant used by yescrypt.

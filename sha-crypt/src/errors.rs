@@ -29,7 +29,7 @@ impl fmt::Display for Error {
     }
 }
 
-#[cfg(feature = "simple")]
+#[cfg(feature = "password-hash")]
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> Self {
         match err {
