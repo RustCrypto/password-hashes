@@ -38,8 +38,7 @@
 //! # }
 //! ```
 //!
-//! If you want to use a different PRF, then you can use [`pbkdf2`][crate::pbkdf2]
-//! and [`pbkdf2_array`] functions.
+//! If you want to use a different PRF, then you can use [`pbkdf2`] and [`pbkdf2_array`] functions.
 //!
 //! This crates also provides the high-level password-hashing API through
 //! the [`Pbkdf2`] struct and traits defined in the
@@ -171,8 +170,7 @@ where
     Ok(())
 }
 
-/// A variant of the [`pbkdf2`][crate::pbkdf2] function which returns an array
-/// instead of filling an input slice.
+/// A variant of the [`pbkdf2`] function which returns an array instead of filling an input slice.
 ///
 /// ```
 /// use hex_literal::hex;
@@ -197,7 +195,8 @@ where
     pbkdf2::<PRF>(password, salt, rounds, &mut buf).map(|()| buf)
 }
 
-/// A variant of the [`pbkdf2`][crate::pbkdf2] function which uses HMAC for PRF.
+/// A variant of the [`pbkdf2`] function which uses HMAC for PRF.
+///
 /// It's generic over (eager) hash functions.
 ///
 /// ```
