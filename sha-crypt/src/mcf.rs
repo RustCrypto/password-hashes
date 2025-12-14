@@ -144,6 +144,17 @@ where
     }
 }
 
+impl<D> PasswordVerifier<str> for ShaCrypt<D>
+where
+    Self: ShaCryptCore,
+{
+    fn verify_password(&self, password: &[u8], hash: &str) -> password_hash::Result<()> {
+        // TODO(tarcieri): better mapping from `mcf::Error` and `password_hash::Error`?
+        let hash = PasswordHashRef::new(hash).map_err(|_| Error::EncodingInvalid)?;
+        self.verify_password(password, hash)
+    }
+}
+
 impl ShaCryptCore for ShaCrypt<Sha256> {
     const MCF_ID: &'static str = "5";
     type Output = [u8; BLOCK_SIZE_SHA256];

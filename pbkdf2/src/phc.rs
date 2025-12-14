@@ -39,7 +39,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             return Err(Error::Version);
         }
 
-        let salt = Salt::new(salt).map_err(|_| Error::SaltInvalid)?;
+        let salt = Salt::new(salt)?;
 
         let mut buffer = [0u8; Output::MAX_LENGTH];
         let out = buffer
@@ -54,7 +54,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
         };
 
         f(password, &salt, params.rounds, out);
-        let output = Output::new(out).map_err(|_| Error::OutputSize)?;
+        let output = Output::new(out)?;
 
         Ok(PasswordHash {
             algorithm: *algorithm.ident(),
