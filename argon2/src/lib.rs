@@ -649,7 +649,7 @@ impl PasswordHasher<PasswordHash> for Argon2<'_> {
         password: &[u8],
         salt: &[u8],
     ) -> password_hash::Result<PasswordHash> {
-        let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
+        let salt = Salt::new(salt)?;
 
         let output_len = self
             .params
@@ -662,7 +662,7 @@ impl PasswordHasher<PasswordHash> for Argon2<'_> {
             .ok_or(password_hash::Error::OutputSize)?;
 
         self.hash_password_into(password, &salt, out)?;
-        let output = Output::new(out).map_err(|_| password_hash::Error::OutputSize)?;
+        let output = Output::new(out)?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),
@@ -671,6 +671,13 @@ impl PasswordHasher<PasswordHash> for Argon2<'_> {
             salt: Some(salt),
             hash: Some(output),
         })
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+impl PasswordVerifier<str> for Argon2<'_> {
+    fn verify_password(&self, password: &[u8], hash: &str) -> password_hash::Result<()> {
+        self.verify_password(password, &PasswordHash::new(hash)?)
     }
 }
 

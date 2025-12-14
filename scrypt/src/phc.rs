@@ -39,13 +39,13 @@ impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
             return Err(Error::Version);
         }
 
-        let salt = Salt::new(salt).map_err(|_| Error::SaltInvalid)?;
+        let salt = Salt::new(salt)?;
         let len = params.len.unwrap_or(Params::RECOMMENDED_LEN);
 
         let mut buffer = [0u8; Output::MAX_LENGTH];
         let out = buffer.get_mut(..len).ok_or(Error::OutputSize)?;
         scrypt(password, &salt, &params, out).map_err(|_| Error::OutputSize)?;
-        let output = Output::new(out).map_err(|_| Error::OutputSize)?;
+        let output = Output::new(out)?;
 
         Ok(PasswordHash {
             algorithm: ALG_ID,

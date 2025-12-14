@@ -127,3 +127,11 @@ impl PasswordVerifier<PasswordHashRef> for Yescrypt {
         Ok(())
     }
 }
+
+impl PasswordVerifier<str> for Yescrypt {
+    fn verify_password(&self, password: &[u8], hash: &str) -> Result<()> {
+        // TODO(tarcieri): better mapping from `mcf::Error` and `password_hash::Error`?
+        let hash = PasswordHashRef::new(hash).map_err(|_| Error::EncodingInvalid)?;
+        self.verify_password(password, hash)
+    }
+}

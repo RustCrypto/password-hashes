@@ -234,9 +234,9 @@ where
         password: &[u8],
         salt: &[u8],
     ) -> password_hash::Result<PasswordHash> {
-        let salt = Salt::new(salt).map_err(|_| password_hash::Error::SaltInvalid)?;
+        let salt = Salt::new(salt)?;
         let hash = self.hash(password, &salt)?;
-        let output = Output::new(&hash).map_err(|_| password_hash::Error::OutputSize)?;
+        let output = Output::new(&hash)?;
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),
@@ -245,6 +245,17 @@ where
             salt: Some(salt),
             hash: Some(output),
         })
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "password-hash"))]
+impl<D> PasswordVerifier<str> for Balloon<'_, D>
+where
+    D: Digest + FixedOutputReset,
+    Array<u8, D::OutputSize>: ArrayDecoding,
+{
+    fn verify_password(&self, password: &[u8], hash: &str) -> password_hash::Result<()> {
+        self.verify_password(password, &PasswordHash::new(hash)?)
     }
 }
 
