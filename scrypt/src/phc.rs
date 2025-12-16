@@ -1,22 +1,15 @@
 //! Implementation of the `password-hash` crate API.
 
-use crate::{Params, scrypt};
-use password_hash::{
-    CustomizedPasswordHasher, Error, PasswordHasher, Result, Version,
-    phc::{Ident, Output, PasswordHash, Salt},
-};
+pub use password_hash::phc::{Ident, Output, PasswordHash, Salt};
+
+use crate::{Params, Scrypt, scrypt};
+use password_hash::{CustomizedPasswordHasher, Error, PasswordHasher, Result, Version};
 
 /// Algorithm name
 const ALG_NAME: &str = "scrypt";
 
 /// Algorithm identifier
 pub const ALG_ID: Ident = Ident::new_unwrap(ALG_NAME);
-
-/// scrypt type for use with [`PasswordHasher`].
-///
-/// See the [crate docs](crate) for a usage example.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Scrypt;
 
 impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
     type Params = Params;
@@ -60,5 +53,32 @@ impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
 impl PasswordHasher<PasswordHash> for Scrypt {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, Params::default())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PasswordHash, Scrypt};
+    use password_hash::PasswordVerifier;
+
+    /// Test vector from passlib:
+    /// <https://passlib.readthedocs.io/en/stable/lib/passlib.hash.scrypt.html>
+    #[cfg(feature = "password-hash")]
+    const EXAMPLE_PASSWORD_HASH: &str =
+        "$scrypt$ln=16,r=8,p=1$aM15713r3Xsvxbi31lqr1Q$nFNh2CVHVjNldFVKDHDlm4CbdRSCdEBsjjJxD+iCs5E";
+
+    #[cfg(feature = "password-hash")]
+    #[test]
+    fn password_hash_verify_password() {
+        let password = "password";
+        let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
+        assert_eq!(Scrypt.verify_password(password.as_bytes(), &hash), Ok(()));
+    }
+
+    #[cfg(feature = "password-hash")]
+    #[test]
+    fn password_hash_reject_incorrect_password() {
+        let hash = PasswordHash::new(EXAMPLE_PASSWORD_HASH).unwrap();
+        assert!(Scrypt.verify_password(b"invalid", &hash).is_err());
     }
 }

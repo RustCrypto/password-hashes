@@ -418,11 +418,13 @@ dependencies = [
 name = "scrypt"
 version = "0.12.0-rc.6"
 dependencies = [
+ "mcf",
  "password-hash",
  "pbkdf2",
  "rayon",
  "salsa20",
  "sha2",
+ "subtle",
 ]
 
 [[package]]
