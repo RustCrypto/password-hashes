@@ -203,10 +203,10 @@ fn decode64_uint32(src: &[u8]) -> Result<u32> {
     for i in 0..ENCODED_U32_LEN {
         let n = *src
             .get(i)
-            .and_then(|&b| ATOI64.get(b as usize).filter(|&&c| c != 0xFF))
+            .and_then(|&b| ATOI64.get(b as usize).filter(|&&n| n <= 63))
             .ok_or(Error::EncodingInvalid)?;
 
-        value |= (n as u32) << (6 * i);
+        value |= u32::from(n) << (6 * i);
     }
 
     Ok(value)
