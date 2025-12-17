@@ -7,7 +7,8 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust implementation of the [Password-Based Key Derivation Function v2 (PBKDF2)][1].
+Pure Rust implementation of the [Password-Based Key Derivation Function v2 (PBKDF2)][1] as specified
+in [RFC 2898][2].
 
 ## License
 
@@ -40,3 +41,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [1]: https://en.wikipedia.org/wiki/PBKDF2
+[2]: https://datatracker.ietf.org/doc/html/rfc2898

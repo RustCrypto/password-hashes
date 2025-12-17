@@ -7,7 +7,8 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [scrypt key derivation function][1].
+Pure Rust implementation of the [scrypt key derivation function][1], a sequential memory hard
+function which can also be used for password hashing.
 
 ## License
 

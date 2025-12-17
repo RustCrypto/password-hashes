@@ -1,6 +1,11 @@
-//! This crate implements the PBKDF2 key derivation function as specified
-//! in [RFC 2898](https://tools.ietf.org/html/rfc2898).
-//!
+#![no_std]
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
+)]
+
 //! # Examples
 //!
 //! PBKDF2 is defined in terms of a keyed pseudo-random function (PRF).
@@ -75,13 +80,6 @@
 //! # Ok(())
 //! # }
 //! ```
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
-)]
 
 #[cfg(feature = "password-hash")]
 extern crate alloc;
