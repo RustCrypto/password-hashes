@@ -311,10 +311,10 @@ fn N2log2(N: u64) -> u32 {
     N_log2
 }
 
-/// s(ha)crypt-flavored Base64 alphabet.
+/// (ye)scrypt-flavored Base64 alphabet.
 static ITOA64: &[u8] = b"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-/// Reverse lookup table for s(ha)crypt-flavored Base64 alphabet.
+/// Reverse lookup table for (ye)scrypt-flavored Base64 alphabet.
 static ATOI64: [u8; 128] = {
     let mut tbl = [0xFFu8; 128]; // use 0xFF as a placeholder for invalid chars
     let mut i = 0u8;
@@ -325,6 +325,10 @@ static ATOI64: [u8; 128] = {
     tbl
 };
 
+/// yescrypt uses a special variable-width packing to make small parameter values shorter.
+///
+/// This function, which has been adapted from the yescrypt reference implementation, implements
+/// both Base64 decoding and decoding of the variable-width format.
 fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)> {
     let mut start = 0u32;
     let mut end = 47u32;
@@ -335,14 +339,15 @@ fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)>
         return Err(Error::Encoding);
     }
 
-    let c = match ATOI64.get(src[pos] as usize) {
-        Some(&c) if c <= 63 => c,
-        _ => return Err(Error::Encoding),
-    };
+    let n = *ATOI64
+        .get(usize::from(src[pos]))
+        .filter(|&&n| n <= 63)
+        .ok_or(Error::Encoding)?;
+
     pos += 1;
 
     let mut dst = min;
-    while u32::from(c) > end {
+    while u32::from(n) > end {
         dst += (end + 1 - start) << bits;
         start = end + 1;
         end = start + (62 - end) / 2;
@@ -350,7 +355,7 @@ fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)>
         bits += 6;
     }
 
-    dst += (u32::from(c) - start) << bits;
+    dst += (u32::from(n) - start) << bits;
 
     while chars > 1 {
         chars -= 1;
@@ -372,6 +377,10 @@ fn decode64_uint32(src: &[u8], mut pos: usize, min: u32) -> Result<(u32, usize)>
     Ok((dst, pos))
 }
 
+/// yescrypt uses a special variable-width packing to make small parameter values shorter.
+///
+/// This function, which has been adapted from the yescrypt reference implementation, implements
+/// simultaneously encoding the variable-width format and encoding Base64.
 fn encode64_uint32(dst: &mut [u8], mut src: u32, min: u32) -> Result<usize> {
     let mut start = 0u32;
     let mut end = 47u32;
