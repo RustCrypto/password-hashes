@@ -1,16 +1,21 @@
-//! This crate implements the Scrypt key derivation function as specified
-//! in \[1\].
-//!
+#![no_std]
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
+)]
+
 //! If you are only using the low-level [`scrypt`] function instead of the
 //! higher-level [`Scrypt`] struct to produce/verify hash strings,
 //! it's recommended to disable default features in your `Cargo.toml`:
 //!
 //! ```toml
 //! [dependencies]
-//! scrypt = { version = "0.2", default-features = false }
+//! scrypt = { version = "0.12", default-features = false }
 //! ```
 //!
-//! # Usage (simple with default params)
+//! # Usage (simple PHC password hash usage with default params)
 //!
 #![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
 #![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
@@ -36,17 +41,6 @@
 //! # Ok(())
 //! # }
 //! ```
-//!
-//! # References
-//! \[1\] - [C. Percival. Stronger Key Derivation Via Sequential
-//! Memory-Hard Functions](http://www.tarsnap.com/scrypt/scrypt.pdf)
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
-)]
 
 #[macro_use]
 extern crate alloc;
