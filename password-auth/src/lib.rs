@@ -118,7 +118,7 @@ pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
         || hash.params != default_params_string::<argon2::Params>());
 
     #[cfg(feature = "scrypt")]
-    return Ok(hash.algorithm != scrypt::ALG_ID
+    return Ok(hash.algorithm != scrypt::phc::ALG_ID
         || hash.params != default_params_string::<scrypt::Params>());
 
     #[cfg(feature = "pbkdf2")]

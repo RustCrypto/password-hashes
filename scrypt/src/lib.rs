@@ -27,10 +27,11 @@
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //!
 //! // Hash password to PHC string ($scrypt$...)
-//! let password_hash = Scrypt.hash_password(password)?.to_string();
+//! let hash: PasswordHash = Scrypt.hash_password(password)?;
+//! let hash_string = hash.to_string();
 //!
 //! // Verify password against PHC string
-//! let parsed_hash = PasswordHash::new(&password_hash)?;
+//! let parsed_hash = PasswordHash::new(&hash_string)?;
 //! assert!(Scrypt.verify_password(password, &parsed_hash).is_ok());
 //! # Ok(())
 //! # }
@@ -58,16 +59,18 @@ pub mod errors;
 mod params;
 mod romix;
 
-#[cfg(feature = "password-hash")]
-mod phc;
+#[cfg(feature = "mcf")]
+pub mod mcf;
+#[cfg(feature = "phc")]
+pub mod phc;
 
 pub use crate::params::Params;
 
 #[cfg(feature = "password-hash")]
 pub use password_hash;
 
-#[cfg(feature = "password-hash")]
-pub use crate::phc::{ALG_ID, Scrypt};
+#[cfg(all(doc, feature = "password-hash"))]
+use password_hash::{CustomizedPasswordHasher, PasswordHasher, PasswordVerifier};
 
 /// The scrypt key derivation function.
 ///
@@ -139,3 +142,14 @@ fn romix_parallel(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
         romix::scrypt_ro_mix(chunk, &mut v, &mut t, n);
     });
 }
+
+/// scrypt password hashing type which can produce and verify strings in either the Password Hashing
+/// Competition (PHC) string format which begin with `$scrypt$`, or in Modular Crypt Format (MCF)
+/// which begin with `$7$`.
+///
+/// This is a ZST which impls traits from the [`password-hash`][`password_hash`] crate, notably
+/// the [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
+///
+/// See the toplevel documentation for a code example.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Scrypt;

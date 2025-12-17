@@ -1,6 +1,6 @@
 use crate::errors::InvalidParams;
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 use {
     core::{
         fmt::{self, Display},
@@ -12,7 +12,7 @@ use {
     },
 };
 
-#[cfg(all(feature = "password-hash", doc))]
+#[cfg(all(feature = "phc", doc))]
 use password_hash::PasswordHasher;
 
 /// The Scrypt parameter values.
@@ -118,7 +118,7 @@ impl Params {
     /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
     /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
     /// because they are intended for use with password hash strings.
-    #[cfg(feature = "password-hash")]
+    #[cfg(feature = "phc")]
     pub fn new_with_output_len(
         log_n: u8,
         r: u32,
@@ -176,14 +176,14 @@ impl Default for Params {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl Display for Params {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl FromStr for Params {
     type Err = Error;
 
@@ -193,7 +193,7 @@ impl FromStr for Params {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
@@ -229,7 +229,7 @@ impl TryFrom<&ParamsString> for Params {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl TryFrom<&PasswordHash> for Params {
     type Error = Error;
 
@@ -250,7 +250,7 @@ impl TryFrom<&PasswordHash> for Params {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
@@ -259,7 +259,7 @@ impl TryFrom<Params> for ParamsString {
     }
 }
 
-#[cfg(feature = "password-hash")]
+#[cfg(feature = "phc")]
 impl TryFrom<&Params> for ParamsString {
     type Error = Error;
 

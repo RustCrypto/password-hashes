@@ -77,13 +77,11 @@ fn compute_reference_strings() {
 fn verify_reference_strings() {
     for &hash in EXAMPLE_HASHES {
         let hash = PasswordHashRef::new(hash).unwrap();
+        assert_eq!(Yescrypt.verify_password(EXAMPLE_PASSWD, hash), Ok(()));
 
-        if Yescrypt.verify_password(EXAMPLE_PASSWD, hash).is_err() {
-            panic!("failed to verify password hash: {hash}");
-        }
-
-        if Yescrypt.verify_password(b"bogus", hash) != Err(Error::PasswordInvalid) {
-            panic!("verification unexpectedly succeeded for password hash: {hash}");
-        }
+        assert_eq!(
+            Yescrypt.verify_password(b"bogus", hash),
+            Err(Error::PasswordInvalid)
+        );
     }
 }
