@@ -107,16 +107,16 @@ pub fn scrypt(
     let mut b = vec![0u8; pr128];
     pbkdf2_hmac::<Sha256>(password, salt, 1, &mut b);
 
-    #[cfg(not(feature = "rayon"))]
+    #[cfg(not(feature = "parallel"))]
     romix_sequential(nr128, r128, n, &mut b);
-    #[cfg(feature = "rayon")]
+    #[cfg(feature = "parallel")]
     romix_parallel(nr128, r128, n, &mut b);
 
     pbkdf2_hmac::<Sha256>(password, &b, 1, output);
     Ok(())
 }
 
-#[cfg(not(feature = "rayon"))]
+#[cfg(not(feature = "parallel"))]
 fn romix_sequential(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
     let mut v = vec![0u8; nr128];
     let mut t = vec![0u8; r128];
@@ -126,7 +126,7 @@ fn romix_sequential(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
     });
 }
 
-#[cfg(feature = "rayon")]
+#[cfg(feature = "parallel")]
 fn romix_parallel(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
     use rayon::{iter::ParallelIterator as _, slice::ParallelSliceMut as _};
 

@@ -31,7 +31,7 @@ getrandom = ["password-hash", "password-hash/getrandom"]
 mcf = ["alloc", "password-hash", "dep:mcf", "dep:subtle"]
 phc = ["password-hash/phc"]
 rand_core = ["password-hash/rand_core"]
-rayon = ["dep:rayon"]
+parallel = ["dep:rayon"]
 
 [package.metadata.docs.rs]
 all-features = true
