@@ -268,9 +268,9 @@ checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
 
 [[package]]
 name = "mcf"
-version = "0.6.0-rc.0"
+version = "0.6.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97fe7b16e9a78dd25fb4a09d26f04fe0f8bd5a8a7574c27cbec331f9cf802e79"
+checksum = "5cccf883a4e4c6a0d0f912967c2e36bdf0b4406a903075200eb18b42728884a1"
 dependencies = [
  "base64ct",
 ]
