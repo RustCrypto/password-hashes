@@ -30,13 +30,22 @@ The core API consists of two functions:
 
 Behind the scenes the crate uses the multi-algorithm support in the
 [`password-hash`] crate to support multiple password hashing algorithms
-simultaneously. By default it supports Argon2 (using the latest OWASP
-recommended parameters 8), but it can also optionally support PBKDF2 and scrypt
+simultaneously. By default, it supports Argon2 (using the latest OWASP
+recommended parameters), but it can also optionally support PBKDF2 and scrypt
 by enabling crate features.
 
 When multiple algorithms are enabled, it will still default to Argon2 for
 `generate_hash`, but will be able to verify password hashes from PBKDF2 and
 scrypt as well, if you have them in your password database.
+
+## SemVer Policy
+
+MSRV increases are not considered breaking changes and can happen in patch releases.
+
+The crate MSRV accounts for all supported targets and crate feature combinations.
+
+Users who depend on specific versions of the `getrandom` crate should pin to specific minor versions
+of `password-auth`, as we reserve the right to upgrade `getrandom` without bumping major versions.
 
 ## License
 
@@ -55,18 +64,18 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/password-auth
+[crate-image]: https://img.shields.io/crates/v/password-auth?logo=rust
 [crate-link]: https://crates.io/crates/password-auth
 [docs-image]: https://docs.rs/password-auth/badge.svg
 [docs-link]: https://docs.rs/password-auth/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.81+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
-[build-image]: https://github.com/RustCrypto/password-hashes/workflows/password-auth/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Apassword-auth
+[build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/password-auth.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/password-hashes/actions/workflows/password-auth.yml
 
-[//]: # (general links)
+[//]: # (links)
 
 [RustCrypto]: https://github.com/RustCrypto/
 [Argon2]: https://en.wikipedia.org/wiki/Argon2

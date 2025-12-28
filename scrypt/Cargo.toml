@@ -21,7 +21,7 @@ rayon = { version = "1.11", optional = true }
 
 # optional dependencies
 mcf = { version = "0.6.0-rc.1", optional = true }
-password-hash = { version = "0.6.0-rc.6", optional = true, default-features = false }
+password-hash = { version = "0.6.0-rc.7", optional = true, default-features = false }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
