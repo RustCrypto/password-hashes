@@ -204,9 +204,9 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "getrandom"
-version = "0.3.4"
+version = "0.4.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
+checksum = "3b99f0d993a2b9b97b9a201193aa8ad21305cde06a3be9a7e1f8f4201e5cc27e"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -303,9 +303,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.6.0-rc.6"
+version = "0.6.0-rc.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "383d290055c99f2dd7dece082088d89494dff6d79277fbac4a7da21c1bf2ab6b"
+checksum = "c351143b5ab27b1f1d24712f21ea4d0458fe74f60dd5839297dabcc2ecd24d58"
 dependencies = [
  "getrandom",
  "phc",
@@ -328,9 +328,9 @@ dependencies = [
 
 [[package]]
 name = "phc"
-version = "0.6.0-rc.0"
+version = "0.6.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c61f960577aaac5c259bc0866d685ba315c0ed30793c602d7287f54980913863"
+checksum = "71d390c5fe8d102c2c18ff39f1e72b9ad5996de282c2d831b0312f56910f5508"
 dependencies = [
  "base64ct",
  "getrandom",
@@ -364,9 +364,9 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rand_core"
-version = "0.10.0-rc-2"
+version = "0.10.0-rc-3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "104a23e4e8b77312a823b6b5613edbac78397e2f34320bc7ac4277013ec4478e"
+checksum = "f66ee92bc15280519ef199a274fe0cafff4245d31bc39aaa31c011ad56cb1f05"
 
 [[package]]
 name = "rayon"
