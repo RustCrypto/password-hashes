@@ -48,6 +48,7 @@ extern crate alloc;
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
 
+mod block_mix;
 /// Errors for `scrypt` operations.
 pub mod errors;
 mod params;
