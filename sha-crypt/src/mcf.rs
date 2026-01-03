@@ -75,7 +75,7 @@ where
             .push_str(&salt)
             .map_err(|_| Error::EncodingInvalid)?;
 
-        mcf_hash.push_base64(out.as_ref(), Base64::ShaCrypt);
+        mcf_hash.push_base64(out.as_ref(), Base64::Crypt);
 
         Ok(mcf_hash)
     }
@@ -126,7 +126,7 @@ where
         let expected = fields
             .next()
             .ok_or(Error::EncodingInvalid)?
-            .decode_base64(Base64::ShaCrypt)
+            .decode_base64(Base64::Crypt)
             .map_err(|_| Error::EncodingInvalid)?;
 
         // should be the last field
