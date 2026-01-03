@@ -18,7 +18,7 @@ use password_hash::{
 const MCF_ID: &str = "7";
 
 /// Base64 variant used by scrypt.
-const SCRYPT_BASE64: Base64 = Base64::ShaCrypt;
+const SCRYPT_BASE64: Base64 = Base64::Crypt;
 
 /// Size of a `u32` when using scrypt's fixed-width Base64 encoding.
 const ENCODED_U32_LEN: usize = 5;

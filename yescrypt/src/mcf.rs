@@ -14,7 +14,7 @@ use password_hash::{
 const YESCRYPT_MCF_ID: &str = "y";
 
 /// Base64 variant used by yescrypt.
-const YESCRYPT_BASE64: Base64 = Base64::ShaCrypt;
+const YESCRYPT_BASE64: Base64 = Base64::Crypt;
 
 /// yescrypt password hashing type which can produce and verify strings in Modular Crypt Format
 /// (MCF) which begin with `$y$`
