@@ -64,7 +64,7 @@ fn generate_phc_hash(password: &[u8]) -> password_hash::Result<PasswordHash> {
     return Argon2::default().hash_password(password);
 
     #[cfg(feature = "scrypt")]
-    return Scrypt.hash_password(password);
+    return Scrypt::default().hash_password(password);
 
     #[cfg(feature = "pbkdf2")]
     return Pbkdf2.hash_password(password);
@@ -86,7 +86,7 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Ver
         #[cfg(feature = "pbkdf2")]
         &Pbkdf2,
         #[cfg(feature = "scrypt")]
-        &Scrypt,
+        &Scrypt::default(),
     ];
 
     for &alg in algs {
