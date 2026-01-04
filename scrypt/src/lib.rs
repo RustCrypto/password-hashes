@@ -29,15 +29,16 @@
 //!     Scrypt
 //! };
 //!
+//! let scrypt = Scrypt::default(); // Uses `Params::RECOMMENDED`
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //!
 //! // Hash password to PHC string ($scrypt$...)
-//! let hash: PasswordHash = Scrypt.hash_password(password)?;
+//! let hash: PasswordHash = scrypt.hash_password(password)?;
 //! let hash_string = hash.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&hash_string)?;
-//! assert!(Scrypt.verify_password(password, &parsed_hash).is_ok());
+//! assert!(scrypt.verify_password(password, &parsed_hash).is_ok());
 //! # Ok(())
 //! # }
 //! ```
@@ -142,9 +143,34 @@ fn romix_parallel(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
 /// Competition (PHC) string format which begin with `$scrypt$`, or in Modular Crypt Format (MCF)
 /// which begin with `$7$`.
 ///
-/// This is a ZST which impls traits from the [`password-hash`][`password_hash`] crate, notably
-/// the [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
+/// This type holds the default parameters to use when computing password hashes.
 ///
 /// See the toplevel documentation for a code example.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Scrypt;
+#[cfg(any(feature = "mcf", feature = "phc"))]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct Scrypt {
+    /// Default parameters to use.
+    params: Params,
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl Scrypt {
+    /// Initialize [`Scrypt`] with default parameters.
+    pub const fn new() -> Self {
+        Self {
+            params: Params::RECOMMENDED,
+        }
+    }
+
+    /// Initialize [`Scrypt`] with the provided parameters.
+    pub const fn new_with_params(params: Params) -> Self {
+        Self { params }
+    }
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl From<Params> for Scrypt {
+    fn from(params: Params) -> Self {
+        Self::new_with_params(params)
+    }
+}

@@ -74,7 +74,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Scrypt {
 
 impl PasswordHasher<PasswordHash> for Scrypt {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Params::RECOMMENDED)
+        self.hash_password_customized(password, salt, None, None, self.params)
     }
 }
 
@@ -273,7 +273,7 @@ mod tests {
         let salt = SCRYPT_BASE64.decode_vec(EXAMPLE_SALT).unwrap();
         let params = Params::new(EXAMPLE_LOG_N, EXAMPLE_R, EXAMPLE_P).unwrap();
 
-        let actual_hash: PasswordHash = Scrypt
+        let actual_hash: PasswordHash = Scrypt::new()
             .hash_password_with_params(EXAMPLE_PASSWORD, &salt, params)
             .unwrap();
 
@@ -284,10 +284,13 @@ mod tests {
     #[test]
     fn verify_password() {
         let hash = PasswordHashRef::new(EXAMPLE_MCF_HASH).unwrap();
-        assert_eq!(Scrypt.verify_password(EXAMPLE_PASSWORD, hash), Ok(()));
+        assert_eq!(
+            Scrypt::new().verify_password(EXAMPLE_PASSWORD, hash),
+            Ok(())
+        );
 
         assert_eq!(
-            Scrypt.verify_password(b"bogus", hash),
+            Scrypt::new().verify_password(b"bogus", hash),
             Err(Error::PasswordInvalid)
         );
     }
