@@ -39,7 +39,11 @@ let input_password = "password";
 let password_hash = phc::PasswordHash::new(&hash_string)?;
 
 // Trait objects for algorithms to support
-let algs: &[&dyn PasswordVerifier<phc::PasswordHash>] = &[&Argon2::default(), &Pbkdf2, &Scrypt::default()];
+let algs: &[&dyn PasswordVerifier<phc::PasswordHash>] = &[
+    &Argon2::default(),
+    &Pbkdf2::default(),
+    &Scrypt::default()
+];
 
 for alg in algs {
     if alg.verify_password(input_password.as_ref(), &password_hash).is_ok() {

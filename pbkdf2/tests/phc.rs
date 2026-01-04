@@ -28,7 +28,7 @@ fn hash_with_default_algorithm() {
         output_length: 40,
     };
 
-    let hash = Pbkdf2
+    let hash = Pbkdf2::new()
         .hash_password_customized(PASSWORD, SALT, None, None, params)
         .unwrap();
 

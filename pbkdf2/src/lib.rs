@@ -69,14 +69,15 @@
 //!     Pbkdf2
 //! };
 //!
+//! let pbkdf2 = Pbkdf2::new(); // Uses `Params::RECOMMENDED`
 //! let password = b"hunter42"; // Bad password; don't actually use!
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
-//! let password_hash = Pbkdf2.hash_password(password)?.to_string();
+//! let password_hash = pbkdf2.hash_password(password)?.to_string();
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&password_hash)?;
-//! assert!(Pbkdf2.verify_password(password, &parsed_hash).is_ok());
+//! assert!(pbkdf2.verify_password(password, &parsed_hash).is_ok());
 //! # Ok(())
 //! # }
 //! ```

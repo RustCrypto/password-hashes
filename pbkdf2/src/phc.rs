@@ -15,8 +15,35 @@ use sha2::{Sha256, Sha512};
 use sha1::Sha1;
 
 /// PBKDF2 type for use with [`PasswordHasher`].
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Pbkdf2;
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct Pbkdf2 {
+    /// Algorithm to use
+    algorithm: Algorithm,
+
+    /// Default parameters to use.
+    params: Params,
+}
+
+impl Pbkdf2 {
+    /// Initialize [`Pbkdf2`] with default parameters.
+    pub const fn new() -> Self {
+        Self::new_with_params(Params::RECOMMENDED)
+    }
+
+    /// Initialize [`Pbkdf2`] with the provided parameters.
+    pub const fn new_with_params(params: Params) -> Self {
+        Self {
+            algorithm: Algorithm::RECOMMENDED,
+            params,
+        }
+    }
+}
+
+impl From<Params> for Pbkdf2 {
+    fn from(params: Params) -> Self {
+        Self::new_with_params(params)
+    }
+}
 
 impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
     type Params = Params;
@@ -32,7 +59,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
         let algorithm = alg_id
             .map(Algorithm::try_from)
             .transpose()?
-            .unwrap_or_default();
+            .unwrap_or(self.algorithm);
 
         // Versions unsupported
         if version.is_some() {
@@ -68,7 +95,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
 
 impl PasswordHasher<PasswordHash> for Pbkdf2 {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Params::default())
+        self.hash_password_customized(password, salt, None, None, self.params)
     }
 }
 
@@ -97,7 +124,7 @@ impl Default for Algorithm {
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     fn default() -> Self {
-        Self::Pbkdf2Sha256
+        Self::RECOMMENDED
     }
 }
 
@@ -111,6 +138,14 @@ impl Algorithm {
 
     /// PBKDF2 (SHA-512) algorithm identifier
     pub const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha512");
+
+    /// Default algorithm suggested by the [OWASP cheat sheet]:
+    ///
+    /// > Use PBKDF2 with a work factor of 600,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-256.
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    const RECOMMENDED: Self = Self::Pbkdf2Sha256;
 
     /// Parse an [`Algorithm`] from the provided string.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
