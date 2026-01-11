@@ -54,12 +54,12 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/yescrypt
 [docs-image]: https://docs.rs/yescrypt/badge.svg
 [docs-link]: https://docs.rs/yescrypt/
+[build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml 
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
-[build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml/badge.svg
-[build-link]: https://github.com/RustCrypto/password-hashes/actions/workflows/yescrypt.yml 
 
 [//]: # (links)
 
