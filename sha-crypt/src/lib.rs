@@ -15,14 +15,15 @@
 //! # fn main() -> password_hash::Result<()> {
 //! // NOTE: example requires `getrandom` feature is enabled
 //!
-//! use sha_crypt::{SHA512_CRYPT, PasswordHasher, PasswordVerifier};
+//! use sha_crypt::{PasswordHasher, PasswordVerifier, ShaCrypt};
 //!
+//! let sha_crypt = ShaCrypt::default(); // default is SHA-512-crypt
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
-//! let password_hash = SHA512_CRYPT.hash_password(password)?;
+//! let password_hash = sha_crypt.hash_password(password)?;
 //! assert!(password_hash.as_str().starts_with("$6$"));
 //!
 //! // verify password is correct for the given hash
-//! SHA512_CRYPT.verify_password(password, &password_hash)?;
+//! sha_crypt.verify_password(password, &password_hash)?;
 //! # Ok(())
 //! # }
 //! ```
@@ -35,6 +36,8 @@ mod errors;
 mod params;
 
 #[cfg(feature = "password-hash")]
+mod algorithm;
+#[cfg(feature = "password-hash")]
 mod mcf;
 
 pub use crate::{
@@ -44,8 +47,9 @@ pub use crate::{
 
 #[cfg(feature = "password-hash")]
 pub use {
-    crate::mcf::{
-        PasswordHash, PasswordHashRef, SHA256_CRYPT, SHA512_CRYPT, ShaCrypt, ShaCryptCore,
+    crate::{
+        algorithm::Algorithm,
+        mcf::{PasswordHash, PasswordHashRef, ShaCrypt},
     },
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
 };
@@ -53,21 +57,19 @@ pub use {
 use alloc::vec::Vec;
 use sha2::{Digest, Sha256, Sha512};
 
-/// Block size for SHA256
+/// Block size for SHA-256-crypt.
 pub const BLOCK_SIZE_SHA256: usize = 32;
 
-/// Block size for SHA512
+/// Block size for SHA-512-crypt.
 pub const BLOCK_SIZE_SHA512: usize = 64;
 
-/// The SHA-256 crypt function returned as byte vector
-///
-/// If the provided hash is longer than defs::SALT_MAX_LEN character, it will
-/// be stripped down to defs::SALT_MAX_LEN characters.
+/// The SHA-256-crypt function which outputs a uniformly random byte array.
 ///
 /// # Arguments
 /// - `password`: the password to process as a byte vector
 /// - `salt`: the salt value to use as a byte vector
 /// - `params`: the parameters to use
+///
 ///   **WARNING: Make sure to compare this value in constant time!**
 pub fn sha256_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA256] {
     let pw_len = password.len();
@@ -79,7 +81,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK
     };
     let salt_len = salt.len();
 
-    let digest_a = sha256crypt_intermediate(password, salt);
+    let digest_a = sha256_crypt_intermediate(password, salt);
 
     // 13.
     let mut hasher_alt = Sha256::default();
@@ -150,15 +152,13 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK
     digest_c
 }
 
-/// The SHA-512 crypt function returned as byte vector
-///
-/// If the provided hash is longer than defs::SALT_MAX_LEN character, it will
-/// be stripped down to defs::SALT_MAX_LEN characters.
+/// The SHA-512-crypt function which outputs a uniformly random byte array.
 ///
 /// # Arguments
 /// - `password`The password to process as a byte vector
 /// - `salt` - The salt value to use as a byte vector
 /// - `params` - The parameters to use
+///
 ///   **WARNING: Make sure to compare this value in constant time!**
 pub fn sha512_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA512] {
     let pw_len = password.len();
@@ -170,7 +170,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK
     };
     let salt_len = salt.len();
 
-    let digest_a = sha512crypt_intermediate(password, salt);
+    let digest_a = sha512_crypt_intermediate(password, salt);
 
     // 13.
     let mut hasher_alt = Sha512::default();
@@ -241,7 +241,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK
     digest_c
 }
 
-fn sha256crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA256] {
+fn sha256_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA256] {
     let pw_len = password.len();
 
     let mut hasher = Sha256::default();
@@ -284,7 +284,7 @@ fn sha256crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA
     hasher.finalize().as_slice().try_into().unwrap()
 }
 
-fn sha512crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA512] {
+fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA512] {
     let pw_len = password.len();
 
     let mut hasher = Sha512::default();

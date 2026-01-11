@@ -3,7 +3,7 @@
 use base64ct::{Base64ShaCrypt, Encoding};
 use mcf::PasswordHash;
 use sha_crypt::{
-    Params, SHA256_CRYPT, SHA512_CRYPT,
+    Algorithm, Params, ShaCrypt,
     password_hash::{CustomizedPasswordHasher, Error, PasswordVerifier},
 };
 
@@ -89,12 +89,13 @@ const TEST_VECTORS: &[TestVector] = &[
 
 #[test]
 fn hash_sha256_crypt() {
+    let sha_crypt = ShaCrypt::from(Algorithm::Sha256Crypt);
     let mut any = false;
 
     for t in TEST_VECTORS {
         if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
             let params = Params::new(t.rounds).unwrap();
-            let result = SHA256_CRYPT
+            let result = sha_crypt
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
                 .unwrap();
 
@@ -108,12 +109,13 @@ fn hash_sha256_crypt() {
 
 #[test]
 fn hash_sha512_crypt() {
+    let sha_crypt = ShaCrypt::default(); // default should be SHA-512
     let mut any = false;
 
     for t in TEST_VECTORS {
         if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
             let params = Params::new(t.rounds).unwrap();
-            let result = SHA512_CRYPT
+            let result = sha_crypt
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
                 .unwrap();
 
@@ -127,20 +129,19 @@ fn hash_sha512_crypt() {
 
 #[test]
 fn verify_sha256_crypt() {
+    let sha_crypt = ShaCrypt::from(Algorithm::Sha256Crypt);
+
     for t in TEST_VECTORS {
         let mut hash = PasswordHash::from_id("6").unwrap();
         hash.push_str(&format!("rounds={}", t.rounds)).unwrap();
         hash.push_str(t.salt).unwrap();
         hash.push_str(t.result_sha512).unwrap();
 
-        assert_eq!(
-            SHA512_CRYPT.verify_password(t.input.as_bytes(), &hash),
-            Ok(())
-        );
+        assert_eq!(sha_crypt.verify_password(t.input.as_bytes(), &hash), Ok(()));
     }
 
     assert_eq!(
-        SHA256_CRYPT.verify_password(
+        sha_crypt.verify_password(
             b"foobar",
             &PasswordHash::new("$5$9aEeVXnCiCNHUjO/$FrVBcjyJukRaE6inMYazyQv1DBnwaKfom.71ebgQR/0")
                 .unwrap()
@@ -149,7 +150,7 @@ fn verify_sha256_crypt() {
     );
 
     assert_eq!(
-        SHA256_CRYPT.verify_password(
+        sha_crypt.verify_password(
             b"foobar",
             &PasswordHash::new(
                 "$5$rounds=100000$PhW/wpSsmgIMKsTW$d9kDD8dQNu3r0Ky.xcOEhdin6EQRebrHfNKDRwWP/pB"
@@ -162,20 +163,19 @@ fn verify_sha256_crypt() {
 
 #[test]
 fn verify_sha512_crypt() {
+    let sha_crypt = ShaCrypt::default(); // default should be SHA-512
+
     for t in TEST_VECTORS {
         let mut hash = PasswordHash::from_id("6").unwrap();
         hash.push_str(&format!("rounds={}", t.rounds)).unwrap();
         hash.push_str(t.salt).unwrap();
         hash.push_str(t.result_sha512).unwrap();
 
-        assert_eq!(
-            SHA512_CRYPT.verify_password(t.input.as_bytes(), &hash),
-            Ok(())
-        );
+        assert_eq!(sha_crypt.verify_password(t.input.as_bytes(), &hash), Ok(()));
     }
 
     assert_eq!(
-        SHA512_CRYPT.verify_password(
+        sha_crypt.verify_password(
             b"foobar",
             &PasswordHash::new(
                 "$6$bbe605c2cce4c642$BiBOywFAm9kdv6ZPpj2GaKVqeh/.c21pf1uFBaq.e59KEE2Ej74iJleXaLXURYV6uh5LF4K7dDc4vtRtPiiKB/"
@@ -185,7 +185,7 @@ fn verify_sha512_crypt() {
     );
 
     assert_eq!(
-        SHA512_CRYPT.verify_password(
+        sha_crypt.verify_password(
             b"foobar",
             &PasswordHash::new(
                 "$6$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0"
@@ -197,22 +197,12 @@ fn verify_sha512_crypt() {
 
 #[cfg(feature = "password-hash")]
 #[test]
-fn test_sha256_wrong_id() {
+fn test_wrong_id() {
+    let sha_crypt = ShaCrypt::default();
     let passwd = b"foobar";
 
     // wrong id '7'
     let hash = PasswordHash::new("$7$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0").unwrap();
-    let res = SHA256_CRYPT.verify_password(passwd, &hash);
-    assert_eq!(res, Err(Error::Algorithm));
-}
-
-#[cfg(feature = "password-hash")]
-#[test]
-fn test_sha512_wrong_id() {
-    let passwd = b"foobar";
-
-    // wrong id '7'
-    let hash = PasswordHash::new("$7$rounds=100000$exn6tVc2j/MZD8uG$BI1Xh8qQSK9J4m14uwy7abn.ctj/TIAzlaVCto0MQrOFIeTXsc1iwzH16XEWo/a7c7Y9eVJvufVzYAs4EsPOy0").unwrap();
-    let res = SHA512_CRYPT.verify_password(passwd, &hash);
+    let res = sha_crypt.verify_password(passwd, &hash);
     assert_eq!(res, Err(Error::Algorithm));
 }

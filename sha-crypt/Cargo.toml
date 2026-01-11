@@ -2,8 +2,9 @@
 name = "sha-crypt"
 version = "0.6.0-rc.1"
 description = """
-Pure Rust implementation of the SHA-crypt password hash based on SHA-512
-as implemented by the POSIX crypt C library
+Pure Rust implementation of the SHA-crypt password hashing algorithm based on SHA-256/SHA-512
+as implemented by the POSIX crypt C library, including support for generating and verifying password
+hash strings in the Modular Crypt Format
 """
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
