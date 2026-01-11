@@ -89,13 +89,17 @@ extern crate alloc;
 pub use password_hash;
 
 #[cfg(feature = "password-hash")]
+mod algorithm;
+#[cfg(feature = "password-hash")]
+mod params;
+#[cfg(feature = "password-hash")]
 mod phc;
 
 #[cfg(feature = "hmac")]
 pub use hmac;
 
 #[cfg(feature = "password-hash")]
-pub use crate::phc::{Algorithm, Params, Pbkdf2};
+pub use crate::{algorithm::Algorithm, params::Params, phc::Pbkdf2};
 
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
