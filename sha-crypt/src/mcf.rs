@@ -17,6 +17,16 @@ use subtle::ConstantTimeEq;
 pub struct ShaCrypt {
     /// Default algorithm to use when generating password hashes.
     algorithm: Algorithm,
+
+    /// Default params to use when generating password hashes.
+    params: Params,
+}
+
+impl ShaCrypt {
+    /// Create a new password hasher with customized algorithm and params.
+    pub fn new(algorithm: Algorithm, params: Params) -> Self {
+        Self { algorithm, params }
+    }
 }
 
 impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
@@ -44,7 +54,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
         let mut mcf_hash = PasswordHash::from_id(alg.ident()).expect("should have valid ID");
 
         mcf_hash
-            .push_displayable(&params)
+            .push_displayable(params)
             .expect("should be valid field");
 
         mcf_hash
@@ -53,11 +63,11 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
 
         match alg {
             Algorithm::Sha256Crypt => {
-                let out = sha256_crypt_core(password, salt.as_bytes(), &params);
+                let out = sha256_crypt_core(password, salt.as_bytes(), params);
                 mcf_hash.push_base64(&out, Base64::Crypt);
             }
             Algorithm::Sha512Crypt => {
-                let out = sha512_crypt_core(password, salt.as_bytes(), &params);
+                let out = sha512_crypt_core(password, salt.as_bytes(), params);
                 mcf_hash.push_base64(&out, Base64::Crypt);
             }
         }
@@ -68,7 +78,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
 
 impl PasswordHasher<PasswordHash> for ShaCrypt {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Params::default())
+        self.hash_password_customized(password, salt, None, None, self.params)
     }
 }
 
@@ -108,10 +118,10 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt {
         }
 
         let is_valid = match alg {
-            Algorithm::Sha256Crypt => sha256_crypt_core(password, salt, &params)
+            Algorithm::Sha256Crypt => sha256_crypt_core(password, salt, params)
                 .as_ref()
                 .ct_eq(&expected),
-            Algorithm::Sha512Crypt => sha512_crypt_core(password, salt, &params)
+            Algorithm::Sha512Crypt => sha512_crypt_core(password, salt, params)
                 .as_ref()
                 .ct_eq(&expected),
         };
@@ -134,12 +144,24 @@ impl PasswordVerifier<str> for ShaCrypt {
 
 impl From<Algorithm> for ShaCrypt {
     fn from(algorithm: Algorithm) -> Self {
-        Self { algorithm }
+        Self {
+            algorithm,
+            params: Params::default(),
+        }
+    }
+}
+
+impl From<Params> for ShaCrypt {
+    fn from(params: Params) -> Self {
+        Self {
+            algorithm: Algorithm::default(),
+            params,
+        }
     }
 }
 
 /// SHA-256-crypt core function: uses an algorithm-specific transposition table.
-fn sha256_crypt_core(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA256] {
+fn sha256_crypt_core(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA256] {
     let output = super::sha256_crypt(password, salt, params);
     let transposition_table = [
         20, 10, 0, 11, 1, 21, 2, 22, 12, 23, 13, 3, 14, 4, 24, 5, 25, 15, 26, 16, 6, 17, 7, 27, 8,
@@ -155,7 +177,7 @@ fn sha256_crypt_core(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOC
 }
 
 /// SHA-512-crypt core function: uses an algorithm-specific transposition table.
-fn sha512_crypt_core(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA512] {
+fn sha512_crypt_core(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA512] {
     let output = super::sha512_crypt(password, salt, params);
     let transposition_table = [
         42, 21, 0, 1, 43, 22, 23, 2, 44, 45, 24, 3, 4, 46, 25, 26, 5, 47, 48, 27, 6, 7, 49, 28, 29,
