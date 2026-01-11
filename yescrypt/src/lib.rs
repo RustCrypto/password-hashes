@@ -32,12 +32,13 @@
 //!
 //! use yescrypt::{Yescrypt, PasswordHasher, PasswordVerifier};
 //!
+//! let yescrypt = Yescrypt::default();
 //! let password = b"pleaseletmein"; // don't actually use this as a password!
-//! let password_hash = Yescrypt.hash_password(password)?;
+//! let password_hash = yescrypt.hash_password(password)?;
 //! assert!(password_hash.as_str().starts_with("$y$"));
 //!
 //! // verify password is correct for the given hash
-//! Yescrypt.verify_password(password, &password_hash)?;
+//! yescrypt.verify_password(password, &password_hash)?;
 //! # Ok(())
 //! # }
 //! ```

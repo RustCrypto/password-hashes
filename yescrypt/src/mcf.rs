@@ -19,12 +19,21 @@ const YESCRYPT_BASE64: Base64 = Base64::Crypt;
 /// yescrypt password hashing type which can produce and verify strings in Modular Crypt Format
 /// (MCF) which begin with `$y$`
 ///
-/// This is a ZST which impls traits from the [`password-hash`][`password_hash`] crate, notably
-/// the [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
+/// This type impls traits from the [`password-hash`][`password_hash`] crate, notably the
+/// [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
 ///
 /// See the toplevel documentation for a code example.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Yescrypt;
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct Yescrypt {
+    /// Default parameters to use when hashing passwords.
+    params: Params,
+}
+
+impl From<Params> for Yescrypt {
+    fn from(params: Params) -> Self {
+        Self { params }
+    }
+}
 
 impl CustomizedPasswordHasher<PasswordHash> for Yescrypt {
     type Params = Params;
@@ -72,7 +81,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Yescrypt {
 
 impl PasswordHasher<PasswordHash> for Yescrypt {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
-        self.hash_password_customized(password, salt, None, None, Params::default())
+        self.hash_password_customized(password, salt, None, None, self.params)
     }
 }
 
