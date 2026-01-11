@@ -2,7 +2,10 @@ use core::{
     fmt::{self, Display},
     str::FromStr,
 };
-use password_hash::{Error, phc::Ident};
+use password_hash::Error;
+
+#[cfg(feature = "phc")]
+use password_hash::phc::Ident;
 
 /// PBKDF2 variants.
 ///
@@ -24,13 +27,25 @@ pub enum Algorithm {
 impl Algorithm {
     /// PBKDF2 (SHA-1) algorithm identifier
     #[cfg(feature = "sha1")]
-    pub const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap("pbkdf2");
+    pub const PBKDF2_SHA1_ID: &'static str = "pbkdf2";
 
     /// PBKDF2 (SHA-256) algorithm identifier
-    pub const PBKDF2_SHA256_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha256");
+    pub const PBKDF2_SHA256_ID: &'static str = "pbkdf2-sha256";
 
     /// PBKDF2 (SHA-512) algorithm identifier
-    pub const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap("pbkdf2-sha512");
+    pub const PBKDF2_SHA512_ID: &'static str = "pbkdf2-sha512";
+
+    /// PBKDF2 (SHA-1) algorithm identifier
+    #[cfg(all(feature = "phc", feature = "sha1"))]
+    pub(crate) const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap(Self::PBKDF2_SHA1_ID);
+
+    /// PBKDF2 (SHA-256) algorithm identifier
+    #[cfg(feature = "phc")]
+    pub(crate) const PBKDF2_SHA256_IDENT: Ident = Ident::new_unwrap(Self::PBKDF2_SHA256_ID);
+
+    /// PBKDF2 (SHA-512) algorithm identifier
+    #[cfg(feature = "phc")]
+    pub(crate) const PBKDF2_SHA512_IDENT: Ident = Ident::new_unwrap(Self::PBKDF2_SHA512_ID);
 
     /// Default algorithm suggested by the [OWASP cheat sheet]:
     ///
@@ -45,25 +60,20 @@ impl Algorithm {
         id.as_ref().parse()
     }
 
-    /// Get the [`Ident`] that corresponds to this PBKDF2 [`Algorithm`].
-    pub fn ident(&self) -> &'static Ident {
+    /// Get the Modular Crypt Format algorithm identifier for this algorithm.
+    pub const fn to_str(self) -> &'static str {
         match self {
             #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => &Self::PBKDF2_SHA1_IDENT,
-            Algorithm::Pbkdf2Sha256 => &Self::PBKDF2_SHA256_IDENT,
-            Algorithm::Pbkdf2Sha512 => &Self::PBKDF2_SHA512_IDENT,
+            Algorithm::Pbkdf2Sha1 => Self::PBKDF2_SHA1_ID,
+            Algorithm::Pbkdf2Sha256 => Self::PBKDF2_SHA256_ID,
+            Algorithm::Pbkdf2Sha512 => Self::PBKDF2_SHA512_ID,
         }
-    }
-
-    /// Get the identifier string for this PBKDF2 [`Algorithm`].
-    pub fn as_str(&self) -> &str {
-        self.ident().as_str()
     }
 }
 
 impl AsRef<str> for Algorithm {
     fn as_ref(&self) -> &str {
-        self.as_str()
+        self.to_str()
     }
 }
 
@@ -75,7 +85,7 @@ impl Default for Algorithm {
 
 impl Display for Algorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        f.write_str(self.to_str())
     }
 }
 
@@ -87,9 +97,15 @@ impl FromStr for Algorithm {
     }
 }
 
+#[cfg(feature = "phc")]
 impl From<Algorithm> for Ident {
     fn from(alg: Algorithm) -> Ident {
-        *alg.ident()
+        match alg {
+            #[cfg(feature = "sha1")]
+            Algorithm::Pbkdf2Sha1 => Algorithm::PBKDF2_SHA1_IDENT,
+            Algorithm::Pbkdf2Sha256 => Algorithm::PBKDF2_SHA256_IDENT,
+            Algorithm::Pbkdf2Sha512 => Algorithm::PBKDF2_SHA512_IDENT,
+        }
     }
 }
 
@@ -97,11 +113,11 @@ impl<'a> TryFrom<&'a str> for Algorithm {
     type Error = Error;
 
     fn try_from(name: &'a str) -> password_hash::Result<Algorithm> {
-        match name.try_into() {
+        match name {
             #[cfg(feature = "sha1")]
-            Ok(Self::PBKDF2_SHA1_IDENT) => Ok(Algorithm::Pbkdf2Sha1),
-            Ok(Self::PBKDF2_SHA256_IDENT) => Ok(Algorithm::Pbkdf2Sha256),
-            Ok(Self::PBKDF2_SHA512_IDENT) => Ok(Algorithm::Pbkdf2Sha512),
+            Self::PBKDF2_SHA1_ID => Ok(Algorithm::Pbkdf2Sha1),
+            Self::PBKDF2_SHA256_ID => Ok(Algorithm::Pbkdf2Sha256),
+            Self::PBKDF2_SHA512_ID => Ok(Algorithm::Pbkdf2Sha512),
             _ => Err(Error::Algorithm),
         }
     }

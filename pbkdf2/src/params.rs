@@ -1,10 +1,13 @@
 use core::{
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display},
+    num::ParseIntError,
     str::FromStr,
 };
+
+#[cfg(feature = "phc")]
 use password_hash::{
     Error,
-    phc::{Decimal, ParamsString, PasswordHash},
+    phc::{self, Decimal, ParamsString},
 };
 
 /// PBKDF2 params
@@ -18,6 +21,12 @@ pub struct Params {
 }
 
 impl Params {
+    /// Maximum supported output length.
+    pub const MAX_LENGTH: usize = 64;
+
+    /// Recommended output length.
+    pub const RECOMMENDED_LENGTH: usize = 32;
+
     /// Recommended number of PBKDF2 rounds (used by default).
     ///
     /// This number is adopted from the [OWASP cheat sheet]:
@@ -25,15 +34,22 @@ impl Params {
     /// > Use PBKDF2 with a work factor of 600,000 or more
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-    pub const RECOMMENDED_ROUNDS: usize = 600_000;
+    pub const RECOMMENDED_ROUNDS: u32 = 600_000;
 
     /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED: Self = Params {
-        rounds: Self::RECOMMENDED_ROUNDS as u32,
-        output_length: 32,
+        rounds: Self::RECOMMENDED_ROUNDS,
+        output_length: Self::RECOMMENDED_LENGTH,
     };
+
+    /// Create new params with the given number of rounds.
+    pub fn new(rounds: u32) -> Self {
+        let mut ret = Self::RECOMMENDED;
+        ret.rounds = rounds;
+        ret
+    }
 }
 
 impl Default for Params {
@@ -43,20 +59,20 @@ impl Default for Params {
 }
 
 impl Display for Params {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.rounds)
     }
 }
 
 impl FromStr for Params {
-    type Err = Error;
+    type Err = ParseIntError;
 
-    fn from_str(s: &str) -> password_hash::Result<Self> {
-        let params_string = ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
-        Self::try_from(&params_string)
+    fn from_str(s: &str) -> Result<Self, ParseIntError> {
+        u32::from_str(s).map(Params::new)
     }
 }
 
+#[cfg(feature = "phc")]
 impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
@@ -71,11 +87,17 @@ impl TryFrom<&ParamsString> for Params {
                         .map_err(|_| Error::ParamInvalid { name: "i" })?
                 }
                 "l" => {
-                    params.output_length = value
+                    let output_length = value
                         .decimal()
                         .ok()
                         .and_then(|dec| dec.try_into().ok())
                         .ok_or(Error::ParamInvalid { name: "l" })?;
+
+                    if output_length > Self::MAX_LENGTH {
+                        return Err(Error::ParamInvalid { name: "l" });
+                    }
+
+                    params.output_length = output_length;
                 }
                 _ => return Err(Error::ParamsInvalid),
             }
@@ -85,10 +107,11 @@ impl TryFrom<&ParamsString> for Params {
     }
 }
 
-impl TryFrom<&PasswordHash> for Params {
+#[cfg(feature = "phc")]
+impl TryFrom<&phc::PasswordHash> for Params {
     type Error = Error;
 
-    fn try_from(hash: &PasswordHash) -> password_hash::Result<Self> {
+    fn try_from(hash: &phc::PasswordHash) -> password_hash::Result<Self> {
         if hash.version.is_some() {
             return Err(Error::Version);
         }
@@ -105,6 +128,7 @@ impl TryFrom<&PasswordHash> for Params {
     }
 }
 
+#[cfg(feature = "phc")]
 impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
@@ -113,6 +137,7 @@ impl TryFrom<Params> for ParamsString {
     }
 }
 
+#[cfg(feature = "phc")]
 impl TryFrom<&Params> for ParamsString {
     type Error = Error;
 

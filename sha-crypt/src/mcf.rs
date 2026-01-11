@@ -41,7 +41,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
         params: Params,
     ) -> Result<PasswordHash> {
         let alg = alg_id
-            .map(|id| id.parse::<Algorithm>())
+            .map(Algorithm::try_from)
             .transpose()?
             .unwrap_or(self.algorithm);
 
@@ -51,7 +51,7 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
 
         // We compute the function over the Base64-encoded salt
         let salt = Base64ShaCrypt::encode_string(salt);
-        let mut mcf_hash = PasswordHash::from_id(alg.ident()).expect("should have valid ID");
+        let mut mcf_hash = PasswordHash::from_id(alg.to_str()).expect("should have valid ID");
 
         mcf_hash
             .push_displayable(params)
