@@ -22,22 +22,26 @@ pub struct Pbkdf2 {
 
 impl Pbkdf2 {
     /// Initialize [`Pbkdf2`] with default parameters.
-    pub const fn new() -> Self {
-        Self::new_with_params(Params::RECOMMENDED)
+    pub const fn new(algorithm: Algorithm, params: Params) -> Self {
+        Self { algorithm, params }
     }
+}
 
-    /// Initialize [`Pbkdf2`] with the provided parameters.
-    pub const fn new_with_params(params: Params) -> Self {
+impl From<Algorithm> for Pbkdf2 {
+    fn from(algorithm: Algorithm) -> Self {
         Self {
-            algorithm: Algorithm::RECOMMENDED,
-            params,
+            algorithm,
+            params: Params::default(),
         }
     }
 }
 
 impl From<Params> for Pbkdf2 {
     fn from(params: Params) -> Self {
-        Self::new_with_params(params)
+        Self {
+            algorithm: Algorithm::default(),
+            params,
+        }
     }
 }
 
