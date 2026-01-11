@@ -37,7 +37,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
 
         let mut buffer = [0u8; Params::MAX_LENGTH];
         let out = buffer
-            .get_mut(..params.output_length)
+            .get_mut(..params.output_len())
             .ok_or(Error::OutputSize)?;
 
         let f = match algorithm {
@@ -47,7 +47,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
         };
 
-        f(password, &salt, params.rounds, out);
+        f(password, &salt, params.rounds(), out);
         let output = Output::new(out)?;
 
         Ok(PasswordHash {
@@ -88,10 +88,7 @@ mod tests {
     /// dkLen = 40
     #[test]
     fn hash_with_default_algorithm() {
-        let params = Params {
-            rounds: 4096,
-            output_length: 40,
-        };
+        let params = Params::new_with_output_len(4096, 40);
 
         let pwhash: PasswordHash = Pbkdf2::default()
             .hash_password_customized(PASSWORD, SALT, None, None, params)

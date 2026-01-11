@@ -14,10 +14,10 @@ use password_hash::{
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Number of rounds
-    pub rounds: u32,
+    rounds: u32,
 
     /// Size of the output (in bytes)
-    pub output_length: usize,
+    output_len: usize,
 }
 
 impl Params {
@@ -41,14 +41,32 @@ impl Params {
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED: Self = Params {
         rounds: Self::RECOMMENDED_ROUNDS,
-        output_length: Self::RECOMMENDED_LENGTH,
+        output_len: Self::RECOMMENDED_LENGTH,
     };
 
     /// Create new params with the given number of rounds.
-    pub fn new(rounds: u32) -> Self {
+    pub const fn new(rounds: u32) -> Self {
         let mut ret = Self::RECOMMENDED;
         ret.rounds = rounds;
         ret
+    }
+
+    /// Create new params with a customized output length.
+    pub const fn new_with_output_len(rounds: u32, output_length: usize) -> Self {
+        Self {
+            rounds,
+            output_len: output_length,
+        }
+    }
+
+    /// Get the number of rounds.
+    pub const fn rounds(self) -> u32 {
+        self.rounds
+    }
+
+    /// Get the output length.
+    pub const fn output_len(self) -> usize {
+        self.output_len
     }
 }
 
@@ -87,17 +105,17 @@ impl TryFrom<&ParamsString> for Params {
                         .map_err(|_| Error::ParamInvalid { name: "i" })?
                 }
                 "l" => {
-                    let output_length = value
+                    let len = value
                         .decimal()
                         .ok()
                         .and_then(|dec| dec.try_into().ok())
                         .ok_or(Error::ParamInvalid { name: "l" })?;
 
-                    if output_length > Self::MAX_LENGTH {
+                    if len > Self::MAX_LENGTH {
                         return Err(Error::ParamInvalid { name: "l" });
                     }
 
-                    params.output_length = output_length;
+                    params.output_len = len;
                 }
                 _ => return Err(Error::ParamsInvalid),
             }
@@ -119,7 +137,7 @@ impl TryFrom<&phc::PasswordHash> for Params {
         let params = Self::try_from(&hash.params)?;
 
         if let Some(hash) = &hash.hash {
-            if hash.len() != params.output_length {
+            if hash.len() != params.output_len {
                 return Err(Error::OutputSize);
             }
         }
@@ -144,7 +162,7 @@ impl TryFrom<&Params> for ParamsString {
     fn try_from(input: &Params) -> password_hash::Result<ParamsString> {
         let mut output = ParamsString::new();
 
-        for (name, value) in [("i", input.rounds), ("l", input.output_length as Decimal)] {
+        for (name, value) in [("i", input.rounds), ("l", input.output_len as Decimal)] {
             output
                 .add_decimal(name, value)
                 .map_err(|_| Error::ParamInvalid { name })?;
