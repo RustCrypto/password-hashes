@@ -444,7 +444,7 @@ dependencies = [
 
 [[package]]
 name = "sha-crypt"
-version = "0.6.0-rc.1"
+version = "0.6.0-rc.2"
 dependencies = [
  "base64ct",
  "mcf",
