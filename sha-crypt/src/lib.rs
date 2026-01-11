@@ -71,7 +71,7 @@ pub const BLOCK_SIZE_SHA512: usize = 64;
 /// - `params`: the parameters to use
 ///
 ///   **WARNING: Make sure to compare this value in constant time!**
-pub fn sha256_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA256] {
+pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA256] {
     let pw_len = password.len();
 
     let salt_len = salt.len();
@@ -160,7 +160,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK
 /// - `params` - The parameters to use
 ///
 ///   **WARNING: Make sure to compare this value in constant time!**
-pub fn sha512_crypt(password: &[u8], salt: &[u8], params: &Params) -> [u8; BLOCK_SIZE_SHA512] {
+pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA512] {
     let pw_len = password.len();
 
     let salt_len = salt.len();

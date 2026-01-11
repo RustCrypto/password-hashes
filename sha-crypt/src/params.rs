@@ -7,10 +7,11 @@ use core::{
     str::FromStr,
 };
 
+/// Name of the parameter when serialized in an MCF string.
 const ROUNDS_PARAM: &str = "rounds=";
 
 /// Algorithm parameters.
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Number of times to apply the digest function
     pub(crate) rounds: u32,
