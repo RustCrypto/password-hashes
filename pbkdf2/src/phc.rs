@@ -1,49 +1,16 @@
 //! Implementation of the `password-hash` crate API.
 
-use crate::{Algorithm, Params, pbkdf2_hmac};
+pub use password_hash::phc::PasswordHash;
+
+use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac};
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, Result,
-    phc::{Output, PasswordHash, Salt},
+    phc::{Output, Salt},
 };
 use sha2::{Sha256, Sha512};
 
 #[cfg(feature = "sha1")]
 use sha1::Sha1;
-
-/// PBKDF2 type for use with [`PasswordHasher`].
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub struct Pbkdf2 {
-    /// Algorithm to use
-    algorithm: Algorithm,
-
-    /// Default parameters to use.
-    params: Params,
-}
-
-impl Pbkdf2 {
-    /// Initialize [`Pbkdf2`] with default parameters.
-    pub const fn new(algorithm: Algorithm, params: Params) -> Self {
-        Self { algorithm, params }
-    }
-}
-
-impl From<Algorithm> for Pbkdf2 {
-    fn from(algorithm: Algorithm) -> Self {
-        Self {
-            algorithm,
-            params: Params::default(),
-        }
-    }
-}
-
-impl From<Params> for Pbkdf2 {
-    fn from(params: Params) -> Self {
-        Self {
-            algorithm: Algorithm::default(),
-            params,
-        }
-    }
-}
 
 impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
     type Params = Params;
@@ -68,7 +35,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
 
         let salt = Salt::new(salt)?;
 
-        let mut buffer = [0u8; Output::MAX_LENGTH];
+        let mut buffer = [0u8; Params::MAX_LENGTH];
         let out = buffer
             .get_mut(..params.output_length)
             .ok_or(Error::OutputSize)?;
@@ -84,7 +51,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
         let output = Output::new(out)?;
 
         Ok(PasswordHash {
-            algorithm: *algorithm.ident(),
+            algorithm: algorithm.into(),
             version: None,
             params: params.try_into()?,
             salt: Some(salt),
@@ -96,5 +63,56 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
 impl PasswordHasher<PasswordHash> for Pbkdf2 {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, self.params)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PasswordHash;
+    use crate::{Params, Pbkdf2};
+    use hex_literal::hex;
+    use password_hash::CustomizedPasswordHasher;
+
+    const PASSWORD: &[u8] = b"passwordPASSWORDpassword";
+    const SALT: &[u8] = b"saltSALTsaltSALTsaltSALTsaltSALTsalt";
+    const EXPECTED_HASH: &str = "$pbkdf2-sha256$i=4096,l=40\
+    $c2FsdFNBTFRzYWx0U0FMVHNhbHRTQUxUc2FsdFNBTFRzYWx0\
+    $NIyJ28vTKy8y2BS4EW6EzysXNH68GAAYHE4qH7jdU+HGNVGMfaxH6Q";
+
+    /// Test with `algorithm: None` - uses default PBKDF2-SHA256
+    ///
+    /// Input:
+    /// - P = "passwordPASSWORDpassword" (24 octets)
+    /// - S = "saltSALTsaltSALTsaltSALTsaltSALTsalt" (36 octets)
+    /// c = 4096
+    /// dkLen = 40
+    #[test]
+    fn hash_with_default_algorithm() {
+        let params = Params {
+            rounds: 4096,
+            output_length: 40,
+        };
+
+        let pwhash: PasswordHash = Pbkdf2::default()
+            .hash_password_customized(PASSWORD, SALT, None, None, params)
+            .unwrap();
+
+        assert_eq!(
+            pwhash.algorithm,
+            crate::algorithm::Algorithm::Pbkdf2Sha256.into()
+        );
+        assert_eq!(pwhash.salt.unwrap().as_ref(), SALT);
+        assert_eq!(Params::try_from(&pwhash).unwrap(), params);
+
+        let expected_output = hex!(
+            "34 8c 89 db cb d3 2b 2f
+             32 d8 14 b8 11 6e 84 cf
+             2b 17 34 7e bc 18 00 18
+             1c 4e 2a 1f b8 dd 53 e1
+             c6 35 51 8c 7d ac 47 e9 "
+        );
+
+        assert_eq!(pwhash.hash.unwrap().as_ref(), expected_output);
+        assert_eq!(pwhash, EXPECTED_HASH.parse().unwrap());
     }
 }

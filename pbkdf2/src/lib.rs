@@ -21,6 +21,10 @@
 //!
 //! [KDF]: https://github.com/RustCrypto/KDFs
 //!
+//! ## Low-level API
+//!
+//! This API operates directly on byte slices:
+//!
 //! ```
 //! # #[cfg(feature = "hmac")] {
 //! use hex_literal::hex;
@@ -57,15 +61,21 @@
 //! rand_core = { version = "0.6", features = ["std"] }
 //! ```
 //!
+//! ## PHC string API
+//!
+//! This crate can produce and verify password hash strings encoded in the Password Hashing
+//! Competition (PHC) string format.
+//!
 //! The following example demonstrates the high-level password hashing API:
 //!
-#![cfg_attr(feature = "password-hash", doc = "```")]
-#![cfg_attr(not(feature = "password-hash"), doc = "```ignore")]
+#![cfg_attr(all(feature = "getrandom", feature = "phc"), doc = "```")]
+#![cfg_attr(not(all(feature = "getrandom", feature = "phc")), doc = "```ignore")]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! // NOTE: example requires `getrandom` feature is enabled
 //!
 //! use pbkdf2::{
-//!     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
+//!     password_hash::{PasswordHasher, PasswordVerifier},
+//!     phc::PasswordHash,
 //!     Pbkdf2
 //! };
 //!
@@ -73,33 +83,34 @@
 //! let password = b"hunter2"; // Bad password; don't actually use!
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
-//! let password_hash = pbkdf2.hash_password(password)?.to_string();
+//! let pwhash: PasswordHash = pbkdf2.hash_password(password)?;
+//! let pwhash_string = pwhash.to_string();
 //!
 //! // Verify password against PHC string
-//! let parsed_hash = PasswordHash::new(&password_hash)?;
-//! assert!(pbkdf2.verify_password(password, &parsed_hash).is_ok());
+//! let parsed_hash = PasswordHash::new(&pwhash_string)?;
+//! pbkdf2.verify_password(password, &parsed_hash)?;
 //! # Ok(())
 //! # }
 //! ```
 
-#[cfg(feature = "password-hash")]
-extern crate alloc;
+#[cfg(feature = "mcf")]
+pub mod mcf;
+#[cfg(feature = "phc")]
+pub mod phc;
 
-#[cfg(feature = "password-hash")]
-pub use password_hash;
-
-#[cfg(feature = "password-hash")]
+#[cfg(any(feature = "mcf", feature = "phc"))]
 mod algorithm;
-#[cfg(feature = "password-hash")]
+#[cfg(any(feature = "mcf", feature = "phc"))]
 mod params;
-#[cfg(feature = "password-hash")]
-mod phc;
 
+#[cfg(any(feature = "mcf", feature = "phc"))]
+pub use crate::{algorithm::Algorithm, params::Params};
 #[cfg(feature = "hmac")]
 pub use hmac;
-
-#[cfg(feature = "password-hash")]
-pub use crate::{algorithm::Algorithm, params::Params, phc::Pbkdf2};
+#[cfg(any(feature = "mcf", feature = "phc"))]
+pub use password_hash;
+#[cfg(any(feature = "mcf", feature = "phc"))]
+pub use password_hash::{PasswordHasher, PasswordVerifier};
 
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
@@ -241,4 +252,48 @@ where
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
     buf
+}
+
+/// PBKDF2 type for use with the [`PasswordHasher`] and [`PasswordVerifier`] traits, which
+/// implements support for password hash strings.
+///
+/// Supports the following password hash string formats, gated under the following crate features:
+/// - `mcf`: support for the Modular Crypt Format
+/// - `phc`: support for the Password Hashing Competition string format
+#[cfg(any(feature = "mcf", feature = "phc"))]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct Pbkdf2 {
+    /// Algorithm to use
+    algorithm: Algorithm,
+
+    /// Default parameters to use.
+    params: Params,
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl Pbkdf2 {
+    /// Initialize [`Pbkdf2`] with default parameters.
+    pub const fn new(algorithm: Algorithm, params: Params) -> Self {
+        Self { algorithm, params }
+    }
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl From<Algorithm> for Pbkdf2 {
+    fn from(algorithm: Algorithm) -> Self {
+        Self {
+            algorithm,
+            params: Params::default(),
+        }
+    }
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl From<Params> for Pbkdf2 {
+    fn from(params: Params) -> Self {
+        Self {
+            algorithm: Algorithm::default(),
+            params,
+        }
+    }
 }

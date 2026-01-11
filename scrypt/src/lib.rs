@@ -38,7 +38,7 @@
 //!
 //! // Verify password against PHC string
 //! let parsed_hash = PasswordHash::new(&hash_string)?;
-//! assert!(scrypt.verify_password(password, &parsed_hash).is_ok());
+//! scrypt.verify_password(password, &parsed_hash)?;
 //! # Ok(())
 //! # }
 //! ```

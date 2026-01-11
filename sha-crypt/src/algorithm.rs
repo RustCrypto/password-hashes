@@ -2,7 +2,7 @@ use core::{fmt, str::FromStr};
 use password_hash::Error;
 
 /// SHA-crypt algorithm variants: SHA-256 or SHA-512.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Algorithm {
     /// SHA-256-crypt: SHA-crypt instantiated with SHA-256.
@@ -35,28 +35,23 @@ impl Algorithm {
     }
 
     /// Get the Modular Crypt Format algorithm identifier for this algorithm.
-    pub const fn ident(&self) -> &'static str {
+    pub const fn to_str(self) -> &'static str {
         match self {
             Algorithm::Sha256Crypt => Self::SHA256_CRYPT_IDENT,
             Algorithm::Sha512Crypt => Self::SHA512_CRYPT_IDENT,
         }
     }
-
-    /// Get the identifier string for this PBKDF2 [`Algorithm`].
-    pub fn as_str(&self) -> &'static str {
-        self.ident()
-    }
 }
 
 impl AsRef<str> for Algorithm {
     fn as_ref(&self) -> &str {
-        self.as_str()
+        self.to_str()
     }
 }
 
 impl fmt::Display for Algorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        f.write_str(self.to_str())
     }
 }
 
