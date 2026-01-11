@@ -94,6 +94,9 @@
 //! ```
 
 #[cfg(feature = "mcf")]
+extern crate alloc;
+
+#[cfg(feature = "mcf")]
 pub mod mcf;
 #[cfg(feature = "phc")]
 pub mod phc;
@@ -268,6 +271,15 @@ pub struct Pbkdf2 {
 
     /// Default parameters to use.
     params: Params,
+}
+
+#[cfg(any(feature = "mcf", feature = "phc"))]
+impl Pbkdf2 {
+    /// PBKDF2 configured with SHA-256 as the default.
+    pub const SHA256: Self = Self::new(Algorithm::Pbkdf2Sha256, Params::RECOMMENDED);
+
+    /// PBKDF2 configured with SHA-512 as the default.
+    pub const SHA512: Self = Self::new(Algorithm::Pbkdf2Sha512, Params::RECOMMENDED);
 }
 
 #[cfg(any(feature = "mcf", feature = "phc"))]
