@@ -23,7 +23,7 @@ base64ct = { version = "1.8", default-features = false, features = ["alloc"] }
 
 # optional dependencies
 mcf = { version = "0.6.0-rc.2", optional = true, default-features = false, features = ["alloc", "base64"] }
-password-hash = { version = "0.6.0-rc.7", optional = true, default-features = false }
+password-hash = { version = "0.6.0-rc.8", optional = true, default-features = false }
 subtle = { version = "2", optional = true, default-features = false }
 
 [features]
