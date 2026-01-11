@@ -64,7 +64,7 @@ fn compute_reference_strings() {
         let params = Params::new(flags, 1 << N_log2, r, p).unwrap();
         let salt = &EXAMPLE_SALT[..(16 - (i as usize & 15))];
 
-        let actual_hash = Yescrypt
+        let actual_hash = Yescrypt::default()
             .hash_password_with_params(EXAMPLE_PASSWD, salt, params)
             .unwrap();
 
@@ -75,12 +75,14 @@ fn compute_reference_strings() {
 /// `yescrypt_verify()` tests
 #[test]
 fn verify_reference_strings() {
+    let yescrypt = Yescrypt::default();
+
     for &hash in EXAMPLE_HASHES {
         let hash = PasswordHashRef::new(hash).unwrap();
-        assert_eq!(Yescrypt.verify_password(EXAMPLE_PASSWD, hash), Ok(()));
+        assert_eq!(yescrypt.verify_password(EXAMPLE_PASSWD, hash), Ok(()));
 
         assert_eq!(
-            Yescrypt.verify_password(b"bogus", hash),
+            yescrypt.verify_password(b"bogus", hash),
             Err(Error::PasswordInvalid)
         );
     }
