@@ -69,8 +69,8 @@
 //!     Pbkdf2
 //! };
 //!
-//! let pbkdf2 = Pbkdf2::new(); // Uses `Params::RECOMMENDED`
-//! let password = b"hunter42"; // Bad password; don't actually use!
+//! let pbkdf2 = Pbkdf2::default(); // Uses `Algorithm::default()` and `Params::RECOMMENDED`
+//! let password = b"hunter2"; // Bad password; don't actually use!
 //!
 //! // Hash password to PHC string ($pbkdf2-sha256$...)
 //! let password_hash = pbkdf2.hash_password(password)?.to_string();
