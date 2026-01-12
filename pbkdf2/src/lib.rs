@@ -94,9 +94,6 @@
 //! ```
 
 #[cfg(feature = "mcf")]
-extern crate alloc;
-
-#[cfg(feature = "mcf")]
 pub mod mcf;
 #[cfg(feature = "phc")]
 pub mod phc;
