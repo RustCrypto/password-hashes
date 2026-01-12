@@ -1,6 +1,6 @@
 [package]
 name = "pbkdf2"
-version = "0.13.0-rc.6"
+version = "0.13.0-rc.7"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Generic implementation of PBKDF2"
