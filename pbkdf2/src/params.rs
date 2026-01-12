@@ -1,12 +1,11 @@
 use core::{
     fmt::{self, Display},
-    num::ParseIntError,
     str::FromStr,
 };
 
 #[cfg(feature = "phc")]
 use password_hash::{
-    Error,
+    Error, Result,
     phc::{self, Decimal, ParamsString},
 };
 
@@ -21,11 +20,18 @@ pub struct Params {
 }
 
 impl Params {
+    /// Minimum supported output length.
+    // Uses the same recommendation as the PHC spec.
+    pub const MIN_OUTPUT_LENGTH: usize = 10;
+
     /// Maximum supported output length.
-    pub const MAX_LENGTH: usize = 64;
+    pub const MAX_OUTPUT_LENGTH: usize = 64;
+
+    /// Minimum supported number of rounds, adapted from NIST's suggestions.
+    pub const MIN_ROUNDS: u32 = 1000;
 
     /// Recommended output length.
-    pub const RECOMMENDED_LENGTH: usize = 32;
+    pub const RECOMMENDED_OUTPUT_LENGTH: usize = 32;
 
     /// Recommended number of PBKDF2 rounds (used by default).
     ///
@@ -41,22 +47,24 @@ impl Params {
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED: Self = Params {
         rounds: Self::RECOMMENDED_ROUNDS,
-        output_len: Self::RECOMMENDED_LENGTH,
+        output_len: Self::RECOMMENDED_OUTPUT_LENGTH,
     };
 
     /// Create new params with the given number of rounds.
-    pub const fn new(rounds: u32) -> Self {
-        let mut ret = Self::RECOMMENDED;
-        ret.rounds = rounds;
-        ret
+    pub const fn new(rounds: u32) -> Result<Self> {
+        Self::new_with_output_len(rounds, Self::RECOMMENDED_OUTPUT_LENGTH)
     }
 
     /// Create new params with a customized output length.
-    pub const fn new_with_output_len(rounds: u32, output_length: usize) -> Self {
-        Self {
-            rounds,
-            output_len: output_length,
+    pub const fn new_with_output_len(rounds: u32, output_len: usize) -> Result<Self> {
+        if rounds < Self::MIN_ROUNDS
+            || output_len < Self::MIN_OUTPUT_LENGTH
+            || output_len > Self::MAX_OUTPUT_LENGTH
+        {
+            return Err(Error::ParamsInvalid);
         }
+
+        Ok(Self { rounds, output_len })
     }
 
     /// Get the number of rounds.
@@ -83,10 +91,20 @@ impl Display for Params {
 }
 
 impl FromStr for Params {
-    type Err = ParseIntError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, ParseIntError> {
-        u32::from_str(s).map(Params::new)
+    fn from_str(s: &str) -> Result<Self> {
+        u32::from_str(s)
+            .map_err(|_| Error::EncodingInvalid)
+            .and_then(Params::new)
+    }
+}
+
+impl TryFrom<u32> for Params {
+    type Error = Error;
+
+    fn try_from(value: u32) -> Result<Self> {
+        Self::new(value)
     }
 }
 
@@ -95,33 +113,36 @@ impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
     fn try_from(params_string: &ParamsString) -> password_hash::Result<Self> {
-        let mut params = Params::default();
+        let mut rounds = Params::RECOMMENDED_ROUNDS;
+        let mut output_len = Params::RECOMMENDED_OUTPUT_LENGTH;
 
         for (ident, value) in params_string.iter() {
             match ident.as_str() {
                 "i" => {
-                    params.rounds = value
+                    rounds = value
                         .decimal()
-                        .map_err(|_| Error::ParamInvalid { name: "i" })?
+                        .map_err(|_| Error::ParamInvalid { name: "i" })?;
+
+                    if rounds < Self::MIN_ROUNDS {
+                        return Err(Error::ParamInvalid { name: "i" });
+                    }
                 }
                 "l" => {
-                    let len = value
+                    output_len = value
                         .decimal()
                         .ok()
                         .and_then(|dec| dec.try_into().ok())
                         .ok_or(Error::ParamInvalid { name: "l" })?;
 
-                    if len > Self::MAX_LENGTH {
+                    if output_len > Self::MAX_OUTPUT_LENGTH {
                         return Err(Error::ParamInvalid { name: "l" });
                     }
-
-                    params.output_len = len;
                 }
                 _ => return Err(Error::ParamsInvalid),
             }
         }
 
-        Ok(params)
+        Params::new_with_output_len(rounds, output_len)
     }
 }
 

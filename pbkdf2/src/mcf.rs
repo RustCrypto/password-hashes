@@ -40,7 +40,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             return Err(Error::Version);
         }
 
-        let mut buffer = [0u8; Params::MAX_LENGTH];
+        let mut buffer = [0u8; Params::MAX_OUTPUT_LENGTH];
         let out = buffer
             .get_mut(..params.output_len())
             .ok_or(Error::OutputSize)?;
@@ -110,7 +110,7 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
             return Err(Error::EncodingInvalid);
         }
 
-        let mut buffer = [0u8; Params::MAX_LENGTH];
+        let mut buffer = [0u8; Params::MAX_OUTPUT_LENGTH];
         let out = buffer.get_mut(..expected.len()).ok_or(Error::OutputSize)?;
 
         let f = match algorithm {
@@ -168,7 +168,7 @@ mod tests {
             "$pbkdf2-sha256$8000$XAuBMIYQQogxRg$tRRlz8hYn63B9LYiCd6PRo6FMiunY9ozmMMI3srxeRE";
 
         let salt = base64_decode(EXAMPLE_SALT).unwrap();
-        let params = Params::new(EXAMPLE_ROUNDS);
+        let params = Params::new(EXAMPLE_ROUNDS).unwrap();
 
         let actual_hash: PasswordHash = Pbkdf2::SHA256
             .hash_password_with_params(EXAMPLE_PASSWORD, salt.as_slice(), params)
@@ -198,7 +198,7 @@ mod tests {
         const EXAMPLE_HASH: &str = "$pbkdf2-sha512$25000$O4fwPmdMyRmDUIrx/h9jTA$Xlp267ZwEbG4aOpN3Bve/ATo3rFA7WH8iMdS16Xbe9rc6P5welk1yiXEMPy7.BFp0qsncipHumaW1trCWVvq/A";
 
         let salt = base64_decode(EXAMPLE_SALT).unwrap();
-        let params = Params::new_with_output_len(EXAMPLE_ROUNDS, 64);
+        let params = Params::new_with_output_len(EXAMPLE_ROUNDS, 64).unwrap();
 
         let actual_hash: PasswordHash = Pbkdf2::SHA512
             .hash_password_with_params(EXAMPLE_PASSWORD, salt.as_slice(), params)
