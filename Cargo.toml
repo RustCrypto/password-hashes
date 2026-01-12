@@ -20,5 +20,3 @@ opt-level = 2
 argon2 = { path = "./argon2" }
 pbkdf2 = { path = "./pbkdf2" }
 scrypt = { path = "./scrypt" }
-
-mcf = { git = "https://github.com/RustCrypto/formats", branch = "base64ct/pbkdf2-alphabet" }
