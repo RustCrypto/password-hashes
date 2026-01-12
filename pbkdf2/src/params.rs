@@ -2,12 +2,10 @@ use core::{
     fmt::{self, Display},
     str::FromStr,
 };
+use password_hash::{Error, Result};
 
 #[cfg(feature = "phc")]
-use password_hash::{
-    Error, Result,
-    phc::{self, Decimal, ParamsString},
-};
+use password_hash::phc::{self, Decimal, ParamsString};
 
 /// PBKDF2 params
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
