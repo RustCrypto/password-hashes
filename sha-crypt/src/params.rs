@@ -18,8 +18,13 @@ pub struct Params {
 }
 
 impl Params {
-    /// Default number of rounds.
-    pub const ROUNDS_DEFAULT: u32 = 5_000;
+    /// Recommended parameters.
+    pub const RECOMMENDED: Self = Self {
+        rounds: Self::RECOMMENDED_ROUNDS,
+    };
+
+    /// Recommended number of rounds.
+    pub const RECOMMENDED_ROUNDS: u32 = 5_000;
 
     /// Minimum number of rounds allowed.
     pub const ROUNDS_MIN: u32 = 1_000;
@@ -38,9 +43,7 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Params {
-            rounds: Self::ROUNDS_DEFAULT,
-        }
+        Params::RECOMMENDED
     }
 }
 

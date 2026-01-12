@@ -23,8 +23,14 @@ pub struct ShaCrypt {
 }
 
 impl ShaCrypt {
+    /// SHA-crypt configured with SHA-256 as the default.
+    pub const SHA256: Self = Self::new(Algorithm::Sha256Crypt, Params::RECOMMENDED);
+
+    /// SHA-crypt configured with SHA-512 as the default.
+    pub const SHA512: Self = Self::new(Algorithm::Sha512Crypt, Params::RECOMMENDED);
+
     /// Create a new password hasher with customized algorithm and params.
-    pub fn new(algorithm: Algorithm, params: Params) -> Self {
+    pub const fn new(algorithm: Algorithm, params: Params) -> Self {
         Self { algorithm, params }
     }
 }
