@@ -76,10 +76,10 @@ mod tests {
     const PASSWORD: &[u8] = b"passwordPASSWORDpassword";
     const SALT: &[u8] = b"saltSALTsaltSALTsaltSALTsaltSALTsalt";
     const EXPECTED_HASH: &str = "$pbkdf2-sha256$i=4096,l=40\
-    $c2FsdFNBTFRzYWx0U0FMVHNhbHRTQUxUc2FsdFNBTFRzYWx0\
-    $NIyJ28vTKy8y2BS4EW6EzysXNH68GAAYHE4qH7jdU+HGNVGMfaxH6Q";
+        $c2FsdFNBTFRzYWx0U0FMVHNhbHRTQUxUc2FsdFNBTFRzYWx0\
+        $NIyJ28vTKy8y2BS4EW6EzysXNH68GAAYHE4qH7jdU+HGNVGMfaxH6Q";
 
-    /// Test with `algorithm: None` - uses default PBKDF2-SHA256
+    /// Test with `algorithm: None`: uses default PBKDF2-SHA256
     ///
     /// Input:
     /// - P = "passwordPASSWORDpassword" (24 octets)
