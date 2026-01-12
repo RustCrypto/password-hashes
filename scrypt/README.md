@@ -31,12 +31,12 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/scrypt
 [docs-image]: https://docs.rs/scrypt/badge.svg
 [docs-link]: https://docs.rs/scrypt/
+[build-image]: https://github.com/RustCrypto/password-hashes/actions/workflows/scrypt.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/password-hashes/actions/workflows/scrypt.yml
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
-[build-image]: https://github.com/RustCrypto/password-hashes/workflows/scrypt/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Ascrypt
 
 [//]: # (general links)
 
