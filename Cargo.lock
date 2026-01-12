@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.13.0-rc.5"
+version = "0.13.0-rc.6"
 dependencies = [
  "belt-hash",
  "digest",
