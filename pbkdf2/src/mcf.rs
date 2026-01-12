@@ -10,7 +10,6 @@
 pub use mcf::{PasswordHash, PasswordHashRef};
 
 use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac};
-use alloc::{string::String, vec::Vec};
 use mcf::Base64;
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
@@ -55,19 +54,11 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
         f(password, salt, params.rounds(), out);
 
         let mut mcf_hash = PasswordHash::from_id(algorithm.to_str()).expect("should have valid ID");
-
         mcf_hash
             .push_displayable(params)
             .map_err(|_| Error::EncodingInvalid)?;
-
-        mcf_hash
-            .push_str(&base64_encode(salt))
-            .map_err(|_| Error::EncodingInvalid)?;
-
-        mcf_hash
-            .push_str(&base64_encode(out))
-            .map_err(|_| Error::EncodingInvalid)?;
-
+        mcf_hash.push_base64(salt, Base64::Pbkdf2);
+        mcf_hash.push_base64(out, Base64::Pbkdf2);
         Ok(mcf_hash)
     }
 }
@@ -97,13 +88,17 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
             next = fields.next().ok_or(Error::EncodingInvalid)?;
         }
 
-        let salt = base64_decode(next.as_str())?;
+        // decode salt
+        let salt = next
+            .decode_base64(Base64::Pbkdf2)
+            .map_err(|_| Error::EncodingInvalid)?;
 
         // decode expected password hash
         let expected = fields
             .next()
-            .ok_or(Error::EncodingInvalid)
-            .and_then(|field| base64_decode(field.as_str()))?;
+            .ok_or(Error::EncodingInvalid)?
+            .decode_base64(Base64::Pbkdf2)
+            .map_err(|_| Error::EncodingInvalid)?;
 
         // should be the last field
         if fields.next().is_some() {
@@ -136,25 +131,12 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
     }
 }
 
-// Base64 support: PBKDF2 uses a variant of standard unpadded Base64 which substitutes the `+`
-// character for `.` and this is a distinct encoding from the bcrypt and crypt Base64 variants.
-
-fn base64_decode(base64: &str) -> Result<Vec<u8>> {
-    Base64::B64
-        .decode_vec(&base64.replace('.', "+"))
-        .map_err(|_| Error::EncodingInvalid)
-}
-
-fn base64_encode(bytes: &[u8]) -> String {
-    Base64::B64.encode_string(bytes).replace('+', ".")
-}
-
-// TODO(tarcieri): tests for SHA-1 and SHA-512
+// TODO(tarcieri): tests for SHA-1
 #[cfg(test)]
 mod tests {
-    use super::{Error, base64_decode};
+    use super::Error;
     use crate::{Params, Pbkdf2};
-    use mcf::PasswordHash;
+    use mcf::{Base64, PasswordHash};
     use password_hash::{CustomizedPasswordHasher, PasswordVerifier};
 
     // Example adapted from:
@@ -167,7 +149,7 @@ mod tests {
         const EXAMPLE_HASH: &str =
             "$pbkdf2-sha256$8000$XAuBMIYQQogxRg$tRRlz8hYn63B9LYiCd6PRo6FMiunY9ozmMMI3srxeRE";
 
-        let salt = base64_decode(EXAMPLE_SALT).unwrap();
+        let salt = Base64::Pbkdf2.decode_vec(EXAMPLE_SALT).unwrap();
         let params = Params::new(EXAMPLE_ROUNDS).unwrap();
 
         let actual_hash: PasswordHash = Pbkdf2::SHA256
@@ -197,7 +179,7 @@ mod tests {
         const EXAMPLE_SALT: &str = "O4fwPmdMyRmDUIrx/h9jTA";
         const EXAMPLE_HASH: &str = "$pbkdf2-sha512$25000$O4fwPmdMyRmDUIrx/h9jTA$Xlp267ZwEbG4aOpN3Bve/ATo3rFA7WH8iMdS16Xbe9rc6P5welk1yiXEMPy7.BFp0qsncipHumaW1trCWVvq/A";
 
-        let salt = base64_decode(EXAMPLE_SALT).unwrap();
+        let salt = Base64::Pbkdf2.decode_vec(EXAMPLE_SALT).unwrap();
         let params = Params::new_with_output_len(EXAMPLE_ROUNDS, 64).unwrap();
 
         let actual_hash: PasswordHash = Pbkdf2::SHA512

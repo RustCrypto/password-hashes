@@ -36,9 +36,9 @@ dependencies = [
 
 [[package]]
 name = "base64ct"
-version = "1.8.2"
+version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d809780667f4410e7c41b07f52439b94d2bdf8528eeedc287fa38d3b7f95d82"
+checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "bcrypt-pbkdf"
@@ -283,8 +283,7 @@ checksum = "c5a2d376baa530d1238d133232d15e239abad80d05838b4b59354e5268af431f"
 [[package]]
 name = "mcf"
 version = "0.6.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "872721b0f376d4b3b2f4064d69a52aff03e7cddb1fd32c5cb0517edf08faff5e"
+source = "git+https://github.com/RustCrypto/formats?branch=base64ct%2Fpbkdf2-alphabet#a2b37fd6975e49ecdee08d640d6258f4b0f488c7"
 dependencies = [
  "base64ct",
 ]
