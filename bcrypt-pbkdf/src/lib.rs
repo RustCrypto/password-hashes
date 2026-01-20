@@ -37,80 +37,6 @@ const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;
 const BHASH_SEED: &[u8; BHASH_OUTPUT_SIZE] = b"OxychromaticBlowfishSwatDynamite";
 
-fn bhash(sha2_pass: &Output<Sha512>, sha2_salt: &Output<Sha512>) -> Output<Bhash> {
-    let mut blowfish = Blowfish::bc_init_state();
-
-    blowfish.salted_expand_key(sha2_salt, sha2_pass);
-    for _ in 0..64 {
-        blowfish.bc_expand_key(sha2_salt);
-        blowfish.bc_expand_key(sha2_pass);
-    }
-
-    let mut cdata = [0u32; BHASH_WORDS];
-    for i in 0..BHASH_WORDS {
-        cdata[i] = u32::from_be_bytes(BHASH_SEED[i * 4..(i + 1) * 4].try_into().unwrap());
-    }
-
-    for _ in 0..64 {
-        for i in (0..BHASH_WORDS).step_by(2) {
-            let [l, r] = blowfish.bc_encrypt([cdata[i], cdata[i + 1]]);
-            cdata[i] = l;
-            cdata[i + 1] = r;
-        }
-    }
-
-    let mut output = Output::<Bhash>::default();
-    for i in 0..BHASH_WORDS {
-        output[i * 4..(i + 1) * 4].copy_from_slice(&cdata[i].to_le_bytes());
-    }
-
-    output
-}
-
-#[derive(Clone)]
-struct Bhash {
-    sha2_pass: Output<Sha512>,
-    salt: Sha512,
-}
-
-impl MacMarker for Bhash {}
-
-impl KeySizeUser for Bhash {
-    type KeySize = <Sha512 as OutputSizeUser>::OutputSize;
-}
-
-impl KeyInit for Bhash {
-    fn new(key: &Key<Self>) -> Self {
-        Bhash {
-            sha2_pass: *key,
-            salt: Sha512::default(),
-        }
-    }
-}
-
-impl Update for Bhash {
-    fn update(&mut self, data: &[u8]) {
-        Update::update(&mut self.salt, data);
-    }
-}
-
-impl OutputSizeUser for Bhash {
-    type OutputSize = U32;
-}
-
-impl FixedOutput for Bhash {
-    fn finalize_into(mut self, out: &mut Output<Self>) {
-        *out = bhash(&self.sha2_pass, &self.salt.finalize_reset());
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Drop for Bhash {
-    fn drop(&mut self) {
-        self.sha2_pass.zeroize();
-    }
-}
-
 /// The bcrypt_pbkdf function.
 ///
 /// # Arguments
@@ -198,6 +124,80 @@ pub fn bcrypt_pbkdf_with_memory(
     }
 
     Ok(())
+}
+
+fn bhash(sha2_pass: &Output<Sha512>, sha2_salt: &Output<Sha512>) -> Output<Bhash> {
+    let mut blowfish = Blowfish::bc_init_state();
+
+    blowfish.salted_expand_key(sha2_salt, sha2_pass);
+    for _ in 0..64 {
+        blowfish.bc_expand_key(sha2_salt);
+        blowfish.bc_expand_key(sha2_pass);
+    }
+
+    let mut cdata = [0u32; BHASH_WORDS];
+    for i in 0..BHASH_WORDS {
+        cdata[i] = u32::from_be_bytes(BHASH_SEED[i * 4..(i + 1) * 4].try_into().unwrap());
+    }
+
+    for _ in 0..64 {
+        for i in (0..BHASH_WORDS).step_by(2) {
+            let [l, r] = blowfish.bc_encrypt([cdata[i], cdata[i + 1]]);
+            cdata[i] = l;
+            cdata[i + 1] = r;
+        }
+    }
+
+    let mut output = Output::<Bhash>::default();
+    for i in 0..BHASH_WORDS {
+        output[i * 4..(i + 1) * 4].copy_from_slice(&cdata[i].to_le_bytes());
+    }
+
+    output
+}
+
+#[derive(Clone)]
+struct Bhash {
+    sha2_pass: Output<Sha512>,
+    salt: Sha512,
+}
+
+impl MacMarker for Bhash {}
+
+impl KeySizeUser for Bhash {
+    type KeySize = <Sha512 as OutputSizeUser>::OutputSize;
+}
+
+impl KeyInit for Bhash {
+    fn new(key: &Key<Self>) -> Self {
+        Bhash {
+            sha2_pass: *key,
+            salt: Sha512::default(),
+        }
+    }
+}
+
+impl Update for Bhash {
+    fn update(&mut self, data: &[u8]) {
+        Update::update(&mut self.salt, data);
+    }
+}
+
+impl OutputSizeUser for Bhash {
+    type OutputSize = U32;
+}
+
+impl FixedOutput for Bhash {
+    fn finalize_into(mut self, out: &mut Output<Self>) {
+        *out = bhash(&self.sha2_pass, &self.salt.finalize_reset());
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Drop for Bhash {
+    fn drop(&mut self) {
+        self.sha2_pass.zeroize();
+    }
 }
 
 #[cfg(test)]
