@@ -25,9 +25,8 @@ zeroize = { version = "1", default-features = false, optional = true }
 hex-literal = "1"
 
 [features]
-default = ["alloc", "std"]
+default = ["alloc"]
 alloc = []
-std = []
 zeroize = ["dep:zeroize"]
 
 [package.metadata.docs.rs]
