@@ -317,9 +317,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.6.0-rc.8"
+version = "0.6.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f77af9403a6489b7b51f552693bd48d8e81a710c92d3d77648b203558578762d"
+checksum = "35d7cb93fb02e6e7941e867799a770d9eb67ce70751a84a9e826e92ecad6aadc"
 dependencies = [
  "getrandom",
  "phc",
@@ -379,9 +379,9 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rand_core"
-version = "0.10.0-rc-3"
+version = "0.10.0-rc-5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f66ee92bc15280519ef199a274fe0cafff4245d31bc39aaa31c011ad56cb1f05"
+checksum = "05a06e03bd1f2ae861ab9e7498b6c64ed3dadb9ce175c0464a2522a5f23c0045"
 
 [[package]]
 name = "rayon"
