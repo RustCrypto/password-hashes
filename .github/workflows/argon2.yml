@@ -36,7 +36,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --no-default-features
-      - run: cargo build --target ${{ matrix.target }} --no-default-features --features password-hash
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features kdf
       - run: cargo build --target ${{ matrix.target }} --no-default-features --features password-hash
       - run: cargo build --target ${{ matrix.target }} --no-default-features --features zeroize
 
@@ -73,6 +73,7 @@ jobs:
           targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test --no-default-features
+      - run: cargo test --no-default-features --features kdf
       - run: cargo test --no-default-features --features password-hash
       - run: cargo test
       - run: cargo test --all-features

@@ -81,9 +81,11 @@ pub use crate::{
     params::Params,
 };
 
+#[cfg(feature = "kdf")]
+pub use kdf::{self, Kdf, Pbkdf};
 #[cfg(feature = "password-hash")]
 pub use {
-    crate::mcf::{PasswordHash, PasswordHashRef, Yescrypt},
+    crate::mcf::{PasswordHash, PasswordHashRef},
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
 };
 
@@ -217,3 +219,41 @@ fn yescrypt_body(
 
     Ok(())
 }
+
+/// yescrypt password hashing type which can produce and verify strings in Modular Crypt Format
+/// (MCF) which begin with `$y$`
+///
+/// This type impls traits from the [`password-hash`][`password_hash`] crate, notably the
+/// [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
+///
+/// See the toplevel documentation for a code example.
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct Yescrypt {
+    /// Default parameters to use when hashing passwords.
+    params: Params,
+}
+
+impl Yescrypt {
+    /// Hash password into the given output buffer using the configured params.
+    pub fn hash_password_into(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
+        yescrypt(password, salt, &self.params, out)?;
+        Ok(())
+    }
+}
+
+impl From<Params> for Yescrypt {
+    fn from(params: Params) -> Self {
+        Self { params }
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl Kdf for Yescrypt {
+    fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
+        self.hash_password_into(password, salt, out)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl Pbkdf for Yescrypt {}

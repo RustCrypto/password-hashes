@@ -56,5 +56,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: RustCrypto/actions/cargo-hack-install@master
-      - run: cargo hack test --feature-powerset
+      - run: cargo hack check --feature-powerset --no-dev-deps
+      - run: cargo hack test --feature-powerset --exclude-features default,getrandom,hmac,kdf,password-hash,rand_core
+      - run: cargo test --no-default-features --features getrandom
+      - run: cargo test --no-default-features --features hmac
+      - run: cargo test --no-default-features --features kdf
+      - run: cargo test --no-default-features --features password-hash
+      - run: cargo test --no-default-features --features rand_core
       - run: cargo test --all-features --release

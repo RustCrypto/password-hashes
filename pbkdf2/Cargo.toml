@@ -18,6 +18,7 @@ digest = { version = "0.11.0-rc.4", features = ["mac"] }
 
 # optional dependencies
 hmac = { version = "0.13.0-rc.3", optional = true, default-features = false }
+kdf = { version = "0.1.0-pre.1", optional = true }
 mcf = { version = "0.6.0-rc.3", optional = true, default-features = false, features = ["base64"] }
 password-hash = { version = "0.6.0-rc.9", default-features = false, optional = true }
 sha1 = { version = "0.11.0-rc.3", default-features = false, optional = true }
@@ -34,10 +35,14 @@ belt-hash = "0.2.0-rc.3"
 [features]
 default = ["hmac"]
 alloc = ["mcf?/alloc", "password-hash?/alloc"]
+
+kdf = ["sha2", "dep:kdf"]
 getrandom = ["password-hash/getrandom"]
-mcf = ["hmac", "sha2", "dep:password-hash", "dep:mcf"]
-phc = ["hmac", "password-hash/phc", "sha2"]
+mcf = ["sha2", "password-hash", "dep:mcf"]
+phc = ["password-hash/phc", "sha2"]
 rand_core = ["password-hash/rand_core"]
+sha1 = ["hmac", "dep:sha1"]
+sha2 = ["hmac", "dep:sha2"]
 
 [package.metadata.docs.rs]
 all-features = true

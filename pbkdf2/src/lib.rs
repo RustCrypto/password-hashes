@@ -25,11 +25,12 @@
 //!
 //! This API operates directly on byte slices:
 //!
-//! ```
-//! # #[cfg(feature = "hmac")] {
+#![cfg_attr(feature = "sha2", doc = "```")]
+#![cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+//! // NOTE: example requires `getrandom` feature is enabled
+//!
 //! use hex_literal::hex;
-//! use pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_array};
-//! use sha2::Sha256;
+//! use pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_array, sha2::Sha256};
 //!
 //! let password = b"password";
 //! let salt = b"salt";
@@ -44,27 +45,14 @@
 //!
 //! let key2 = pbkdf2_hmac_array::<Sha256, 20>(password, salt, n);
 //! assert_eq!(key2, expected);
-//! # }
 //! ```
 //!
 //! If you want to use a different PRF, then you can use [`pbkdf2`] and [`pbkdf2_array`] functions.
 //!
-//! This crates also provides the high-level password-hashing API through
-//! the [`Pbkdf2`] struct and traits defined in the
-//! [`password-hash`][password_hash] crate.
-//!
-//! Add the following to your crate's `Cargo.toml` to import it:
-//!
-//! ```toml
-//! [dependencies]
-//! pbkdf2 = { version = "0.12", features = ["password-hash"] }
-//! rand_core = { version = "0.6", features = ["std"] }
-//! ```
-//!
 //! ## PHC string API
 //!
 //! This crate can produce and verify password hash strings encoded in the Password Hashing
-//! Competition (PHC) string format.
+//! Competition (PHC) string format using the [`Pbkdf2`] struct.
 //!
 //! The following example demonstrates the high-level password hashing API:
 //!
@@ -98,12 +86,12 @@ pub mod mcf;
 #[cfg(feature = "phc")]
 pub mod phc;
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
 mod algorithm;
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
 mod params;
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
 pub use crate::{algorithm::Algorithm, params::Params};
 #[cfg(feature = "hmac")]
 pub use hmac;
@@ -111,11 +99,17 @@ pub use hmac;
 pub use password_hash;
 #[cfg(any(feature = "mcf", feature = "phc"))]
 pub use password_hash::{PasswordHasher, PasswordVerifier};
+#[cfg(feature = "sha1")]
+pub use sha1;
+#[cfg(feature = "sha2")]
+pub use sha2;
 
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
 use hmac::EagerHash;
+#[cfg(feature = "kdf")]
+use kdf::{Kdf, Pbkdf};
 
 #[inline(always)]
 fn xor(res: &mut [u8], salt: &[u8]) {
@@ -153,11 +147,10 @@ where
 
 /// Generic implementation of PBKDF2 algorithm which accepts an arbitrary keyed PRF.
 ///
-/// ```
+#[cfg_attr(feature = "sha2", doc = "```")]
+#[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
 /// use hex_literal::hex;
-/// use pbkdf2::pbkdf2;
-/// use hmac::Hmac;
-/// use sha2::Sha256;
+/// use pbkdf2::{pbkdf2, hmac::Hmac, sha2::Sha256};
 ///
 /// let mut buf = [0u8; 20];
 /// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", 600_000, &mut buf)
@@ -186,11 +179,10 @@ where
 
 /// A variant of the [`pbkdf2`] function which returns an array instead of filling an input slice.
 ///
-/// ```
+#[cfg_attr(feature = "sha2", doc = "```")]
+#[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
 /// use hex_literal::hex;
-/// use pbkdf2::pbkdf2_array;
-/// use hmac::Hmac;
-/// use sha2::Sha256;
+/// use pbkdf2::{pbkdf2_array, hmac::Hmac, sha2::Sha256};
 ///
 /// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", 600_000)
 ///     .expect("HMAC can be initialized with any key length");
@@ -213,10 +205,10 @@ where
 ///
 /// It's generic over (eager) hash functions.
 ///
-/// ```
+#[cfg_attr(feature = "sha2", doc = "```")]
+#[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
 /// use hex_literal::hex;
-/// use pbkdf2::pbkdf2_hmac;
-/// use sha2::Sha256;
+/// use pbkdf2::{pbkdf2_hmac, sha2::Sha256};
 ///
 /// let mut buf = [0u8; 20];
 /// pbkdf2_hmac::<Sha256>(b"password", b"salt", 600_000, &mut buf);
@@ -227,17 +219,17 @@ pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
 where
     D: EagerHash<Core: Sync>,
 {
-    crate::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
+    pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
 }
 
 /// A variant of the [`pbkdf2_hmac`] function which returns an array
 /// instead of filling an input slice.
 ///
-/// ```
+#[cfg_attr(feature = "sha2", doc = "```")]
+#[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
 /// use hex_literal::hex;
-/// use pbkdf2::pbkdf2_hmac_array;
-/// use sha2::Sha256;
+/// use pbkdf2::{pbkdf2_hmac_array, sha2::Sha256};
 ///
 /// assert_eq!(
 ///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 600_000),
@@ -254,14 +246,50 @@ where
     buf
 }
 
+/// API for using [`pbkdf2_hmac`] which supports the [`Algorithm`] and [`Params`] types and with
+/// it runtime selection of which algorithm to use.
+///
+#[cfg_attr(feature = "sha2", doc = "```")]
+#[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+/// use hex_literal::hex;
+/// use pbkdf2::pbkdf2_hmac_with_params;
+///
+/// let algorithm = pbkdf2::Algorithm::Pbkdf2Sha256;
+/// let params = pbkdf2::Params::default();
+///
+/// let mut buf = [0u8; 32];
+/// pbkdf2_hmac_with_params(b"password", b"salt", algorithm, params, &mut buf);
+/// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e4563752b7a28f6eaab614ee005178"));
+/// ```
+#[cfg(any(feature = "sha1", feature = "sha2"))]
+pub fn pbkdf2_hmac_with_params(
+    password: &[u8],
+    salt: &[u8],
+    algorithm: Algorithm,
+    params: Params,
+    out: &mut [u8],
+) {
+    let f = match algorithm {
+        #[cfg(feature = "sha1")]
+        Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<sha1::Sha1>,
+        #[cfg(feature = "sha2")]
+        Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<sha2::Sha256>,
+        #[cfg(feature = "sha2")]
+        Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<sha2::Sha512>,
+    };
+
+    f(password, salt, params.rounds(), out);
+}
+
 /// PBKDF2 type for use with the [`PasswordHasher`] and [`PasswordVerifier`] traits, which
 /// implements support for password hash strings.
 ///
 /// Supports the following password hash string formats, gated under the following crate features:
 /// - `mcf`: support for the Modular Crypt Format
 /// - `phc`: support for the Password Hashing Competition string format
-#[cfg(any(feature = "mcf", feature = "phc"))]
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg_attr(feature = "sha2", derive(Default))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Pbkdf2 {
     /// Algorithm to use
     algorithm: Algorithm,
@@ -270,7 +298,7 @@ pub struct Pbkdf2 {
     params: Params,
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(feature = "sha2")]
 impl Pbkdf2 {
     /// PBKDF2 configured with SHA-256 as the default.
     pub const SHA256: Self = Self::new(Algorithm::Pbkdf2Sha256, Params::RECOMMENDED);
@@ -279,15 +307,20 @@ impl Pbkdf2 {
     pub const SHA512: Self = Self::new(Algorithm::Pbkdf2Sha512, Params::RECOMMENDED);
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
 impl Pbkdf2 {
     /// Initialize [`Pbkdf2`] with default parameters.
     pub const fn new(algorithm: Algorithm, params: Params) -> Self {
         Self { algorithm, params }
     }
+
+    /// Hash password into the given output buffer using the configured params.
+    pub fn hash_password_into(&self, password: &[u8], salt: &[u8], out: &mut [u8]) {
+        pbkdf2_hmac_with_params(password, salt, self.algorithm, self.params, out);
+    }
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "sha1", feature = "sha2"))]
 impl From<Algorithm> for Pbkdf2 {
     fn from(algorithm: Algorithm) -> Self {
         Self {
@@ -297,7 +330,7 @@ impl From<Algorithm> for Pbkdf2 {
     }
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(feature = "sha2")]
 impl From<Params> for Pbkdf2 {
     fn from(params: Params) -> Self {
         Self {
@@ -306,3 +339,14 @@ impl From<Params> for Pbkdf2 {
         }
     }
 }
+
+#[cfg(feature = "kdf")]
+impl Kdf for Pbkdf2 {
+    fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
+        self.hash_password_into(password, salt, out);
+        Ok(())
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl Pbkdf for Pbkdf2 {}

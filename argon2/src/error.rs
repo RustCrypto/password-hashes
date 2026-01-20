@@ -60,6 +60,15 @@ pub enum Error {
     OutOfMemory,
 }
 
+impl core::error::Error for Error {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::B64Encoding(err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
@@ -90,6 +99,13 @@ impl From<base64ct::Error> for Error {
     }
 }
 
+#[cfg(feature = "kdf")]
+impl From<Error> for kdf::Error {
+    fn from(_err: Error) -> kdf::Error {
+        kdf::Error
+    }
+}
+
 #[cfg(feature = "password-hash")]
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> password_hash::Error {
@@ -111,15 +127,6 @@ impl From<Error> for password_hash::Error {
             }
             Error::TimeTooSmall => password_hash::Error::ParamInvalid { name: "t" },
             Error::VersionInvalid => password_hash::Error::Version,
-        }
-    }
-}
-
-impl core::error::Error for Error {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
-        match self {
-            Self::B64Encoding(err) => Some(err),
-            _ => None,
         }
     }
 }

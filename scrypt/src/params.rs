@@ -6,10 +6,7 @@ use {
         fmt::{self, Display},
         str::FromStr,
     },
-    password_hash::{
-        Error,
-        phc::{Decimal, Output, ParamsString, PasswordHash},
-    },
+    password_hash::{Error, phc},
 };
 
 #[cfg(all(feature = "phc", doc))]
@@ -125,7 +122,7 @@ impl Params {
         p: u32,
         len: usize,
     ) -> Result<Params, InvalidParams> {
-        if !(Output::MIN_LENGTH..=Output::MAX_LENGTH).contains(&len) {
+        if !(phc::Output::MIN_LENGTH..=phc::Output::MAX_LENGTH).contains(&len) {
             return Err(InvalidParams);
         }
 
@@ -179,7 +176,9 @@ impl Default for Params {
 #[cfg(feature = "phc")]
 impl Display for Params {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        ParamsString::try_from(self).map_err(|_| fmt::Error)?.fmt(f)
+        phc::ParamsString::try_from(self)
+            .map_err(|_| fmt::Error)?
+            .fmt(f)
     }
 }
 
@@ -188,16 +187,16 @@ impl FromStr for Params {
     type Err = Error;
 
     fn from_str(s: &str) -> password_hash::Result<Self> {
-        let params_string = ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
+        let params_string = phc::ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
         Self::try_from(&params_string)
     }
 }
 
 #[cfg(feature = "phc")]
-impl TryFrom<&ParamsString> for Params {
+impl TryFrom<&phc::ParamsString> for Params {
     type Error = Error;
 
-    fn try_from(params: &ParamsString) -> password_hash::Result<Self> {
+    fn try_from(params: &phc::ParamsString) -> password_hash::Result<Self> {
         let mut log_n = Self::RECOMMENDED_LOG_N;
         let mut r = Self::RECOMMENDED_R;
         let mut p = Self::RECOMMENDED_P;
@@ -230,10 +229,10 @@ impl TryFrom<&ParamsString> for Params {
 }
 
 #[cfg(feature = "phc")]
-impl TryFrom<&PasswordHash> for Params {
+impl TryFrom<&phc::PasswordHash> for Params {
     type Error = Error;
 
-    fn try_from(hash: &PasswordHash) -> password_hash::Result<Self> {
+    fn try_from(hash: &phc::PasswordHash) -> password_hash::Result<Self> {
         if hash.version.is_some() {
             return Err(Error::Version);
         }
@@ -251,23 +250,23 @@ impl TryFrom<&PasswordHash> for Params {
 }
 
 #[cfg(feature = "phc")]
-impl TryFrom<Params> for ParamsString {
+impl TryFrom<Params> for phc::ParamsString {
     type Error = Error;
 
-    fn try_from(params: Params) -> Result<ParamsString, Error> {
+    fn try_from(params: Params) -> Result<phc::ParamsString, Error> {
         Self::try_from(&params)
     }
 }
 
 #[cfg(feature = "phc")]
-impl TryFrom<&Params> for ParamsString {
+impl TryFrom<&Params> for phc::ParamsString {
     type Error = Error;
 
-    fn try_from(input: &Params) -> Result<ParamsString, Error> {
-        let mut output = ParamsString::new();
+    fn try_from(input: &Params) -> Result<phc::ParamsString, Error> {
+        let mut output = phc::ParamsString::new();
 
         for (name, value) in [
-            ("ln", input.log_n as Decimal),
+            ("ln", input.log_n as phc::Decimal),
             ("r", input.r),
             ("p", input.p),
         ] {

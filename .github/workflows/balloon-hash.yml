@@ -35,6 +35,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features
+      - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features kdf
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features password-hash
 
   minimal-versions:
@@ -56,7 +57,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      - run: cargo test --release
-      - run: cargo test --release --no-default-features --features alloc
-      - run: cargo test --release --no-default-features --features alloc,zeroize
-      - run: cargo test --release --all-features
+      - run: cargo test
+      - run: cargo test --no-default-features --features alloc
+      - run: cargo test --no-default-features --features alloc,zeroize
+      - run: cargo test --no-default-features --features kdf
+      - run: cargo test --all-features
+      - run: cargo test --all-features --release

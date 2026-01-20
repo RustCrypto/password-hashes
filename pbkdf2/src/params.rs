@@ -1,11 +1,12 @@
-use core::{
-    fmt::{self, Display},
-    str::FromStr,
-};
-use password_hash::{Error, Result};
+use core::fmt::{self, Display};
 
 #[cfg(feature = "phc")]
 use password_hash::phc::{self, Decimal, ParamsString};
+#[cfg(feature = "password-hash")]
+use {
+    core::str::FromStr,
+    password_hash::{Error, Result},
+};
 
 /// PBKDF2 params
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -49,11 +50,13 @@ impl Params {
     };
 
     /// Create new params with the given number of rounds.
+    #[cfg(feature = "password-hash")]
     pub const fn new(rounds: u32) -> Result<Self> {
         Self::new_with_output_len(rounds, Self::RECOMMENDED_OUTPUT_LENGTH)
     }
 
     /// Create new params with a customized output length.
+    #[cfg(feature = "password-hash")]
     pub const fn new_with_output_len(rounds: u32, output_len: usize) -> Result<Self> {
         if rounds < Self::MIN_ROUNDS
             || output_len < Self::MIN_OUTPUT_LENGTH
@@ -88,6 +91,7 @@ impl Display for Params {
     }
 }
 
+#[cfg(feature = "password-hash")]
 impl FromStr for Params {
     type Err = Error;
 
@@ -98,6 +102,7 @@ impl FromStr for Params {
     }
 }
 
+#[cfg(feature = "password-hash")]
 impl TryFrom<u32> for Params {
     type Error = Error;
 

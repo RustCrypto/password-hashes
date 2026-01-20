@@ -16,6 +16,13 @@ impl fmt::Display for InvalidOutputLen {
 
 impl core::error::Error for InvalidOutputLen {}
 
+#[cfg(feature = "kdf")]
+impl From<InvalidOutputLen> for kdf::Error {
+    fn from(_err: InvalidOutputLen) -> kdf::Error {
+        kdf::Error
+    }
+}
+
 impl fmt::Display for InvalidParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("invalid scrypt parameters")

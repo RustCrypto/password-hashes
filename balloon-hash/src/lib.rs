@@ -65,6 +65,8 @@ use digest::array::Array;
 use digest::typenum::Unsigned;
 use digest::{Digest, FixedOutputReset};
 
+#[cfg(feature = "kdf")]
+pub use kdf::{self, Kdf, Pbkdf};
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 pub use password_hash::phc::Salt;
 
@@ -95,8 +97,9 @@ where
     pub secret: Option<&'key [u8]>,
 }
 
-impl<'key, D: Digest + FixedOutputReset> Balloon<'key, D>
+impl<'key, D> Balloon<'key, D>
 where
+    D: Digest + FixedOutputReset,
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
     /// Create a new Balloon context.
@@ -111,10 +114,13 @@ where
 
     /// Hash a password and associated parameters.
     #[cfg(feature = "alloc")]
-    pub fn hash(&self, pwd: &[u8], salt: &[u8]) -> Result<Array<u8, D::OutputSize>> {
+    pub fn hash_password_to_array(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+    ) -> Result<Array<u8, D::OutputSize>> {
         let mut output = Array::default();
-        self.hash_into(pwd, salt, &mut output)?;
-
+        self.hash_password_into(pwd, salt, &mut output)?;
         Ok(output)
     }
 
@@ -122,13 +128,13 @@ where
     ///
     /// The `output` has to have the same size as the hash output size: `D::OutputSize`.
     #[cfg(feature = "alloc")]
-    pub fn hash_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
+    pub fn hash_password_into(&self, pwd: &[u8], salt: &[u8], output: &mut [u8]) -> Result<()> {
         #[cfg(not(feature = "parallel"))]
         let mut memory = alloc::vec![Array::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
         let mut memory = alloc::vec![Array::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
 
-        self.hash_into_with_memory(pwd, salt, &mut memory, output)?;
+        self.hash_password_into_with_memory(pwd, salt, &mut memory, output)?;
         #[cfg(feature = "zeroize")]
         memory.iter_mut().for_each(|block| block.zeroize());
         Ok(())
@@ -139,19 +145,19 @@ where
     /// This method takes an explicit `memory_blocks` parameter which allows
     /// the caller to provide the backing storage for the algorithm's state:
     ///
-    /// - Users with the `alloc` feature enabled can use [`Balloon::hash`]
+    /// - Users with the `alloc` feature enabled can use [`Balloon::hash_password`]
     ///   to have it allocated for them.
     /// - `no_std` users on "heapless" targets can use an array of the [`Array`] type
     ///   to stack allocate this buffer. It needs a minimum size of `s_cost` or `s_cost * p_cost`
     ///   with the `parallel` crate feature enabled.
-    pub fn hash_with_memory(
+    pub fn hash_password_with_memory(
         &self,
         pwd: &[u8],
         salt: &[u8],
         memory_blocks: &mut [Array<u8, D::OutputSize>],
     ) -> Result<Array<u8, D::OutputSize>> {
         let mut output = Array::default();
-        self.hash_into_with_memory(pwd, salt, memory_blocks, &mut output)?;
+        self.hash_password_into_with_memory(pwd, salt, memory_blocks, &mut output)?;
 
         Ok(output)
     }
@@ -160,8 +166,8 @@ where
     ///
     /// The `output` has to have the same size as the hash output size: `D::OutputSize`.
     ///
-    /// See [`Balloon::hash_with_memory`] for more details.
-    pub fn hash_into_with_memory(
+    /// See [`Balloon::hash_password_with_memory`] for more details.
+    pub fn hash_password_into_with_memory(
         &self,
         pwd: &[u8],
         salt: &[u8],
@@ -190,6 +196,26 @@ where
             }
         }
     }
+}
+
+#[cfg(feature = "kdf")]
+impl<D> Kdf for Balloon<'_, D>
+where
+    D: Digest + FixedOutputReset,
+    Array<u8, D::OutputSize>: ArrayDecoding,
+{
+    fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
+        self.hash_password_into(password, &salt, out)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl<D> Pbkdf for Balloon<'_, D>
+where
+    D: Digest + FixedOutputReset,
+    Array<u8, D::OutputSize>: ArrayDecoding,
+{
 }
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
@@ -235,7 +261,7 @@ where
         salt: &[u8],
     ) -> password_hash::Result<PasswordHash> {
         let salt = Salt::new(salt)?;
-        let hash = self.hash(password, &salt)?;
+        let hash = self.hash_password_to_array(password, &salt)?;
         let output = Output::new(&hash)?;
 
         Ok(PasswordHash {
