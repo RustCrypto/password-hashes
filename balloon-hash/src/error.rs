@@ -28,6 +28,8 @@ pub enum Error {
     },
 }
 
+impl core::error::Error for Error {}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -40,6 +42,13 @@ impl fmt::Display for Error {
                 write!(f, "unexpected output size, expected {expected} bytes")
             }
         }
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl From<Error> for kdf::Error {
+    fn from(_err: Error) -> kdf::Error {
+        kdf::Error
     }
 }
 
@@ -56,5 +65,3 @@ impl From<Error> for password_hash::Error {
         }
     }
 }
-
-impl core::error::Error for Error {}

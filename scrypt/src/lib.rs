@@ -62,6 +62,8 @@ pub mod phc;
 
 pub use crate::params::Params;
 
+#[cfg(feature = "kdf")]
+pub use kdf::{self, Kdf, Pbkdf};
 #[cfg(feature = "password-hash")]
 pub use password_hash;
 
@@ -146,14 +148,14 @@ fn romix_parallel(nr128: usize, r128: usize, n: usize, b: &mut [u8]) {
 /// This type holds the default parameters to use when computing password hashes.
 ///
 /// See the toplevel documentation for a code example.
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "kdf", feature = "mcf", feature = "phc"))]
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Scrypt {
     /// Default parameters to use.
     params: Params,
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "kdf", feature = "mcf", feature = "phc"))]
 impl Scrypt {
     /// Initialize [`Scrypt`] with default parameters.
     pub const fn new() -> Self {
@@ -168,9 +170,20 @@ impl Scrypt {
     }
 }
 
-#[cfg(any(feature = "mcf", feature = "phc"))]
+#[cfg(any(feature = "kdf", feature = "mcf", feature = "phc"))]
 impl From<Params> for Scrypt {
     fn from(params: Params) -> Self {
         Self::new_with_params(params)
     }
 }
+
+#[cfg(feature = "kdf")]
+impl Kdf for Scrypt {
+    fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
+        scrypt(password, salt, &self.params, out)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl Pbkdf for Scrypt {}

@@ -37,6 +37,13 @@ impl From<TryFromIntError> for Error {
     }
 }
 
+#[cfg(feature = "kdf")]
+impl From<Error> for kdf::Error {
+    fn from(_: Error) -> Self {
+        kdf::Error
+    }
+}
+
 #[cfg(feature = "password-hash")]
 impl From<Error> for password_hash::Error {
     fn from(err: Error) -> Self {

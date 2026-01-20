@@ -24,6 +24,27 @@ jobs:
     with:
       working-directory: ${{ github.workflow }}
 
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+        target:
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --no-default-features
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features kdf
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features password-hash
+
   test:
     runs-on: ubuntu-latest
     strategy:

@@ -12,15 +12,12 @@ pub use mcf::PasswordHashRef;
 #[cfg(feature = "alloc")]
 pub use mcf::PasswordHash;
 
-use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac};
+use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac_with_params};
 use mcf::Base64;
 use password_hash::{Error, PasswordVerifier, Result};
-use sha2::{Sha256, Sha512};
 
 #[cfg(feature = "alloc")]
 use password_hash::{CustomizedPasswordHasher, PasswordHasher, Version};
-#[cfg(feature = "sha1")]
-use sha1::Sha1;
 
 const MAX_SALT_LEN: usize = 64;
 
@@ -50,14 +47,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             .get_mut(..params.output_len())
             .ok_or(Error::OutputSize)?;
 
-        let f = match algorithm {
-            #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
-            Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
-            Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
-        };
-
-        f(password, salt, params.rounds(), out);
+        pbkdf2_hmac_with_params(password, salt, algorithm, params, out);
 
         let mut mcf_hash = PasswordHash::from_id(algorithm.to_str()).expect("should have valid ID");
         mcf_hash
@@ -118,14 +108,7 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
         let mut out_buf = [0u8; Params::MAX_OUTPUT_LENGTH];
         let out = out_buf.get_mut(..expected.len()).ok_or(Error::OutputSize)?;
 
-        let f = match algorithm {
-            #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
-            Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
-            Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
-        };
-
-        f(password, &salt, params.rounds(), out);
+        pbkdf2_hmac_with_params(password, salt, algorithm, params, out);
 
         // TODO(tarcieri): use `subtle` or `ctutils` for comparison
         if out

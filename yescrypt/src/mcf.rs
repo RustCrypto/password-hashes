@@ -2,7 +2,7 @@
 
 pub use mcf::{PasswordHash, PasswordHashRef};
 
-use crate::{Params, yescrypt};
+use crate::{Params, Yescrypt, yescrypt};
 use alloc::vec;
 use mcf::Base64;
 use password_hash::{
@@ -15,25 +15,6 @@ const YESCRYPT_MCF_ID: &str = "y";
 
 /// Base64 variant used by yescrypt.
 const YESCRYPT_BASE64: Base64 = Base64::Crypt;
-
-/// yescrypt password hashing type which can produce and verify strings in Modular Crypt Format
-/// (MCF) which begin with `$y$`
-///
-/// This type impls traits from the [`password-hash`][`password_hash`] crate, notably the
-/// [`PasswordHasher`], [`PasswordVerifier`], and [`CustomizedPasswordHasher`] traits.
-///
-/// See the toplevel documentation for a code example.
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub struct Yescrypt {
-    /// Default parameters to use when hashing passwords.
-    params: Params,
-}
-
-impl From<Params> for Yescrypt {
-    fn from(params: Params) -> Self {
-        Self { params }
-    }
-}
 
 impl CustomizedPasswordHasher<PasswordHash> for Yescrypt {
     type Params = Params;

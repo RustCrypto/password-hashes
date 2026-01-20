@@ -10,6 +10,7 @@ dependencies = [
  "blake2",
  "cpufeatures",
  "hex-literal",
+ "kdf",
  "password-hash",
  "rayon",
  "zeroize",
@@ -28,6 +29,7 @@ dependencies = [
  "crypto-bigint",
  "digest",
  "hex-literal",
+ "kdf",
  "password-hash",
  "rayon",
  "sha2",
@@ -275,6 +277,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "kdf"
+version = "0.1.0-pre.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4852c654c9650d06a4293146ead04bedcf29861dc0de1115ca1492b7a27c50aa"
+
+[[package]]
 name = "libc"
 version = "0.2.179"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -334,6 +342,7 @@ dependencies = [
  "digest",
  "hex-literal",
  "hmac",
+ "kdf",
  "mcf",
  "password-hash",
  "sha1",
@@ -434,6 +443,7 @@ name = "scrypt"
 version = "0.12.0-rc.8"
 dependencies = [
  "cfg-if",
+ "kdf",
  "mcf",
  "password-hash",
  "pbkdf2",
@@ -580,6 +590,7 @@ version = "0.1.0-rc.3"
 dependencies = [
  "hex-literal",
  "hmac",
+ "kdf",
  "mcf",
  "password-hash",
  "pbkdf2",

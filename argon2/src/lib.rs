@@ -148,6 +148,8 @@ pub use crate::{
     version::Version,
 };
 
+#[cfg(feature = "kdf")]
+pub use kdf::{self, Kdf, Pbkdf};
 #[cfg(feature = "password-hash")]
 pub use {
     crate::algorithm::{ARGON2D_IDENT, ARGON2I_IDENT, ARGON2ID_IDENT},
@@ -607,6 +609,17 @@ impl<'key> Argon2<'key> {
         Ok(())
     }
 }
+
+#[cfg(feature = "kdf")]
+impl Kdf for Argon2<'_> {
+    fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
+        self.hash_password_into(password, &salt, out)?;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "kdf")]
+impl Pbkdf for Argon2<'_> {}
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 impl CustomizedPasswordHasher<PasswordHash> for Argon2<'_> {

@@ -2,15 +2,11 @@
 
 pub use password_hash::phc::PasswordHash;
 
-use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac};
+use crate::{Algorithm, Params, Pbkdf2, pbkdf2_hmac_with_params};
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, Result,
     phc::{Output, Salt},
 };
-use sha2::{Sha256, Sha512};
-
-#[cfg(feature = "sha1")]
-use sha1::Sha1;
 
 impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
     type Params = Params;
@@ -40,14 +36,7 @@ impl CustomizedPasswordHasher<PasswordHash> for Pbkdf2 {
             .get_mut(..params.output_len())
             .ok_or(Error::OutputSize)?;
 
-        let f = match algorithm {
-            #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<Sha1>,
-            Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<Sha256>,
-            Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<Sha512>,
-        };
-
-        f(password, &salt, params.rounds(), out);
+        pbkdf2_hmac_with_params(password, salt.as_ref(), algorithm, params, out);
         let output = Output::new(out)?;
 
         Ok(PasswordHash {
@@ -84,8 +73,8 @@ mod tests {
     /// Input:
     /// - P = "passwordPASSWORDpassword" (24 octets)
     /// - S = "saltSALTsaltSALTsaltSALTsaltSALTsalt" (36 octets)
-    /// c = 4096
-    /// dkLen = 40
+    /// - c = 4096
+    /// - dkLen = 40
     #[test]
     fn hash_with_default_algorithm() {
         let params = Params::new_with_output_len(4096, 40).unwrap();

@@ -64,7 +64,7 @@ fn test_vectors() {
 
         assert_eq!(
             balloon
-                .hash_with_memory(test_vector.password, test_vector.salt, &mut memory)
+                .hash_password_with_memory(test_vector.password, test_vector.salt, &mut memory)
                 .unwrap()
                 .as_slice(),
             test_vector.output,
