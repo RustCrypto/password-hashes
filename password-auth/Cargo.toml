@@ -26,8 +26,8 @@ pbkdf2 = { version = "0.13.0-rc.7", optional = true, default-features = false, f
 scrypt = { version = "0.12.0-rc.6", optional = true, default-features = false, features = ["phc"] }
 
 [features]
-default = ["argon2", "std"]
-std = []
+default = ["argon2"]
+std = [] # no-op, but we can't remove it because it would be a breaking change
 wasm_js = ["getrandom/wasm_js"]
 
 [package.metadata.docs.rs]
