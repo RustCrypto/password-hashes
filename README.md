@@ -8,14 +8,15 @@ Collection of password hashing algorithms, otherwise known as password-based key
 
 ## Supported Algorithms
 
-| Algorithm      | Crate            | Crates.io                                                                                              | Documentation | MSRV                    |
-|----------------|------------------|--------------------------------------------------------------------------------------------------------|---------------|-------------------------|
-| [Argon2]       | [`argon2`]       | [![crates.io](https://img.shields.io/crates/v/argon2.svg)](https://crates.io/crates/argon2)            | [![Documentation](https://docs.rs/argon2/badge.svg)](https://docs.rs/argon2) | ![MSRV 1.85][msrv-1.85] |
+| Algorithm      | Crate            | Crates.io                                                                                               | Documentation | MSRV                    |
+|----------------|------------------|---------------------------------------------------------------------------------------------------------|---------------|-------------------------|
+| [Argon2]       | [`argon2`]       | [![crates.io](https://img.shields.io/crates/v/argon2.svg)](https://crates.io/crates/argon2)             | [![Documentation](https://docs.rs/argon2/badge.svg)](https://docs.rs/argon2) | ![MSRV 1.85][msrv-1.85] |
 | [Balloon]      | [`balloon‑hash`] | [![crates.io](https://img.shields.io/crates/v/balloon-hash.svg)](https://crates.io/crates/balloon-hash) | [![Documentation](https://docs.rs/balloon-hash/badge.svg)](https://docs.rs/balloon-hash) | ![MSRV 1.85][msrv-1.85] |
 | [bcrypt‑pbkdf] | [`bcrypt‑pbkdf`] | [![crates.io](https://img.shields.io/crates/v/bcrypt-pbkdf.svg)](https://crates.io/crates/bcrypt-pbkdf) | [![Documentation](https://docs.rs/bcrypt-pbkdf/badge.svg)](https://docs.rs/bcrypt-pbkdf) | ![MSRV 1.85][msrv-1.85] |
-| [PBKDF2]       | [`pbkdf2`]       | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2)            | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) | ![MSRV 1.85][msrv-1.85] |
-| [scrypt]       | [`scrypt`]       | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt)            | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) | ![MSRV 1.85][msrv-1.85] |
-| [SHA-crypt]    | [`sha‑crypt`]    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt)      | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) | ![MSRV 1.85][msrv-1.85] |
+| [PBKDF2]       | [`pbkdf2`]       | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2)             | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) | ![MSRV 1.85][msrv-1.85] |
+| [scrypt]       | [`scrypt`]       | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt)             | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) | ![MSRV 1.85][msrv-1.85] |
+| [SHA-crypt]    | [`sha‑crypt`]    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt)       | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) | ![MSRV 1.85][msrv-1.85] |
+| [yescrypt]     | [`yescrypt`]     | [![crates.io](https://img.shields.io/crates/v/yescrypt.svg)](https://crates.io/crates/yescrypt)         | [![Documentation](https://docs.rs/yescrypt/badge.svg)](https://docs.rs/yescrypt) | ![MSRV 1.85][msrv-1.85] |
 
 Please see the [OWASP Password Storage Cheat Sheet] for assistance in selecting an appropriate algorithm for your use case.
 
@@ -90,6 +91,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [`pbkdf2`]: ./pbkdf2
 [`scrypt`]: ./scrypt
 [`sha‑crypt`]: ./sha-crypt
+[`yescrypt`]: ./yescrypt
 
 [//]: # (general links)
 
@@ -99,4 +101,5 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [PBKDF2]: https://en.wikipedia.org/wiki/PBKDF2
 [scrypt]: https://en.wikipedia.org/wiki/Scrypt
 [SHA-crypt]: https://www.akkadia.org/drepper/SHA-crypt.txt
+[yescrypt]: https://www.openwall.com/yescrypt/
 [OWASP Password Storage Cheat Sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
