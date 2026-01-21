@@ -77,6 +77,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn try_from() {
         assert_eq!(Mode::try_from(0).unwrap(), Mode::Classic);
         assert_eq!(Mode::try_from(1).unwrap(), Mode::Worm);

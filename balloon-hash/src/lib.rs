@@ -205,7 +205,7 @@ where
     Array<u8, D::OutputSize>: ArrayDecoding,
 {
     fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
-        self.hash_password_into(password, &salt, out)?;
+        self.hash_password_into(password, salt, out)?;
         Ok(())
     }
 }
