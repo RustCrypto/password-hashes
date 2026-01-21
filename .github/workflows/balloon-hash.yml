@@ -39,7 +39,6 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --release --no-default-features --features password-hash
 
   minimal-versions:
-    if: false # disabled while using pre-releases
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
       working-directory: ${{ github.workflow }}
