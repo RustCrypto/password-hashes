@@ -17,8 +17,14 @@
 //!
 //! # Usage (simple PHC password hash usage with default params)
 //!
-#![cfg_attr(all(feature = "alloc", feature = "getrandom"), doc = "```")]
-#![cfg_attr(not(all(feature = "alloc", feature = "getrandom")), doc = "```ignore")]
+#![cfg_attr(
+    all(feature = "alloc", feature = "getrandom", feature = "phc"),
+    doc = "```"
+)]
+#![cfg_attr(
+    not(all(feature = "alloc", feature = "getrandom", feature = "phc")),
+    doc = "```ignore"
+)]
 //! # fn main() -> Result<(), Box<dyn core::error::Error>> {
 //! // NOTE: example requires `getrandom` feature is enabled
 //!
