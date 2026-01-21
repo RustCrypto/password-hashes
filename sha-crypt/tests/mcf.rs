@@ -93,7 +93,7 @@ fn hash_sha256_crypt() {
     let mut any = false;
 
     for t in TEST_VECTORS {
-        if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
+        if let Ok(salt) = Base64ShaCrypt::decode_vec(t.salt) {
             let params = Params::new(t.rounds).unwrap();
             let result = sha_crypt
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
@@ -113,7 +113,7 @@ fn hash_sha512_crypt() {
     let mut any = false;
 
     for t in TEST_VECTORS {
-        if let Ok(salt) = Base64ShaCrypt::decode_vec(&t.salt) {
+        if let Ok(salt) = Base64ShaCrypt::decode_vec(t.salt) {
             let params = Params::new(t.rounds).unwrap();
             let result = sha_crypt
                 .hash_password_with_params(t.input.as_bytes(), &salt, params)
