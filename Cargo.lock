@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "argon2"
-version = "0.6.0-rc.5"
+version = "0.6.0-rc.6"
 dependencies = [
  "base64ct",
  "blake2",
@@ -24,7 +24,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "balloon-hash"
-version = "0.5.0-rc.3"
+version = "0.5.0-rc.4"
 dependencies = [
  "crypto-bigint",
  "digest",
@@ -44,7 +44,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "bcrypt-pbkdf"
-version = "0.11.0-rc.2"
+version = "0.11.0-rc.3"
 dependencies = [
  "blowfish",
  "hex-literal",
@@ -336,7 +336,7 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.13.0-rc.7"
+version = "0.13.0-rc.8"
 dependencies = [
  "belt-hash",
  "digest",
@@ -440,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "scrypt"
-version = "0.12.0-rc.8"
+version = "0.12.0-rc.9"
 dependencies = [
  "cfg-if",
  "kdf",
@@ -455,7 +455,7 @@ dependencies = [
 
 [[package]]
 name = "sha-crypt"
-version = "0.6.0-rc.2"
+version = "0.6.0-rc.3"
 dependencies = [
  "base64ct",
  "mcf",
@@ -586,7 +586,7 @@ checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
 
 [[package]]
 name = "yescrypt"
-version = "0.1.0-rc.3"
+version = "0.1.0-rc.4"
 dependencies = [
  "hex-literal",
  "hmac",
