@@ -1,13 +1,7 @@
 use crate::errors::InvalidParams;
 
 #[cfg(feature = "phc")]
-use {
-    core::{
-        fmt::{self, Display},
-        str::FromStr,
-    },
-    password_hash::{Error, phc},
-};
+use password_hash::{Error, phc};
 
 #[cfg(all(feature = "phc", doc))]
 use password_hash::PasswordHasher;
@@ -170,25 +164,6 @@ impl Params {
 impl Default for Params {
     fn default() -> Params {
         Params::RECOMMENDED
-    }
-}
-
-#[cfg(feature = "phc")]
-impl Display for Params {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        phc::ParamsString::try_from(self)
-            .map_err(|_| fmt::Error)?
-            .fmt(f)
-    }
-}
-
-#[cfg(feature = "phc")]
-impl FromStr for Params {
-    type Err = Error;
-
-    fn from_str(s: &str) -> password_hash::Result<Self> {
-        let params_string = phc::ParamsString::from_str(s).map_err(|_| Error::ParamsInvalid)?;
-        Self::try_from(&params_string)
     }
 }
 
