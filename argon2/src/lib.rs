@@ -613,7 +613,7 @@ impl<'key> Argon2<'key> {
 #[cfg(feature = "kdf")]
 impl Kdf for Argon2<'_> {
     fn derive_key(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> kdf::Result<()> {
-        self.hash_password_into(password, &salt, out)?;
+        self.hash_password_into(password, salt, out)?;
         Ok(())
     }
 }

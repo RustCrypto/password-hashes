@@ -482,6 +482,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn decoder() {
         let p1: Params = "j9T".parse().unwrap();
         assert_eq!(
