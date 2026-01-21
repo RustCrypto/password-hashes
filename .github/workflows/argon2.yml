@@ -92,7 +92,7 @@ jobs:
           - target: powerpc-unknown-linux-gnu
             # MSRV is not used because of the compiler bug:
             # https://github.com/rust-lang/rust/issues/145693
-            rust: 1.90.0
+            rust: 1.91.0
           - target: powerpc-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
