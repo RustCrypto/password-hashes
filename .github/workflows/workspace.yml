@@ -24,7 +24,7 @@ jobs:
         with:
           toolchain: 1.92.0
           components: clippy
-      - run: cargo clippy --all-features --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-features --lib --bins --tests -- -D warnings
 
   doc:
     runs-on: ubuntu-latest
