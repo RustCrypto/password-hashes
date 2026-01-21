@@ -10,6 +10,16 @@
 Pure Rust implementation of the [`bcrypt_pbkdf`] password-based key derivation
 function, a custom derivative of PBKDF2 [used in OpenSSH].
 
+## About
+
+`bcrypt_pbkdf` is a password-based key derivation function that uses a PBKDF2-style repeated
+application of a hash function, but instead of using a standard hash function like SHA-2 it uses
+a bcrypt-style core based on the Blowfish cipher. At its heart is a modified bcrypt operation
+called "bhash" that repeatedly mixes the password and salt into Blowfish’s internal state and then
+uses Blowfish to encrypt a fixed 256-bit constant, producing a block of output. This is
+deliberately expensive to compute to thwart brute force attacks, with a user-controlled number of
+rounds which control the compute cost of the derivation.
+
 ## License
 
 Licensed under either of:
@@ -40,5 +50,5 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (links)
 
-[`bcrypt_pbkdf`]: https://flak.tedunangst.com/post/bcrypt-pbkdf
-[used in OpenSSH]: https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf
+[`bcrypt_pbkdf`]: https://web.archive.org/web/20251228225511/https://flak.tedunangst.com/post/bcrypt-pbkdf
+[used in OpenSSH]: https://web.archive.org/web/20251231170734/https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf
