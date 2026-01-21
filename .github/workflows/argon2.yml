@@ -86,14 +86,13 @@ jobs:
       - run: cargo careful test --all-features
 
   cross:
-    # Temporarily disabled because of the compiler bug:
-    # https://github.com/rust-lang/rust/issues/145693
-    if: false
     strategy:
       matrix:
         include:
           - target: powerpc-unknown-linux-gnu
-            rust: 1.85.0 # MSRV
+            # MSRV is not used because of the compiler bug:
+            # https://github.com/rust-lang/rust/issues/145693
+            rust: 1.90.0
           - target: powerpc-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
