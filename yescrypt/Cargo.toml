@@ -23,7 +23,7 @@ subtle = { version = "2", default-features = false }
 # optional dependencies
 kdf = { version = "0.1.0-pre.1", optional = true }
 mcf = { version = "0.6.0-rc.2", optional = true, default-features = false, features = ["alloc", "base64"] }
-password-hash = { version = "0.6.0-rc.9", optional = true, default-features = false }
+password-hash = { version = "0.6.0-rc.10", optional = true, default-features = false }
 
 [dev-dependencies]
 hex-literal = "1"

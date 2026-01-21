@@ -325,9 +325,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.6.0-rc.9"
+version = "0.6.0-rc.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35d7cb93fb02e6e7941e867799a770d9eb67ce70751a84a9e826e92ecad6aadc"
+checksum = "80b7795f59c339f0458e0213b31e01f45de7f061bdfc52857386f457d94c2cb8"
 dependencies = [
  "getrandom",
  "phc",
