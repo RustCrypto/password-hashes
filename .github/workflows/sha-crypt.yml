@@ -3,6 +3,7 @@ name: sha-crypt
 on:
   pull_request:
     paths:
+      - ".github/workflows/sha-crypt.yml"
       - "sha-crypt/**"
       - "Cargo.*"
   push:
