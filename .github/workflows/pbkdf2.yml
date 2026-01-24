@@ -3,6 +3,7 @@ name: pbkdf2
 on:
   pull_request:
     paths:
+      - ".github/workflows/pbkdf2.yml"
       - "pbkdf2/**"
       - "Cargo.*"
   push:
@@ -39,6 +40,7 @@ jobs:
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
+      stable-cmd: cargo hack check --feature-powerset --no-dev-deps
       working-directory: ${{ github.workflow }}
 
   test:
