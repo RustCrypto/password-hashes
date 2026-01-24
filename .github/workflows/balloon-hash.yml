@@ -3,6 +3,7 @@ name: balloon-hash
 on:
   pull_request:
     paths:
+      - ".github/workflows/balloon-hash.yml"
       - "balloon-hash/**"
       - "Cargo.*"
   push:

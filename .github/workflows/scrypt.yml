@@ -3,6 +3,7 @@ name: scrypt
 on:
   pull_request:
     paths:
+      - ".github/workflows/scrypt.yml"
       - "scrypt/**"
       - "Cargo.*"
   push:
