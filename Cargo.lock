@@ -348,9 +348,9 @@ dependencies = [
 
 [[package]]
 name = "kdf"
-version = "0.1.0-pre.1"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4852c654c9650d06a4293146ead04bedcf29861dc0de1115ca1492b7a27c50aa"
+checksum = "fb9652713a34bd7a2f539adcab233163943bed9c685970db62eb3cb264d625a1"
 
 [[package]]
 name = "leb128fmt"
