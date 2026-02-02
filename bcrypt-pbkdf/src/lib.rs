@@ -23,7 +23,7 @@ use sha2::{
     Digest, Sha512,
     digest::{
         FixedOutput, MacMarker, Output, OutputSizeUser, Update,
-        crypto_common::{Key, KeyInit, KeySizeUser},
+        common::{Key, KeyInit, KeySizeUser},
         typenum::U32,
     },
 };

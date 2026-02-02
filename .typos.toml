@@ -15,6 +15,7 @@ extend-ignore-re = [
 ]
 
 [default.extend-words]
+consts = "consts"
 "GOST" = "GOST"
 # Variable name in yescrypt
 "clen" = "clen"
