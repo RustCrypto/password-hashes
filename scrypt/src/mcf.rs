@@ -112,7 +112,7 @@ impl PasswordVerifier<PasswordHashRef> for Scrypt {
         let mut actual = vec![0u8; expected.len()];
         scrypt(password, salt, &params, &mut actual).map_err(|_| Error::OutputSize)?;
 
-        if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
+        if ctutils::CtEq::ct_ne(actual.as_slice(), &expected).into() {
             return Err(Error::PasswordInvalid);
         }
 

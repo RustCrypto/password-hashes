@@ -548,6 +548,7 @@ name = "scrypt"
 version = "0.12.0-rc.10"
 dependencies = [
  "cfg-if",
+ "ctutils",
  "kdf",
  "mcf",
  "password-hash",
@@ -555,7 +556,6 @@ dependencies = [
  "rayon",
  "salsa20",
  "sha2",
- "subtle",
 ]
 
 [[package]]
@@ -611,10 +611,10 @@ name = "sha-crypt"
 version = "0.6.0-rc.4"
 dependencies = [
  "base64ct",
+ "ctutils",
  "mcf",
  "password-hash",
  "sha2",
- "subtle",
 ]
 
 [[package]]
@@ -647,12 +647,6 @@ checksum = "8f02c29e9fbd46b3493c2d1b8038d738480a56d25edc0ec0acc27f796a125a89"
 dependencies = [
  "digest",
 ]
-
-[[package]]
-name = "subtle"
-version = "2.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "syn"
@@ -872,6 +866,7 @@ dependencies = [
 name = "yescrypt"
 version = "0.1.0-rc.5"
 dependencies = [
+ "ctutils",
  "hex-literal",
  "hmac",
  "kdf",
@@ -880,7 +875,6 @@ dependencies = [
  "pbkdf2",
  "salsa20",
  "sha2",
- "subtle",
 ]
 
 [[package]]

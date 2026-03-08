@@ -21,17 +21,17 @@ sha2 = { version = "0.11.0-rc.5", default-features = false }
 rayon = { version = "1.11", optional = true }
 
 # optional dependencies
+ctutils = { version = "0.4", optional = true }
 kdf = { version = "0.1", optional = true }
 mcf = { version = "0.6", optional = true }
 password-hash = { version = "0.6.0-rc.12", optional = true, default-features = false }
-subtle = { version = "2", optional = true, default-features = false }
 
 [features]
 alloc = ["password-hash?/alloc"]
 
 getrandom = ["password-hash", "password-hash/getrandom"]
 kdf = ["alloc", "dep:kdf"]
-mcf = ["alloc", "phc", "dep:mcf", "dep:subtle"]
+mcf = ["alloc", "phc", "dep:ctutils", "dep:mcf"]
 phc = ["password-hash/phc"]
 rand_core = ["password-hash/rand_core"]
 parallel = ["dep:rayon"]
