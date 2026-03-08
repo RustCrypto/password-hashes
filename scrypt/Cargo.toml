@@ -22,7 +22,7 @@ rayon = { version = "1.11", optional = true }
 
 # optional dependencies
 kdf = { version = "0.1", optional = true }
-mcf = { version = "0.6.0-rc.3", optional = true }
+mcf = { version = "0.6", optional = true }
 password-hash = { version = "0.6.0-rc.12", optional = true, default-features = false }
 subtle = { version = "2", optional = true, default-features = false }
 
