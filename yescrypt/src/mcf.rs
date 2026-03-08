@@ -110,7 +110,7 @@ impl PasswordVerifier<PasswordHashRef> for Yescrypt {
         let mut actual = vec![0u8; expected.len()];
         yescrypt(password, &salt, &params, &mut actual)?;
 
-        if subtle::ConstantTimeEq::ct_ne(actual.as_slice(), &expected).into() {
+        if ctutils::CtEq::ct_ne(actual.as_slice(), &expected).into() {
             return Err(Error::PasswordInvalid);
         }
 

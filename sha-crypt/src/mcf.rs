@@ -5,11 +5,11 @@ pub use mcf::{PasswordHash, PasswordHashRef};
 use crate::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, Params, algorithm::Algorithm};
 use base64ct::{Base64ShaCrypt, Encoding};
 use core::str::FromStr;
+use ctutils::CtEq;
 use mcf::Base64;
 use password_hash::{
     CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
 };
-use subtle::ConstantTimeEq;
 
 /// SHA-crypt type for use with the [`PasswordHasher`] and [`PasswordVerifier`] traits, which can
 /// produce and verify password hashes in [`Modular Crypt Format`][`mcf`].
