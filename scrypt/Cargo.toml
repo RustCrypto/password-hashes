@@ -24,7 +24,7 @@ rayon = { version = "1.11", optional = true }
 ctutils = { version = "0.4", optional = true }
 kdf = { version = "0.1", optional = true }
 mcf = { version = "0.6", optional = true }
-password-hash = { version = "0.6.0-rc.12", optional = true, default-features = false }
+password-hash = { version = "0.6", optional = true, default-features = false }
 
 [features]
 alloc = ["password-hash?/alloc"]
