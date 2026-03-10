@@ -14,7 +14,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-digest = { version = "0.11.0-rc.4", features = ["mac"] }
+digest = { version = "0.11", features = ["mac"] }
 
 # optional dependencies
 hmac = { version = "0.13.0-rc.5", optional = true, default-features = false }
