@@ -14,7 +14,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-digest = { version = "0.11.0-rc.11", default-features = false }
+digest = { version = "0.11", default-features = false }
 crypto-bigint = { version = "0.7.0-rc.25", default-features = false, features = ["hybrid-array"] }
 
 # optional dependencies
