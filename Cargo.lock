@@ -449,7 +449,6 @@ dependencies = [
  "kdf",
  "mcf",
  "password-hash",
- "sha1",
  "sha2",
  "streebog",
 ]
@@ -624,17 +623,6 @@ dependencies = [
  "mcf",
  "password-hash",
  "sha2",
-]
-
-[[package]]
-name = "sha1"
-version = "0.11.0-rc.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b167252f3c126be0d8926639c4c4706950f01445900c4b3db0fd7e89fcb750a"
-dependencies = [
- "cfg-if",
- "cpufeatures 0.2.17",
- "digest",
 ]
 
 [[package]]
