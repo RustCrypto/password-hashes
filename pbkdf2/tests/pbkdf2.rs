@@ -80,7 +80,7 @@ fn pbkdf2_streebog() {
     );
 }
 
-/// Test vector from STB 4.101.45-2013 (page 33):
+/// Test vector from STB 34.101.45-2013 (page 33):
 /// https://apmi.bsu.by/assets/files/std/bign-spec294.pdf
 #[test]
 fn pbkdf2_belt() {
