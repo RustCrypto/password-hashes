@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.13.0 (UNRELEASED)
 ### Removed
 - The `parallel` crate feature  ([#702])
+- `sha1` feature ([#853])
 
 [#702]: https://github.com/RustCrypto/password-hashes/pull/702
+[#853]: https://github.com/RustCrypto/password-hashes/pull/835
 
 ## 0.12.2 (2023-07-08)
 ### Fixed

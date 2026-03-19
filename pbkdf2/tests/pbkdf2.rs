@@ -2,6 +2,7 @@
 
 use belt_hash::BeltHash;
 use hex_literal::hex;
+use sha1::Sha1;
 use streebog::Streebog512;
 
 macro_rules! test {
@@ -17,6 +18,23 @@ macro_rules! test {
             assert_eq!(hash[..], EXPECTED_HASH[..]);
         })*
     };
+}
+
+/// Test vectors from RFC 6070:
+/// https://www.rfc-editor.org/rfc/rfc6070
+#[test]
+fn pbkdf2_rfc6070() {
+    test!(
+        Sha1;
+        b"password", b"salt", 1, "0c60c80f961f0e71f3a9b524af6012062fe037a6";
+        b"password", b"salt", 2, "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957";
+        b"password", b"salt", 4096, "4b007901b765489abead49d926f721d065a429c1";
+        // this test passes, but takes a long time to execute
+        // b"password", b"salt", 16777216, "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
+        b"passwordPASSWORDpassword", b"saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096,
+            "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038";
+        b"pass\0word", b"sa\0lt", 4096, "56fa6aa75548099dcc37d7f03425e0c3";
+    );
 }
 
 /// Test vectors from R 50.1.111-2016:

@@ -27,6 +27,7 @@ sha2 = { version = "0.11.0-rc.5", default-features = false, optional = true }
 belt-hash = "0.2.0-rc.5"
 hmac = "0.13.0-rc.5"
 hex-literal = "1"
+sha1 = "0.11.0-rc.5"
 sha2 = "0.11.0-rc.5"
 streebog = "0.11.0-rc.5"
 
