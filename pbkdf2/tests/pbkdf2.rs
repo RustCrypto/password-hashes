@@ -1,4 +1,5 @@
 #![cfg(feature = "hmac")]
+
 use belt_hash::BeltHash;
 use hex_literal::hex;
 use sha1::Sha1;

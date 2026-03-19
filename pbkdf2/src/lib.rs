@@ -86,12 +86,12 @@ pub mod mcf;
 #[cfg(feature = "phc")]
 pub mod phc;
 
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 mod algorithm;
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 mod params;
 
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 pub use crate::{algorithm::Algorithm, params::Params};
 #[cfg(feature = "hmac")]
 pub use hmac;
@@ -99,8 +99,6 @@ pub use hmac;
 pub use password_hash;
 #[cfg(any(feature = "mcf", feature = "phc"))]
 pub use password_hash::{PasswordHasher, PasswordVerifier};
-#[cfg(feature = "sha1")]
-pub use sha1;
 #[cfg(feature = "sha2")]
 pub use sha2;
 
@@ -261,7 +259,7 @@ where
 /// pbkdf2_hmac_with_params(b"password", b"salt", algorithm, params, &mut buf);
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e4563752b7a28f6eaab614ee005178"));
 /// ```
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 pub fn pbkdf2_hmac_with_params(
     password: &[u8],
     salt: &[u8],
@@ -270,8 +268,6 @@ pub fn pbkdf2_hmac_with_params(
     out: &mut [u8],
 ) {
     let f = match algorithm {
-        #[cfg(feature = "sha1")]
-        Algorithm::Pbkdf2Sha1 => pbkdf2_hmac::<sha1::Sha1>,
         #[cfg(feature = "sha2")]
         Algorithm::Pbkdf2Sha256 => pbkdf2_hmac::<sha2::Sha256>,
         #[cfg(feature = "sha2")]
@@ -287,7 +283,7 @@ pub fn pbkdf2_hmac_with_params(
 /// Supports the following password hash string formats, gated under the following crate features:
 /// - `mcf`: support for the Modular Crypt Format
 /// - `phc`: support for the Password Hashing Competition string format
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 #[cfg_attr(feature = "sha2", derive(Default))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Pbkdf2 {
@@ -307,7 +303,7 @@ impl Pbkdf2 {
     pub const SHA512: Self = Self::new(Algorithm::Pbkdf2Sha512, Params::RECOMMENDED);
 }
 
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 impl Pbkdf2 {
     /// Initialize [`Pbkdf2`] with default parameters.
     pub const fn new(algorithm: Algorithm, params: Params) -> Self {
@@ -320,7 +316,7 @@ impl Pbkdf2 {
     }
 }
 
-#[cfg(any(feature = "sha1", feature = "sha2"))]
+#[cfg(feature = "sha2")]
 impl From<Algorithm> for Pbkdf2 {
     fn from(algorithm: Algorithm) -> Self {
         Self {

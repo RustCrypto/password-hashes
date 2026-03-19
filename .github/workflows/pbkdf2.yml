@@ -63,4 +63,5 @@ jobs:
       - run: cargo test --no-default-features --features kdf
       - run: cargo test --no-default-features --features password-hash
       - run: cargo test --no-default-features --features rand_core
+      - run: cargo test --no-default-features --features sha2
       - run: cargo test --all-features --release

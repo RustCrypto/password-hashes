@@ -11,10 +11,6 @@ use {core::str::FromStr, password_hash::Error};
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Algorithm {
-    /// PBKDF2-HMAC-SHA1 a.k.a. `$pbkdf2`
-    #[cfg(feature = "sha1")]
-    Pbkdf2Sha1,
-
     /// PBKDF2-HMAC-SHA-256 a.k.a. `$pbkdf2-sha256`
     #[cfg(feature = "sha2")]
     Pbkdf2Sha256,
@@ -25,10 +21,6 @@ pub enum Algorithm {
 }
 
 impl Algorithm {
-    /// PBKDF2 (SHA-1) algorithm identifier
-    #[cfg(feature = "sha1")]
-    pub const PBKDF2_SHA1_ID: &'static str = "pbkdf2";
-
     /// PBKDF2 (SHA-256) algorithm identifier
     #[cfg(feature = "sha2")]
     pub const PBKDF2_SHA256_ID: &'static str = "pbkdf2-sha256";
@@ -36,10 +28,6 @@ impl Algorithm {
     /// PBKDF2 (SHA-512) algorithm identifier
     #[cfg(feature = "sha2")]
     pub const PBKDF2_SHA512_ID: &'static str = "pbkdf2-sha512";
-
-    /// PBKDF2 (SHA-1) algorithm identifier
-    #[cfg(all(feature = "phc", feature = "sha1"))]
-    pub(crate) const PBKDF2_SHA1_IDENT: Ident = Ident::new_unwrap(Self::PBKDF2_SHA1_ID);
 
     /// PBKDF2 (SHA-256) algorithm identifier
     #[cfg(feature = "phc")]
@@ -67,8 +55,6 @@ impl Algorithm {
     /// Get the Modular Crypt Format algorithm identifier for this algorithm.
     pub const fn to_str(self) -> &'static str {
         match self {
-            #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => Self::PBKDF2_SHA1_ID,
             #[cfg(feature = "sha2")]
             Algorithm::Pbkdf2Sha256 => Self::PBKDF2_SHA256_ID,
             #[cfg(feature = "sha2")]
@@ -109,8 +95,6 @@ impl FromStr for Algorithm {
 impl From<Algorithm> for Ident {
     fn from(alg: Algorithm) -> Ident {
         match alg {
-            #[cfg(feature = "sha1")]
-            Algorithm::Pbkdf2Sha1 => Algorithm::PBKDF2_SHA1_IDENT,
             Algorithm::Pbkdf2Sha256 => Algorithm::PBKDF2_SHA256_IDENT,
             Algorithm::Pbkdf2Sha512 => Algorithm::PBKDF2_SHA512_IDENT,
         }
@@ -123,8 +107,6 @@ impl<'a> TryFrom<&'a str> for Algorithm {
 
     fn try_from(name: &'a str) -> password_hash::Result<Algorithm> {
         match name {
-            #[cfg(feature = "sha1")]
-            Self::PBKDF2_SHA1_ID => Ok(Algorithm::Pbkdf2Sha1),
             #[cfg(feature = "sha2")]
             Self::PBKDF2_SHA256_ID => Ok(Algorithm::Pbkdf2Sha256),
             #[cfg(feature = "sha2")]
