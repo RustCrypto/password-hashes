@@ -297,10 +297,12 @@ pub struct Pbkdf2 {
 #[cfg(feature = "sha2")]
 impl Pbkdf2 {
     /// PBKDF2 configured with SHA-256 as the default.
-    pub const SHA256: Self = Self::new(Algorithm::Pbkdf2Sha256, Params::RECOMMENDED);
+    pub const SHA256: Self =
+        Self::new(Algorithm::Pbkdf2Sha256, Params::recommended_for(Algorithm::Pbkdf2Sha256));
 
     /// PBKDF2 configured with SHA-512 as the default.
-    pub const SHA512: Self = Self::new(Algorithm::Pbkdf2Sha512, Params::RECOMMENDED);
+    pub const SHA512: Self =
+        Self::new(Algorithm::Pbkdf2Sha512, Params::recommended_for(Algorithm::Pbkdf2Sha512));
 }
 
 #[cfg(feature = "sha2")]
@@ -321,7 +323,7 @@ impl From<Algorithm> for Pbkdf2 {
     fn from(algorithm: Algorithm) -> Self {
         Self {
             algorithm,
-            params: Params::default(),
+            params: Params::recommended_for(algorithm),
         }
     }
 }
@@ -333,6 +335,29 @@ impl From<Params> for Pbkdf2 {
             algorithm: Algorithm::default(),
             params,
         }
+    }
+}
+
+#[cfg(all(test, feature = "sha2"))]
+mod tests {
+    use super::{Algorithm, Params, Pbkdf2};
+
+    #[test]
+    fn recommended_params_follow_algorithm() {
+        assert_eq!(
+            Params::recommended_for(Algorithm::Pbkdf2Sha256).rounds(),
+            Params::RECOMMENDED_ROUNDS
+        );
+        assert_eq!(
+            Params::recommended_for(Algorithm::Pbkdf2Sha512).rounds(),
+            Params::RECOMMENDED_SHA512_ROUNDS
+        );
+    }
+
+    #[test]
+    fn pbkdf2_algorithm_defaults_use_matching_rounds() {
+        assert_eq!(Pbkdf2::SHA256, Pbkdf2::from(Algorithm::Pbkdf2Sha256));
+        assert_eq!(Pbkdf2::SHA512, Pbkdf2::from(Algorithm::Pbkdf2Sha512));
     }
 }
 

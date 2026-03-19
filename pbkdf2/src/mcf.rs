@@ -78,7 +78,7 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
         let algorithm = hash.id().parse::<Algorithm>()?;
         let mut fields = hash.fields();
         let mut next = fields.next().ok_or(Error::EncodingInvalid)?;
-        let mut params = Params::default();
+        let mut params = Params::recommended_for(algorithm);
 
         // decode params
         if let Ok(p) = next.as_str().parse::<Params>() {

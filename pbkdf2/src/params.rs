@@ -1,5 +1,7 @@
 use core::fmt::{self, Display};
 
+use crate::Algorithm;
+
 #[cfg(feature = "phc")]
 use password_hash::phc::{self, Decimal, ParamsString};
 #[cfg(feature = "password-hash")]
@@ -32,14 +34,25 @@ impl Params {
     /// Recommended output length.
     pub const RECOMMENDED_OUTPUT_LENGTH: usize = 32;
 
-    /// Recommended number of PBKDF2 rounds (used by default).
+    /// Recommended number of PBKDF2-SHA256 rounds (used by default).
     ///
     /// This number is adopted from the [OWASP cheat sheet]:
     ///
-    /// > Use PBKDF2 with a work factor of 600,000 or more
+    /// > Use PBKDF2 with a work factor of 600,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-256.
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED_ROUNDS: u32 = 600_000;
+
+    /// Recommended number of PBKDF2-SHA512 rounds.
+    ///
+    /// This number is adopted from the [OWASP cheat sheet]:
+    ///
+    /// > Use PBKDF2 with a work factor of 210,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-512.
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    pub const RECOMMENDED_SHA512_ROUNDS: u32 = 210_000;
 
     /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
     ///
@@ -48,6 +61,19 @@ impl Params {
         rounds: Self::RECOMMENDED_ROUNDS,
         output_len: Self::RECOMMENDED_OUTPUT_LENGTH,
     };
+
+    /// Recommended PBKDF2 parameters for the selected algorithm.
+    pub const fn recommended_for(algorithm: Algorithm) -> Self {
+        let rounds = match algorithm {
+            Algorithm::Pbkdf2Sha256 => Self::RECOMMENDED_ROUNDS,
+            Algorithm::Pbkdf2Sha512 => Self::RECOMMENDED_SHA512_ROUNDS,
+        };
+
+        Self {
+            rounds,
+            output_len: Self::RECOMMENDED_OUTPUT_LENGTH,
+        }
+    }
 
     /// Create new params with the given number of rounds.
     #[cfg(feature = "password-hash")]
@@ -158,7 +184,37 @@ impl TryFrom<&phc::PasswordHash> for Params {
             return Err(Error::Version);
         }
 
-        let params = Self::try_from(&hash.params)?;
+        let algorithm = Algorithm::try_from(hash.algorithm.as_str())?;
+        let mut rounds = Self::recommended_for(algorithm).rounds();
+        let mut output_len = Self::RECOMMENDED_OUTPUT_LENGTH;
+
+        for (ident, value) in hash.params.iter() {
+            match ident.as_str() {
+                "i" => {
+                    rounds = value
+                        .decimal()
+                        .map_err(|_| Error::ParamInvalid { name: "i" })?;
+
+                    if rounds < Self::MIN_ROUNDS {
+                        return Err(Error::ParamInvalid { name: "i" });
+                    }
+                }
+                "l" => {
+                    output_len = value
+                        .decimal()
+                        .ok()
+                        .and_then(|dec| dec.try_into().ok())
+                        .ok_or(Error::ParamInvalid { name: "l" })?;
+
+                    if output_len > Self::MAX_OUTPUT_LENGTH {
+                        return Err(Error::ParamInvalid { name: "l" });
+                    }
+                }
+                _ => return Err(Error::ParamsInvalid),
+            }
+        }
+
+        let params = Params::new_with_output_len(rounds, output_len)?;
 
         if let Some(hash) = &hash.hash {
             if hash.len() != params.output_len {
