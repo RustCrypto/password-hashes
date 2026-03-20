@@ -184,7 +184,7 @@ impl TryFrom<&phc::PasswordHash> for Params {
             return Err(Error::Version);
         }
 
-       let params = Self::try_from(&hash.params)?;
+        let params = Self::try_from(&hash.params)?;
 
         if let Some(hash) = &hash.hash {
             if hash.len() != params.output_len {
