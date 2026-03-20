@@ -297,10 +297,16 @@ pub struct Pbkdf2 {
 #[cfg(feature = "sha2")]
 impl Pbkdf2 {
     /// PBKDF2 configured with SHA-256 as the default.
-    pub const SHA256: Self = Self::new(Algorithm::Pbkdf2Sha256, Params::RECOMMENDED);
+    pub const SHA256: Self = Self::new(
+        Algorithm::Pbkdf2Sha256,
+        Params::recommended_for(Algorithm::Pbkdf2Sha256),
+    );
 
     /// PBKDF2 configured with SHA-512 as the default.
-    pub const SHA512: Self = Self::new(Algorithm::Pbkdf2Sha512, Params::RECOMMENDED);
+    pub const SHA512: Self = Self::new(
+        Algorithm::Pbkdf2Sha512,
+        Params::recommended_for(Algorithm::Pbkdf2Sha512),
+    );
 }
 
 #[cfg(feature = "sha2")]
@@ -321,7 +327,7 @@ impl From<Algorithm> for Pbkdf2 {
     fn from(algorithm: Algorithm) -> Self {
         Self {
             algorithm,
-            params: Params::default(),
+            params: Params::recommended_for(algorithm),
         }
     }
 }

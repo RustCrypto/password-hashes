@@ -1,5 +1,7 @@
 use core::fmt::{self, Display};
 
+use crate::Algorithm;
+
 #[cfg(feature = "phc")]
 use password_hash::phc::{self, Decimal, ParamsString};
 #[cfg(feature = "password-hash")]
@@ -32,14 +34,25 @@ impl Params {
     /// Recommended output length.
     pub const RECOMMENDED_OUTPUT_LENGTH: usize = 32;
 
-    /// Recommended number of PBKDF2 rounds (used by default).
+    /// Recommended number of PBKDF2-SHA256 rounds (used by default).
     ///
     /// This number is adopted from the [OWASP cheat sheet]:
     ///
-    /// > Use PBKDF2 with a work factor of 600,000 or more
+    /// > Use PBKDF2 with a work factor of 600,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-256.
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
     pub const RECOMMENDED_ROUNDS: u32 = 600_000;
+
+    /// Recommended number of PBKDF2-SHA512 rounds.
+    ///
+    /// This number is adopted from the [OWASP cheat sheet]:
+    ///
+    /// > Use PBKDF2 with a work factor of 210,000 or more and set with an
+    /// > internal hash function of HMAC-SHA-512.
+    ///
+    /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    pub const RECOMMENDED_SHA512_ROUNDS: u32 = 210_000;
 
     /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
     ///
@@ -48,6 +61,19 @@ impl Params {
         rounds: Self::RECOMMENDED_ROUNDS,
         output_len: Self::RECOMMENDED_OUTPUT_LENGTH,
     };
+
+    /// Recommended PBKDF2 parameters for the selected algorithm.
+    pub const fn recommended_for(algorithm: Algorithm) -> Self {
+        let rounds = match algorithm {
+            Algorithm::Pbkdf2Sha256 => Self::RECOMMENDED_ROUNDS,
+            Algorithm::Pbkdf2Sha512 => Self::RECOMMENDED_SHA512_ROUNDS,
+        };
+
+        Self {
+            rounds,
+            output_len: Self::RECOMMENDED_OUTPUT_LENGTH,
+        }
+    }
 
     /// Create new params with the given number of rounds.
     #[cfg(feature = "password-hash")]

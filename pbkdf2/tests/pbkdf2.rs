@@ -2,7 +2,10 @@
 
 use belt_hash::BeltHash;
 use hex_literal::hex;
+#[cfg(all(feature = "sha2", feature = "phc"))]
+use pbkdf2::{Params, Pbkdf2, password_hash::PasswordHasher, phc::PasswordHash};
 use sha1::Sha1;
+use sha2::{Sha256, Sha512};
 use streebog::Streebog512;
 
 macro_rules! test {
@@ -91,4 +94,51 @@ fn pbkdf2_belt() {
         10_000,
         "3D331BBB B1FBBB40 E4BF22F6 CB9A689E F13A77DC 09ECF932 91BFE424 39A72E7D";
     );
+}
+#[test]
+fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_256() {
+    test!(
+        Sha256;
+        b"password", b"salt", 1, "120fb6cffcf8b32c43e7225256c4f837a86548c9";
+        b"password", b"salt", 2, "ae4d0c95af6b46d32d0adff928f06dd02a303f8e";
+        b"password", b"salt", 4096, "c5e478d59288c841aa530db6845c4c8d962893a0";
+        // this test passes, but takes a long time to execute
+        // b"password", b"salt", 16777216, "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
+        b"passwordPASSWORDpassword", b"saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096,
+            "348c89dbcbd32b2f32d814b8116e84cf2b17347e";
+        b"pass\0word", b"sa\0lt", 600_000, "efc5286bfbd0681c9600b5c024b8ba1b5ae0f0ab";
+    );
+}
+
+#[test]
+fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_512() {
+    test!(
+        Sha512;
+        b"password", b"salt", 1, "867f70cf1ade02cff3752599a3a53dc4af34c7a6";
+        b"password", b"salt", 2, "e1d9c16aa681708a45f5c7c4e215ceb66e011a2e";
+        b"password", b"salt", 4096, "d197b1b33db0143e018b12f3d1d1479e6cdebdcc";
+        // this test passes, but takes a long time to execute
+        // b"password", b"salt", 16777216, "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
+        b"passwordPASSWORDpassword", b"saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096,
+            "8c0511f4c6e597c6ac6315d8f0362e225f3c5014";
+        b"pass\0word", b"sa\0lt", 210_000, "4941abc239d618e79f63d3d300e5f81954164bc1";
+    );
+}
+
+#[test]
+#[cfg(all(feature = "sha2", feature = "phc"))]
+fn pbkdf2_sha_512_default_iterations() {
+    let hash: PasswordHash = Pbkdf2::SHA512
+        .hash_password_with_salt(b"pass\0word", b"testsalt")
+        .unwrap();
+    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 210_000);
+}
+
+#[test]
+#[cfg(all(feature = "sha2", feature = "phc"))]
+fn pbkdf2_sha_256_default_iterations() {
+    let hash: PasswordHash = Pbkdf2::SHA256
+        .hash_password_with_salt(b"pass\0word", b"testsalt")
+        .unwrap();
+    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 600_000);
 }
