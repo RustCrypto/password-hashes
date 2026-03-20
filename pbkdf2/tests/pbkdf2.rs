@@ -131,7 +131,7 @@ fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_512() {
 
 #[test]
 #[cfg(all(feature = "sha2", feature = "phc"))]
-fn pbkdf2_sha_512_default_interations() {
+fn pbkdf2_sha_512_default_iterations() {
     let hash = Pbkdf2::SHA512
         .hash_password_with_salt(b"pass\0word", b"testsalt")
         .unwrap();
@@ -140,7 +140,7 @@ fn pbkdf2_sha_512_default_interations() {
 
 #[test]
 #[cfg(all(feature = "sha2", feature = "phc"))]
-fn pbkdf2_sha_256_default_interations() {
+fn pbkdf2_sha_256_default_iterations() {
     let hash = Pbkdf2::SHA256
         .hash_password_with_salt(b"pass\0word", b"testsalt")
         .unwrap();
