@@ -184,37 +184,7 @@ impl TryFrom<&phc::PasswordHash> for Params {
             return Err(Error::Version);
         }
 
-        let algorithm = Algorithm::try_from(hash.algorithm.as_str())?;
-        let mut rounds = Self::recommended_for(algorithm).rounds();
-        let mut output_len = Self::RECOMMENDED_OUTPUT_LENGTH;
-
-        for (ident, value) in hash.params.iter() {
-            match ident.as_str() {
-                "i" => {
-                    rounds = value
-                        .decimal()
-                        .map_err(|_| Error::ParamInvalid { name: "i" })?;
-
-                    if rounds < Self::MIN_ROUNDS {
-                        return Err(Error::ParamInvalid { name: "i" });
-                    }
-                }
-                "l" => {
-                    output_len = value
-                        .decimal()
-                        .ok()
-                        .and_then(|dec| dec.try_into().ok())
-                        .ok_or(Error::ParamInvalid { name: "l" })?;
-
-                    if output_len > Self::MAX_OUTPUT_LENGTH {
-                        return Err(Error::ParamInvalid { name: "l" });
-                    }
-                }
-                _ => return Err(Error::ParamsInvalid),
-            }
-        }
-
-        let params = Params::new_with_output_len(rounds, output_len)?;
+       let params = Self::try_from(&hash.params)?;
 
         if let Some(hash) = &hash.hash {
             if hash.len() != params.output_len {
