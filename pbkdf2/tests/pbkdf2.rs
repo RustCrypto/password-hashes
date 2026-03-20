@@ -5,7 +5,7 @@ use hex_literal::hex;
 #[cfg(all(feature = "sha2", feature = "phc"))]
 use pbkdf2::{
     Params, Pbkdf2,
-    password_hash::{PasswordHasher, PasswordVerifier},
+    password_hash::{PasswordHasher}, phc::PasswordHash,
 };
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
@@ -131,7 +131,7 @@ fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_512() {
 #[test]
 #[cfg(all(feature = "sha2", feature = "phc"))]
 fn pbkdf2_sha_512_default_iterations() {
-    let hash = Pbkdf2::SHA512
+    let hash: PasswordHash = Pbkdf2::SHA512
         .hash_password_with_salt(b"pass\0word", b"testsalt")
         .unwrap();
     assert_eq!(Params::try_from(&hash).unwrap().rounds(), 210_000);
@@ -140,7 +140,7 @@ fn pbkdf2_sha_512_default_iterations() {
 #[test]
 #[cfg(all(feature = "sha2", feature = "phc"))]
 fn pbkdf2_sha_256_default_iterations() {
-    let hash = Pbkdf2::SHA256
+    let hash: PasswordHash = Pbkdf2::SHA256
         .hash_password_with_salt(b"pass\0word", b"testsalt")
         .unwrap();
     assert_eq!(Params::try_from(&hash).unwrap().rounds(), 600_000);
