@@ -3,10 +3,7 @@
 use belt_hash::BeltHash;
 use hex_literal::hex;
 #[cfg(all(feature = "sha2", feature = "phc"))]
-use pbkdf2::{
-    Params, Pbkdf2,
-    password_hash::{PasswordHasher}, phc::PasswordHash,
-};
+use pbkdf2::{Params, Pbkdf2, password_hash::PasswordHasher, phc::PasswordHash};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 use streebog::Streebog512;
