@@ -21,7 +21,6 @@ macro_rules! test {
             const N: usize = EXPECTED_HASH.len();
 
             let hash = pbkdf2::pbkdf2_hmac_array::<$hash, N>($password, $salt, $rounds);
-            let hex = hex::encode(hash);
             assert_eq!(hash[..], EXPECTED_HASH[..]);
         })*
     };
@@ -101,7 +100,7 @@ fn pbkdf2_belt() {
 }
 #[test]
 fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_256() {
-       test!(
+    test!(
         Sha256;
         b"password", b"salt", 1, "120fb6cffcf8b32c43e7225256c4f837a86548c9";
         b"password", b"salt", 2, "ae4d0c95af6b46d32d0adff928f06dd02a303f8e";
@@ -116,7 +115,7 @@ fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_256() {
 
 #[test]
 fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_512() {
-       test!(
+    test!(
         Sha512;
         b"password", b"salt", 1, "867f70cf1ade02cff3752599a3a53dc4af34c7a6";
         b"password", b"salt", 2, "e1d9c16aa681708a45f5c7c4e215ceb66e011a2e";
