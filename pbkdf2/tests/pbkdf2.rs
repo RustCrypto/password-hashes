@@ -2,6 +2,11 @@
 
 use belt_hash::BeltHash;
 use hex_literal::hex;
+#[cfg(all(feature = "sha2", feature = "phc"))]
+use pbkdf2::{
+    Params, Pbkdf2,
+    password_hash::{PasswordHasher, PasswordVerifier},
+};
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 use streebog::Streebog512;
@@ -16,6 +21,7 @@ macro_rules! test {
             const N: usize = EXPECTED_HASH.len();
 
             let hash = pbkdf2::pbkdf2_hmac_array::<$hash, N>($password, $salt, $rounds);
+            let hex = hex::encode(hash);
             assert_eq!(hash[..], EXPECTED_HASH[..]);
         })*
     };
@@ -104,7 +110,7 @@ fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_256() {
         // b"password", b"salt", 16777216, "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
         b"passwordPASSWORDpassword", b"saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096,
             "348c89dbcbd32b2f32d814b8116e84cf2b17347e";
-        b"pass\0word", b"sa\0lt", 4096, "89b69d0516f829893c696226650a86878c029ac1";
+        b"pass\0word", b"sa\0lt", 600_000, "efc5286bfbd0681c9600b5c024b8ba1b5ae0f0ab";
     );
 }
 
@@ -119,6 +125,24 @@ fn pbkdf2_algorithm_defaults_use_matching_rounds_sha_512() {
         // b"password", b"salt", 16777216, "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
         b"passwordPASSWORDpassword", b"saltSALTsaltSALTsaltSALTsaltSALTsalt", 4096,
             "8c0511f4c6e597c6ac6315d8f0362e225f3c5014";
-        b"pass\0word", b"sa\0lt", 4096, "9d9e9c4cd21fe4be24d5b8244c759665f39d98fc";
+        b"pass\0word", b"sa\0lt", 210_000, "4941abc239d618e79f63d3d300e5f81954164bc1";
     );
+}
+
+#[test]
+#[cfg(all(feature = "sha2", feature = "phc"))]
+fn pbkdf2_sha_512_default_interations() {
+    let hash = Pbkdf2::SHA512
+        .hash_password_with_salt(b"pass\0word", b"testsalt")
+        .unwrap();
+    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 210_000);
+}
+
+#[test]
+#[cfg(all(feature = "sha2", feature = "phc"))]
+fn pbkdf2_sha_256_default_interations() {
+    let hash = Pbkdf2::SHA256
+        .hash_password_with_salt(b"pass\0word", b"testsalt")
+        .unwrap();
+    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 600_000);
 }
