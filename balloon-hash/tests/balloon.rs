@@ -1,7 +1,6 @@
 use balloon_hash::{Algorithm, Balloon, Params};
 use digest::array::Array;
 
-
 #[path = "../data/mod.rs"]
 mod data;
 use data::TEST_VECTORS;
