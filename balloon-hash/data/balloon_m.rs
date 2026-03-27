@@ -1,6 +1,6 @@
 use hex_literal::hex;
 
-pub struct TestVector {
+pub struct BalloonMTestVector {
     pub password: &'static [u8],
     pub salt: &'static [u8],
     pub s_cost: u32,
@@ -12,8 +12,8 @@ pub struct TestVector {
 /// Tested with the following implementations:
 /// - <https://github.com/nachonavarro/balloon-hashing>
 /// - <https://github.com/nogoegst/balloon>
-pub const TEST_VECTORS: &[TestVector] = &[
-    TestVector {
+pub const BALLOON_M_TEST_VECTORS: &[BalloonMTestVector] = &[
+    BalloonMTestVector {
         password: b"hunter42",
         salt: b"examplesalt",
         s_cost: 1024,
@@ -21,7 +21,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 4,
         output: hex!("1832bd8e5cbeba1cb174a13838095e7e66508e9bf04c40178990adbc8ba9eb6f"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"",
         salt: b"salt",
         s_cost: 3,
@@ -29,7 +29,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 2,
         output: hex!("f8767fe04059cef67b4427cda99bf8bcdd983959dbd399a5e63ea04523716c23"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"password",
         salt: b"",
         s_cost: 3,
@@ -37,7 +37,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 3,
         output: hex!("bcad257eff3d1090b50276514857e60db5d0ec484129013ef3c88f7d36e438d6"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"password",
         salt: b"",
         s_cost: 3,
@@ -45,7 +45,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 1,
         output: hex!("498344ee9d31baf82cc93ebb3874fe0b76e164302c1cefa1b63a90a69afb9b4d"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"\0",
         salt: b"\0",
         s_cost: 3,
@@ -53,7 +53,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 4,
         output: hex!("8a665611e40710ba1fd78c181549c750f17c12e423c11930ce997f04c7153e0c"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"\0",
         salt: b"\0",
         s_cost: 3,
@@ -61,7 +61,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 1,
         output: hex!("d9e33c683451b21fb3720afbd78bf12518c1d4401fa39f054b052a145c968bb1"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"password",
         salt: b"salt",
         s_cost: 1,
@@ -69,7 +69,7 @@ pub const TEST_VECTORS: &[TestVector] = &[
         p_cost: 16,
         output: hex!("a67b383bb88a282aef595d98697f90820adf64582a4b3627c76b7da3d8bae915"),
     },
-    TestVector {
+    BalloonMTestVector {
         password: b"password",
         salt: b"salt",
         s_cost: 1,

@@ -6,11 +6,11 @@ use test::Bencher;
 use balloon_hash::{Algorithm, Balloon, Params};
 use digest::array::Array;
 
-#[path = "../data/mod.rs"]
-mod data;
-use data::TestVector;
+#[path = "../data/balloon_m.rs"]
+mod test_vectors;
+use test_vectors::{BALLOON_M_TEST_VECTORS, BalloonMTestVector};
 
-fn bench_test_vector(b: &mut Bencher, test_vector: &TestVector) {
+fn bench_test_vector(b: &mut Bencher, test_vector: &BalloonMTestVector) {
     let params = Params::new(test_vector.s_cost, test_vector.t_cost, test_vector.p_cost).unwrap();
     let balloon = Balloon::<sha2::Sha256>::new(Algorithm::BalloonM, params, None);
     let mut memory = vec![Array::default(); balloon.params.s_cost.get() as usize];
@@ -25,40 +25,40 @@ fn bench_test_vector(b: &mut Bencher, test_vector: &TestVector) {
 
 #[bench]
 fn bench_balloon_m_vector_0(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[0]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[0]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_1(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[1]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[1]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_2(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[2]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[2]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_3(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[3]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[3]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_4(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[4]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[4]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_5(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[5]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[5]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_6(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[6]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[6]);
 }
 
 #[bench]
 fn bench_balloon_m_vector_7(b: &mut Bencher) {
-    bench_test_vector(b, &data::TEST_VECTORS[7]);
+    bench_test_vector(b, &BALLOON_M_TEST_VECTORS[7]);
 }
