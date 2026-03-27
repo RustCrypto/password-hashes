@@ -1,5 +1,3 @@
-use std::path;
-
 use balloon_hash::{Algorithm, Balloon, Params};
 use digest::array::Array;
 
