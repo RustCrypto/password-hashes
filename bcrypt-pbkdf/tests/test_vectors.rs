@@ -11,7 +11,7 @@ fn test_openbsd_vectors() {
         let mut out = vec![0; t.out.len()];
         let len = t.out.len().div_ceil(32) * 32;
         let mut memory = vec![0; len];
-        bcrypt_pbkdf_with_memory(t.password, &t.salt[..], t.rounds, &mut out, &mut memory).unwrap();
+        bcrypt_pbkdf_with_memory(t.password, t.salt, t.rounds, &mut out, &mut memory).unwrap();
         assert_eq!(out, t.out);
     }
 }
