@@ -1,9 +1,9 @@
 use balloon_hash::{Algorithm, Balloon, Params};
 use digest::array::Array;
 
-#[path = "../data/balloon.rs"]
-mod test_vectors;
-use test_vectors::BALLOON_TEST_VECTORS;
+#[path = "../data/balloon_test_vectors.rs"]
+mod balloon_test_vectors;
+use balloon_test_vectors::BALLOON_TEST_VECTORS;
 
 #[test]
 fn test_vectors() {
