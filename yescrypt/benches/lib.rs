@@ -27,7 +27,7 @@ fn bench_test_vector(bh: &mut Bencher, test_vector: &TestVector) {
             &mut buf[..test_vector.output.len()],
         )
         .unwrap();
-        // assert_eq!(test_vector.output, &buf[..test_vector.output.len()]);
+        assert_eq!(test_vector.output, &buf[..test_vector.output.len()]);
     });
 }
 
@@ -46,7 +46,7 @@ fn bench_hash_mcf(bh: &mut Bencher, test_vector: &McfTestVector) {
         let hash = Yescrypt::default()
             .hash_password_with_params(test_vector.password, salt, params)
             .unwrap();
-        // assert_eq!(test_vector.expected_hash, hash.as_str());
+        assert_eq!(test_vector.expected_hash, hash.as_str());
     });
 }
 
