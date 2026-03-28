@@ -76,12 +76,15 @@ impl Params {
         // check that p * r * 128 doesn't overflow
         r128.checked_mul(p).ok_or(InvalidParams)?;
 
-        // This check required by Scrypt:
-        // check: n < 2^(128 * r / 8)
-        // r * 16 won't overflow since r128 didn't
-        if (log_n as usize) >= r * 16 {
-            return Err(InvalidParams);
-        }
+        // Note: RFC 7914 requires `n < 2^(128 * r / 8)`, i.e. `log_n < r * 16`,
+        // but this upper bound is based on an error in the RFC where a bit count
+        // was treated as a byte count. The correct bound from the original scrypt
+        // paper (Percival, 2009) is `N < 2^(128*r)`, i.e. `log_n < r * 128`,
+        // which far exceeds any practical parameter value.
+        // We intentionally omit this check, consistent with the Tarsnap reference
+        // implementation and Go's x/crypto/scrypt.
+        // See: https://github.com/RustCrypto/password-hashes/issues/866
+        // See: https://www.rfc-editor.org/errata/eid5971
 
         // This check required by Scrypt:
         // check: p <= ((2^32-1) * 32) / (128 * r)
