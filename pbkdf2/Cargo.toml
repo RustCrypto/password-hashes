@@ -21,15 +21,15 @@ hmac = { version = "0.13", optional = true, default-features = false }
 kdf = { version = "0.1", optional = true }
 mcf = { version = "0.6", optional = true, default-features = false, features = ["base64"] }
 password-hash = { version = "0.6", default-features = false, optional = true }
-sha2 = { version = "0.11.0-rc.5", default-features = false, optional = true }
+sha2 = { version = "0.11", default-features = false, optional = true }
 
 [dev-dependencies]
 belt-hash = "0.2.0-rc.5"
 hmac = "0.13"
 hex-literal = "1"
-sha1 = "0.11.0-rc.5"
-sha2 = "0.11.0-rc.5"
-streebog = "0.11.0-rc.5"
+sha1 = "0.11"
+sha2 = "0.11"
+streebog = "0.11"
 
 [features]
 default = ["hmac"]

@@ -17,7 +17,7 @@ rust-version = "1.85"
 cfg-if = "1.0"
 pbkdf2 = { version = "0.13.0-rc.10", path = "../pbkdf2" }
 salsa20 = { version = "0.11.0-rc.2", default-features = false }
-sha2 = { version = "0.11.0-rc.5", default-features = false }
+sha2 = { version = "0.11", default-features = false }
 rayon = { version = "1.11", optional = true }
 
 # optional dependencies
