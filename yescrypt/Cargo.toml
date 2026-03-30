@@ -17,7 +17,7 @@ rust-version = "1.85"
 ctutils = "0.4"
 hmac = { version = "0.13", default-features = false }
 pbkdf2 = { version = "0.13.0-rc.10", default-features = false, features = ["hmac"] }
-salsa20 = { version = "0.11.0-rc.2", default-features = false }
+salsa20 = { version = "0.11", default-features = false }
 sha2 = { version = "0.11", default-features = false }
 
 # optional dependencies
