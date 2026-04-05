@@ -163,7 +163,7 @@ pub fn pbkdf2<PRF>(
     res: &mut [u8],
 ) -> Result<(), InvalidLength>
 where
-    PRF: KeyInit + Update + FixedOutput + Clone + Sync,
+    PRF: KeyInit + Update + FixedOutput + Clone,
 {
     let n = PRF::OutputSize::to_usize();
     let prf = PRF::new_from_slice(password)?;
@@ -193,7 +193,7 @@ pub fn pbkdf2_array<PRF, const N: usize>(
     rounds: u32,
 ) -> Result<[u8; N], InvalidLength>
 where
-    PRF: KeyInit + Update + FixedOutput + Clone + Sync,
+    PRF: KeyInit + Update + FixedOutput + Clone,
 {
     let mut buf = [0u8; N];
     pbkdf2::<PRF>(password, salt, rounds, &mut buf).map(|()| buf)
@@ -213,10 +213,7 @@ where
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[cfg(feature = "hmac")]
-pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
-where
-    D: EagerHash<Core: Sync>,
-{
+pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8]) {
     pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
 }
@@ -235,10 +232,11 @@ where
 /// );
 /// ```
 #[cfg(feature = "hmac")]
-pub fn pbkdf2_hmac_array<D, const N: usize>(password: &[u8], salt: &[u8], rounds: u32) -> [u8; N]
-where
-    D: EagerHash<Core: Sync>,
-{
+pub fn pbkdf2_hmac_array<D: EagerHash, const N: usize>(
+    password: &[u8],
+    salt: &[u8],
+    rounds: u32,
+) -> [u8; N] {
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
     buf
