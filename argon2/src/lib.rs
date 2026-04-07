@@ -709,7 +709,10 @@ impl From<&Params> for Argon2<'_> {
 #[cfg(all(test, feature = "alloc", feature = "password-hash"))]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use crate::{Algorithm, Argon2, CustomizedPasswordHasher, Params, PasswordHasher, Version};
+    use crate::{
+        Algorithm, Argon2, CustomizedPasswordHasher, Params, PasswordHasher, PasswordVerifier,
+        Version,
+    };
 
     /// Example password only: don't use this as a real password!!!
     const EXAMPLE_PASSWORD: &[u8] = b"hunter42";
@@ -755,5 +758,18 @@ mod tests {
                 value,
             );
         }
+    }
+
+    #[test]
+    fn non_default_output_len_round_trip_should_verify() {
+        let params = Params::new(8, 1, 1, Some(16)).unwrap();
+        let hash = Argon2::new(Algorithm::Argon2id, Version::V0x13, params)
+            .hash_password_with_salt(EXAMPLE_PASSWORD, EXAMPLE_SALT)
+            .unwrap();
+
+        assert_eq!(
+            Argon2::default().verify_password(EXAMPLE_PASSWORD, &hash),
+            Ok(())
+        );
     }
 }
