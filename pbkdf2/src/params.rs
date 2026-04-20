@@ -63,6 +63,7 @@ impl Params {
     };
 
     /// Recommended PBKDF2 parameters for the selected algorithm.
+    #[must_use]
     pub const fn recommended_for(algorithm: Algorithm) -> Self {
         let rounds = match algorithm {
             Algorithm::Pbkdf2Sha256 => Self::RECOMMENDED_ROUNDS,
@@ -76,12 +77,20 @@ impl Params {
     }
 
     /// Create new params with the given number of rounds.
+    ///
+    /// # Errors
+    /// If the number of rounds is less than [`Params::MIN_ROUNDS`].
     #[cfg(feature = "password-hash")]
     pub const fn new(rounds: u32) -> Result<Self> {
         Self::new_with_output_len(rounds, Self::RECOMMENDED_OUTPUT_LENGTH)
     }
 
     /// Create new params with a customized output length.
+    ///
+    /// # Errors
+    /// - If the number of rounds is less than [`Params::MIN_ROUNDS`].
+    /// - If `output_len` is shorter than [`Params::MIN_OUTPUT_LENGTH`].
+    /// - If `output_len` is longer than [`Params::MAX_OUTPUT_LENGTH`].
     #[cfg(feature = "password-hash")]
     pub const fn new_with_output_len(rounds: u32, output_len: usize) -> Result<Self> {
         if rounds < Self::MIN_ROUNDS
@@ -95,11 +104,13 @@ impl Params {
     }
 
     /// Get the number of rounds.
+    #[must_use]
     pub const fn rounds(self) -> u32 {
         self.rounds
     }
 
     /// Get the output length.
+    #[must_use]
     pub const fn output_len(self) -> usize {
         self.output_len
     }
@@ -141,7 +152,7 @@ impl TryFrom<u32> for Params {
 impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
-    fn try_from(params_string: &ParamsString) -> password_hash::Result<Self> {
+    fn try_from(params_string: &ParamsString) -> Result<Self> {
         let mut rounds = Params::RECOMMENDED_ROUNDS;
         let mut output_len = Params::RECOMMENDED_OUTPUT_LENGTH;
 
@@ -179,7 +190,7 @@ impl TryFrom<&ParamsString> for Params {
 impl TryFrom<&phc::PasswordHash> for Params {
     type Error = Error;
 
-    fn try_from(hash: &phc::PasswordHash) -> password_hash::Result<Self> {
+    fn try_from(hash: &phc::PasswordHash) -> Result<Self> {
         if hash.version.is_some() {
             return Err(Error::Version);
         }
@@ -200,7 +211,7 @@ impl TryFrom<&phc::PasswordHash> for Params {
 impl TryFrom<Params> for ParamsString {
     type Error = Error;
 
-    fn try_from(params: Params) -> password_hash::Result<ParamsString> {
+    fn try_from(params: Params) -> Result<ParamsString> {
         Self::try_from(&params)
     }
 }
@@ -209,10 +220,11 @@ impl TryFrom<Params> for ParamsString {
 impl TryFrom<&Params> for ParamsString {
     type Error = Error;
 
-    fn try_from(input: &Params) -> password_hash::Result<ParamsString> {
+    fn try_from(input: &Params) -> Result<ParamsString> {
         let mut output = ParamsString::new();
+        let output_len = Decimal::try_from(input.output_len).map_err(|_| Error::OutputSize)?;
 
-        for (name, value) in [("i", input.rounds), ("l", input.output_len as Decimal)] {
+        for (name, value) in [("i", input.rounds), ("l", output_len)] {
             output
                 .add_decimal(name, value)
                 .map_err(|_| Error::ParamInvalid { name })?;

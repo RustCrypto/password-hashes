@@ -47,12 +47,16 @@ impl Algorithm {
     pub const RECOMMENDED: Self = Self::Pbkdf2Sha256;
 
     /// Parse an [`Algorithm`] from the provided string.
+    ///
+    /// # Errors
+    /// If the provided algorithm `id` is not known/supported.
     #[cfg(feature = "password-hash")]
     pub fn new(id: impl AsRef<str>) -> password_hash::Result<Self> {
         id.as_ref().parse()
     }
 
     /// Get the Modular Crypt Format algorithm identifier for this algorithm.
+    #[must_use]
     pub const fn to_str(self) -> &'static str {
         match self {
             #[cfg(feature = "sha2")]

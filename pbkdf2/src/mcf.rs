@@ -124,8 +124,8 @@ impl PasswordVerifier<PasswordHashRef> for Pbkdf2 {
     }
 }
 
-// TODO(tarcieri): tests for SHA-1
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use crate::Pbkdf2;
     use mcf::PasswordHashRef;

@@ -155,6 +155,9 @@ where
 ///     .expect("HMAC can be initialized with any key length");
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
+///
+/// # Errors
+/// Returns `InvalidLength` if the length of `password` is unsupported by `PRF`.
 #[inline]
 pub fn pbkdf2<PRF>(
     password: &[u8],
@@ -169,6 +172,7 @@ where
     let prf = PRF::new_from_slice(password)?;
 
     for (i, chunk) in res.chunks_mut(n).enumerate() {
+        #[allow(clippy::cast_possible_truncation, reason = "TODO")]
         pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
     }
 
@@ -186,6 +190,9 @@ where
 ///     .expect("HMAC can be initialized with any key length");
 /// assert_eq!(res, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
+///
+/// # Errors
+/// Returns `InvalidLength` if the length of `password` is unsupported by `PRF`.
 #[inline]
 pub fn pbkdf2_array<PRF, const N: usize>(
     password: &[u8],
@@ -213,6 +220,7 @@ where
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[cfg(feature = "hmac")]
+#[allow(clippy::missing_panics_doc, reason = "condition should not occur")]
 pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8]) {
     pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
@@ -232,6 +240,7 @@ pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res:
 /// );
 /// ```
 #[cfg(feature = "hmac")]
+#[must_use]
 pub fn pbkdf2_hmac_array<D: EagerHash, const N: usize>(
     password: &[u8],
     salt: &[u8],
@@ -310,6 +319,7 @@ impl Pbkdf2 {
 #[cfg(feature = "sha2")]
 impl Pbkdf2 {
     /// Initialize [`Pbkdf2`] with default parameters.
+    #[must_use]
     pub const fn new(algorithm: Algorithm, params: Params) -> Self {
         Self { algorithm, params }
     }
