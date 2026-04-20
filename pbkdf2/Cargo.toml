@@ -42,5 +42,8 @@ phc = ["password-hash/phc", "sha2"]
 rand_core = ["password-hash/rand_core"]
 sha2 = ["hmac", "dep:sha2"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

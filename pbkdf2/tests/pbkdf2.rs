@@ -1,4 +1,7 @@
+//! Integration tests.
+
 #![cfg(feature = "hmac")]
+#![allow(clippy::unwrap_used)]
 
 use belt_hash::BeltHash;
 use hex_literal::hex;
@@ -23,8 +26,7 @@ macro_rules! test {
     };
 }
 
-/// Test vectors from RFC 6070:
-/// https://www.rfc-editor.org/rfc/rfc6070
+/// Test vectors from RFC 6070: <https://www.rfc-editor.org/rfc/rfc6070>
 #[test]
 fn pbkdf2_rfc6070() {
     test!(
@@ -40,8 +42,7 @@ fn pbkdf2_rfc6070() {
     );
 }
 
-/// Test vectors from R 50.1.111-2016:
-/// https://tc26.ru/standard/rs/Р%2050.1.111-2016.pdf
+/// Test vectors from R 50.1.111-2016: <https://tc26.ru/standard/rs/Р%2050.1.111-2016.pdf>
 #[test]
 fn pbkdf2_streebog() {
     test!(
@@ -84,7 +85,7 @@ fn pbkdf2_streebog() {
 }
 
 /// Test vector from STB 34.101.45-2013 (page 33):
-/// https://apmi.bsu.by/assets/files/std/bign-spec294.pdf
+/// <https://apmi.bsu.by/assets/files/std/bign-spec294.pdf>
 #[test]
 fn pbkdf2_belt() {
     test!(

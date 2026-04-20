@@ -1,4 +1,4 @@
-# RustCrypto: PBKDF2
+# [RustCrypto]: PBKDF2
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -40,7 +40,8 @@ dual licensed as above, without any additional terms or conditions.
 [build-image]: https://github.com/RustCrypto/password-hashes/workflows/pbkdf2/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/password-hashes/actions?query=workflow%3Apbkdf2
 
-[//]: # (general links)
+[//]: # (links)
 
+[RustCrypto]: https://github.com/RustCrypto
 [1]: https://en.wikipedia.org/wiki/PBKDF2
 [2]: https://datatracker.ietf.org/doc/html/rfc2898
