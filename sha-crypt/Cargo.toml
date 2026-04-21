@@ -19,15 +19,17 @@ rust-version = "1.85"
 
 [dependencies]
 sha2 = { version = "0.11", default-features = false }
-base64ct = { version = "1.8", default-features = false, features = ["alloc"] }
+base64ct = { version = "1.8", default-features = false }
 
 # optional dependencies
 ctutils = { version = "0.4", optional = true }
-mcf = { version = "0.6", optional = true, default-features = false, features = ["alloc", "base64"] }
+mcf = { version = "0.6", optional = true, default-features = false, features = ["base64"] }
 password-hash = { version = "0.6", optional = true, default-features = false }
 
 [features]
-default = ["password-hash"]
+default = ["alloc", "password-hash"]
+alloc = ["base64ct/alloc", "mcf?/alloc"]
+
 getrandom = ["password-hash/getrandom", "password-hash"]
 rand_core = ["password-hash/rand_core"]
 password-hash = ["dep:ctutils", "dep:mcf", "dep:password-hash"]

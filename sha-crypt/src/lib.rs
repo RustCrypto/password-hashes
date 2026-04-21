@@ -28,10 +28,6 @@
 //! # }
 //! ```
 
-// TODO(tarcieri): heapless support
-#[macro_use]
-extern crate alloc;
-
 mod errors;
 mod params;
 
@@ -49,12 +45,14 @@ pub use crate::{
 pub use {
     crate::{
         algorithm::Algorithm,
-        mcf::{PasswordHash, PasswordHashRef, ShaCrypt},
+        mcf::{PasswordHashRef, ShaCrypt},
     },
     password_hash::{self, CustomizedPasswordHasher, PasswordHasher, PasswordVerifier},
 };
 
-use alloc::vec::Vec;
+#[cfg(all(feature = "password-hash", feature = "alloc"))]
+pub use ::mcf::PasswordHash;
+
 use sha2::{Digest, Sha256, Sha512};
 
 /// Block size for SHA-256-crypt.
@@ -97,7 +95,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 16.
     // Create byte sequence P.
-    let p_vec = produce_byte_seq(pw_len, &dp);
+    // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(pw_len...`)
 
     // 17.
     hasher_alt = Sha256::default();
@@ -114,7 +112,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 20.
     // Create byte sequence S.
-    let s_vec = produce_byte_seq(salt_len, &ds);
+    // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(salt_len...`)
 
     let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA256 to burn
@@ -125,26 +123,26 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         } else {
             hasher.update(digest_c);
         }
 
         // Add salt for numbers not divisible by 3
         if i % 3 != 0 {
-            hasher.update(&s_vec);
+            hash_byte_seq(salt_len, &ds, &mut hasher);
         }
 
         // Add key for numbers not divisible by 7
         if i % 7 != 0 {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
         // Add key or last result
         if (i & 1) != 0 {
             hasher.update(digest_c);
         } else {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
         digest_c.clone_from_slice(&hasher.finalize());
@@ -187,7 +185,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 16.
     // Create byte sequence P.
-    let p_vec = produce_byte_seq(pw_len, &dp);
+    // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(pw_len...`)
 
     // 17.
     hasher_alt = Sha512::default();
@@ -204,7 +202,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 20.
     // Create byte sequence S.
-    let s_vec = produce_byte_seq(salt_len, &ds);
+    // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(salt_len...`)
 
     let mut digest_c = digest_a;
     // Repeatedly run the collected hash value through SHA512 to burn
@@ -215,26 +213,26 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
         // Add key or last result
         if (i & 1) != 0 {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         } else {
             hasher.update(digest_c);
         }
 
         // Add salt for numbers not divisible by 3
         if i % 3 != 0 {
-            hasher.update(&s_vec);
+            hash_byte_seq(salt_len, &ds, &mut hasher);
         }
 
         // Add key for numbers not divisible by 7
         if i % 7 != 0 {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
         // Add key or last result
         if (i & 1) != 0 {
             hasher.update(digest_c);
         } else {
-            hasher.update(&p_vec);
+            hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
         digest_c.clone_from_slice(&hasher.finalize());
@@ -329,15 +327,10 @@ fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     hasher.finalize().into()
 }
 
-fn produce_byte_seq(len: usize, fill_from: &[u8]) -> Vec<u8> {
+fn hash_byte_seq<D: Digest>(len: usize, fill_from: &[u8], digest: &mut D) {
     let bs = fill_from.len();
-    let mut seq: Vec<u8> = vec![0; len];
-    let mut offset: usize = 0;
     for _ in 0..(len / bs) {
-        seq[offset..offset + bs].clone_from_slice(fill_from);
-        offset += bs;
+        digest.update(fill_from);
     }
-    let from_slice = &fill_from[..(len % bs)];
-    seq[offset..offset + (len % bs)].clone_from_slice(from_slice);
-    seq
+    digest.update(&fill_from[..(len % bs)]);
 }

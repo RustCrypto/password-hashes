@@ -1,14 +1,18 @@
 //! Implementation of the `password-hash` crate API.
 
-pub use mcf::{PasswordHash, PasswordHashRef};
+pub use mcf::PasswordHashRef;
 
 use crate::{BLOCK_SIZE_SHA256, BLOCK_SIZE_SHA512, Params, algorithm::Algorithm};
-use base64ct::{Base64ShaCrypt, Encoding};
 use core::str::FromStr;
 use ctutils::CtEq;
 use mcf::Base64;
-use password_hash::{
-    CustomizedPasswordHasher, Error, PasswordHasher, PasswordVerifier, Result, Version,
+use password_hash::{Error, PasswordVerifier, Result};
+
+#[cfg(feature = "alloc")]
+use {
+    base64ct::{Base64ShaCrypt, Encoding},
+    mcf::PasswordHash,
+    password_hash::{CustomizedPasswordHasher, PasswordHasher, Version},
 };
 
 /// SHA-crypt type for use with the [`PasswordHasher`] and [`PasswordVerifier`] traits, which can
@@ -36,6 +40,7 @@ impl ShaCrypt {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
     type Params = Params;
 
@@ -83,12 +88,14 @@ impl CustomizedPasswordHasher<PasswordHash> for ShaCrypt {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl PasswordHasher<PasswordHash> for ShaCrypt {
     fn hash_password_with_salt(&self, password: &[u8], salt: &[u8]) -> Result<PasswordHash> {
         self.hash_password_customized(password, salt, None, None, self.params)
     }
 }
 
+#[cfg(feature = "alloc")]
 impl PasswordVerifier<PasswordHash> for ShaCrypt {
     fn verify_password(&self, password: &[u8], hash: &PasswordHash) -> Result<()> {
         self.verify_password(password, hash.as_password_hash_ref())
@@ -113,10 +120,11 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt {
         let salt = next.as_str().as_bytes();
 
         // decode expected password hash
+        let mut buf = [0u8; BLOCK_SIZE_SHA512];
         let expected = fields
             .next()
             .ok_or(Error::EncodingInvalid)?
-            .decode_base64(Base64::Crypt)
+            .decode_base64_into(Base64::Crypt, &mut buf)
             .map_err(|_| Error::EncodingInvalid)?;
 
         // should be the last field
@@ -127,10 +135,10 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt {
         let is_valid = match alg {
             Algorithm::Sha256Crypt => sha256_crypt_core(password, salt, params)
                 .as_ref()
-                .ct_eq(&expected),
+                .ct_eq(expected),
             Algorithm::Sha512Crypt => sha512_crypt_core(password, salt, params)
                 .as_ref()
-                .ct_eq(&expected),
+                .ct_eq(expected),
         };
 
         if (!is_valid).into() {
