@@ -33,6 +33,10 @@ impl Params {
     pub const ROUNDS_MAX: u32 = 999_999_999;
 
     /// Create new algorithm parameters.
+    ///
+    /// # Errors
+    /// Returns [`Error::RoundsInvalid`] if `rounds` is outside the range [`Params::ROUNDS_MIN`]
+    /// to [`Params::ROUNDS_MAX`] inclusive.
     pub fn new(rounds: u32) -> Result<Params> {
         match rounds {
             Self::ROUNDS_MIN..=Self::ROUNDS_MAX => Ok(Params { rounds }),

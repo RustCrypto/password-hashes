@@ -1,3 +1,5 @@
+//! Modular Crypt Format (MCF) integration tests.
+
 #![cfg(feature = "password-hash")]
 
 use base64ct::{Base64ShaCrypt, Encoding};
@@ -104,7 +106,7 @@ fn hash_sha256_crypt() {
         }
     }
 
-    assert!(any)
+    assert!(any);
 }
 
 #[test]
@@ -124,7 +126,7 @@ fn hash_sha512_crypt() {
         }
     }
 
-    assert!(any)
+    assert!(any);
 }
 
 #[test]

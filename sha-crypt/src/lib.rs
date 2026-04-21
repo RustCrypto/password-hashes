@@ -71,6 +71,7 @@ pub const BLOCK_SIZE_SHA512: usize = 64;
 /// - `params`: the parameters to use
 ///
 ///   **WARNING: Make sure to compare this value in constant time!**
+#[must_use]
 pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA256] {
     let pw_len = password.len();
 
@@ -160,6 +161,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 /// - `params` - The parameters to use
 ///
 ///   **WARNING: Make sure to compare this value in constant time!**
+#[must_use]
 pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA512] {
     let pw_len = password.len();
 
@@ -281,7 +283,7 @@ fn sha256_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     }
 
     // 12.
-    hasher.finalize().as_slice().try_into().unwrap()
+    hasher.finalize().into()
 }
 
 fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA512] {
@@ -324,7 +326,7 @@ fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     }
 
     // 12.
-    hasher.finalize().as_slice().try_into().unwrap()
+    hasher.finalize().into()
 }
 
 fn produce_byte_seq(len: usize, fill_from: &[u8]) -> Vec<u8> {
