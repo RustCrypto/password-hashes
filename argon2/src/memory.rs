@@ -8,6 +8,8 @@
 //! > length of q/SL. Segments of the same slice can be computed in parallel and do not reference
 //! > blocks from each other. All other blocks can be referenced.
 
+#![allow(clippy::unnecessary_safety_comment)]
+
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 

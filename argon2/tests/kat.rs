@@ -5,6 +5,7 @@
 //! <https://datatracker.ietf.org/doc/draft-irtf-cfrg-argon2/>
 
 #![cfg(all(feature = "alloc", feature = "password-hash"))]
+#![allow(clippy::unwrap_used, reason = "tests")]
 
 // TODO(tarcieri): test full set of vectors from the reference implementation:
 // https://github.com/P-H-C/phc-winner-argon2/blob/master/src/test.c

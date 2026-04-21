@@ -17,7 +17,7 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     }
 
     let len_bytes = u32::try_from(out.len())
-        .map(|v| v.to_le_bytes())
+        .map(u32::to_le_bytes)
         .map_err(|_| Error::OutputTooLong)?;
 
     // Use blake2b directly if the output is small enough.

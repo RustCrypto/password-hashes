@@ -50,11 +50,15 @@ pub enum Algorithm {
 
 impl Algorithm {
     /// Parse an [`Algorithm`] from the provided string.
+    ///
+    /// # Errors
+    /// Returns [`Error::AlgorithmInvalid`] if `id` is not a valid Argon2 algorithm identifier.
     pub fn new(id: impl AsRef<str>) -> Result<Self> {
         id.as_ref().parse()
     }
 
     /// Get the identifier string for this PBKDF2 [`Algorithm`].
+    #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self {
             Algorithm::Argon2d => "argon2d",
@@ -65,6 +69,7 @@ impl Algorithm {
 
     /// Get the [`Ident`] that corresponds to this Argon2 [`Algorithm`].
     #[cfg(feature = "password-hash")]
+    #[must_use]
     pub const fn ident(&self) -> Ident {
         match self {
             Algorithm::Argon2d => ARGON2D_IDENT,

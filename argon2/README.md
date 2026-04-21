@@ -1,4 +1,4 @@
-# RustCrypto: Argon2
+# [RustCrypto]: Argon2
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -53,6 +53,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (general links)
 
+[RustCrypto]: https://github.com/RustCrypto
 [Argon2]: https://en.wikipedia.org/wiki/Argon2
 [key derivation function]: https://en.wikipedia.org/wiki/Key_derivation_function
 [Password Hashing Competition]: https://www.password-hashing.net/

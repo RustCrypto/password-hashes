@@ -55,6 +55,7 @@ impl Block {
     pub const SIZE: usize = 1024;
 
     /// Returns a Block initialized with zeros.
+    #[must_use]
     pub const fn new() -> Self {
         Self([0u64; Self::SIZE / 8])
     }
