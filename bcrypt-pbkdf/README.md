@@ -1,4 +1,4 @@
-# RustCrypto: bcrypt-pbkdf
+# [RustCrypto]: bcrypt-pbkdf
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -50,5 +50,6 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (links)
 
+[RustCrypto]: https://github.com/RustCrypto
 [`bcrypt_pbkdf`]: https://web.archive.org/web/20251228225511/https://flak.tedunangst.com/post/bcrypt-pbkdf
 [used in OpenSSH]: https://web.archive.org/web/20251231170734/https://flak.tedunangst.com/post/new-openssh-key-format-and-bcrypt-pbkdf

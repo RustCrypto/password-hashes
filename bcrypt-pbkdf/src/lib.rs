@@ -35,7 +35,7 @@ const BHASH_WORDS: usize = 8;
 const BHASH_OUTPUT_SIZE: usize = BHASH_WORDS * 4;
 const BHASH_SEED: &[u8; BHASH_OUTPUT_SIZE] = b"OxychromaticBlowfishSwatDynamite";
 
-/// The bcrypt_pbkdf function.
+/// The `bcrypt_pbkdf` function.
 ///
 /// # Arguments
 /// - `passphrase` - The passphrase to process.
@@ -43,11 +43,10 @@ const BHASH_SEED: &[u8; BHASH_OUTPUT_SIZE] = b"OxychromaticBlowfishSwatDynamite"
 /// - `rounds` - The number of rounds to apply.
 /// - `output` - The resulting derived key is returned in this byte vector.
 ///
-/// # Returns
-/// - `Ok(())` if everything is fine.
-/// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
-/// - `Err(Error::InvalidRounds)` if `rounds == 0`.
-/// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
+/// # Errors
+/// - `Error::InvalidParamLen` if `passphrase.is_empty() || salt.is_empty()`.
+/// - `Error::InvalidRounds` if `rounds == 0`.
+/// - `Error::InvalidOutputLen` if `output.is_empty() || output.len() > 1024`.
 #[cfg(feature = "alloc")]
 pub fn bcrypt_pbkdf(
     passphrase: impl AsRef<[u8]>,
@@ -82,13 +81,13 @@ pub fn bcrypt_pbkdf(
 /// - `output` - The resulting derived key is returned in this byte vector.
 /// - `memory` - Buffer space used for internal computation.
 ///
-/// # Returns
-/// - `Ok(())` if everything is fine.
-/// - `Err(Error::InvalidParamLen)` if `passphrase.is_empty() || salt.is_empty()`.
-/// - `Err(Error::InvalidRounds)` if `rounds == 0`.
-/// - `Err(Error::InvalidOutputLen)` if `output.is_empty() || output.len() > 1024`.
-/// - `Err(Error::InvalidMemoryLen)` if `memory.len() < (output.len() + 32 - 1) / 32 * 32`, i.e.
+/// # Errors
+/// - `Error::InvalidParamLen` if `passphrase.is_empty() || salt.is_empty()`.
+/// - `Error::InvalidRounds` if `rounds == 0`.
+/// - `Error::InvalidOutputLen` if `output.is_empty() || output.len() > 1024`.
+/// - `Error::InvalidMemoryLen` if `memory.len() < (output.len() + 32 - 1) / 32 * 32`, i.e.
 ///   `output.len()` rounded up to the nearest multiple of 32.
+#[allow(clippy::missing_panics_doc, reason = "Bhash should always work")]
 pub fn bcrypt_pbkdf_with_memory(
     passphrase: impl AsRef<[u8]>,
     salt: &[u8],
@@ -101,13 +100,13 @@ pub fn bcrypt_pbkdf_with_memory(
     // Validate inputs in same way as OpenSSH implementation
     let passphrase = passphrase.as_ref();
     if passphrase.is_empty() || salt.is_empty() {
-        return Err(errors::Error::InvalidParamLen);
+        return Err(Error::InvalidParamLen);
     } else if rounds == 0 {
-        return Err(errors::Error::InvalidRounds);
+        return Err(Error::InvalidRounds);
     } else if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
-        return Err(errors::Error::InvalidOutputLen);
+        return Err(Error::InvalidOutputLen);
     } else if memory.len() < stride * BHASH_OUTPUT_SIZE {
-        return Err(errors::Error::InvalidMemoryLen);
+        return Err(Error::InvalidMemoryLen);
     }
 
     // Run the regular PBKDF2 algorithm with bhash as the PRF.
@@ -134,6 +133,9 @@ fn bhash(sha2_pass: &Output<Sha512>, sha2_salt: &Output<Sha512>) -> Output<Bhash
     }
 
     let mut cdata = [0u32; BHASH_WORDS];
+
+    // TODO(tarcieri): iterate over BHASH_SEED using `as_chunks::<4>` when MSRV 1.88
+    #[allow(clippy::unwrap_used, reason = "MSRV")]
     for i in 0..BHASH_WORDS {
         cdata[i] = u32::from_be_bytes(BHASH_SEED[i * 4..(i + 1) * 4].try_into().unwrap());
     }
