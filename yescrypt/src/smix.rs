@@ -47,7 +47,7 @@ pub(crate) fn smix(
         }
     } else if t != 0 {
         if t == 1 {
-            nloop_all += nloop_all.div_ceil(2) // 1.5, round up
+            nloop_all += nloop_all.div_ceil(2); // 1.5, round up
         }
         nloop_all *= u64::from(t);
     }
@@ -276,7 +276,7 @@ fn smix2(
 
         // V_j <-- X
         if mode.is_rw() {
-            v[j as usize * s..][..s].copy_from_slice(x);
+            v[j * s..][..s].copy_from_slice(x);
         }
 
         // 8.2: X <-- H(X)

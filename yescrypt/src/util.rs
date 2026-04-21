@@ -13,7 +13,7 @@ where
 {
     assert_eq!(dst.len(), src.len());
     for (dst, src) in core::iter::zip(dst, src) {
-        *dst ^= *src
+        *dst ^= *src;
     }
 }
 

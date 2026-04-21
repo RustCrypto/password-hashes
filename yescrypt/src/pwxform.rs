@@ -15,7 +15,7 @@ use core::mem;
 const PWXSIMPLE: usize = 2;
 
 /// Number of parallel "simple SIMD" lanes per "gather SIMD" vector (requiring "S-box lookups" of
-/// values as wide as a "simple SIMD" lane from PWXgather typically non-contiguous memory
+/// values as wide as a "simple SIMD" lane from `PWXgather` typically non-contiguous memory
 /// locations). Must be a power of 2.
 const PWXGATHER: usize = 4;
 

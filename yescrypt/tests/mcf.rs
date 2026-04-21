@@ -15,7 +15,7 @@ const EXAMPLE_PASSWD: &[u8] = b"pleaseletmein";
 const EXAMPLE_SALT: &[u8] = b"WZaPV7LSUEKMo34.";
 
 /// Adapted from `TESTS-OK` in the yescrypt reference C implementation
-/// https://github.com/openwall/yescrypt/blob/caa931d/TESTS-OK#L31-L66
+/// <https://github.com/openwall/yescrypt/blob/caa931d/TESTS-OK#L31-L66>
 const EXAMPLE_HASHES: &[&str] = &[
     "$y$jD5.7$LdJMENpBABJJ3hIHjB1Bi.$HboGM6qPrsK.StKYGt6KErmUYtioHreJd98oIugoNB6",
     "$y$jC4$LdJMENpBABJJ3hIHjB1B$jVg4HoqqpbmQv/NCpin.QCMagJ8o4QX7lXdzvVV0xFC", // TODO
@@ -41,7 +41,7 @@ const EXAMPLE_HASHES: &[&str] = &[
 #[test]
 fn compute_reference_strings() {
     for (i, &expected_hash) in EXAMPLE_HASHES.iter().enumerate() {
-        let i = i as u32;
+        let i = u32::try_from(i).unwrap();
 
         // Test case logic adapted from the yescrypt C reference implementation (tests.c)
         let mut N_log2 = if i < 14 { 16 - i } else { 2 };

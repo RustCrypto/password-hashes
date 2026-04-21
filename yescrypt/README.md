@@ -1,4 +1,4 @@
-# RustCrypto: yescrypt
+# [RustCrypto]: yescrypt
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -63,7 +63,8 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (links)
 
-[yescrypt]: https://www.openwall.com/yescrypt/
+[RustCrypto]: https://github.com/RustCrypto
+[yescrypt]: https://www.openwall.com/yescrypt
 [scrypt]: https://en.wikipedia.org/wiki/Scrypt
-[Password Hashing Competition]: https://www.password-hashing.net/
+[Password Hashing Competition]: https://www.password-hashing.net
 [paper]: https://www.password-hashing.net/submissions/specs/yescrypt-v2.pdf
