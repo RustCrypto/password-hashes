@@ -1,3 +1,5 @@
+//! `bcrypt_pbkdf` test vectors.
+
 extern crate bcrypt_pbkdf;
 
 use bcrypt_pbkdf::bcrypt_pbkdf_with_memory;
