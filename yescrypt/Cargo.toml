@@ -35,5 +35,8 @@ kdf = ["dep:kdf"]
 rand_core = ["password-hash/rand_core"]
 password-hash = ["dep:mcf", "dep:password-hash"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

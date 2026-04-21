@@ -6,22 +6,6 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 #![deny(unsafe_code)]
-#![warn(
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::checked_conversions,
-    clippy::implicit_saturating_sub,
-    clippy::panic,
-    clippy::panic_in_result_fn,
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
 
 //! # Usage
 //! ## Password Hashing
@@ -98,6 +82,9 @@ use sha2::{Digest, Sha256};
 ///
 /// If you are looking for a higher-level interface which can express and store password hashes as
 /// strings, please check out the [`Yescrypt`] type.
+///
+/// # Errors
+/// Returns [`Error::Params`] if the params are not valid for the size of `out`.
 pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> Result<()> {
     let mut passwd = passwd;
     let mut dk = [0u8; 32];
@@ -235,6 +222,9 @@ pub struct Yescrypt {
 
 impl Yescrypt {
     /// Hash password into the given output buffer using the configured params.
+    ///
+    /// # Errors
+    /// Returns the same errors as the toplevel [`yescrypt`] function.
     pub fn hash_password_into(&self, password: &[u8], salt: &[u8], out: &mut [u8]) -> Result<()> {
         yescrypt(password, salt, &self.params, out)?;
         Ok(())

@@ -57,6 +57,9 @@ impl Params {
     /// - `n`: CPU/memory cost. See [`Params::n`] for more info.
     /// - `r`: resource usage. See [`Params::r`] for more info.
     /// - `p`: parallelization. See [`Params::p`] for more info.
+    ///
+    /// # Errors
+    /// Returns [`Error::Params`] if the params are not valid.
     pub fn new(mode: Mode, n: u64, r: u32, p: u32) -> Result<Params> {
         Self::new_with_all_params(mode, n, r, p, 0, 0)
     }
@@ -66,6 +69,9 @@ impl Params {
     /// Accepts all the same arguments as [`Params::new`] with the following additional arguments:
     /// - `t`: increase computation time while keeping peak memory usage the same. `0` is optimal.
     /// - `g`: number of cost upgrades performed on the hash so far. `0` is the only allowed value.
+    ///
+    /// # Errors
+    /// Returns [`Error::Params`] if the params are not valid.
     pub fn new_with_all_params(
         mode: Mode,
         n: u64,
@@ -102,6 +108,7 @@ impl Params {
     /// `N`: CPU/memory cost (like `scrypt`).
     ///
     /// Memory and CPU usage scale linearly with `N`.
+    #[must_use]
     pub const fn n(&self) -> u64 {
         self.n
     }
@@ -109,6 +116,7 @@ impl Params {
     /// `r` parameter: resource usage (like `scrypt`).
     ///
     /// Memory and CPU usage scales linearly with this parameter.
+    #[must_use]
     pub const fn r(&self) -> u32 {
         self.r
     }
@@ -117,6 +125,7 @@ impl Params {
     ///
     /// Allows use of multithreaded parallelism (not currently implemented, `1` is the recommended
     /// setting for now).
+    #[must_use]
     pub const fn p(&self) -> u32 {
         self.p
     }

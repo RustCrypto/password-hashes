@@ -31,16 +31,19 @@ pub enum Mode {
 
 impl Mode {
     /// Is the mode scrypt classic?
+    #[must_use]
     pub fn is_classic(self) -> bool {
         self == Self::Classic
     }
 
     /// Is the mode write-once/read-many?
+    #[must_use]
     pub fn is_worm(self) -> bool {
         self == Self::Worm
     }
 
     /// Is the mode the yescrypt native read-write mode? (default)
+    #[must_use]
     pub fn is_rw(self) -> bool {
         self == Self::Rw
     }
