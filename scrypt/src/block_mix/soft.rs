@@ -1,13 +1,25 @@
-/// Execute the BlockMix operation
-/// input - the input vector. The length must be a multiple of 128.
-/// output - the output vector. Must be the same length as input.
-pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
-    use salsa20::{
-        SalsaCore,
-        cipher::{StreamCipherCore, typenum::U4},
-    };
+//! Portable software implementation.
 
-    type Salsa20_8 = SalsaCore<U4>;
+#![allow(clippy::unwrap_used, reason = "switch to `as_chunks` when MSRV 1.88")]
+
+use salsa20::{
+    SalsaCore,
+    cipher::{StreamCipherCore, typenum::U4},
+};
+
+type Salsa20_8 = SalsaCore<U4>;
+
+/// Execute the `BlockMix` operation.
+///
+/// - `input`: the input vector. The length must be a multiple of 128.
+/// - `output`: the output vector. Must be the same length as input.
+pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
+    debug_assert_eq!(input.len() % 128, 0, "input must be a multiple of 128");
+    debug_assert_eq!(
+        output.len(),
+        input.len(),
+        "output must be same length as input"
+    );
 
     let mut x = [0u8; 64];
     x.copy_from_slice(&input[input.len() - 64..]);

@@ -81,14 +81,16 @@ use password_hash::{CustomizedPasswordHasher, PasswordHasher, PasswordVerifier};
 /// # Arguments
 /// - `password` - The password to process as a byte vector
 /// - `salt` - The salt value to use as a byte vector
-/// - `params` - The ScryptParams to use
+/// - `params` - The `ScryptParams` to use
 /// - `output` - The resulting derived key is returned in this byte vector.
 ///   **WARNING: Make sure to compare this value in constant time!**
 ///
-/// # Return
-/// `Ok(())` if calculation is successful and `Err(InvalidOutputLen)` if
-/// `output` does not satisfy the following condition:
-/// `output.len() > 0 && output.len() <= (2^32 - 1) * 32`.
+/// # Errors
+/// Returns [`errors::InvalidOutputLen`] if `output` does not satisfy the following condition:
+///
+/// ```text
+/// output.len() > 0 && output.len() <= (2^32 - 1) * 32
+/// ```
 ///
 /// # Note about output lengths
 /// The output size is determined entirely by size of the `output` parameter.
@@ -164,6 +166,7 @@ pub struct Scrypt {
 #[cfg(any(feature = "kdf", feature = "mcf", feature = "phc"))]
 impl Scrypt {
     /// Initialize [`Scrypt`] with default parameters.
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             params: Params::RECOMMENDED,
@@ -171,6 +174,7 @@ impl Scrypt {
     }
 
     /// Initialize [`Scrypt`] with the provided parameters.
+    #[must_use]
     pub const fn new_with_params(params: Params) -> Self {
         Self { params }
     }
