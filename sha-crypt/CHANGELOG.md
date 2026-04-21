@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 (2026-04-21)
+### Added
+- Implement `core::error::Error` for error types ([#719])
+- Implement the `password-hash` crate traits ([#771], [#779], [#806])
+- Dynamic `Algorithm` support ([#800])
+- `Params` customization for `ShaCrypt` type ([#801])
+- `ShaCrypt::SHA256` and `ShaCrypt::SHA512` ([#813])
+- `no_alloc` support ([#894])
+
+### Changed
+- `rounds` parameter is now `u32` ([#500])
+- Make hashing infallible ([#500])
+- Bump edition to 2024; MSRV 1.85 ([#563])
+- Switch from `rand` to `rand_core` ([#720])
+- Use `mcf` crate for implementing Modular Crypt Format ([#726], [#842])
+- Unify `Params` type ([#772])
+- Rename `simple` feature to `password-hash` ([#776])
+- Migrate from `subtle` to `ctutils` ([#845])
+- Bump `password-hash` dependency to v0.6 ([#848])
+- Bump `sha2` to v0.11 ([#872])
+
+### Removed
+- `std` feature ([#719])
+
+[#500]: https://github.com/RustCrypto/password-hashes/pull/500
+[#563]: https://github.com/RustCrypto/password-hashes/pull/563
+[#719]: https://github.com/RustCrypto/password-hashes/pull/719
+[#720]: https://github.com/RustCrypto/password-hashes/pull/720
+[#726]: https://github.com/RustCrypto/password-hashes/pull/726
+[#771]: https://github.com/RustCrypto/password-hashes/pull/771
+[#772]: https://github.com/RustCrypto/password-hashes/pull/772
+[#776]: https://github.com/RustCrypto/password-hashes/pull/776
+[#779]: https://github.com/RustCrypto/password-hashes/pull/779
+[#800]: https://github.com/RustCrypto/password-hashes/pull/800
+[#801]: https://github.com/RustCrypto/password-hashes/pull/801
+[#806]: https://github.com/RustCrypto/password-hashes/pull/806
+[#813]: https://github.com/RustCrypto/password-hashes/pull/813
+[#842]: https://github.com/RustCrypto/password-hashes/pull/842
+[#845]: https://github.com/RustCrypto/password-hashes/pull/845
+[#848]: https://github.com/RustCrypto/password-hashes/pull/848
+[#872]: https://github.com/RustCrypto/password-hashes/pull/872
+[#894]: https://github.com/RustCrypto/password-hashes/pull/894
+
 ## 0.5.0 (2023-03-04)
 ### Added
 - `sha256_crypt` ([#350])
