@@ -1,6 +1,6 @@
 //! Modular Crypt Format (MCF) integration tests.
 
-#![cfg(feature = "password-hash")]
+#![cfg(all(feature = "alloc", feature = "password-hash"))]
 
 use base64ct::{Base64ShaCrypt, Encoding};
 use mcf::PasswordHash;
