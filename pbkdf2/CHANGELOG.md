@@ -5,13 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.13.0 (UNRELEASED)
-### Removed
-- The `parallel` crate feature  ([#702])
-- `sha1` feature ([#853])
+## 0.13.0 (2026-04-21)
+### Added
+- Customizable `Params` for `Pbkdf2` type ([#798])
+- Modular Crypt Format (MCF) support ([#806], [#808])
+- `alloc` feature ([#816])
+- `kdf::{Kdf, Pbkdf}` implementations ([#823])
 
+### Changed
+- Bump edition to 2024; MSRV 1.85 ([#563])
+- Use `EagerHash` in bounds ([#592])
+- Use `phc` crate for PHC hash types ([#761])
+- Rename `simple` features to `phc` ([#776])
+- Have `Pbkdf2::new` take algorithm/params args ([#805])
+- Fallible `Params` constructors ([#810])
+- Bump `password-hash` dependency to v0.6 ([#848])
+- Bump `digest` dependency to v0.11 ([#849])
+- Use 210,000 iterations for PBKDF2-HMAC-SHA512 per OWASP ([#857])
+- Bump `hmac` dependency to v0.13 ([#870])
+- Bump `sha2` to v0.11 ([#872])
+
+### Removed
+- `parallel` crate feature ([#702])
+- `std` feature ([#760])
+- `sha1` feature ([#853])
+- `Sync` bounds ([#876])
+
+[#563]: https://github.com/RustCrypto/password-hashes/pull/563
+[#592]: https://github.com/RustCrypto/password-hashes/pull/592
 [#702]: https://github.com/RustCrypto/password-hashes/pull/702
-[#853]: https://github.com/RustCrypto/password-hashes/pull/835
+[#760]: https://github.com/RustCrypto/password-hashes/pull/760
+[#761]: https://github.com/RustCrypto/password-hashes/pull/761
+[#776]: https://github.com/RustCrypto/password-hashes/pull/776
+[#798]: https://github.com/RustCrypto/password-hashes/pull/798
+[#805]: https://github.com/RustCrypto/password-hashes/pull/805
+[#806]: https://github.com/RustCrypto/password-hashes/pull/806
+[#808]: https://github.com/RustCrypto/password-hashes/pull/808
+[#810]: https://github.com/RustCrypto/password-hashes/pull/810
+[#816]: https://github.com/RustCrypto/password-hashes/pull/816
+[#823]: https://github.com/RustCrypto/password-hashes/pull/823
+[#848]: https://github.com/RustCrypto/password-hashes/pull/848
+[#849]: https://github.com/RustCrypto/password-hashes/pull/849
+[#853]: https://github.com/RustCrypto/password-hashes/pull/853
+[#857]: https://github.com/RustCrypto/password-hashes/pull/857
+[#870]: https://github.com/RustCrypto/password-hashes/pull/870
+[#872]: https://github.com/RustCrypto/password-hashes/pull/872
+[#876]: https://github.com/RustCrypto/password-hashes/pull/876
 
 ## 0.12.2 (2023-07-08)
 ### Fixed
