@@ -36,5 +36,8 @@ phc = ["password-hash/phc"]
 rand_core = ["password-hash/rand_core"]
 parallel = ["dep:rayon"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

@@ -1,4 +1,4 @@
-/// Execute the ROMix operation in-place.
+/// Execute the `ROMix` operation in-place.
 /// b - the data to operate on
 /// v - a temporary variable to store the vector V
 /// t - a temporary variable to store the result of the xor
@@ -11,8 +11,12 @@ pub(crate) fn scrypt_ro_mix(b: &mut [u8], v: &mut [u8], t: &mut [u8], n: usize) 
         let mask = n - 1;
         // This cast is safe since we're going to get the value mod n (which is a power of 2), so we
         // don't have to care about truncating any of the high bits off
-        //let result = (LittleEndian::read_u32(&x[x.len() - 64..x.len() - 60]) as usize) & mask;
-        let t = u32::from_le_bytes(x[x.len() - 64..x.len() - 60].try_into().unwrap());
+        let t = u32::from_le_bytes(
+            x[x.len() - 64..x.len() - 60]
+                .try_into()
+                .expect("incorrect length"),
+        );
+
         (t as usize) & mask
     }
 

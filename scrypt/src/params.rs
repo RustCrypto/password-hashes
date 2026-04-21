@@ -54,27 +54,33 @@ impl Params {
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
+    ///
+    /// # Errors
+    /// Returns [`InvalidParams`] if one of the parameters is incorrect.
     pub fn new(log_n: u8, r: u32, p: u32) -> Result<Params, InvalidParams> {
         let cond1 = (log_n as usize) < usize::BITS as usize;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
-        let cond3 = r <= usize::MAX as u32 && p < usize::MAX as u32;
+        let cond3 = usize::try_from(r).is_ok() && usize::try_from(p).is_ok();
         if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
             return Err(InvalidParams);
         }
 
-        let r = r as usize;
-        let p = p as usize;
-
-        let n: usize = 1 << log_n;
+        let n = 1usize << log_n;
 
         // check that r * 128 doesn't overflow
-        let r128 = r.checked_mul(128).ok_or(InvalidParams)?;
+        let r128 = usize::try_from(r)
+            .map_err(|_| InvalidParams)?
+            .checked_mul(128)
+            .ok_or(InvalidParams)?;
 
         // check that n * r * 128 doesn't overflow
         r128.checked_mul(n).ok_or(InvalidParams)?;
 
         // check that p * r * 128 doesn't overflow
-        r128.checked_mul(p).ok_or(InvalidParams)?;
+        usize::try_from(p)
+            .ok()
+            .and_then(|p| r128.checked_mul(p))
+            .ok_or(InvalidParams)?;
 
         // Note: RFC 7914 requires `n < 2^(128 * r / 8)`, i.e. `log_n < r * 16`,
         // but this upper bound is based on an error in the RFC where a bit count
@@ -96,8 +102,8 @@ impl Params {
 
         Ok(Params {
             log_n,
-            r: r as u32,
-            p: p as u32,
+            r,
+            p,
             #[cfg(feature = "password-hash")]
             len: None,
         })
@@ -112,6 +118,9 @@ impl Params {
     /// The allowed values for `len` are between 10 bytes (80 bits) and 64 bytes inclusive.
     /// These lengths come from the [PHC string format specification](https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md)
     /// because they are intended for use with password hash strings.
+    ///
+    /// # Errors
+    /// Returns [`InvalidParams`] if one of the parameters is incorrect.
     #[cfg(feature = "phc")]
     pub fn new_with_output_len(
         log_n: u8,
@@ -130,6 +139,7 @@ impl Params {
 
     /// Deprecated: recommended values according to the OWASP cheat sheet.
     #[deprecated(since = "0.12.0", note = "use Params::RECOMMENDED instead")]
+    #[must_use]
     pub const fn recommended() -> Params {
         Self::RECOMMENDED
     }
@@ -138,6 +148,7 @@ impl Params {
     ///
     /// Memory and CPU usage scale linearly with `N`. If you need `N`, use
     /// [`Params::n`] instead.
+    #[must_use]
     pub const fn log_n(&self) -> u8 {
         self.log_n
     }
@@ -146,6 +157,7 @@ impl Params {
     ///
     /// This method returns 2 to the power of [`Params::log_n`]. Memory and CPU
     /// usage scale linearly with `N`.
+    #[must_use]
     pub const fn n(&self) -> u64 {
         1 << self.log_n
     }
@@ -154,11 +166,13 @@ impl Params {
     ///
     /// scrypt iterates 2*r times. Memory and CPU time scale linearly
     /// with this parameter.
+    #[must_use]
     pub const fn r(&self) -> u32 {
         self.r
     }
 
     /// `p` parameter: parallelization.
+    #[must_use]
     pub const fn p(&self) -> u32 {
         self.p
     }
@@ -217,11 +231,7 @@ impl TryFrom<&phc::PasswordHash> for Params {
 
         let mut params = Params::try_from(&hash.params)?;
 
-        params.len = Some(
-            hash.hash
-                .map(|out| out.len())
-                .unwrap_or(Self::RECOMMENDED_LEN),
-        );
+        params.len = Some(hash.hash.map_or(Self::RECOMMENDED_LEN, |out| out.len()));
 
         Ok(params)
     }
@@ -244,7 +254,7 @@ impl TryFrom<&Params> for phc::ParamsString {
         let mut output = phc::ParamsString::new();
 
         for (name, value) in [
-            ("ln", input.log_n as phc::Decimal),
+            ("ln", phc::Decimal::from(input.log_n)),
             ("r", input.r),
             ("p", input.p),
         ] {

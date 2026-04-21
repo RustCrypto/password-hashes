@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, reason = "switch to `as_chunks` when MSRV 1.88")]
+
 use crate::block_mix::pivot::{INVERSE_PIVOT_ABCD, PIVOT_ABCD};
 
 pub(crate) fn shuffle_in(b: &mut [u8]) {
@@ -24,6 +26,7 @@ pub(crate) fn shuffle_out(b: &mut [u8]) {
     }
 }
 
+#[allow(clippy::undocumented_unsafe_blocks, reason = "TODO")]
 pub(crate) fn scrypt_block_mix(input: &[u8], output: &mut [u8]) {
     #[cfg(target_arch = "x86")]
     use core::arch::x86::*;

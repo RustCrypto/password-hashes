@@ -1,4 +1,4 @@
-# RustCrypto: scrypt
+# [RustCrypto]: scrypt
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,7 +7,7 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [scrypt key derivation function][1], a sequential memory hard
+Pure Rust implementation of the [scrypt key derivation function][scrypt], a sequential memory hard
 function which can also be used for password hashing.
 
 ## License
@@ -38,6 +38,7 @@ dual licensed as above, without any additional terms or conditions.
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 
-[//]: # (general links)
+[//]: # (links)
 
-[1]: https://www.tarsnap.com/scrypt.html
+[RustCrypto]: https://github.com/RustCrypto
+[scrypt]: https://www.tarsnap.com/scrypt.html

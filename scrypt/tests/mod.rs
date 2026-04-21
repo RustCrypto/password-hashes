@@ -1,3 +1,5 @@
+//! Integration tests.
+
 use scrypt::{Params, scrypt};
 
 struct Test {
