@@ -1,5 +1,8 @@
 //! Argon2 password hash parameters.
 
+#![allow(missing_copy_implementations, reason = "unnecessary")]
+#![allow(clippy::doc_markdown, reason = "false positive")]
+
 use crate::{Algorithm, Argon2, Error, Result, SYNC_POINTS, Version};
 use base64ct::{Base64Unpadded as B64, Encoding};
 use core::str::FromStr;
@@ -107,6 +110,16 @@ impl Params {
     /// - `t_cost`: number of iterations. Between 1 and (2^32)-1.
     /// - `p_cost`: degree of parallelism. Between 1 and (2^24)-1.
     /// - `output_len`: size of the KDF output in bytes. Default 32.
+    ///
+    /// # Errors
+    /// - Returns [`Error::MemoryTooLittle`] if `m_cost` is smaller than [`Params::MIN_M_COST`].
+    /// - Returns [`Error::ThreadsTooFew`] if `p_cost` is smaller than [`Params::MIN_P_COST`].
+    /// - Returns [`Error::ThreadsTooMany`] if `p_cost` is larger than [`Params::MAX_P_COST`].
+    /// - Returns [`Error::TimeTooSmall`] if `t_cost` is smaller than [`Params::MIN_T_COST`].
+    /// - Returns [`Error::OutputTooShort`] if `output_len` is smaller than
+    ///   [`Params::MIN_OUTPUT_LEN`].
+    /// - Returns [`Error::OutputTooLong`] if `output_len` is larger than
+    ///   [`Params::MAX_OUTPUT_LEN`].
     pub const fn new(
         m_cost: u32,
         t_cost: u32,
@@ -160,6 +173,7 @@ impl Params {
     /// Memory size, expressed in kibibytes. Between 8\*`p_cost` and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
+    #[must_use]
     pub const fn m_cost(&self) -> u32 {
         self.m_cost
     }
@@ -167,6 +181,7 @@ impl Params {
     /// Number of iterations. Between 1 and (2^32)-1.
     ///
     /// Value is an integer in decimal (1 to 10 digits).
+    #[must_use]
     pub const fn t_cost(&self) -> u32 {
         self.t_cost
     }
@@ -174,6 +189,7 @@ impl Params {
     /// Degree of parallelism. Between 1 and (2^24)-1.
     ///
     /// Value is an integer in decimal (1 to 3 digits).
+    #[must_use]
     pub const fn p_cost(&self) -> u32 {
         self.p_cost
     }
@@ -189,6 +205,7 @@ impl Params {
     /// On top of that, this field is not longer part of the Argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
+    #[must_use]
     pub fn keyid(&self) -> &[u8] {
         self.keyid.as_bytes()
     }
@@ -200,11 +217,13 @@ impl Params {
     /// This field is not longer part of the argon2 standard
     /// (see: <https://github.com/P-H-C/phc-winner-argon2/pull/173>), and should
     /// not be used for any non-legacy work.
+    #[must_use]
     pub fn data(&self) -> &[u8] {
         self.data.as_bytes()
     }
 
     /// Length of the output (in bytes).
+    #[must_use]
     pub const fn output_len(&self) -> Option<usize> {
         self.output_len
     }
@@ -222,7 +241,7 @@ impl Params {
 
     /// Get the segment length given the configured `m_cost` and `p_cost`.
     ///
-    /// Minimum memory_blocks = 8*`L` blocks, where `L` is the number of lanes.
+    /// Minimum `memory_blocks` = 8*`L` blocks, where `L` is the number of lanes.
     pub(crate) const fn segment_length(&self) -> usize {
         let m_cost = self.m_cost as usize;
 
@@ -236,6 +255,7 @@ impl Params {
     }
 
     /// Get the number of blocks required given the configured `m_cost` and `p_cost`.
+    #[must_use]
     pub const fn block_count(&self) -> usize {
         self.segment_length() * self.lanes() * SYNC_POINTS
     }
@@ -265,12 +285,13 @@ macro_rules! param_buf {
 
             #[doc = "Create a new"]
             #[doc = $name]
-            #[doc = "from a slice."]
+            #[doc = "from a slice.\n"]
+            #[doc = "# Errors"]
+            #[doc = concat!("Returns [`", stringify!($error), "`] in event the provided slice is too long.")]
             pub fn new(slice: &[u8]) -> Result<Self> {
                 let mut bytes = [0u8; Self::MAX_LEN];
                 let len = slice.len();
                 bytes.get_mut(..len).ok_or($error)?.copy_from_slice(slice);
-
                 Ok(Self { bytes, len })
             }
 
@@ -282,11 +303,12 @@ macro_rules! param_buf {
 
             #[doc = "Decode"]
             #[doc = $name]
-            #[doc = " from a B64 string"]
+            #[doc = " from a B64 string.\n"]
+            #[doc = "# Errors"]
+            #[doc = "Returns [`Error::B64Encoding`] if the providing string couldn't be decoded as B64." ]
             pub fn from_b64(s: &str) -> Result<Self> {
                 let mut bytes = [0u8; Self::MAX_LEN];
                 let len = B64::decode(s, &mut bytes)?.len();
-
                 Ok(Self { bytes, len })
             }
 
@@ -490,6 +512,7 @@ pub struct ParamsBuilder {
 
 impl ParamsBuilder {
     /// Create a new builder with the default parameters.
+    #[must_use]
     pub const fn new() -> Self {
         Self::DEFAULT
     }
@@ -534,6 +557,10 @@ impl ParamsBuilder {
     ///
     /// This performs validations to ensure that the given parameters are valid
     /// and compatible with each other, and will return an error if they are not.
+    ///
+    /// # Errors
+    /// Propagates errors from [`Params::new`]. See error documentation for that function for
+    /// additional information.
     pub const fn build(&self) -> Result<Params> {
         let mut params = match Params::new(self.m_cost, self.t_cost, self.p_cost, self.output_len) {
             Ok(params) => params,
@@ -552,9 +579,14 @@ impl ParamsBuilder {
     }
 
     /// Create a new [`Argon2`] context using the provided algorithm/version.
+    ///
+    /// # Errors
+    /// Propagates errors from [`Params::new`]. See error documentation for that function for
+    /// additional information.
     pub fn context(&self, algorithm: Algorithm, version: Version) -> Result<Argon2<'_>> {
         Ok(Argon2::new(algorithm, version, self.build()?))
     }
+
     /// Default parameters (recommended).
     pub const DEFAULT: ParamsBuilder = {
         let params = Params::DEFAULT;
