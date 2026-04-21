@@ -9,7 +9,7 @@ use crate::Params;
 pub type Result<T> = core::result::Result<T, Error>;
 
 /// Error type.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Error {
     /// Parameters are invalid (e.g. parse error)
     ParamsInvalid,

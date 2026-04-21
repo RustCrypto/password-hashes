@@ -32,5 +32,8 @@ getrandom = ["password-hash/getrandom", "password-hash"]
 rand_core = ["password-hash/rand_core"]
 password-hash = ["dep:ctutils", "dep:mcf", "dep:password-hash"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

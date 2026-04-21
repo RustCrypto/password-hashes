@@ -1,4 +1,4 @@
-# RustCrypto: SHA-crypt password hash
+# [RustCrypto]: SHA-crypt password hash
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,11 +7,11 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Pure Rust implementation of the [SHA-crypt password hash based on SHA-256/SHA-512][1],
-a legacy password hashing scheme supported by the [POSIX crypt C library][2].
+Pure Rust implementation of the [SHA-crypt password hash based on SHA-256/SHA-512][SHA-crypt],
+a legacy password hashing scheme supported by the [POSIX crypt C library][crypt].
 
-Password hashes using this algorithm start with `$5$` or `$6$` when encoded
-using the [Modular Crypt Format][3].
+Password hashes using this algorithm start with `$5$` or `$6$` when encoded using the
+[Modular Crypt Format (MCF)][MCF].
 
 ## License
 
@@ -41,8 +41,9 @@ dual licensed as above, without any additional terms or conditions.
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260046-password-hashes
 
-[//]: # (general links)
+[//]: # (links)
 
-[1]: https://www.akkadia.org/drepper/SHA-crypt.txt
-[2]: https://en.wikipedia.org/wiki/Crypt_(C)
-[3]: https://passlib.readthedocs.io/en/stable/modular_crypt_format.html
+[RustCrypto]: https://github.com/RustCrypto
+[SHA-crypt]: https://www.akkadia.org/drepper/SHA-crypt.txt
+[crypt]: https://en.wikipedia.org/wiki/Crypt_(C)
+[MCF]: https://passlib.readthedocs.io/en/stable/modular_crypt_format.html

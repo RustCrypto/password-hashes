@@ -30,6 +30,7 @@ impl ShaCrypt {
     pub const SHA512: Self = Self::new(Algorithm::Sha512Crypt, Params::RECOMMENDED);
 
     /// Create a new password hasher with customized algorithm and params.
+    #[must_use]
     pub const fn new(algorithm: Algorithm, params: Params) -> Self {
         Self { algorithm, params }
     }
@@ -141,7 +142,7 @@ impl PasswordVerifier<PasswordHashRef> for ShaCrypt {
 }
 
 impl PasswordVerifier<str> for ShaCrypt {
-    fn verify_password(&self, password: &[u8], hash: &str) -> password_hash::Result<()> {
+    fn verify_password(&self, password: &[u8], hash: &str) -> Result<()> {
         // TODO(tarcieri): better mapping from `mcf::Error` and `password_hash::Error`?
         let hash = PasswordHashRef::new(hash).map_err(|_| Error::EncodingInvalid)?;
         self.verify_password(password, hash)
@@ -168,32 +169,38 @@ impl From<Params> for ShaCrypt {
 
 /// SHA-256-crypt core function: uses an algorithm-specific transposition table.
 fn sha256_crypt_core(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA256] {
-    let output = super::sha256_crypt(password, salt, params);
-    let transposition_table = [
+    const TRANSPOSITION_TABLE: [usize; 32] = [
         20, 10, 0, 11, 1, 21, 2, 22, 12, 23, 13, 3, 14, 4, 24, 5, 25, 15, 26, 16, 6, 17, 7, 27, 8,
         28, 18, 29, 19, 9, 30, 31,
     ];
 
-    let mut transposed = [0u8; BLOCK_SIZE_SHA256];
-    for (i, &ti) in transposition_table.iter().enumerate() {
-        transposed[i] = output[ti as usize];
-    }
-
-    transposed
+    transpose(
+        &super::sha256_crypt(password, salt, params),
+        &TRANSPOSITION_TABLE,
+    )
 }
 
 /// SHA-512-crypt core function: uses an algorithm-specific transposition table.
 fn sha512_crypt_core(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_SIZE_SHA512] {
-    let output = super::sha512_crypt(password, salt, params);
-    let transposition_table = [
+    const TRANSPOSITION_TABLE: [usize; 64] = [
         42, 21, 0, 1, 43, 22, 23, 2, 44, 45, 24, 3, 4, 46, 25, 26, 5, 47, 48, 27, 6, 7, 49, 28, 29,
         8, 50, 51, 30, 9, 10, 52, 31, 32, 11, 53, 54, 33, 12, 13, 55, 34, 35, 14, 56, 57, 36, 15,
         16, 58, 37, 38, 17, 59, 60, 39, 18, 19, 61, 40, 41, 20, 62, 63,
     ];
 
-    let mut transposed = [0u8; BLOCK_SIZE_SHA512];
+    transpose(
+        &super::sha512_crypt(password, salt, params),
+        &TRANSPOSITION_TABLE,
+    )
+}
+
+/// Perform a transposition.
+#[inline]
+fn transpose<const N: usize>(bytes: &[u8], transposition_table: &[usize]) -> [u8; N] {
+    let mut transposed = [0u8; N];
+
     for (i, &ti) in transposition_table.iter().enumerate() {
-        transposed[i] = output[ti as usize];
+        transposed[i] = bytes[ti];
     }
 
     transposed

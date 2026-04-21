@@ -30,11 +30,15 @@ impl Algorithm {
     const RECOMMENDED: Self = Self::Sha512Crypt;
 
     /// Parse an [`Algorithm`] from the provided string.
+    ///
+    /// # Errors
+    /// Returns [`Error::Algorithm`] if `id` is not `5` (SHA-256) or `6` (SHA-512).
     pub fn new(id: impl AsRef<str>) -> password_hash::Result<Self> {
         id.as_ref().parse()
     }
 
     /// Get the Modular Crypt Format algorithm identifier for this algorithm.
+    #[must_use]
     pub const fn to_str(self) -> &'static str {
         match self {
             Algorithm::Sha256Crypt => Self::SHA256_CRYPT_IDENT,
