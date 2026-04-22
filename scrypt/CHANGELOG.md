@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.12.0 (2026-04-22)
+### Added
+- Implement `PartialEq` for `scrypt::Params` ([#490])
+- `Params::n` method ([#544])
+- `parallel` feature using `rayon` ([#733], [#785])
+- `mcf` feature for Modular Crypt Format support ([#781], [#806])
+- SSE2/simd128 `RoMix` data layout optimization ([#622])
+- Customizable `Params` for `Scrypt` type ([#797])
+- Implement `kdf::{Kdf, Pbkdf}` for `Scrypt` ([#823])
+
+### Changed
+- Make methods of `scrypt::Params` into `const fn` ([#508])
+- Bump edition to 2024; MSRV 1.85 ([#563])
+- Split `Params::new` and `Params::new_with_output_len` ([#602])
+- Use the `phc` crate for `PasswordHash` and related types ([#761])
+- Switch from `std::error::Error` to `core::error::Error` ([#767])
+- Rename `simple` feature to `phc` ([#776])
+- Migrate from `subtle` to `ctutils` ([#845])
+- Bump `password-hash` dependency to v0.6 ([#848])
+- Bump `sha2` to v0.11 ([#872])
+- Bump `salsa20` dependency to v0.11 ([#875])
+- Bump `pbkdf2` dependency to v0.13 ([#885])
+
+### Removed
+- `Display` and `FromStr` impls for `Params` ([#824])
+- Incorrect `N` upper-bound check from `Params::new` ([#867])
+
+[#490]: https://github.com/RustCrypto/password-hashes/pull/490
+[#508]: https://github.com/RustCrypto/password-hashes/pull/508
+[#544]: https://github.com/RustCrypto/password-hashes/pull/544
+[#563]: https://github.com/RustCrypto/password-hashes/pull/563
+[#602]: https://github.com/RustCrypto/password-hashes/pull/602
+[#622]: https://github.com/RustCrypto/password-hashes/pull/622
+[#733]: https://github.com/RustCrypto/password-hashes/pull/733
+[#761]: https://github.com/RustCrypto/password-hashes/pull/761
+[#767]: https://github.com/RustCrypto/password-hashes/pull/767
+[#776]: https://github.com/RustCrypto/password-hashes/pull/776
+[#781]: https://github.com/RustCrypto/password-hashes/pull/781
+[#785]: https://github.com/RustCrypto/password-hashes/pull/785
+[#797]: https://github.com/RustCrypto/password-hashes/pull/797
+[#806]: https://github.com/RustCrypto/password-hashes/pull/806
+[#823]: https://github.com/RustCrypto/password-hashes/pull/823
+[#824]: https://github.com/RustCrypto/password-hashes/pull/824
+[#845]: https://github.com/RustCrypto/password-hashes/pull/845
+[#848]: https://github.com/RustCrypto/password-hashes/pull/848
+[#867]: https://github.com/RustCrypto/password-hashes/pull/867
+[#872]: https://github.com/RustCrypto/password-hashes/pull/872
+[#875]: https://github.com/RustCrypto/password-hashes/pull/875
+[#885]: https://github.com/RustCrypto/password-hashes/pull/885
+
 ## 0.11.0 (2023-03-04)
 ### Added
 - Ability to use custom output key length ([#255])
