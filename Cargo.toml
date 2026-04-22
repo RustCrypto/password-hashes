@@ -7,6 +7,7 @@ members = [
     "bcrypt-pbkdf",
     "password-auth",
     "pbkdf2",
+    "posme",
     "scrypt",
     "sha-crypt",
     "yescrypt"
