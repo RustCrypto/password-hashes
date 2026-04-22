@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.11.0 (2026-04-22)
+### Added
+- `zeroize` feature ([#539])
+
+### Changed
+- Bump edition to 2024; MSRV 1.85 ([#563])
+- Switch from `std::error::Error` to `core::error::Error` ([#767])
+- Bump `sha2` to v0.11 ([#872])
+- Bump `blowfish` to v0.10 ([#887])
+
+### Removed
+- `std` feature ([#822])
+
+[#539]: https://github.com/RustCrypto/password-hashes/pull/539
+[#563]: https://github.com/RustCrypto/password-hashes/pull/563
+[#767]: https://github.com/RustCrypto/password-hashes/pull/767
+[#822]: https://github.com/RustCrypto/password-hashes/pull/822
+[#872]: https://github.com/RustCrypto/password-hashes/pull/872
+[#887]: https://github.com/RustCrypto/password-hashes/pull/887
+
 ## 0.10.0 (2023-03-04)
 ### Added
 - Support for `alloc`-free usage ([#372])
