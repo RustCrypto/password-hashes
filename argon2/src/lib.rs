@@ -309,8 +309,30 @@ impl<'key> Argon2<'key> {
         pwd: &[u8],
         salt: &[u8],
         out: &mut [u8],
-        mut memory_blocks: impl AsMut<[Block]>,
+        memory_blocks: impl AsMut<[Block]>,
     ) -> Result<()> {
+        self.hash_password_into_block(pwd, salt, out, memory_blocks)?;
+        Ok(())
+    }
+
+    /// Hash a password and associated parameters, returning the final reduced internal block.
+    ///
+    /// This method performs the full Argon2 execution phase but returns the raw computed block
+    /// matrix result prior to the final BLAKE2b variable-length extraction layout.
+    ///
+    /// # Errors
+    /// - Returns [`Error::PwdTooLong`] if `pwd` is longer than `MAX_PWD_LEN`.
+    /// - Returns [`Error::SaltTooShort`] if `salt` is shorter than `MIN_SALT_LEN`.
+    /// - Returns [`Error::SaltTooLong`] if `salt` is longer than `MAX_SALT_LEN`.
+    /// - Returns [`Error::OutputTooShort`] if `out` is too short.
+    /// - Returns [`Error::OutputTooLong`] if `out` is too long.
+    pub fn hash_password_into_block(
+        &self,
+        pwd: &[u8],
+        salt: &[u8],
+        out: &mut [u8],
+        mut memory_blocks: impl AsMut<[Block]>,
+    ) -> Result<Block> {
         // Validate output length
         if out.len() < self.params.output_len().unwrap_or(Params::MIN_OUTPUT_LEN) {
             return Err(Error::OutputTooShort);
@@ -547,18 +569,21 @@ impl<'key> Argon2<'key> {
         &self.params
     }
 
-    fn finalize(&self, memory_blocks: &[Block], out: &mut [u8]) -> Result<()> {
-        let lane_length = self.params.lane_length();
-
-        let mut blockhash = memory_blocks[lane_length - 1];
-
-        // XOR the last blocks
-        for l in 1..self.params.lanes() {
-            let last_block_in_lane = l * lane_length + (lane_length - 1);
-            blockhash ^= &memory_blocks[last_block_in_lane];
+    /// Finalize a raw structural block hash computed from [`Argon2::hash_password_into_block`]
+    /// down into a target variable-length byte destination buffer.
+    ///
+    /// # Errors
+    /// - Returns [`Error::OutputTooShort`] if `out` is too short.
+    /// - Returns [`Error::OutputTooLong`] if `out` is too long.
+    pub fn finalize_block(&self, blockhash: &Block, out: &mut [u8]) -> Result<()> {
+        if out.len() < self.params.output_len().unwrap_or(Params::MIN_OUTPUT_LEN) {
+            return Err(Error::OutputTooShort);
         }
 
-        // Hash the result
+        if out.len() > self.params.output_len().unwrap_or(Params::MAX_OUTPUT_LEN) {
+            return Err(Error::OutputTooLong);
+        }
+
         let mut blockhash_bytes = [0u8; Block::SIZE];
 
         for (chunk, v) in blockhash_bytes.chunks_mut(8).zip(blockhash.iter()) {
@@ -569,11 +594,31 @@ impl<'key> Argon2<'key> {
 
         #[cfg(feature = "zeroize")]
         {
-            blockhash.zeroize();
             blockhash_bytes.zeroize();
         }
 
         Ok(())
+    }
+
+    fn finalize(&self, memory_blocks: &[Block], out: &mut [u8]) -> Result<Block> {
+        let lane_length = self.params.lane_length();
+
+        let mut blockhash = memory_blocks[lane_length - 1];
+
+        // XOR the last blocks
+        for l in 1..self.params.lanes() {
+            let last_block_in_lane = l * lane_length + (lane_length - 1);
+            blockhash ^= &memory_blocks[last_block_in_lane];
+        }
+
+        self.finalize_block(&blockhash, out)?;
+
+        #[cfg(feature = "zeroize")]
+        {
+            blockhash.zeroize();
+        }
+
+        Ok(blockhash)
     }
 
     fn update_address_block(
