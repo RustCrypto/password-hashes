@@ -130,9 +130,9 @@ fn yescrypt_body(
         return Err(Error::Params);
     }
 
-    let mut v = vec![0; 32 * (r as usize) * usize::try_from(n)?];
-    let mut b = vec![0; 32 * (r as usize) * (p as usize)];
-    let mut xy = vec![0; 64 * (r as usize)];
+    let mut v = vec![0; usize::try_from(32 * u64::from(r) * n)?];
+    let mut b = vec![0; usize::try_from(32 * u64::from(r) * u64::from(p))?];
+    let mut xy = vec![0; usize::try_from(64 * u64::from(r))?];
 
     let mut passwd = passwd;
     let mut sha256 = [0u8; 32];
