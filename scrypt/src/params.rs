@@ -96,7 +96,7 @@ impl Params {
         // check: p <= ((2^32-1) * 32) / (128 * r)
         // It takes a bit of re-arranging to get the check above into this form,
         // but it is indeed the same.
-        if r * p >= 0x4000_0000 {
+        if u64::from(r) * u64::from(p) >= 0x4000_0000 {
             return Err(InvalidParams);
         }
 
