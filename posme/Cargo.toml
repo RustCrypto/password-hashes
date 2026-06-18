@@ -1,0 +1,23 @@
+[package]
+name = "posme"
+version = "0.1.0-pre.0"
+description = "Pure Rust implementation of PoSME (Proof of Sequential Memory Execution), a latency-bound memory-hard sequential proof primitive"
+authors = ["David Condrey <david@writerslogic.com>"]
+license = "Apache-2.0"
+documentation = "https://docs.rs/posme"
+homepage = "https://github.com/RustCrypto/password-hashes/tree/master/posme"
+repository = "https://github.com/RustCrypto/password-hashes"
+keywords = ["crypto", "memory-hard", "sequential", "proof-of-work", "asic-resistance"]
+categories = ["cryptography", "algorithms"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.70"
+
+[dependencies]
+blake3 = "1"
+
+[dev-dependencies]
+hex-literal = "1"
+
+[package.metadata.docs.rs]
+all-features = true
