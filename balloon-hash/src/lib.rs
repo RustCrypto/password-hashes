@@ -132,7 +132,7 @@ where
         #[cfg(not(feature = "parallel"))]
         let mut memory = alloc::vec![Array::default(); self.params.s_cost.get() as usize];
         #[cfg(feature = "parallel")]
-        let mut memory = alloc::vec![Array::default(); (self.params.s_cost.get() * self.params.p_cost.get()) as usize];
+        let mut memory = alloc::vec![Array::default(); self.params.s_cost.get() as usize * self.params.p_cost.get() as usize];
 
         self.hash_password_into_with_memory(pwd, salt, &mut memory, output)?;
         #[cfg(feature = "zeroize")]

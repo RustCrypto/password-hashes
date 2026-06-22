@@ -49,7 +49,7 @@ where
     let output_xor = {
         use rayon::iter::{ParallelBridge, ParallelIterator};
 
-        if memory_blocks.len() < (params.s_cost.get() * params.p_cost.get()) as usize {
+        if memory_blocks.len() < params.s_cost.get() as usize * params.p_cost.get() as usize {
             return Err(Error::MemoryTooLittle);
         }
 
