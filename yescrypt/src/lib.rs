@@ -93,7 +93,7 @@ pub fn yescrypt(passwd: &[u8], salt: &[u8], params: &Params, out: &mut [u8]) -> 
     if params.mode.is_rw()
         && params.p >= 1
         && params.n / u64::from(params.p) >= 0x100
-        && params.n / u64::from(params.p) * u64::from(params.r) >= 0x20000
+        && u128::from(params.n / u64::from(params.p)) * u128::from(params.r) >= 0x20000
     {
         let mut prehash_params = *params;
         prehash_params.n >>= 6;
