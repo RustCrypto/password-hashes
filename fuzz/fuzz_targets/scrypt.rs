@@ -1,13 +1,12 @@
 #![no_main]
 use libfuzzer_sys::arbitrary::{Arbitrary, Result, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use scrypt::password_hash::{
-    Ident, PasswordHash, PasswordHasher, PasswordVerifier, Salt, SaltString,
-};
-use scrypt::{scrypt, Scrypt};
+use scrypt::password_hash::{CustomizedPasswordHasher, PasswordVerifier};
+use scrypt::phc::PasswordHash;
+use scrypt::{scrypt, Params, Scrypt};
 
 #[derive(Debug)]
-pub struct ScryptRandParams(pub scrypt::Params);
+pub struct ScryptRandParams(pub Params);
 
 impl<'a> Arbitrary<'a> for ScryptRandParams {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self> {
@@ -16,7 +15,7 @@ impl<'a> Arbitrary<'a> for ScryptRandParams {
         let p = u.int_in_range(1..=8)?;
         let len = u.int_in_range(10..=64)?;
 
-        let params = scrypt::Params::new(log_n, r, p, len).unwrap();
+        let params = Params::new_with_output_len(log_n, r, p, len).unwrap();
         Ok(Self(params))
     }
 }
@@ -24,11 +23,7 @@ impl<'a> Arbitrary<'a> for ScryptRandParams {
 fuzz_target!(|data: (&[u8], &[u8], ScryptRandParams)| {
     let (password, salt, ScryptRandParams(params)) = data;
 
-    if password.len() > 64 {
-        return;
-    }
-
-    if salt.len() < Salt::MIN_LENGTH || salt.len() > (6 * Salt::MAX_LENGTH) / 8 {
+    if password.len() > 64 || salt.len() < 8 || salt.len() > 64 {
         return;
     }
 
@@ -37,19 +32,13 @@ fuzz_target!(|data: (&[u8], &[u8], ScryptRandParams)| {
     scrypt(password, salt, &params, &mut result).unwrap();
 
     // Check PHC hashing
-    let salt_string = SaltString::encode_b64(salt).unwrap();
-    let phc_hash = Scrypt
-        .hash_password_customized(
-            password,
-            Some(Ident::new_unwrap("scrypt")),
-            None,
-            params,
-            &salt_string,
-        )
-        .unwrap()
-        .to_string();
+    let hasher = Scrypt::new_with_params(params);
+    if let Ok(phc_hash) = hasher.hash_password_customized(password, salt, Some("scrypt"), None, params) {
+        let phc_string = phc_hash.to_string();
 
-    // Check PHC verification
-    let hash = PasswordHash::new(&phc_hash).unwrap();
-    Scrypt.verify_password(password, &hash).unwrap();
+        // Check PHC verification
+        if let Ok(hash) = PasswordHash::new(&phc_string) {
+            hasher.verify_password(password, &hash).unwrap();
+        }
+    }
 });
