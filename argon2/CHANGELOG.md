@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 (2026-08-27)
+### Added
+- Detect allocation failures in `hash_password_into` ([#568])
+- `parallel` feature ([#547])
+- `PasswordVerifier<str>` impl ([#779])
+- `kdf::{Kdf, Pbkdf}` impls ([#823])
+
+### Changed
+- Upgrade to Rust 2024 edition; MSRV 1.85 ([#563])
+- Switch from `std::error::Error` to `core::error::Error` ([#767])
+- Rename `simple` feature to `password-hash` ([#776])
+- Bump `cpufeatures` to v0.3 ([#847])
+- Bump `password-hash` to v0.6 ([#848])
+- Bump `blake2` to v0.11 ([#929])
+
+### Removed
+- `std` feature ([#768])
+
+### Fixed
+- Check `p_cost < Params::MIN_P_COST` before `m_cost < p_cost * 8` ([#745])
+
+[#547]: https://github.com/RustCrypto/password-hashes/pull/547
+[#563]: https://github.com/RustCrypto/password-hashes/pull/563
+[#568]: https://github.com/RustCrypto/password-hashes/pull/568
+[#745]: https://github.com/RustCrypto/password-hashes/pull/745
+[#767]: https://github.com/RustCrypto/password-hashes/pull/767
+[#768]: https://github.com/RustCrypto/password-hashes/pull/768
+[#776]: https://github.com/RustCrypto/password-hashes/pull/776
+[#779]: https://github.com/RustCrypto/password-hashes/pull/779
+[#823]: https://github.com/RustCrypto/password-hashes/pull/823
+[#847]: https://github.com/RustCrypto/password-hashes/pull/847
+[#848]: https://github.com/RustCrypto/password-hashes/pull/848
+[#929]: https://github.com/RustCrypto/password-hashes/pull/929
+
 ## 0.5.3 (2024-01-20)
 ### Fixed
 - Documentation ([#458], [#459])
