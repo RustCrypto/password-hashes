@@ -11,6 +11,9 @@ use blake2::{
     },
 };
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     if out.is_empty() {
         return Err(Error::OutputTooShort);
@@ -32,6 +35,9 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
         hasher.finalize_variable_core(&mut buf, &mut full_out);
         let out_src = &full_out[..out.len()];
         out.copy_from_slice(out_src);
+
+        #[cfg(feature = "zeroize")]
+        full_out.zeroize();
 
         return Ok(());
     }
@@ -69,6 +75,12 @@ pub fn blake2b_long(inputs: &[&[u8]], out: &mut [u8]) -> Result<()> {
     hasher.finalize_variable_core(&mut buf, &mut full_out);
     let out_src = &full_out[..out.len()];
     out.copy_from_slice(out_src);
+
+    #[cfg(feature = "zeroize")]
+    {
+        last_output.zeroize();
+        full_out.zeroize();
+    }
 
     Ok(())
 }
