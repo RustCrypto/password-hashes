@@ -323,8 +323,8 @@ impl<'key> Argon2<'key> {
         Self::verify_inputs(pwd, salt)?;
 
         // Hashing all inputs
-        let initial_hash = self.initial_hash(pwd, salt, out);
-        self.fill_blocks(memory_blocks.as_mut(), initial_hash)?;
+        let mut initial_hash = self.initial_hash(pwd, salt, out);
+        self.fill_blocks(memory_blocks.as_mut(), &mut initial_hash)?;
         self.finalize(memory_blocks.as_mut(), out)
     }
 
@@ -346,15 +346,15 @@ impl<'key> Argon2<'key> {
     ) -> Result<()> {
         Self::verify_inputs(pwd, salt)?;
 
-        let initial_hash = self.initial_hash(pwd, salt, &[]);
-        self.fill_blocks(memory_blocks.as_mut(), initial_hash)
+        let mut initial_hash = self.initial_hash(pwd, salt, &[]);
+        self.fill_blocks(memory_blocks.as_mut(), &mut initial_hash)
     }
 
-    #[allow(clippy::cast_possible_truncation, unused_mut)]
+    #[allow(clippy::cast_possible_truncation)]
     fn fill_blocks(
         &self,
         memory_blocks: &mut [Block],
-        mut initial_hash: digest::Output<Blake2b512>,
+        initial_hash: &mut digest::Output<Blake2b512>,
     ) -> Result<()> {
         let block_count = self.params.block_count();
         let mut memory_blocks = memory_blocks
@@ -383,6 +383,9 @@ impl<'key> Argon2<'key> {
                 let mut hash = [0u8; Block::SIZE];
                 blake2b_long(inputs, &mut hash)?;
                 block.load(&hash);
+
+                #[cfg(feature = "zeroize")]
+                hash.zeroize();
             }
         }
 
@@ -400,6 +403,8 @@ impl<'key> Argon2<'key> {
                 let mut address_block = Block::default();
                 let mut input_block = Block::default();
                 let zero_block = Block::default();
+                #[allow(unused_assignments)] // initial value is only read by the zeroize
+                let mut result = Block::default();
 
                 if data_independent_addressing {
                     input_block.as_mut()[..6].copy_from_slice(&[
@@ -503,7 +508,7 @@ impl<'key> Argon2<'key> {
                     let ref_index = ref_lane * lane_length + lane_index;
 
                     // Calculate new block
-                    let result = self.compress(
+                    result = self.compress(
                         memory_view.get_block(prev_index),
                         memory_view.get_block(ref_index),
                     );
@@ -517,6 +522,9 @@ impl<'key> Argon2<'key> {
                     prev_index = cur_index;
                     cur_index += 1;
                 }
+
+                #[cfg(feature = "zeroize")]
+                result.zeroize();
             });
         }
 
@@ -698,6 +706,9 @@ impl PasswordHasher<PasswordHash> for Argon2<'_> {
 
         self.hash_password_into(password, &salt, out)?;
         let output = Output::new(out)?;
+
+        #[cfg(feature = "zeroize")]
+        buffer.zeroize();
 
         Ok(PasswordHash {
             algorithm: self.algorithm.ident(),
