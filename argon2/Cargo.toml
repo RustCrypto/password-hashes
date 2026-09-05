@@ -41,7 +41,7 @@ getrandom = ["password-hash/getrandom"]
 parallel = ["dep:rayon"]
 password-hash = ["dep:password-hash"]
 rand_core = ["password-hash/rand_core"]
-zeroize = ["dep:zeroize"]
+zeroize = ["dep:zeroize", "blake2/zeroize"]
 
 [lints.clippy]
 borrow_as_ptr = "warn"
