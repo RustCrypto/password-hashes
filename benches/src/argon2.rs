@@ -62,11 +62,29 @@ fn bench_vary_params(c: &mut Criterion) {
     }
 }
 
+/// Single-lane parameter sets from the OWASP password storage cheat sheet.
+fn bench_owasp_params(c: &mut Criterion) {
+    for (m_cost, t_cost) in [(19 * 1024, 2), (7 * 1024, 5)] {
+        let test_name = format!("argon2id V0x13 m={m_cost} t={t_cost} p=1");
+        c.bench_function(&test_name, |b| {
+            let mut out = [0u8; 32];
+            let params = Params::new(m_cost, t_cost, 1, Some(32)).unwrap();
+            let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
+            b.iter(|| {
+                argon2
+                    .hash_password_into(black_box(BENCH_PASSWORD), black_box(BENCH_SALT), &mut out)
+                    .unwrap()
+            })
+        });
+    }
+}
+
 criterion_group!(
     name = benches;
     config = Criterion::default().with_profiler(PProfProfiler::new(300, Output::Flamegraph(None)));
     targets =
     bench_default_params,
     bench_vary_params,
+    bench_owasp_params,
 );
 criterion_main!(benches);

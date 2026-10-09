@@ -77,6 +77,29 @@ jobs:
       - run: cargo test
       - run: cargo test --all-features
 
+  # Test each block compression backend. With `+avx2` the AVX2 backend is selected at
+  # compile time; the "soft" cfg disables it.
+  backends:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+        rustflags:
+          - '--cfg argon2_backend="soft"'
+          - "-C target-feature=+avx2"
+    env:
+      RUSTFLAGS: '-Dwarnings ${{ matrix.rustflags }}'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test --no-default-features
+      - run: cargo test --all-features
+
   careful:
     runs-on: ubuntu-latest
     steps:
