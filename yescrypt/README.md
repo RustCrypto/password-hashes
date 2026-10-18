@@ -23,9 +23,6 @@ The implementation contained in this crate has never been independently audited!
 
 USE AT YOUR OWN RISK!
 
-Note that this crate is in an early stage of implementation and may contain bugs or features which
-do not work correctly.
-
 ## Minimum Supported Rust Version (MSRV) Policy
 
 MSRV increases are not considered breaking changes and can happen in patch releases.
