@@ -140,19 +140,50 @@ impl<'a> SegmentView<'a> {
         unsafe { self.inner.blocks.add(index).as_ref() }
     }
 
-    /// Get a mutable reference to a block.
+    /// Get shared references to the block before `cur_index` in this lane (wrapping to the
+    /// lane's last block) and to the block at `ref_index`, and a mutable reference to the block
+    /// at `cur_index`.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds or if the desired block lies outside this segment.
-    pub fn get_block_mut(&mut self, index: usize) -> &mut Block {
-        assert!(index < self.inner.block_count);
-        assert_eq!(self.inner.lane_of(index), self.lane);
-        assert_eq!(self.inner.slice_of(index), self.slice);
+    /// Panics if an index is out of bounds, if the block at `ref_index` *could* be mutably
+    /// aliased (as in [`SegmentView::get_block`]), if the block at `cur_index` lies outside this
+    /// segment, or if either other block is the block at `cur_index`.
+    pub fn get_blocks_mut(
+        &mut self,
+        ref_index: usize,
+        cur_index: usize,
+    ) -> (&Block, &Block, &mut Block) {
+        assert!(ref_index < self.inner.block_count);
+        assert!(
+            self.inner.lane_of(ref_index) == self.lane
+                || self.inner.slice_of(ref_index) != self.slice
+        );
+        assert!(cur_index < self.inner.block_count);
+        assert_eq!(self.inner.lane_of(cur_index), self.lane);
+        assert_eq!(self.inner.slice_of(cur_index), self.slice);
 
-        // SAFETY: by construction, the base pointer is valid for reads and writes, and we assert
-        // that the index is in bounds. We also assert that the index lies on this segment, and
-        // we're the only view for it, taking `&mut self`.
-        unsafe { self.inner.blocks.add(index).as_mut() }
+        // The previous block is in this lane, so no other view can mutate it.
+        let lane_start = self.lane * self.inner.lane_length;
+        let prev_index = if cur_index == lane_start {
+            lane_start + self.inner.lane_length - 1
+        } else {
+            cur_index - 1
+        };
+        assert_ne!(prev_index, cur_index);
+        assert_ne!(ref_index, cur_index);
+
+        // SAFETY: by construction, the base pointer is valid for reads and writes, and all
+        // indices are in bounds (`prev_index` lies in the same lane as `cur_index`). The shared
+        // references are valid as in `get_block`. The mutable reference is to a block in this
+        // segment, and we're the only view for it, taking `&mut self`. `cur_index` differs from
+        // the other indices, so it is not aliased.
+        unsafe {
+            (
+                self.inner.blocks.add(prev_index).as_ref(),
+                self.inner.blocks.add(ref_index).as_ref(),
+                self.inner.blocks.add(cur_index).as_mut(),
+            )
+        }
     }
 }
