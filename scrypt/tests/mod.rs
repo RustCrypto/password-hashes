@@ -76,3 +76,14 @@ fn test_scrypt() {
         assert!(result == t.expected);
     }
 }
+
+/// RFC 7914 §2 requires `p <= ((2^32 - 1) * 32) / (128 * r)`, i.e. `r * p < 2^30`.
+#[test]
+fn test_params_reject_large_r_times_p() {
+    // r * p = 2^32 overflows u32
+    assert!(Params::new(1, 65536, 65536).is_err());
+    // r * p = 2^30
+    assert!(Params::new(1, 1 << 15, 1 << 15).is_err());
+    // r * p = 2^30 - 1
+    assert!(Params::new(1, 1, (1 << 30) - 1).is_ok());
+}
