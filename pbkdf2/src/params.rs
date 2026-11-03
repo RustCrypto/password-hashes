@@ -1,4 +1,7 @@
-use core::fmt::{self, Display};
+use core::{
+    fmt::{self, Display},
+    num::NonZero,
+};
 
 use crate::Algorithm;
 
@@ -14,7 +17,7 @@ use {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Params {
     /// Number of rounds
-    rounds: u32,
+    rounds: NonZero<u32>,
 
     /// Size of the output (in bytes)
     output_len: usize,
@@ -42,7 +45,7 @@ impl Params {
     /// > internal hash function of HMAC-SHA-256.
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-    pub const RECOMMENDED_ROUNDS: u32 = 600_000;
+    pub const RECOMMENDED_ROUNDS: NonZero<u32> = NonZero::new(600_000).unwrap();
 
     /// Recommended number of PBKDF2-SHA512 rounds.
     ///
@@ -52,7 +55,7 @@ impl Params {
     /// > internal hash function of HMAC-SHA-512.
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-    pub const RECOMMENDED_SHA512_ROUNDS: u32 = 210_000;
+    pub const RECOMMENDED_SHA512_ROUNDS: NonZero<u32> = NonZero::new(210_000).unwrap();
 
     /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
     ///
@@ -100,12 +103,20 @@ impl Params {
             return Err(Error::ParamsInvalid);
         }
 
-        Ok(Self { rounds, output_len })
+        match NonZero::new(rounds) {
+            Some(rounds) => Ok(Self { rounds, output_len }),
+            None => Err(Error::ParamsInvalid),
+        }
     }
 
     /// Get the number of rounds.
     #[must_use]
     pub const fn rounds(self) -> u32 {
+        self.rounds.get()
+    }
+
+    /// Get the number of rounds as [`NonZero`].
+    pub(crate) const fn rounds_nonzero(self) -> NonZero<u32> {
         self.rounds
     }
 
@@ -153,7 +164,7 @@ impl TryFrom<&ParamsString> for Params {
     type Error = Error;
 
     fn try_from(params_string: &ParamsString) -> Result<Self> {
-        let mut rounds = Params::RECOMMENDED_ROUNDS;
+        let mut rounds = Params::RECOMMENDED_ROUNDS.get();
         let mut output_len = Params::RECOMMENDED_OUTPUT_LENGTH;
 
         for (ident, value) in params_string.iter() {
@@ -224,7 +235,7 @@ impl TryFrom<&Params> for ParamsString {
         let mut output = ParamsString::new();
         let output_len = Decimal::try_from(input.output_len).map_err(|_| Error::OutputSize)?;
 
-        for (name, value) in [("i", input.rounds), ("l", output_len)] {
+        for (name, value) in [("i", input.rounds.get()), ("l", output_len)] {
             output
                 .add_decimal(name, value)
                 .map_err(|_| Error::ParamInvalid { name })?;

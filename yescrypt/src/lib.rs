@@ -74,6 +74,7 @@ pub use {
 };
 
 use alloc::vec;
+use core::num::NonZero;
 use sha2::{Digest, Sha256};
 
 /// yescrypt Key Derivation Function (KDF).
@@ -115,6 +116,7 @@ fn yescrypt_body(
     prehash: bool,
     out: &mut [u8],
 ) -> Result<()> {
+    const ROUNDS: NonZero<u32> = NonZero::new(1).unwrap();
     let mode = params.mode;
     let n = params.n;
     let r = params.r;
@@ -147,7 +149,7 @@ fn yescrypt_body(
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b)?);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, ROUNDS, util::cast_slice_mut(&mut b)?);
 
     if !mode.is_classic() {
         sha256.copy_from_slice(util::cast_slice(&b[..8])?);
@@ -177,11 +179,11 @@ fn yescrypt_body(
 
     let mut dk = [0u8; 32];
     if !mode.is_classic() && out.len() < 32 {
-        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, &mut dk);
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, ROUNDS, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, out);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, ROUNDS, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of

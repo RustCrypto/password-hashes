@@ -52,6 +52,7 @@
 #[macro_use]
 extern crate alloc;
 
+use core::num::NonZero;
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
 
@@ -116,15 +117,16 @@ pub fn scrypt(
     let pr128 = (params.p as usize) * r128;
     let nr128 = n * r128;
 
+    const ROUNDS: NonZero<u32> = NonZero::new(1).unwrap();
     let mut b = vec![0u8; pr128];
-    pbkdf2_hmac::<Sha256>(password, salt, 1, &mut b);
+    pbkdf2_hmac::<Sha256>(password, salt, ROUNDS, &mut b);
 
     #[cfg(not(feature = "parallel"))]
     romix_sequential(nr128, r128, n, &mut b);
     #[cfg(feature = "parallel")]
     romix_parallel(nr128, r128, n, &mut b);
 
-    pbkdf2_hmac::<Sha256>(password, &b, 1, output);
+    pbkdf2_hmac::<Sha256>(password, &b, ROUNDS, output);
     Ok(())
 }
 

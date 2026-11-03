@@ -20,7 +20,8 @@ macro_rules! test {
             const EXPECTED_HASH: &[u8] = &hex_literal::hex!($($expected_hash)*);
             const N: usize = EXPECTED_HASH.len();
 
-            let hash = pbkdf2::pbkdf2_hmac_array::<$hash, N>($password, $salt, $rounds);
+            let rounds = core::num::NonZero::new($rounds).unwrap();
+            let hash = pbkdf2::pbkdf2_hmac_array::<$hash, N>($password, $salt, rounds);
             assert_eq!(hash[..], EXPECTED_HASH[..]);
         })*
     };
