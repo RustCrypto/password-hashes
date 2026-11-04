@@ -5,17 +5,6 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
-#![warn(
-    clippy::checked_conversions,
-    clippy::arithmetic_side_effects,
-    clippy::panic,
-    clippy::panic_in_result_fn,
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
 
 extern crate alloc;
 
@@ -43,8 +32,9 @@ use scrypt::Scrypt;
 
 /// Generate a password hash for the given password.
 ///
-/// Uses the best available password hashing algorithm given the enabled
-/// crate features (typically Argon2 unless explicitly disabled).
+/// Uses the best available password hashing algorithm given the enabled crate features (typically
+/// Argon2 unless explicitly disabled).
+#[allow(clippy::missing_panics_doc, reason = "shouldn't panic in practice")]
 pub fn generate_hash(password: impl AsRef<[u8]>) -> String {
     generate_phc_hash(password.as_ref())
         .as_ref()
@@ -70,11 +60,9 @@ fn generate_phc_hash(password: &[u8]) -> password_hash::Result<PasswordHash> {
 
 /// Verify the provided password against the provided password hash.
 ///
-/// # Returns
-///
-/// - `Ok(())` if the password hash verified successfully
-/// - `Err(VerifyError)` if the hash didn't parse successfully or the password
-///   failed to verify against the hash.
+/// # Errors
+/// Returns `Err(VerifyError)` if the hash didn't parse successfully or the password failed to
+/// verify against the hash.
 pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), VerifyError> {
     let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
 
@@ -96,18 +84,18 @@ pub fn verify_password(password: impl AsRef<[u8]>, hash: &str) -> Result<(), Ver
     Err(VerifyError::PasswordInvalid)
 }
 
-/// Determine if the given password hash is using the recommended algorithm and
-/// parameters.
+/// Determine if the given password hash is using the recommended algorithm and parameters.
 ///
-/// This can be used by implementations which wish to lazily update their
-/// password hashes (i.e. by rehashing the password with [`generate_hash`])
-/// to determine if such an update should be applied.
+/// This can be used by implementations which wish to lazily update their password hashes (i.e. by
+/// rehashing the password with [`generate_hash`]) to determine if such an update should be applied.
 ///
-/// # Returns
+/// When the hash parses successfully, it will return one of the following:
 /// - `Ok(true)` if the hash *isn't* using the latest recommended algorithm/parameters.
 /// - `Ok(false)` if the hash *is* using the latest recommended algorithm/parameters.
-/// - `Err(ParseError)` if the hash could not be parsed.
-#[allow(unreachable_code)]
+///
+/// # Errors
+/// Returns `Err(ParseError)` if the hash could not be parsed.
+#[allow(unreachable_code, reason = "feature gating")]
 pub fn is_hash_obsolete(hash: &str) -> Result<bool, ParseError> {
     let hash = PasswordHash::new(hash).map_err(ParseError::new)?;
 

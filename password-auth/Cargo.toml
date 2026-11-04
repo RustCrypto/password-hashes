@@ -28,5 +28,8 @@ scrypt = { version = "0.12", optional = true, default-features = false, features
 [features]
 default = ["argon2"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true
