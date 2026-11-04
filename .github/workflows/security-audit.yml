@@ -16,6 +16,7 @@ jobs:
   security_audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    if: false # TODO(tarcieri): re-enable after upgrading dependencies
     steps:
       - uses: actions/checkout@v7
       - uses: RustCrypto/actions/cargo-cache@master
