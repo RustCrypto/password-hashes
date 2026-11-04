@@ -1,6 +1,6 @@
 [package]
 name = "password-auth"
-version = "1.1.0-rc.2"
+version = "2.0.0-pre"
 description = """
 Password authentication library with a focus on simplicity and ease-of-use,
 including support for Argon2, PBKDF2, and scrypt password hashing algorithms
@@ -27,7 +27,6 @@ scrypt = { version = "0.12", optional = true, default-features = false, features
 
 [features]
 default = ["argon2"]
-std = [] # no-op, but we can't remove it because it would be a breaking change
 wasm_js = ["getrandom/wasm_js"]
 
 [package.metadata.docs.rs]
