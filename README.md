@@ -10,13 +10,13 @@ Collection of password hashing algorithms, otherwise known as password-based key
 
 | Algorithm      | Crate            | Crates.io                                                                                               | Documentation | MSRV                    |
 |----------------|------------------|---------------------------------------------------------------------------------------------------------|---------------|-------------------------|
-| [Argon2]       | [`argon2`]       | [![crates.io](https://img.shields.io/crates/v/argon2.svg)](https://crates.io/crates/argon2)             | [![Documentation](https://docs.rs/argon2/badge.svg)](https://docs.rs/argon2) | ![MSRV 1.85][msrv-1.85] |
-| [Balloon]      | [`balloon‑hash`] | [![crates.io](https://img.shields.io/crates/v/balloon-hash.svg)](https://crates.io/crates/balloon-hash) | [![Documentation](https://docs.rs/balloon-hash/badge.svg)](https://docs.rs/balloon-hash) | ![MSRV 1.85][msrv-1.85] |
-| [bcrypt‑pbkdf] | [`bcrypt‑pbkdf`] | [![crates.io](https://img.shields.io/crates/v/bcrypt-pbkdf.svg)](https://crates.io/crates/bcrypt-pbkdf) | [![Documentation](https://docs.rs/bcrypt-pbkdf/badge.svg)](https://docs.rs/bcrypt-pbkdf) | ![MSRV 1.85][msrv-1.85] |
-| [PBKDF2]       | [`pbkdf2`]       | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2)             | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) | ![MSRV 1.85][msrv-1.85] |
-| [scrypt]       | [`scrypt`]       | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt)             | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) | ![MSRV 1.85][msrv-1.85] |
-| [SHA-crypt]    | [`sha‑crypt`]    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt)       | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) | ![MSRV 1.85][msrv-1.85] |
-| [yescrypt]     | [`yescrypt`]     | [![crates.io](https://img.shields.io/crates/v/yescrypt.svg)](https://crates.io/crates/yescrypt)         | [![Documentation](https://docs.rs/yescrypt/badge.svg)](https://docs.rs/yescrypt) | ![MSRV 1.85][msrv-1.85] |
+| [Argon2]       | [`argon2`]       | [![crates.io](https://img.shields.io/crates/v/argon2.svg)](https://crates.io/crates/argon2)             | [![Documentation](https://docs.rs/argon2/badge.svg)](https://docs.rs/argon2) | ![MSRV 1.87][msrv-1.87] |
+| [Balloon]      | [`balloon‑hash`] | [![crates.io](https://img.shields.io/crates/v/balloon-hash.svg)](https://crates.io/crates/balloon-hash) | [![Documentation](https://docs.rs/balloon-hash/badge.svg)](https://docs.rs/balloon-hash) | ![MSRV 1.87][msrv-1.87] |
+| [bcrypt‑pbkdf] | [`bcrypt‑pbkdf`] | [![crates.io](https://img.shields.io/crates/v/bcrypt-pbkdf.svg)](https://crates.io/crates/bcrypt-pbkdf) | [![Documentation](https://docs.rs/bcrypt-pbkdf/badge.svg)](https://docs.rs/bcrypt-pbkdf) | ![MSRV 1.87][msrv-1.87] |
+| [PBKDF2]       | [`pbkdf2`]       | [![crates.io](https://img.shields.io/crates/v/pbkdf2.svg)](https://crates.io/crates/pbkdf2)             | [![Documentation](https://docs.rs/pbkdf2/badge.svg)](https://docs.rs/pbkdf2) | ![MSRV 1.87][msrv-1.87] |
+| [scrypt]       | [`scrypt`]       | [![crates.io](https://img.shields.io/crates/v/scrypt.svg)](https://crates.io/crates/scrypt)             | [![Documentation](https://docs.rs/scrypt/badge.svg)](https://docs.rs/scrypt) | ![MSRV 1.87][msrv-1.87] |
+| [SHA-crypt]    | [`sha‑crypt`]    | [![crates.io](https://img.shields.io/crates/v/sha-crypt.svg)](https://crates.io/crates/sha-crypt)       | [![Documentation](https://docs.rs/sha-crypt/badge.svg)](https://docs.rs/sha-crypt) | ![MSRV 1.87][msrv-1.87] |
+| [yescrypt]     | [`yescrypt`]     | [![crates.io](https://img.shields.io/crates/v/yescrypt.svg)](https://crates.io/crates/yescrypt)         | [![Documentation](https://docs.rs/yescrypt/badge.svg)](https://docs.rs/yescrypt) | ![MSRV 1.87][msrv-1.87] |
 
 Please see the [OWASP Password Storage Cheat Sheet] for assistance in selecting an appropriate algorithm for your use case.
 
@@ -81,7 +81,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [deps-image]: https://deps.rs/repo/github/RustCrypto/password-hashes/status.svg
 [deps-link]: https://deps.rs/repo/github/RustCrypto/password-hashes
-[msrv-1.85]: https://img.shields.io/badge/rustc-1.85.0+-blue.svg
+[msrv-1.87]: https://img.shields.io/badge/rustc-1.87.0+-blue.svg
 
 [//]: # (crates)
 

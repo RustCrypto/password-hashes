@@ -14,7 +14,7 @@ keywords = ["crypto", "password", "hashing"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 [dependencies]
 getrandom = { version = "0.4", default-features = false }

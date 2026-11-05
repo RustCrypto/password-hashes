@@ -64,7 +64,7 @@ pub(crate) fn slice_as_chunks_mut<T, const N: usize>(slice: &mut [T]) -> (&mut [
 #[must_use]
 unsafe fn slice_as_chunks_unchecked_mut<T, const N: usize>(slice: &mut [T]) -> &mut [[T; N]] {
     assert!(
-        N != 0 && slice.len() % N == 0,
+        N != 0 && slice.len().is_multiple_of(N),
         "slice::as_chunks_unchecked requires `N != 0` and the slice to split exactly into `N`-element chunks"
     );
 
