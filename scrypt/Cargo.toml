@@ -11,7 +11,7 @@ repository = "https://github.com/RustCrypto/password-hashes"
 keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 [dependencies]
 cfg-if = "1.0"
@@ -21,7 +21,7 @@ sha2 = { version = "0.11", default-features = false }
 rayon = { version = "1.11", optional = true }
 
 # optional dependencies
-ctutils = { version = "0.4", optional = true }
+ctutils = { version = "0.4.8", optional = true }
 kdf = { version = "0.1", optional = true }
 mcf = { version = "0.6", optional = true }
 password-hash = { version = "0.6", optional = true, default-features = false }

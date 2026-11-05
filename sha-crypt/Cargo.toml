@@ -15,14 +15,14 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 [dependencies]
 sha2 = { version = "0.11", default-features = false }
 base64ct = { version = "1.8", default-features = false }
 
 # optional dependencies
-ctutils = { version = "0.4", optional = true }
+ctutils = { version = "0.4.8", optional = true }
 mcf = { version = "0.6", optional = true, default-features = false, features = ["base64"] }
 password-hash = { version = "0.6", optional = true, default-features = false }
 

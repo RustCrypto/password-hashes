@@ -11,10 +11,10 @@ keywords = ["crypto", "hashing", "password", "phf"]
 categories = ["authentication", "cryptography", "no-std"]
 readme = "README.md"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 
 [dependencies]
-ctutils = "0.4"
+ctutils = "0.4.8"
 hmac = { version = "0.13", default-features = false }
 pbkdf2 = { version = "0.13", default-features = false, features = ["hmac"] }
 salsa20 = { version = "0.11", default-features = false }
