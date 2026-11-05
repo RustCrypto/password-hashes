@@ -48,11 +48,10 @@ impl Params {
     ///
     /// This number is adopted from the [OWASP cheat sheet]:
     ///
-    /// > Use PBKDF2 with a work factor of 210,000 or more and set with an
-    /// > internal hash function of HMAC-SHA-512.
+    /// > PBKDF2-HMAC-SHA512: 220,000 iterations
     ///
     /// [OWASP cheat sheet]: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-    pub const RECOMMENDED_SHA512_ROUNDS: u32 = 210_000;
+    pub const RECOMMENDED_SHA512_ROUNDS: u32 = 220_000;
 
     /// Recommended PBKDF2 parameters adapted from the [OWASP cheat sheet].
     ///

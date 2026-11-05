@@ -132,7 +132,7 @@ fn pbkdf2_sha_512_default_iterations() {
     let hash: PasswordHash = Pbkdf2::SHA512
         .hash_password_with_salt(b"pass\0word", b"testsalt")
         .unwrap();
-    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 210_000);
+    assert_eq!(Params::try_from(&hash).unwrap().rounds(), 220_000);
 }
 
 #[test]

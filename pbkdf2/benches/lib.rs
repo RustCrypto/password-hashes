@@ -42,15 +42,15 @@ pub fn pbkdf2_hmac_sha512_16384_20(bh: &mut Bencher) {
     });
 }
 
-/// Benchmark PBKDF2-HMAC-SHA512 with 210,000 rounds. This is the recommended configuration for PBKDF2-HMAC-SHA512 according to the OWASP cheat sheet:
+/// Benchmark PBKDF2-HMAC-SHA512 with 220,000 rounds. This is the recommended configuration for PBKDF2-HMAC-SHA512 according to the OWASP cheat sheet:
 /// <https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2>
 #[bench]
-pub fn pbkdf2_hmac_sha512_210000_20(bh: &mut Bencher) {
+pub fn pbkdf2_hmac_sha512_220000_20(bh: &mut Bencher) {
     let password = b"my secure password";
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 210_000, &mut buf).unwrap();
+        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 220_000, &mut buf).unwrap();
         test::black_box(&buf);
     });
 }
