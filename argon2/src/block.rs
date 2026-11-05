@@ -74,8 +74,8 @@ impl Block {
         self.0.iter()
     }
 
-    /// NOTE: do not call this directly. It should only be called via
-    /// `Argon2::compress`.
+    /// NOTE: do not call this directly. It should only be called via the
+    /// `soft` backend (`backends::Soft`).
     #[inline(always)]
     pub(crate) fn compress(rhs: &Self, lhs: &Self) -> Self {
         let r = *rhs ^ lhs;

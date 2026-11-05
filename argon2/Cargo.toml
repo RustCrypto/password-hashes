@@ -84,7 +84,7 @@ unused_qualifications = "warn"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"
-check-cfg = ['cfg(test_large_ram)']
+check-cfg = ['cfg(test_large_ram)', 'cfg(argon2_backend, values("soft"))']
 
 [package.metadata.docs.rs]
 all-features = true

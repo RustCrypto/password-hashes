@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- AVX2 backend for block compression, selected at runtime; build with
+  `--cfg argon2_backend="soft"` to always use the portable backend
+
 ## 0.6.0 (2026-08-27)
 ### Added
 - Detect allocation failures in `hash_password_into` ([#568])
