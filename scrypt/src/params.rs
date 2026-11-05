@@ -51,7 +51,7 @@ impl Params {
     /// - `p` - The Scrypt parameter `p`
     ///
     /// # Conditions
-    /// - `log_n` must be less than `64`
+    /// - `log_n` must be greater than `0` and less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
     ///
@@ -61,7 +61,7 @@ impl Params {
         let cond1 = (log_n as usize) < usize::BITS as usize;
         let cond2 = size_of::<usize>() >= size_of::<u32>();
         let cond3 = usize::try_from(r).is_ok() && usize::try_from(p).is_ok();
-        if !(r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
+        if !(log_n > 0 && r > 0 && p > 0 && cond1 && (cond2 || cond3)) {
             return Err(InvalidParams);
         }
 
