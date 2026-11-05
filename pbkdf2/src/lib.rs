@@ -29,13 +29,14 @@
 #![cfg_attr(not(feature = "sha2"), doc = "```ignore")]
 //! // NOTE: example requires `getrandom` feature is enabled
 //!
+//! use core::num::NonZero;
 //! use hex_literal::hex;
 //! use pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_array, sha2::Sha256};
 //!
 //! let password = b"password";
 //! let salt = b"salt";
 //! // number of iterations
-//! let n = 600_000;
+//! let n = NonZero::new(600_000).unwrap();
 //! // Expected value of generated key
 //! let expected = hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637");
 //!
@@ -102,6 +103,7 @@ pub use password_hash::{PasswordHasher, PasswordVerifier};
 #[cfg(feature = "sha2")]
 pub use sha2;
 
+use core::num::NonZero;
 use digest::{FixedOutput, InvalidLength, KeyInit, Update, typenum::Unsigned};
 
 #[cfg(feature = "hmac")]
@@ -116,7 +118,7 @@ fn xor(res: &mut [u8], salt: &[u8]) {
 }
 
 #[inline(always)]
-fn pbkdf2_body<PRF>(i: u32, chunk: &mut [u8], prf: &PRF, salt: &[u8], rounds: u32)
+fn pbkdf2_body<PRF>(i: u32, chunk: &mut [u8], prf: &PRF, salt: &[u8], rounds: NonZero<u32>)
 where
     PRF: Update + FixedOutput + Clone,
 {
@@ -134,7 +136,7 @@ where
         salt
     };
 
-    for _ in 1..rounds {
+    for _ in 1..rounds.get() {
         let mut prfc = prf.clone();
         prfc.update(&salt);
         salt = prfc.finalize_fixed();
@@ -147,11 +149,13 @@ where
 ///
 #[cfg_attr(feature = "sha2", doc = "```")]
 #[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+/// use core::num::NonZero;
 /// use hex_literal::hex;
 /// use pbkdf2::{pbkdf2, hmac::Hmac, sha2::Sha256};
 ///
+/// let rounds = NonZero::new(600_000).unwrap();
 /// let mut buf = [0u8; 20];
-/// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", 600_000, &mut buf)
+/// pbkdf2::<Hmac<Sha256>>(b"password", b"salt", rounds, &mut buf)
 ///     .expect("HMAC can be initialized with any key length");
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
@@ -162,7 +166,7 @@ where
 pub fn pbkdf2<PRF>(
     password: &[u8],
     salt: &[u8],
-    rounds: u32,
+    rounds: NonZero<u32>,
     res: &mut [u8],
 ) -> Result<(), InvalidLength>
 where
@@ -183,10 +187,12 @@ where
 ///
 #[cfg_attr(feature = "sha2", doc = "```")]
 #[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+/// use core::num::NonZero;
 /// use hex_literal::hex;
 /// use pbkdf2::{pbkdf2_array, hmac::Hmac, sha2::Sha256};
 ///
-/// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", 600_000)
+/// let rounds = NonZero::new(600_000).unwrap();
+/// let res = pbkdf2_array::<Hmac<Sha256>, 20>(b"password", b"salt", rounds)
 ///     .expect("HMAC can be initialized with any key length");
 /// assert_eq!(res, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
@@ -197,7 +203,7 @@ where
 pub fn pbkdf2_array<PRF, const N: usize>(
     password: &[u8],
     salt: &[u8],
-    rounds: u32,
+    rounds: NonZero<u32>,
 ) -> Result<[u8; N], InvalidLength>
 where
     PRF: KeyInit + Update + FixedOutput + Clone,
@@ -212,16 +218,23 @@ where
 ///
 #[cfg_attr(feature = "sha2", doc = "```")]
 #[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+/// use core::num::NonZero;
 /// use hex_literal::hex;
 /// use pbkdf2::{pbkdf2_hmac, sha2::Sha256};
 ///
+/// let rounds = NonZero::new(600_000).unwrap();
 /// let mut buf = [0u8; 20];
-/// pbkdf2_hmac::<Sha256>(b"password", b"salt", 600_000, &mut buf);
+/// pbkdf2_hmac::<Sha256>(b"password", b"salt", rounds, &mut buf);
 /// assert_eq!(buf, hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"));
 /// ```
 #[cfg(feature = "hmac")]
 #[allow(clippy::missing_panics_doc, reason = "condition should not occur")]
-pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8]) {
+pub fn pbkdf2_hmac<D: EagerHash>(
+    password: &[u8],
+    salt: &[u8],
+    rounds: NonZero<u32>,
+    res: &mut [u8],
+) {
     pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res)
         .expect("HMAC can be initialized with any key length");
 }
@@ -231,11 +244,13 @@ pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res:
 ///
 #[cfg_attr(feature = "sha2", doc = "```")]
 #[cfg_attr(not(feature = "sha2"), doc = "```ignore")]
+/// use core::num::NonZero;
 /// use hex_literal::hex;
 /// use pbkdf2::{pbkdf2_hmac_array, sha2::Sha256};
 ///
+/// let rounds = NonZero::new(600_000).unwrap();
 /// assert_eq!(
-///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 600_000),
+///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", rounds),
 ///     hex!("669cfe52482116fda1aa2cbe409b2f56c8e45637"),
 /// );
 /// ```
@@ -244,7 +259,7 @@ pub fn pbkdf2_hmac<D: EagerHash>(password: &[u8], salt: &[u8], rounds: u32, res:
 pub fn pbkdf2_hmac_array<D: EagerHash, const N: usize>(
     password: &[u8],
     salt: &[u8],
-    rounds: u32,
+    rounds: NonZero<u32>,
 ) -> [u8; N] {
     let mut buf = [0u8; N];
     pbkdf2_hmac::<D>(password, salt, rounds, &mut buf);
@@ -281,7 +296,7 @@ pub fn pbkdf2_hmac_with_params(
         Algorithm::Pbkdf2Sha512 => pbkdf2_hmac::<sha2::Sha512>,
     };
 
-    f(password, salt, params.rounds(), out);
+    f(password, salt, params.rounds_nonzero(), out);
 }
 
 /// PBKDF2 type for use with the [`PasswordHasher`] and [`PasswordVerifier`] traits, which

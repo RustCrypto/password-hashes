@@ -3,6 +3,7 @@
 
 extern crate test;
 
+use core::num::NonZero;
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use test::Bencher;
@@ -13,7 +14,8 @@ pub fn pbkdf2_hmac_sha256_16384_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, 16_384, &mut buf).unwrap();
+        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, NonZero::new(16_384).unwrap(), &mut buf)
+            .unwrap();
         test::black_box(&buf);
     });
 }
@@ -26,7 +28,8 @@ pub fn pbkdf2_hmac_sha256_600000_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, 600_000, &mut buf).unwrap();
+        pbkdf2::<Hmac<sha2::Sha256>>(password, salt, NonZero::new(600_000).unwrap(), &mut buf)
+            .unwrap();
         test::black_box(&buf);
     });
 }
@@ -37,7 +40,8 @@ pub fn pbkdf2_hmac_sha512_16384_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 16_384, &mut buf).unwrap();
+        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, NonZero::new(16_384).unwrap(), &mut buf)
+            .unwrap();
         test::black_box(&buf);
     });
 }
@@ -50,7 +54,8 @@ pub fn pbkdf2_hmac_sha512_210000_20(bh: &mut Bencher) {
     let salt = b"salty salt";
     let mut buf = [0u8; 20];
     bh.iter(|| {
-        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, 210_000, &mut buf).unwrap();
+        pbkdf2::<Hmac<sha2::Sha512>>(password, salt, NonZero::new(210_000).unwrap(), &mut buf)
+            .unwrap();
         test::black_box(&buf);
     });
 }

@@ -19,6 +19,7 @@ mod errors;
 pub use errors::Error;
 
 use blowfish::Blowfish;
+use core::num::NonZero;
 use sha2::{
     Digest, Sha512,
     digest::{
@@ -101,9 +102,9 @@ pub fn bcrypt_pbkdf_with_memory(
     let passphrase = passphrase.as_ref();
     if passphrase.is_empty() || salt.is_empty() {
         return Err(Error::InvalidParamLen);
-    } else if rounds == 0 {
-        return Err(Error::InvalidRounds);
-    } else if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
+    }
+    let rounds = NonZero::new(rounds).ok_or(Error::InvalidRounds)?;
+    if output.is_empty() || output.len() > BHASH_OUTPUT_SIZE * BHASH_OUTPUT_SIZE {
         return Err(Error::InvalidOutputLen);
     } else if memory.len() < stride * BHASH_OUTPUT_SIZE {
         return Err(Error::InvalidMemoryLen);
