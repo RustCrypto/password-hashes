@@ -4,10 +4,7 @@
 //! It operates on 64-bit lanes which are designed to be grouped into wider "simple SIMD" lanes,
 //! which are in turn possibly grouped into an even wider "gather SIMD" vector.
 
-use crate::{
-    salsa20,
-    util::{slice_as_chunks_mut, xor},
-};
+use crate::{salsa20, xor};
 use core::mem;
 
 /// Number of 64-bit lanes per "simple SIMD" lane (requiring only arithmetic and bitwise operations
@@ -54,44 +51,39 @@ impl PwxformCtx<'_> {
     /// mixing pwxform’s parallel lanes).
     pub(crate) fn blockmix_pwxform(&mut self, b: &mut [u32], r: usize) {
         // Convert 128-byte blocks to PWXbytes blocks
-        // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-        let (b, _b) = slice_as_chunks_mut::<_, PWXWORDS>(b);
-        assert_eq!(b.len(), 2 * r);
-        assert!(_b.is_empty());
+        assert_eq!(b.len(), 2 * r * PWXWORDS);
 
         // 1: r_1 <-- 128r / PWXbytes
         let r1 = (128 * r) / PWXBYTES;
 
         // 2: X <-- B'_{r_1 - 1}
-        let mut x = b[r1 - 1];
+        let mut x = *b.last_chunk::<PWXWORDS>().expect("B contains r1 blocks");
 
         // 3: for i = 0 to r_1 - 1 do
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..r1 {
+        for bi in b.chunks_exact_mut(PWXWORDS) {
             // 4: if r_1 > 1
             if r1 > 1 {
                 // 5: X <-- X xor B'_i
-                xor(&mut x, &b[i]);
+                xor(&mut x, bi);
             }
 
             // 7: X <-- pwxform(X)
             self.pwxform(&mut x);
 
             // 8: B'_i <-- X
-            b[i] = x;
+            bi.copy_from_slice(&x);
         }
 
         // 10: i <-- floor((r_1 - 1) * PWXbytes / 64)
         let i = (r1 - 1) * PWXBYTES / 64;
 
         // 11: B_i <-- H(B_i)
-        salsa20::salsa20_2(&mut b[i]);
+        salsa20::salsa20_2(b[i * 16..].first_chunk_mut().expect("B_i is 16 words"));
 
         // 12: for i = i + 1 to 2r - 1 do
         for i in (i + 1)..(2 * r) {
-            // TODO(tarcieri): use `get_disjoint_mut` when MSRV is 1.86
-            let (bim1, bi) = b[(i - 1)..i].split_at_mut(1);
-            let (bim1, bi) = (&bim1[0], &mut bi[0]);
+            let (bim1, bi) = b[(i - 1) * 16..].split_at_mut(16);
+            let bi = bi.first_chunk_mut().expect("B_i is 16 words");
 
             /* 13: B_i <-- H(B_i xor B_{i-1}) */
             xor(bi, bim1);
@@ -101,17 +93,14 @@ impl PwxformCtx<'_> {
 
     /// Transform the provided block using the provided S-boxes.
     fn pwxform(&mut self, b: &mut [u32; 16]) {
-        // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-        let b = slice_as_chunks_mut::<_, 2>(slice_as_chunks_mut::<_, PWXSIMPLE>(b).0).0;
         let mut w = self.w;
 
         // 1: for i = 0 to PWXrounds - 1 do
         for i in 0..PWXROUNDS {
             // 2: for j = 0 to PWXgather - 1 do
-            #[allow(clippy::needless_range_loop)]
-            for j in 0..PWXGATHER {
-                let mut xl: u32 = b[j][0][0];
-                let mut xh: u32 = b[j][0][1];
+            for bj in b.chunks_exact_mut(PWXSIMPLE * 2) {
+                let mut xl = bj[0];
+                let mut xh = bj[1];
 
                 // 3: p0 <-- (lo(B_{j,0}) & Smask) / (PWXsimple * 8)
                 let p0 = &self.s0[(xl as usize & SMASK) / 8..];
@@ -120,13 +109,13 @@ impl PwxformCtx<'_> {
                 let p1 = &self.s1[(xh as usize & SMASK) / 8..];
 
                 // 5: for k = 0 to PWXsimple - 1 do
-                for k in 0..PWXSIMPLE {
+                for (k, bjk) in bj.chunks_exact_mut(2).enumerate() {
                     // 6: B_{j,k} <-- (hi(B_{j,k}) * lo(B_{j,k}) + S0_{p0,k}) xor S1_{p1,k}
                     let s0 = (u64::from(p0[k][1]) << 32).wrapping_add(u64::from(p0[k][0]));
                     let s1 = (u64::from(p1[k][1]) << 32).wrapping_add(u64::from(p1[k][0]));
 
-                    xl = b[j][k][0];
-                    xh = b[j][k][1];
+                    xl = bjk[0];
+                    xh = bjk[1];
 
                     let mut x = u64::from(xh).wrapping_mul(u64::from(xl));
                     x = x.wrapping_add(s0);
@@ -134,8 +123,8 @@ impl PwxformCtx<'_> {
 
                     let x_lo = (x & 0xFFFF_FFFF) as u32;
                     let x_hi = ((x >> 32) & 0xFFFF_FFFF) as u32;
-                    b[j][k][0] = x_lo;
-                    b[j][k][1] = x_hi;
+                    bjk[0] = x_lo;
+                    bjk[1] = x_hi;
 
                     // 8: if (i != 0) and (i != PWXrounds - 1)
                     if i != 0 && i != (PWXROUNDS - 1) {
