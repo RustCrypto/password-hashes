@@ -1,6 +1,6 @@
 //! Wrapper functions for invoking the `salsa20` crate.
 
-use crate::util::{slice_as_chunks_mut, xor};
+use crate::xor;
 use salsa20::cipher::{
     StreamCipherCore,
     consts::{U1, U4},
@@ -31,22 +31,24 @@ fn salsa20<R: Unsigned>(b: &mut [u32; 16]) {
 }
 
 pub(crate) fn blockmix_salsa8(b: &mut [u32], y: &mut [u32], r: usize) {
-    // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-    let (b, _) = slice_as_chunks_mut::<_, 16>(b);
-    let (y, _) = slice_as_chunks_mut::<_, 16>(y);
-    let mut x = b[2 * r - 1];
+    let b = &mut b[..32 * r];
+    let y = &mut y[..32 * r];
+    let mut x = *b.last_chunk::<16>().expect("B contains 2r blocks");
 
-    for i in 0..(2 * r) {
-        xor(&mut x, &b[i]);
+    for (bi, yi) in b.chunks_exact(16).zip(y.chunks_exact_mut(16)) {
+        xor(&mut x, bi);
         salsa20::<U4>(&mut x);
-        y[i].copy_from_slice(&x);
+        yi.copy_from_slice(&x);
     }
 
-    for i in 0..r {
-        b[i].copy_from_slice(&y[i * 2]);
-    }
+    let (b0, b1) = b.split_at_mut(16 * r);
 
-    for i in 0..r {
-        b[i + r].copy_from_slice(&y[i * 2 + 1]);
+    for ((b0, b1), yi) in b0
+        .chunks_exact_mut(16)
+        .zip(b1.chunks_exact_mut(16))
+        .zip(y.chunks_exact(32))
+    {
+        b0.copy_from_slice(&yi[..16]);
+        b1.copy_from_slice(&yi[16..]);
     }
 }

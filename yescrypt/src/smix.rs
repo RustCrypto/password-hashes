@@ -3,10 +3,9 @@
 #![allow(clippy::too_many_arguments)]
 
 use crate::{
-    Error, Mode, Result,
+    Error, Mode, Result, hmac_sha256,
     pwxform::{PwxformCtx, SWORDS},
-    salsa20,
-    util::{cast_slice, hmac_sha256, slice_as_chunks_mut, xor},
+    salsa20, xor,
 };
 use alloc::vec::Vec;
 
@@ -18,7 +17,7 @@ const SBYTES: u64 = crate::pwxform::SBYTES as u64;
 /// length; the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
 pub(crate) fn smix(
-    b: &mut [u32],
+    b: &mut [[u8; 4]],
     r: u32,
     n: u64,
     p: u32,
@@ -72,7 +71,7 @@ pub(crate) fn smix(
 
     // S_n = [S_i for i in 0..p]
     let mut sn = if mode.is_rw() {
-        alloc::vec![[0u32; SWORDS]; p as usize]
+        alloc::vec![[[0u32; 2]; SWORDS / 2]; p as usize]
     } else {
         Vec::new()
     };
@@ -108,25 +107,17 @@ pub(crate) fn smix(
                 1,
                 SBYTES / 128,
                 Mode::Classic,
-                &mut si[..],
+                si.as_flattened_mut(),
                 xy,
                 &mut None,
             )?;
 
-            let (s2, s10) = si.split_at_mut((1 << 8) * 4);
-            let (s1, s0) = s10.split_at_mut((1 << 8) * 4);
-
             // 19: S2_i <-- S_{i,0...2^Swidth-1}
-            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-            let (s2, _) = slice_as_chunks_mut::<_, 2>(s2);
+            let (s2, s10) = si.split_at_mut((1 << 8) * 2);
 
             // 20: S1_i <-- S_{i,2^Swidth...2*2^Swidth-1}
-            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-            let (s1, _) = slice_as_chunks_mut::<_, 2>(s1);
-
             // 21: S0_i <-- S_{i,2*2^Swidth...3*2^Swidth-1}
-            // TODO(tarcieri): use upstream `[T]::as_chunks_mut` when MSRV is 1.88
-            let (s0, _) = slice_as_chunks_mut::<_, 2>(s0);
+            let (s1, s0) = s10.split_at_mut((1 << 8) * 2);
 
             // 22: w_i <-- 0
             let w = 0;
@@ -134,7 +125,7 @@ pub(crate) fn smix(
             // 23: if i = 0
             if i == 0 {
                 // 24: passwd <-- HMAC-SHA256(B_{0,2r-1}, passwd)
-                let digest = hmac_sha256(cast_slice(&bs[(s - 16)..s])?, &passwd[..32])?;
+                let digest = hmac_sha256(bs[(s - 16)..s].as_flattened(), &passwd[..32])?;
                 passwd[..32].copy_from_slice(&digest);
             }
 
@@ -196,7 +187,7 @@ pub(crate) fn smix(
 /// The input B must be 128r bytes in length; the temporary storage `V` must be 128rN bytes in
 /// length; the temporary storage `XY` must be 256r bytes in length.
 fn smix1(
-    b: &mut [u32],
+    b: &mut [[u8; 4]],
     r: usize,
     n: u64,
     mode: Mode,
@@ -210,7 +201,7 @@ fn smix1(
     // 1: X <-- B
     for k in 0..(2 * r) {
         for i in 0..16 {
-            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
+            x[k * 16 + i] = u32::from_le_bytes(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -234,7 +225,7 @@ fn smix1(
     /* B' <-- X */
     for k in 0..(2 * r) {
         for i in 0..16 {
-            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = x[k * 16 + i].to_le_bytes();
         }
     }
 
@@ -247,7 +238,7 @@ fn smix1(
 /// the temporary storage XY must be 256r bytes in length.  The value N must be a power of 2
 /// greater than 1.
 fn smix2(
-    b: &mut [u32],
+    b: &mut [[u8; 4]],
     r: usize,
     n: u64,
     nloop: u64,
@@ -262,7 +253,7 @@ fn smix2(
     /* X <-- B */
     for k in 0..(2 * r) {
         for i in 0..16usize {
-            x[k * 16 + i] = u32::from_le(b[(k * 16) + (i * 5 % 16)]);
+            x[k * 16 + i] = u32::from_le_bytes(b[(k * 16) + (i * 5 % 16)]);
         }
     }
 
@@ -289,7 +280,7 @@ fn smix2(
     // 10: B' <-- X
     for k in 0..(2 * r) {
         for i in 0..16 {
-            b[(k * 16) + ((i * 5) % 16)] = (x[k * 16 + i]).to_le();
+            b[(k * 16) + ((i * 5) % 16)] = x[k * 16 + i].to_le_bytes();
         }
     }
 

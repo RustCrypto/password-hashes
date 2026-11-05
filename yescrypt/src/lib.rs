@@ -5,7 +5,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
-#![deny(unsafe_code)]
+#![forbid(unsafe_code)]
 
 //! # Usage
 //! ## Password Hashing
@@ -54,7 +54,6 @@ mod params;
 mod pwxform;
 mod salsa20;
 mod smix;
-mod util;
 
 #[cfg(feature = "password-hash")]
 mod mcf;
@@ -74,6 +73,7 @@ pub use {
 };
 
 use alloc::vec;
+use core::ops::BitXorAssign;
 use sha2::{Digest, Sha256};
 
 /// yescrypt Key Derivation Function (KDF).
@@ -131,7 +131,7 @@ fn yescrypt_body(
     }
 
     let mut v = vec![0; 32 * (r as usize) * usize::try_from(n)?];
-    let mut b = vec![0; 32 * (r as usize) * (p as usize)];
+    let mut b = vec![[0u8; 4]; 32 * (r as usize) * (p as usize)];
     let mut xy = vec![0; 64 * (r as usize)];
 
     let mut passwd = passwd;
@@ -142,15 +142,15 @@ fn yescrypt_body(
         b"yescrypt"
     };
     if !mode.is_classic() {
-        sha256 = util::hmac_sha256(key, passwd)?;
+        sha256 = hmac_sha256(key, passwd)?;
         passwd = &sha256;
     }
 
     // 1: (B_0 ... B_{p-1}) <-- PBKDF2(P, S, 1, p * MFLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, util::cast_slice_mut(&mut b)?);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, salt, 1, b.as_flattened_mut());
 
     if !mode.is_classic() {
-        sha256.copy_from_slice(util::cast_slice(&b[..8])?);
+        sha256.copy_from_slice(b[..8].as_flattened());
         passwd = &sha256;
     }
 
@@ -177,11 +177,11 @@ fn yescrypt_body(
 
     let mut dk = [0u8; 32];
     if !mode.is_classic() && out.len() < 32 {
-        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, &mut dk);
+        pbkdf2::pbkdf2_hmac::<Sha256>(passwd, b.as_flattened(), 1, &mut dk);
     }
 
     // 5: DK <-- PBKDF2(P, B, 1, dkLen)
-    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, util::cast_slice(&b)?, 1, out);
+    pbkdf2::pbkdf2_hmac::<Sha256>(passwd, b.as_flattened(), 1, out);
 
     // Except when computing classic scrypt, allow all computation so far
     // to be performed on the client.  The final steps below match those of
@@ -196,7 +196,7 @@ fn yescrypt_body(
         };
 
         // Compute ClientKey
-        sha256 = util::hmac_sha256(&dkp[..32], b"Client Key")?;
+        sha256 = hmac_sha256(&dkp[..32], b"Client Key")?;
 
         // Compute StoredKey
         let clen = out.len().clamp(0, 32);
@@ -247,3 +247,21 @@ impl Kdf for Yescrypt {
 
 #[cfg(feature = "kdf")]
 impl Pbkdf for Yescrypt {}
+
+pub(crate) fn xor<T>(dst: &mut [T], src: &[T])
+where
+    T: BitXorAssign + Copy,
+{
+    assert_eq!(dst.len(), src.len());
+    for (dst, src) in core::iter::zip(dst, src) {
+        *dst ^= *src;
+    }
+}
+
+pub(crate) fn hmac_sha256(key: &[u8], in_0: &[u8]) -> Result<[u8; 32]> {
+    use hmac::{KeyInit, Mac};
+
+    let mut hmac = hmac::Hmac::<Sha256>::new_from_slice(key).map_err(|_| Error::Internal)?;
+    hmac.update(in_0);
+    Ok(hmac.finalize().into_bytes().into())
+}
