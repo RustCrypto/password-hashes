@@ -54,6 +54,7 @@ impl Params {
     /// - `log_n` must be less than `64`
     /// - `r` must be greater than `0` and less than or equal to `4294967295`
     /// - `p` must be greater than `0` and less than `4294967295`
+    /// - `r * p` must be less than `2^30`
     ///
     /// # Errors
     /// Returns [`InvalidParams`] if one of the parameters is incorrect.
@@ -95,8 +96,8 @@ impl Params {
         // This check required by Scrypt:
         // check: p <= ((2^32-1) * 32) / (128 * r)
         // It takes a bit of re-arranging to get the check above into this form,
-        // but it is indeed the same.
-        if r * p >= 0x4000_0000 {
+        // but it is indeed the same. Compute in `u64` to avoid overflows.
+        if u64::from(r) * u64::from(p) >= 0x4000_0000 {
             return Err(InvalidParams);
         }
 
