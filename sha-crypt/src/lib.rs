@@ -80,7 +80,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
     };
     let salt_len = salt.len();
 
-    let digest_a = sha256_crypt_intermediate(password, salt);
+    let mut digest_a = sha256_crypt_intermediate(password, salt);
 
     // 13.
     let mut hasher_alt = Sha256::default();
@@ -91,7 +91,7 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
     }
 
     // 15.
-    let dp = hasher_alt.finalize();
+    let mut dp = hasher_alt.finalize();
 
     // 16.
     // Create byte sequence P.
@@ -108,13 +108,14 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 19.
     // Finish the digest.
-    let ds = hasher_alt.finalize();
+    let mut ds = hasher_alt.finalize();
 
     // 20.
     // Create byte sequence S.
     // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(salt_len...`)
 
     let mut digest_c = digest_a;
+    clear_secrets(&mut [&mut digest_a]);
     // Repeatedly run the collected hash value through SHA256 to burn
     // CPU cycles
     for i in 0..params.rounds {
@@ -145,9 +146,10 @@ pub fn sha256_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
             hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
-        digest_c.clone_from_slice(&hasher.finalize());
+        hasher.finalize_into((&mut digest_c).into());
     }
 
+    clear_secrets(&mut [&mut dp, &mut ds]);
     digest_c
 }
 
@@ -170,7 +172,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
     };
     let salt_len = salt.len();
 
-    let digest_a = sha512_crypt_intermediate(password, salt);
+    let mut digest_a = sha512_crypt_intermediate(password, salt);
 
     // 13.
     let mut hasher_alt = Sha512::default();
@@ -181,7 +183,7 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
     }
 
     // 15.
-    let dp = hasher_alt.finalize();
+    let mut dp = hasher_alt.finalize();
 
     // 16.
     // Create byte sequence P.
@@ -198,13 +200,14 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
 
     // 19.
     // Finish the digest.
-    let ds = hasher_alt.finalize();
+    let mut ds = hasher_alt.finalize();
 
     // 20.
     // Create byte sequence S.
     // NOTE: deferred until below and computed on-the-fly. See `hash_byte_seq(salt_len...`)
 
     let mut digest_c = digest_a;
+    clear_secrets(&mut [&mut digest_a]);
     // Repeatedly run the collected hash value through SHA512 to burn
     // CPU cycles
     for i in 0..params.rounds {
@@ -235,9 +238,10 @@ pub fn sha512_crypt(password: &[u8], salt: &[u8], params: Params) -> [u8; BLOCK_
             hash_byte_seq(pw_len, &dp, &mut hasher);
         }
 
-        digest_c.clone_from_slice(&hasher.finalize());
+        hasher.finalize_into((&mut digest_c).into());
     }
 
+    clear_secrets(&mut [&mut dp, &mut ds]);
     digest_c
 }
 
@@ -257,7 +261,7 @@ fn sha256_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     // 7.
     hasher_alt.update(password);
     // 8.
-    let digest_b = hasher_alt.finalize();
+    let mut digest_b = hasher_alt.finalize();
 
     // 9.
     for _ in 0..(pw_len / BLOCK_SIZE_SHA256) {
@@ -281,7 +285,10 @@ fn sha256_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     }
 
     // 12.
-    hasher.finalize().into()
+    let mut digest_a = [0u8; BLOCK_SIZE_SHA256];
+    hasher.finalize_into((&mut digest_a).into());
+    clear_secrets(&mut [&mut digest_b]);
+    digest_a
 }
 
 fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SHA512] {
@@ -300,7 +307,7 @@ fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     // 7.
     hasher_alt.update(password);
     // 8.
-    let digest_b = hasher_alt.finalize();
+    let mut digest_b = hasher_alt.finalize();
 
     // 9.
     for _ in 0..(pw_len / BLOCK_SIZE_SHA512) {
@@ -324,7 +331,10 @@ fn sha512_crypt_intermediate(password: &[u8], salt: &[u8]) -> [u8; BLOCK_SIZE_SH
     }
 
     // 12.
-    hasher.finalize().into()
+    let mut digest_a = [0u8; BLOCK_SIZE_SHA512];
+    hasher.finalize_into((&mut digest_a).into());
+    clear_secrets(&mut [&mut digest_b]);
+    digest_a
 }
 
 fn hash_byte_seq<D: Digest>(len: usize, fill_from: &[u8], digest: &mut D) {
@@ -333,4 +343,14 @@ fn hash_byte_seq<D: Digest>(len: usize, fill_from: &[u8], digest: &mut D) {
         digest.update(fill_from);
     }
     digest.update(&fill_from[..(len % bs)]);
+}
+
+/// Overwrites intermediate values derived from the password with zeros, if
+/// the `zeroize` feature is enabled.
+#[cfg_attr(not(feature = "zeroize"), allow(unused_variables))]
+fn clear_secrets(secrets: &mut [&mut [u8]]) {
+    #[cfg(feature = "zeroize")]
+    for secret in secrets {
+        zeroize::Zeroize::zeroize(*secret);
+    }
 }
