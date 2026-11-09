@@ -76,3 +76,10 @@ fn test_scrypt() {
         assert!(result == t.expected);
     }
 }
+
+/// RFC 7914 §2 requires `N > 1`.
+#[test]
+fn test_params_reject_n_1() {
+    assert!(Params::new(0, 8, 1).is_err());
+    assert!(Params::new(1, 8, 1).is_ok());
+}
