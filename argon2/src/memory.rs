@@ -13,54 +13,69 @@
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 
-#[cfg(feature = "parallel")]
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+#[cfg(not(target_has_atomic = "ptr"))]
+use core::cell::Cell;
+#[cfg(target_has_atomic = "ptr")]
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::{Block, SYNC_POINTS};
 
-/// Extension trait for Argon2 memory blocks.
-pub(crate) trait Memory<'a> {
-    /// Compute each Argon2 segment.
-    ///
-    /// By default computation is single threaded. Parallel computation can be enabled with the
-    /// `parallel` feature, in which case [rayon] is used to compute as many lanes in parallel as
-    /// possible.
-    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
-    where
-        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send;
+/// The next lane of a slice to give out: atomic where the target has atomics, so that the lanes
+/// can be computed on several threads.
+#[derive(Default)]
+pub(crate) struct LaneCounter(
+    #[cfg(target_has_atomic = "ptr")] AtomicUsize,
+    #[cfg(not(target_has_atomic = "ptr"))] Cell<usize>,
+);
+
+impl LaneCounter {
+    /// The next lane, then the one after…, past the lanes once they're all taken.
+    fn take(&self) -> usize {
+        #[cfg(target_has_atomic = "ptr")]
+        return self.0.fetch_add(1, Ordering::Relaxed);
+        #[cfg(not(target_has_atomic = "ptr"))]
+        return self.0.replace(self.0.get() + 1);
+    }
+
+    pub(crate) fn get_mut(&mut self) -> &mut usize {
+        self.0.get_mut()
+    }
 }
 
-impl Memory<'_> for &mut [Block] {
-    #[cfg(not(feature = "parallel"))]
-    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
-    where
-        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send,
-    {
-        let inner = MemoryInner::new(self, lanes);
-        for slice in 0..SYNC_POINTS {
-            for lane in 0..lanes {
-                // SAFETY: `self` exclusively borrows the blocks, and we sequentially process
-                // slices and segments.
-                let segment = unsafe { SegmentView::new(inner, slice, lane) };
-                f(segment, slice, lane);
-            }
+/// One slice of the memory, which gives out a view of each of its segments once.
+pub(crate) struct SliceView<'a> {
+    inner: MemoryInner<'a>,
+    pub(crate) slice: usize,
+    lanes: usize,
+    next_lane: &'a LaneCounter,
+}
+
+impl<'a> SliceView<'a> {
+    pub(crate) fn new(
+        memory_blocks: &'a mut [Block],
+        lanes: usize,
+        slice: usize,
+        next_lane: &'a LaneCounter,
+    ) -> Self {
+        SliceView {
+            inner: MemoryInner::new(memory_blocks, lanes),
+            slice,
+            lanes,
+            next_lane,
         }
     }
 
-    #[cfg(feature = "parallel")]
-    fn for_each_segment<F>(&mut self, lanes: usize, f: F)
-    where
-        F: Fn(SegmentView<'_>, usize, usize) + Sync + Send,
-    {
-        let inner = MemoryInner::new(self, lanes);
-        for slice in 0..SYNC_POINTS {
-            (0..lanes).into_par_iter().for_each(|lane| {
-                // SAFETY: `self` exclusively borrows the blocks, we sequentially process slices,
-                // and we create exactly one segment view per lane in a slice.
-                let segment = unsafe { SegmentView::new(inner, slice, lane) };
-                f(segment, slice, lane);
-            });
+    /// The view of a segment not given out yet, with its lane.
+    pub(crate) fn take(&self) -> Option<(usize, SegmentView<'_>)> {
+        let lane = self.next_lane.take();
+        if lane >= self.lanes {
+            return None;
         }
+        // SAFETY: `self` exclusively borrows the blocks, all its views are of the same slice, and
+        // each lane is given out once.
+        Some((lane, unsafe {
+            SegmentView::new(self.inner, self.slice, lane)
+        }))
     }
 }
 
