@@ -136,6 +136,7 @@ mod algorithm;
 mod blake2b_long;
 mod block;
 mod error;
+mod hashing;
 mod memory;
 mod params;
 mod version;
@@ -144,6 +145,7 @@ pub use crate::{
     algorithm::Algorithm,
     block::Block,
     error::{Error, Result},
+    hashing::{Hashing, Segments},
     params::{AssociatedData, KeyId, Params, ParamsBuilder},
     version::Version,
 };
@@ -161,7 +163,7 @@ pub use {
 use crate::blake2b_long::blake2b_long;
 use blake2::{Blake2b512, Digest, digest};
 use core::fmt;
-use memory::{Memory, SegmentView};
+use memory::SegmentView;
 
 #[cfg(all(feature = "alloc", feature = "password-hash"))]
 use password_hash::phc::{Output, ParamsString, Salt};
@@ -311,6 +313,24 @@ impl<'key> Argon2<'key> {
         out: &mut [u8],
         mut memory_blocks: impl AsMut<[Block]>,
     ) -> Result<()> {
+        self.start_hash_password_into(pwd, salt, out, memory_blocks.as_mut())?
+            .finish();
+        Ok(())
+    }
+
+    /// Like [`Argon2::hash_password_into_with_memory`], a slice at a time: the [`Hashing`]
+    /// returned gives out the slices of the memory, whose lanes can be computed at the same time,
+    /// and writes the hash into `out` after the last one.
+    ///
+    /// # Errors
+    /// The same as [`Argon2::hash_password_into_with_memory`].
+    pub fn start_hash_password_into<'a>(
+        &'a self,
+        pwd: &[u8],
+        salt: &[u8],
+        out: &'a mut [u8],
+        memory_blocks: &'a mut [Block],
+    ) -> Result<Hashing<'a>> {
         // Validate output length
         if out.len() < self.params.output_len().unwrap_or(Params::MIN_OUTPUT_LEN) {
             return Err(Error::OutputTooShort);
@@ -324,8 +344,8 @@ impl<'key> Argon2<'key> {
 
         // Hashing all inputs
         let initial_hash = self.initial_hash(pwd, salt, out);
-        self.fill_blocks(memory_blocks.as_mut(), initial_hash)?;
-        self.finalize(memory_blocks.as_mut(), out)
+        let memory_blocks = self.first_blocks(memory_blocks, initial_hash)?;
+        Ok(Hashing::new(self, memory_blocks, Some(out)))
     }
 
     /// Use a password and associated parameters only to fill the given memory blocks.
@@ -347,24 +367,8 @@ impl<'key> Argon2<'key> {
         Self::verify_inputs(pwd, salt)?;
 
         let initial_hash = self.initial_hash(pwd, salt, &[]);
-        self.fill_blocks(memory_blocks.as_mut(), initial_hash)
-    }
-
-    fn fill_blocks(
-        &self,
-        memory_blocks: &mut [Block],
-        initial_hash: digest::Output<Blake2b512>,
-    ) -> Result<()> {
-        let mut memory_blocks = self.first_blocks(memory_blocks, initial_hash)?;
-        let lanes = self.params.lanes();
-
-        // Run passes on blocks
-        for pass in 0..self.params.t_cost() as usize {
-            memory_blocks.for_each_segment(lanes, |memory_view, slice, lane| {
-                self.fill_segment(memory_view, pass, slice, lane);
-            });
-        }
-
+        let memory_blocks = self.first_blocks(memory_blocks.as_mut(), initial_hash)?;
+        Hashing::new(self, memory_blocks, None).finish();
         Ok(())
     }
 
